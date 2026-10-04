@@ -157,6 +157,9 @@ func _setup_passenger_system() -> void:
 
 	passenger_economy = PassengerEconomy.new()
 	passenger_economy.changed.connect(_on_passenger_economy_changed)
+	passenger_economy.passive_passengers_generated.connect(
+		_on_passive_passengers_generated
+	)
 	add_child(passenger_economy)
 	passenger_economy.configure(
 		airport_grid,
@@ -567,6 +570,19 @@ func _apply_completed_flight_reward(
 	reward["mastery_star_up"] = new_mastery_stars > old_mastery_stars
 	reward["aircraft_name"] = aircraft.aircraft_display_name
 
+	var economy_profile := ProfileStore.add_economy_stats({
+		"flights_completed": 1,
+		"flight_coins": int(reward.get("coins", 0)),
+		"flight_xp": int(reward.get("xp", 0)),
+		"resources_earned": resources_won.size()
+	})
+	if not economy_profile.is_empty():
+		current_profile = economy_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+
 	if fleet_screen != null:
 		fleet_screen.set_mastery_hours(
 			current_profile.get("aircraft_mastery_hours", {})
@@ -617,7 +633,8 @@ func _on_navigation_requested(tab: String) -> void:
 				passenger_economy.get_passengers(),
 				passenger_economy.get_capacity(),
 				passenger_economy.get_production_per_minute(),
-				rewarded_passenger_ad_bridge.provider_connected
+				rewarded_passenger_ad_bridge.provider_connected,
+				current_profile.get("economy_stats", {})
 			)
 
 
@@ -714,8 +731,20 @@ func _on_rewarded_passenger_ad_reward_granted() -> void:
 		passenger_economy.get_passengers(),
 		passenger_economy.get_capacity(),
 		passenger_economy.get_production_per_minute(),
-		rewarded_passenger_ad_bridge.provider_connected
+		rewarded_passenger_ad_bridge.provider_connected,
+		current_profile.get("economy_stats", {})
 	)
+
+
+func _on_passive_passengers_generated(amount: int) -> void:
+	if amount <= 0:
+		return
+
+	var updated := ProfileStore.add_economy_stats({
+		"passengers_generated": amount
+	})
+	if not updated.is_empty():
+		current_profile = updated
 
 
 func _on_passenger_economy_changed(
@@ -778,6 +807,7 @@ func _attempt_boarding_and_departure(
 
 	if boarded:
 		_remove_passenger_waiter(aircraft)
+		_record_boarded_passengers(required)
 		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(
 			"%s received %d passengers • boarding started" % [
@@ -837,6 +867,7 @@ func _try_board_waiting_aircraft() -> void:
 			continue
 
 		pending_passenger_departures.remove_at(index)
+		_record_boarded_passengers(required)
 		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(
 			"%s received %d passengers • boarding started" % [
@@ -862,6 +893,16 @@ func _refresh_waiting_passenger_cards() -> void:
 			],
 			"warning"
 		)
+
+
+func _record_boarded_passengers(amount: int) -> void:
+	if amount <= 0:
+		return
+	var updated := ProfileStore.add_economy_stats({
+		"passengers_boarded": amount
+	})
+	if not updated.is_empty():
+		current_profile = updated
 
 
 func _is_passenger_waiter(aircraft: AircraftPrototype) -> bool:

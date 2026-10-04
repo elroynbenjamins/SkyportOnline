@@ -71,7 +71,8 @@ func can_change_flight_plan() -> bool:
 		"PARKED",
 		"WAITING_FUEL",
 		"READY_FOR_DESTINATION",
-		"READY_FOR_DEPARTURE"
+		"READY_FOR_DEPARTURE",
+		"WAITING_PASSENGERS"
 	]
 
 
@@ -116,6 +117,10 @@ func mark_service_complete() -> void:
 		_set_state("READY_FOR_DESTINATION")
 	else:
 		_set_state("READY_FOR_DEPARTURE")
+
+
+func mark_waiting_passengers() -> void:
+	_set_state("WAITING_PASSENGERS")
 
 
 func begin_departure_after_clearance() -> void:
@@ -333,6 +338,8 @@ func _draw() -> void:
 			draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
 		"READY_FOR_DESTINATION":
 			draw_circle(Vector2(-2, -26), 6.0, Color("f0a6ff"))
+		"WAITING_PASSENGERS":
+			draw_circle(Vector2(-2, -26), 6.0, Color("ff9f68"))
 		"READY_FOR_DEPARTURE":
 			draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
 		"CLEARED", "LINE_UP":

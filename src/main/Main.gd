@@ -180,19 +180,8 @@ func _spawn_aircraft_demos() -> void:
 		var aircraft := AircraftPrototype.new()
 
 		var profile_ids: Array[String] = ["pico_p8", "pico_p8"]
-		var default_destinations: Array[String] = ["brussels", "brussels"]
 		var profile_id: String = profile_ids[index % profile_ids.size()]
-		var destination_id: String = default_destinations[
-			index % default_destinations.size()
-		]
 		aircraft.configure_aircraft_type(profile_id)
-
-		var destination := DestinationCatalog.get_destination(destination_id)
-		var initial_plan := FlightRules.create_flight_plan(
-			aircraft.get_aircraft_profile(),
-			destination
-		)
-		aircraft.assign_flight_plan(initial_plan)
 		aircraft.name = label
 		aircraft.z_index = 80 + index
 		aircraft.state_changed.connect(
@@ -220,11 +209,18 @@ func _spawn_aircraft_demos() -> void:
 		ground_services.request_turnaround(aircraft, label, false)
 
 	hud.set_operation_status(
-		"%d aircraft awaiting turnaround" % aircraft_demos.size()
+		"%d Pico P8 aircraft in turnaround • WORLD assigns routes" % aircraft_demos.size(),
+		"warning"
 	)
 
 
 func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
+	if not aircraft.has_flight_plan():
+		hud.set_operation_status(
+			"%s turnaround complete • choose destination" % label,
+			"warning"
+		)
+		return
 	_attempt_boarding_and_departure(aircraft, label)
 
 
@@ -414,6 +410,8 @@ func _on_demo_arrival_completed(
 	label: String
 ) -> void:
 	_apply_completed_flight_reward(aircraft, label)
+	aircraft.clear_flight_plan()
+	_remove_passenger_waiter(aircraft)
 
 	var route_info: Dictionary = airport_grid.get_departure_route_for_stand(
 		aircraft.stand_uid,
@@ -661,6 +659,13 @@ func _attempt_boarding_and_departure(
 	label: String
 ) -> void:
 	if aircraft == null or not is_instance_valid(aircraft):
+		return
+	if not aircraft.has_flight_plan():
+		aircraft.mark_service_complete()
+		hud.set_operation_status(
+			"%s ready • choose destination before boarding" % label,
+			"warning"
+		)
 		return
 
 	var required := _passenger_requirement(aircraft)

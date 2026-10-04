@@ -602,6 +602,11 @@ func _apply_completed_flight_reward(
 				current_profile.get("route_history", {})
 			)
 
+	_process_priority_contract_return(
+		plan,
+		reward
+	)
+
 	if fleet_screen != null:
 		fleet_screen.set_mastery_hours(
 			current_profile.get("aircraft_mastery_hours", {})
@@ -622,6 +627,103 @@ func _apply_completed_flight_reward(
 	)
 
 
+func _process_priority_contract_return(
+	plan: Dictionary,
+	reward: Dictionary
+) -> void:
+	var result := ProfileStore.record_priority_contract_return(
+		plan
+	)
+	if result.is_empty():
+		return
+
+	var saved_profile: Dictionary = result.get(
+		"profile",
+		{}
+	)
+	if not saved_profile.is_empty():
+		current_profile = saved_profile
+
+	if world_map != null:
+		world_map.set_priority_contract_progress(
+			current_profile.get(
+				"priority_contract_progress",
+				{}
+			)
+		)
+
+	if not bool(result.get("completed_now", false)):
+		return
+
+	var bonus_coins := int(
+		plan.get("priority_contract_bonus_coins", 0)
+	)
+	var bonus_xp := int(
+		plan.get("priority_contract_bonus_xp", 0)
+	)
+	var bonus_resources: Array = (
+		plan.get(
+			"priority_contract_bonus_resources",
+			[]
+		) as Array
+	).duplicate(true)
+
+	coins += bonus_coins
+	player_xp += bonus_xp
+
+	var resource_amount := 0
+	for resource in bonus_resources:
+		resource_amount += maxi(
+			int(resource.get("amount", 1)),
+			0
+		)
+
+	var resource_profile := ProfileStore.add_resource_drops(
+		bonus_resources
+	)
+	if not resource_profile.is_empty():
+		current_profile = resource_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+
+	var economy_profile := ProfileStore.add_economy_stats({
+		"contract_bonus_coins": bonus_coins,
+		"contract_bonus_xp": bonus_xp,
+		"resources_earned": resource_amount,
+		"priority_contracts_completed": 1
+	})
+	if not economy_profile.is_empty():
+		current_profile = economy_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+
+	reward["priority_contract_bonus"] = {
+		"coins": bonus_coins,
+		"xp": bonus_xp,
+		"resources": bonus_resources,
+		"contract_id": String(
+			plan.get("priority_contract_id", "")
+		)
+	}
+
+	if world_map != null:
+		world_map.set_priority_contract_progress(
+			current_profile.get(
+				"priority_contract_progress",
+				{}
+			)
+		)
+
+	hud.set_operation_status(
+		"Priority Contract complete • bonus rewards awarded",
+		"success"
+	)
+
+
 func _on_navigation_requested(tab: String) -> void:
 	match tab:
 		"world":
@@ -634,7 +736,12 @@ func _on_navigation_requested(tab: String) -> void:
 				),
 				passenger_economy.get_passengers(),
 				passenger_economy.get_capacity(),
-				current_profile.get("route_history", {})
+				current_profile.get("route_history", {}),
+				String(current_profile.get("airport_id", "")),
+				current_profile.get(
+					"priority_contract_progress",
+					{}
+				)
 			)
 		"fleet":
 			fleet_screen.open_fleet(
@@ -672,9 +779,26 @@ func _create_current_flight_plan(
 	var condition := DynamicDemandRules.condition_for(
 		String(destination.get("id", ""))
 	)
-	return DynamicDemandRules.apply_to_flight_plan(
+	var conditioned_plan := DynamicDemandRules.apply_to_flight_plan(
 		base_plan,
 		condition
+	)
+
+	var contract := RouteContractRules.active_contract(
+		player_level,
+		String(current_profile.get("airport_id", ""))
+	)
+	var contract_state := RouteContractRules.progress_for(
+		contract,
+		current_profile.get(
+			"priority_contract_progress",
+			{}
+		)
+	)
+	return RouteContractRules.apply_to_flight_plan(
+		conditioned_plan,
+		contract,
+		contract_state
 	)
 
 

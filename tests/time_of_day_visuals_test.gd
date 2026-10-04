@@ -82,14 +82,22 @@ func _run() -> void:
 		_fail("Building windows should brighten toward night.")
 		return
 
+	var scene_root := Node2D.new()
+	root.add_child(scene_root)
+
 	var grid := AirportGrid.new()
-	root.add_child(grid)
-	await process_frame
+	grid.name = "AirportGrid"
+	scene_root.add_child(grid)
 
 	var overlay := AirportLightingOverlay.new()
-	root.add_child(overlay)
-	overlay.configure(grid)
+	overlay.name = "AirportLighting"
+	scene_root.add_child(overlay)
 	await process_frame
+	await process_frame
+
+	if overlay.airport_grid != grid:
+		_fail("Scene-mounted lighting overlay should auto-connect to AirportGrid.")
+		return
 
 	var inventory := overlay.get_lighting_inventory()
 	if int(inventory.get("runways", 0)) != 1:

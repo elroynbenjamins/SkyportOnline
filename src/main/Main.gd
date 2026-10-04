@@ -203,6 +203,9 @@ func _setup_event_system() -> void:
 	event_screen.shop_purchase_requested.connect(
 		_on_event_shop_purchase_requested
 	)
+	event_screen.shop_resource_choice_requested.connect(
+		_on_event_shop_resource_choice_requested
+	)
 	event_screen.alliance_claim_requested.connect(
 		_on_event_alliance_claim_requested
 	)
@@ -211,6 +214,12 @@ func _setup_event_system() -> void:
 	event_manager = EventManager.new()
 	event_manager.changed.connect(_on_event_changed)
 	event_manager.message.connect(_on_event_message)
+	event_manager.coins_granted.connect(
+		_on_event_shop_coins_granted
+	)
+	event_manager.resource_granted.connect(
+		_on_event_shop_resource_granted
+	)
 	add_child(event_manager)
 	event_manager.configure(passenger_economy)
 	_on_event_changed(event_manager.get_snapshot())
@@ -942,8 +951,16 @@ func _apply_event_visual_to_aircraft(
 		0
 	)
 	var marker := ""
-	if featured and route_currency > 0:
-		marker = "+%d" % route_currency
+	if featured:
+		if route_currency > 0:
+			marker = "+%d" % route_currency
+		else:
+			marker = String(
+				snapshot.get(
+					"featured_marker_text",
+					"WINTER"
+				)
+			)
 
 	var owned_cosmetics: Dictionary = current_profile.get(
 		"owned_cosmetics",
@@ -1045,6 +1062,58 @@ func _on_event_quest_claim_requested(quest_id: String) -> void:
 func _on_event_shop_purchase_requested(item_id: String) -> void:
 	if event_manager != null:
 		event_manager.purchase_shop_item(item_id)
+
+
+func _on_event_shop_resource_choice_requested(
+	item_id: String,
+	resource_id: String
+) -> void:
+	if event_manager != null:
+		event_manager.purchase_resource_choice(
+			item_id,
+			resource_id
+		)
+
+
+func _on_event_shop_coins_granted(amount: int) -> void:
+	var granted := maxi(amount, 0)
+	if granted <= 0:
+		return
+
+	coins += granted
+	hud.set_player_data(player_level, coins, gems)
+
+	var updated := ProfileStore.add_economy_stats({
+		"event_shop_coins": granted
+	})
+	if not updated.is_empty():
+		current_profile = updated
+
+
+func _on_event_shop_resource_granted(
+	resource_id: String,
+	amount: int
+) -> void:
+	if resource_id.is_empty() or amount <= 0:
+		return
+
+	var updated := ProfileStore.add_resource_drops([
+		{
+			"id": resource_id,
+			"amount": amount
+		}
+	])
+	if not updated.is_empty():
+		current_profile = updated
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+	else:
+		resource_inventory[resource_id] = (
+			int(resource_inventory.get(resource_id, 0))
+			+ amount
+		)
 
 
 func _on_event_alliance_claim_requested(milestone_id: String) -> void:

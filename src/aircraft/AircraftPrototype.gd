@@ -962,6 +962,7 @@ func _set_state(new_state: String) -> void:
 
 func _draw() -> void:
 	_draw_shadow()
+	_draw_stand_ground_props()
 
 	var fuselage := PackedVector2Array([
 		Vector2(22, 0),
@@ -1045,6 +1046,8 @@ func _draw() -> void:
 			3.0
 		)
 
+	_draw_stand_people()
+
 	if (
 		event_featured
 		and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]
@@ -1074,6 +1077,333 @@ func _draw() -> void:
 			draw_circle(Vector2(-2, -26), 6.0, Color("78b7e8"))
 		"HOLDING_FOR_ARRIVAL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
+
+
+func get_ambience_profile() -> Dictionary:
+	var profile := AirportAmbienceRules.profile_for_state(state)
+	if profile.is_empty():
+		return {}
+
+	profile["worker_count"] = AirportAmbienceRules.worker_count_for(
+		state,
+		aircraft_size
+	)
+	profile["passenger_count"] = AirportAmbienceRules.passenger_count_for(
+		state,
+		aircraft_size
+	)
+	profile["baggage_count"] = AirportAmbienceRules.baggage_count_for(
+		state,
+		aircraft_size
+	)
+	profile["size_scale"] = AirportAmbienceRules.size_scale(
+		aircraft_size
+	)
+	return profile
+
+
+func _draw_stand_ground_props() -> void:
+	var profile := get_ambience_profile()
+	if profile.is_empty():
+		return
+
+	var scale := float(profile.get("size_scale", 1.0))
+	if bool(profile.get("chocks", false)):
+		_draw_chock_pair(Vector2(13, 0) * scale)
+		_draw_chock_pair(Vector2(-10, 0) * scale)
+
+	var cone_count := int(profile.get("cones", 0))
+	var cone_positions := [
+		Vector2(19, -24),
+		Vector2(-14, -30),
+		Vector2(-17, 27),
+		Vector2(18, 28)
+	]
+	for index in range(mini(cone_count, cone_positions.size())):
+		_draw_cone(cone_positions[index] * scale)
+
+	var baggage_count := int(
+		profile.get("baggage_count", 0)
+	)
+	if baggage_count > 0:
+		_draw_baggage_cluster(
+			Vector2(-18, 35) * scale,
+			baggage_count,
+			scale
+		)
+
+
+func _draw_stand_people() -> void:
+	var profile := get_ambience_profile()
+	if profile.is_empty():
+		return
+
+	var scale := float(profile.get("size_scale", 1.0))
+	var workers := int(profile.get("worker_count", 0))
+	var worker_positions := [
+		Vector2(-9, 39),
+		Vector2(13, -40),
+		Vector2(-20, -34)
+	]
+	for index in range(mini(workers, worker_positions.size())):
+		_draw_upright_person(
+			worker_positions[index] * scale,
+			Color("ef9a3a"),
+			Color("ffe16a"),
+			scale
+		)
+
+	var passengers := int(
+		profile.get("passenger_count", 0)
+	)
+	var passenger_origin := Vector2(18, -42) * scale
+	for index in range(passengers):
+		var row := index / 3
+		var column := index % 3
+		var offset := Vector2(
+			float(column) * 8.0,
+			-float(row) * 8.0
+		) * scale
+		var shirt := Color("5f9fc0")
+		if index % 3 == 1:
+			shirt = Color("a77eb7")
+		elif index % 3 == 2:
+			shirt = Color("6e9d69")
+		_draw_upright_person(
+			passenger_origin + offset,
+			shirt,
+			Color("dce9ec"),
+			scale * 0.92
+		)
+
+	if bool(profile.get("marshaller", false)):
+		_draw_marshaller(Vector2(46, 0) * scale, scale)
+
+
+func _draw_chock_pair(center: Vector2) -> void:
+	var normal := Vector2(0, 1)
+	for side in [-1.0, 1.0]:
+		var p := center + normal * 5.5 * float(side)
+		var shape := PackedVector2Array([
+			p + Vector2(-4, 0),
+			p + Vector2(1, -3),
+			p + Vector2(4, 0),
+			p + Vector2(1, 3)
+		])
+		draw_colored_polygon(
+			shape,
+			Color("efc64d")
+		)
+		draw_polyline(
+			PackedVector2Array([
+				shape[0],
+				shape[1],
+				shape[2],
+				shape[3],
+				shape[0]
+			]),
+			Color("5f5129"),
+			1.0
+		)
+
+
+func _draw_cone(position_local: Vector2) -> void:
+	var cone := PackedVector2Array([
+		position_local + Vector2(0, -5),
+		position_local + Vector2(-4, 4),
+		position_local + Vector2(4, 4)
+	])
+	draw_colored_polygon(cone, Color("ee8b37"))
+	draw_line(
+		position_local + Vector2(-3, 1),
+		position_local + Vector2(3, 1),
+		Color("f5ede2"),
+		1.5
+	)
+	draw_line(
+		position_local + Vector2(-5, 4),
+		position_local + Vector2(5, 4),
+		Color("6a4a31"),
+		1.5
+	)
+
+
+func _draw_baggage_cluster(
+	center: Vector2,
+	count: int,
+	scale: float
+) -> void:
+	var draw_count := mini(count, 4)
+	var colors := [
+		Color("bb7a3b"),
+		Color("d2a04e"),
+		Color("80665b"),
+		Color("557f9a")
+	]
+	for index in range(draw_count):
+		var column := index % 2
+		var row := index / 2
+		var p := center + Vector2(
+			float(column) * 8.0,
+			-float(row) * 7.0
+		) * scale
+		draw_rect(
+			Rect2(
+				p + Vector2(-4, -3) * scale,
+				Vector2(8, 6) * scale
+			),
+			colors[index % colors.size()]
+		)
+		draw_line(
+			p + Vector2(-1, -4) * scale,
+			p + Vector2(2, -4) * scale,
+			Color("e6d5b9"),
+			1.0
+		)
+
+	var cart_origin := center + Vector2(-5, 7) * scale
+	draw_line(
+		cart_origin,
+		cart_origin + Vector2(22, 0) * scale,
+		Color("6b7880"),
+		2.0
+	)
+	draw_circle(
+		cart_origin + Vector2(3, 3) * scale,
+		2.2 * scale,
+		Color("28363d")
+	)
+	draw_circle(
+		cart_origin + Vector2(18, 3) * scale,
+		2.2 * scale,
+		Color("28363d")
+	)
+
+
+func _draw_upright_person(
+	position_local: Vector2,
+	shirt_color: Color,
+	vest_color: Color,
+	scale: float
+) -> void:
+	draw_set_transform(
+		position_local,
+		-rotation,
+		Vector2.ONE
+	)
+
+	draw_circle(
+		Vector2(0, -8) * scale,
+		3.0 * scale,
+		Color("d7a77d")
+	)
+	draw_rect(
+		Rect2(
+			Vector2(-3, -5) * scale,
+			Vector2(6, 9) * scale
+		),
+		shirt_color
+	)
+	draw_rect(
+		Rect2(
+			Vector2(-3, -2) * scale,
+			Vector2(6, 3) * scale
+		),
+		vest_color
+	)
+	draw_line(
+		Vector2(-1.5, 4) * scale,
+		Vector2(-2.5, 9) * scale,
+		Color("344852"),
+		1.6 * scale
+	)
+	draw_line(
+		Vector2(1.5, 4) * scale,
+		Vector2(2.5, 9) * scale,
+		Color("344852"),
+		1.6 * scale
+	)
+
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
+func _draw_marshaller(
+	position_local: Vector2,
+	scale: float
+) -> void:
+	draw_set_transform(
+		position_local,
+		-rotation,
+		Vector2.ONE
+	)
+
+	draw_circle(
+		Vector2(0, -8) * scale,
+		3.2 * scale,
+		Color("d7a77d")
+	)
+	draw_rect(
+		Rect2(
+			Vector2(-3.5, -5) * scale,
+			Vector2(7, 10) * scale
+		),
+		Color("ed8f35")
+	)
+	draw_rect(
+		Rect2(
+			Vector2(-3.5, -2) * scale,
+			Vector2(7, 3) * scale
+		),
+		Color("f4df61")
+	)
+
+	draw_line(
+		Vector2(-3, -2) * scale,
+		Vector2(-9, -11) * scale,
+		Color("32444d"),
+		1.8 * scale
+	)
+	draw_line(
+		Vector2(3, -2) * scale,
+		Vector2(9, -11) * scale,
+		Color("32444d"),
+		1.8 * scale
+	)
+	draw_line(
+		Vector2(-9, -11) * scale,
+		Vector2(-11, -17) * scale,
+		Color("f26a4b"),
+		2.4 * scale
+	)
+	draw_line(
+		Vector2(9, -11) * scale,
+		Vector2(11, -17) * scale,
+		Color("f26a4b"),
+		2.4 * scale
+	)
+
+	draw_line(
+		Vector2(-1.5, 5) * scale,
+		Vector2(-2.5, 10) * scale,
+		Color("344852"),
+		1.7 * scale
+	)
+	draw_line(
+		Vector2(1.5, 5) * scale,
+		Vector2(2.5, 10) * scale,
+		Color("344852"),
+		1.7 * scale
+	)
+
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
 
 
 func _draw_event_badge() -> void:

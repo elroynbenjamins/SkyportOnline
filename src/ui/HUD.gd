@@ -5,6 +5,9 @@ signal building_selected(building_id: String)
 signal rotate_building_requested
 signal confirm_building_requested
 signal cancel_building_requested
+signal fleet_aircraft_selected(fleet_uid: int)
+signal fleet_aircraft_purchase_requested(aircraft_id: String)
+signal fleet_route_requested(fleet_uid: int, route_id: String)
 
 var level_label: Label
 var coins_label: Label
@@ -32,6 +35,7 @@ var current_level := 1
 var current_coins := 0
 var current_gems := 0
 var active_building_id := ""
+var fleet_panel: FleetPanel
 
 
 func _ready() -> void:
@@ -153,6 +157,7 @@ func _build_interface() -> void:
 	_build_context_panel(root)
 	_build_catalog_panel(root)
 	_build_bottom_navigation(root)
+	_build_fleet_panel(root)
 
 
 func _build_context_panel(root: Control) -> void:
@@ -285,7 +290,71 @@ func _build_bottom_navigation(root: Control) -> void:
 		button.add_theme_font_size_override("font_size", 15)
 		if item.begins_with("🔨"):
 			button.disabled = true
+		elif item.begins_with("✈"):
+			button.pressed.connect(_on_fleet_nav_pressed)
+		else:
+			button.disabled = true
+			button.tooltip_text = "Coming in a later pass."
 		nav_row.add_child(button)
+
+
+func _build_fleet_panel(root: Control) -> void:
+	fleet_panel = FleetPanel.new()
+	fleet_panel.visible = false
+	fleet_panel.z_index = 50
+	fleet_panel.close_requested.connect(close_fleet)
+	fleet_panel.aircraft_selected.connect(
+		func(fleet_uid: int) -> void:
+			fleet_aircraft_selected.emit(fleet_uid)
+	)
+	fleet_panel.aircraft_purchase_requested.connect(
+		func(aircraft_id: String) -> void:
+			fleet_aircraft_purchase_requested.emit(aircraft_id)
+	)
+	fleet_panel.route_requested.connect(
+		func(fleet_uid: int, route_id: String) -> void:
+			fleet_route_requested.emit(fleet_uid, route_id)
+	)
+	root.add_child(fleet_panel)
+
+
+func open_fleet() -> void:
+	if fleet_panel == null:
+		return
+	if not active_building_id.is_empty():
+		cancel_building_requested.emit()
+	fleet_panel.visible = true
+
+
+func close_fleet() -> void:
+	if fleet_panel != null:
+		fleet_panel.visible = false
+
+
+func is_fleet_open() -> bool:
+	return fleet_panel != null and fleet_panel.visible
+
+
+func set_fleet_data(
+	fleet_entries: Array[Dictionary],
+	catalog_entries: Array[Dictionary],
+	route_entries: Array[Dictionary],
+	selected_fleet_uid: int,
+	capacity: Dictionary
+) -> void:
+	if fleet_panel == null:
+		return
+	fleet_panel.configure(
+		fleet_entries,
+		catalog_entries,
+		route_entries,
+		selected_fleet_uid,
+		capacity
+	)
+
+
+func _on_fleet_nav_pressed() -> void:
+	open_fleet()
 
 
 func set_build_catalog(definitions: Array[Dictionary]) -> void:

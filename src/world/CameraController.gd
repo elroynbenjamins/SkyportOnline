@@ -94,7 +94,9 @@ func _current_pinch_distance() -> float:
 	if touches.size() != 2:
 		return 0.0
 	var positions: Array = touches.values()
-	return (positions[0] as Vector2).distance_to(positions[1] as Vector2)
+	var first: Vector2 = positions[0]
+	var second: Vector2 = positions[1]
+	return first.distance_to(second)
 
 
 func _screen_to_world(screen_position: Vector2) -> Vector2:

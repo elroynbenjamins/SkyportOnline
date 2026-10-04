@@ -13,6 +13,8 @@ signal state_changed(state: String)
 @export var landing_speed: float = 150.0
 @export var departure_delay: float = 0.55
 @export var lineup_delay: float = 0.45
+@export var taxi_acceleration: float = 95.0
+@export var taxi_deceleration: float = 150.0
 
 
 var departure_route := PackedVector2Array()
@@ -30,6 +32,8 @@ var runway_uid := -1
 var delay_remaining := 0.0
 var flight_remaining := 0.0
 var takeoff_velocity := 0.0
+var taxi_current_speed := 0.0
+var taxi_turn_rate_deg := 145.0
 var arrival_runway_cleared := false
 var turnaround_panel: PanelContainer
 var turnaround_label: Label
@@ -49,6 +53,10 @@ func configure_aircraft_type(type_id: String) -> void:
 	aircraft_display_name = String(profile.get("name", type_id))
 	aircraft_size = String(profile.get("size", aircraft_size))
 	taxi_speed = maxf(float(profile.get("taxi_speed", taxi_speed)), 1.0)
+	taxi_turn_rate_deg = TaxiMotionRules.turn_rate_degrees(
+		aircraft_size,
+		profile
+	)
 
 
 func assign_flight_plan(plan: Dictionary) -> void:
@@ -318,13 +326,14 @@ func set_departure_route(
 	assigned_stand_uid: int = -1,
 	assigned_runway_uid: int = -1
 ) -> void:
-	departure_route = points
 	aircraft_size = size_class
+	departure_route = _refined_departure_route(points)
 	stand_uid = assigned_stand_uid
 	runway_uid = assigned_runway_uid
 	route_index = 0
 	delay_remaining = 0.0
 	takeoff_velocity = taxi_speed
+	taxi_current_speed = 0.0
 	_set_state("WAITING_FUEL")
 
 	if departure_route.is_empty():
@@ -347,7 +356,7 @@ func set_arrival_route(
 	assigned_stand_uid: int,
 	assigned_runway_uid: int
 ) -> void:
-	arrival_route = points
+	arrival_route = _refined_arrival_route(points)
 	stand_uid = assigned_stand_uid
 	runway_uid = assigned_runway_uid
 	route_index = 0
@@ -371,6 +380,7 @@ func begin_departure_after_clearance() -> void:
 	delay_remaining = departure_delay
 	route_index = 0
 	takeoff_velocity = taxi_speed
+	taxi_current_speed = 0.0
 	_set_state("CLEARED")
 
 
@@ -433,14 +443,36 @@ func _process(delta: float) -> void:
 func _process_departure_taxi(delta: float) -> void:
 	var runway_entry_index := departure_route.size() - 2
 	if route_index >= runway_entry_index:
+		taxi_current_speed = 0.0
 		delay_remaining = lineup_delay
 		_set_state("LINE_UP")
 		return
 
-	var target_index := mini(route_index + 1, runway_entry_index)
-	if _move_toward_point(departure_route[target_index], taxi_speed, delta):
+	var target_index := mini(
+		route_index + 1,
+		runway_entry_index
+	)
+	var target_speed := TaxiMotionRules.speed_for_target(
+		departure_route,
+		route_index,
+		target_index,
+		taxi_speed
+	)
+	taxi_current_speed = _approach_taxi_speed(
+		taxi_current_speed,
+		target_speed,
+		delta
+	)
+
+	if _move_toward_point(
+		departure_route[target_index],
+		taxi_current_speed,
+		delta,
+		taxi_turn_rate_deg
+	):
 		route_index = target_index
 		if route_index >= runway_entry_index:
+			taxi_current_speed = 0.0
 			delay_remaining = lineup_delay
 			_set_state("LINE_UP")
 
@@ -449,7 +481,12 @@ func _process_takeoff_roll(delta: float) -> void:
 	var runway_end_index := departure_route.size() - 1
 	takeoff_velocity = minf(takeoff_velocity + 135.0 * delta, takeoff_speed)
 
-	if _move_toward_point(departure_route[runway_end_index], takeoff_velocity, delta):
+	if _move_toward_point(
+		departure_route[runway_end_index],
+		takeoff_velocity,
+		delta,
+		280.0
+	):
 		route_index = runway_end_index
 		runway_cleared.emit()
 
@@ -464,7 +501,12 @@ func _process_takeoff_roll(delta: float) -> void:
 
 func _process_climb(delta: float) -> void:
 	var climb_target := departure_route[departure_route.size() - 1]
-	if _move_toward_point(climb_target, takeoff_speed * 1.15, delta):
+	if _move_toward_point(
+		climb_target,
+		takeoff_speed * 1.15,
+		delta,
+		165.0
+	):
 		visible = false
 		flight_remaining = maxf(
 			float(flight_plan.get("duration_seconds", 0.0)),
@@ -478,7 +520,12 @@ func _process_approach(delta: float) -> void:
 	if arrival_route.is_empty():
 		return
 
-	if _move_toward_point(arrival_route[0], approach_speed, delta):
+	if _move_toward_point(
+		arrival_route[0],
+		approach_speed,
+		delta,
+		125.0
+	):
 		route_index = 0
 		_set_state("LANDING_ROLL")
 
@@ -489,19 +536,51 @@ func _process_landing_roll(delta: float) -> void:
 
 	var runway_exit_index := 1
 	var current_speed := maxf(landing_speed - float(route_index) * 15.0, taxi_speed)
-	if _move_toward_point(arrival_route[runway_exit_index], current_speed, delta):
+	if _move_toward_point(
+		arrival_route[runway_exit_index],
+		current_speed,
+		delta,
+		190.0
+	):
 		route_index = runway_exit_index
 		_set_state("TAXIING_IN")
 
 
 func _process_taxi_in(delta: float) -> void:
 	if route_index >= arrival_route.size() - 1:
+		taxi_current_speed = 0.0
 		_set_state("PARKED")
 		arrival_completed.emit()
 		return
 
 	var target_index := route_index + 1
-	if _move_toward_point(arrival_route[target_index], taxi_speed, delta):
+	var target_speed := TaxiMotionRules.speed_for_target(
+		arrival_route,
+		route_index,
+		target_index,
+		taxi_speed
+	)
+
+	# Final stand approach is deliberately slower so larger sprites do not
+	# visually overshoot or cut through the terminal/apron.
+	if target_index >= arrival_route.size() - 1:
+		target_speed = minf(
+			target_speed,
+			taxi_speed * 0.48
+		)
+
+	taxi_current_speed = _approach_taxi_speed(
+		taxi_current_speed,
+		target_speed,
+		delta
+	)
+
+	if _move_toward_point(
+		arrival_route[target_index],
+		taxi_current_speed,
+		delta,
+		taxi_turn_rate_deg
+	):
 		route_index = target_index
 
 		if not arrival_runway_cleared and route_index >= 2:
@@ -509,23 +588,121 @@ func _process_taxi_in(delta: float) -> void:
 			runway_cleared.emit()
 
 		if route_index >= arrival_route.size() - 1:
+			taxi_current_speed = 0.0
 			_set_state("PARKED")
 			arrival_completed.emit()
 
 
-func _move_toward_point(target: Vector2, speed: float, delta: float) -> bool:
+func _move_toward_point(
+	target: Vector2,
+	speed: float,
+	delta: float,
+	turn_rate_degrees: float = -1.0
+) -> bool:
 	var to_target := target - position
 	var distance := to_target.length()
-	if distance <= speed * delta:
+	if distance <= maxf(speed, 1.0) * delta:
 		position = target
+		if to_target.length() > 0.001:
+			_rotate_toward_heading(
+				to_target.angle(),
+				delta,
+				turn_rate_degrees
+			)
 		queue_redraw()
 		return true
 
 	var direction := to_target.normalized()
-	position += direction * speed * delta
-	rotation = direction.angle()
+	position += direction * maxf(speed, 1.0) * delta
+	_rotate_toward_heading(
+		direction.angle(),
+		delta,
+		turn_rate_degrees
+	)
 	queue_redraw()
 	return false
+
+
+func _rotate_toward_heading(
+	target_heading: float,
+	delta: float,
+	turn_rate_degrees: float
+) -> void:
+	var rate := turn_rate_degrees
+	if rate <= 0.0:
+		rate = taxi_turn_rate_deg
+
+	var difference := wrapf(
+		target_heading - rotation,
+		-PI,
+		PI
+	)
+	var maximum_step := deg_to_rad(rate) * delta
+	rotation += clampf(
+		difference,
+		-maximum_step,
+		maximum_step
+	)
+
+
+func _approach_taxi_speed(
+	current_speed: float,
+	target_speed: float,
+	delta: float
+) -> float:
+	var rate := taxi_acceleration
+	if target_speed < current_speed:
+		rate = taxi_deceleration
+	return move_toward(
+		current_speed,
+		target_speed,
+		rate * delta
+	)
+
+
+func _refined_departure_route(
+	points: PackedVector2Array
+) -> PackedVector2Array:
+	if points.size() < 4:
+		return points.duplicate()
+
+	# Keep the exact runway entry/end pair intact. Only the stand/taxiway
+	# portion is rounded.
+	var taxi_points := PackedVector2Array()
+	for index in range(0, points.size() - 1):
+		taxi_points.append(points[index])
+
+	var refined := TaxiMotionRules.refined_route(
+		taxi_points,
+		aircraft_size,
+		aircraft_profile
+	)
+	refined.append(points[points.size() - 1])
+	return refined
+
+
+func _refined_arrival_route(
+	points: PackedVector2Array
+) -> PackedVector2Array:
+	if points.size() < 4:
+		return points.duplicate()
+
+	# Keep runway end/exit as the first two exact points for landing-roll
+	# logic, then round the taxiway/stand portion.
+	var taxi_points := PackedVector2Array()
+	for index in range(1, points.size()):
+		taxi_points.append(points[index])
+
+	var refined_taxi := TaxiMotionRules.refined_route(
+		taxi_points,
+		aircraft_size,
+		aircraft_profile
+	)
+	var result := PackedVector2Array()
+	result.append(points[0])
+	for point in refined_taxi:
+		result.append(point)
+	return result
 
 
 func _set_state(new_state: String) -> void:

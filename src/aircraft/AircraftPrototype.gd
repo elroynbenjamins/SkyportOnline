@@ -13,11 +13,20 @@ var moving := false
 var delay_remaining := 0.0
 var state := "PARKED"
 var aircraft_size := "S"
+var stand_uid := -1
+var runway_uid := -1
 
 
-func set_departure_route(points: PackedVector2Array, size_class: String = "S") -> void:
+func set_departure_route(
+	points: PackedVector2Array,
+	size_class: String = "S",
+	assigned_stand_uid: int = -1,
+	assigned_runway_uid: int = -1
+) -> void:
 	route = points
 	aircraft_size = size_class
+	stand_uid = assigned_stand_uid
+	runway_uid = assigned_runway_uid
 	route_index = 0
 	moving = false
 	delay_remaining = 0.0
@@ -32,19 +41,24 @@ func set_departure_route(points: PackedVector2Array, size_class: String = "S") -
 	queue_redraw()
 
 
-func begin_departure_after_service() -> void:
+func mark_service_complete() -> void:
+	moving = false
+	_set_state("READY_FOR_DEPARTURE")
+
+
+func begin_departure_after_clearance() -> void:
 	if route.size() < 2:
 		return
 	delay_remaining = departure_delay
 	moving = false
-	_set_state("READY")
+	_set_state("CLEARED")
 
 
 func _process(delta: float) -> void:
 	if route.size() < 2:
 		return
 
-	if state == "READY":
+	if state == "CLEARED":
 		delay_remaining -= delta
 		if delay_remaining <= 0.0:
 			moving = true
@@ -126,8 +140,10 @@ func _draw() -> void:
 
 	if state == "WAITING_FUEL":
 		draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
-	elif state == "READY":
+	elif state == "READY_FOR_DEPARTURE":
 		draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
+	elif state == "CLEARED":
+		draw_circle(Vector2(-2, -26), 6.0, Color("78b7e8"))
 
 
 func _draw_shadow() -> void:

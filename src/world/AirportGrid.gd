@@ -655,7 +655,8 @@ func _taxiway_path_to_runway(start: Vector2i) -> Array[Vector2i]:
 		return []
 
 	var queue: Array[Vector2i] = [start]
-	var parent: Dictionary = {_cell_key(start): Vector2i(-999, -999)}
+	var parent: Dictionary = {}
+	parent[_cell_key(start)] = Vector2i(-999, -999)
 	var cursor := 0
 	var goal := Vector2i(-1, -1)
 

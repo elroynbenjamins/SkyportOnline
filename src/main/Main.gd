@@ -366,7 +366,23 @@ func _on_demo_aircraft_state_changed(
 	match state:
 		"TAXIING_OUT":
 			_release_stand(aircraft)
-			hud.set_operation_status("%s taxiing to runway" % label)
+			hud.set_operation_status(
+				"%s taxiing to hold short" % label
+			)
+		"HOLD_SHORT":
+			hud.set_operation_status(
+				"%s holding short • awaiting runway" % label,
+				"warning"
+			)
+		"CLEARED":
+			hud.set_operation_status(
+				"%s cleared onto runway" % label,
+				"success"
+			)
+		"ENTERING_RUNWAY":
+			hud.set_operation_status(
+				"%s entering runway" % label
+			)
 		"LINE_UP":
 			hud.set_operation_status("%s lined up for departure" % label)
 		"TAKEOFF_ROLL":
@@ -420,8 +436,6 @@ func _on_demo_aircraft_state_changed(
 				"%s ready • waiting for runway" % label,
 				"warning"
 			)
-		"CLEARED":
-			hud.set_operation_status("%s cleared for departure" % label, "success")
 		"WAITING_FUEL":
 			hud.set_operation_status("%s parked • fuel required" % label)
 

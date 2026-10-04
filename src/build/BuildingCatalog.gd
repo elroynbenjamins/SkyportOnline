@@ -53,6 +53,20 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/taxiway.svg"
 		},
 		{
+			"id": "service_road",
+			"name": "Service Road",
+			"menu_name": "SERVICE ROAD",
+			"category": "Infrastructure",
+			"footprint": Vector2i(1, 1),
+			"cost": 150,
+			"level": 1,
+			"color": Color("7c7368"),
+			"rotatable": false,
+			"sizes": PackedStringArray(["S", "M", "L"]),
+			"description": "Ground vehicles use service roads to reach aircraft.",
+			"icon_path": "res://assets/pixel/airport_v1/taxiway.svg"
+		},
+		{
 			"id": "small_terminal",
 			"name": "Small Terminal",
 			"menu_name": "TERMINAL",

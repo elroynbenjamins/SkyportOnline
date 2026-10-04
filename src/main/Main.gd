@@ -1757,7 +1757,7 @@ func _open_building_management(
 			"runway_strategies",
 			{}
 		)
-		var building_key := airport_grid.get_building_key(
+		var building_key: String = airport_grid.get_building_key(
 			building
 		)
 		var strategy := RunwayStrategyRules.normalize(
@@ -2302,7 +2302,7 @@ func _on_runway_strategy_requested(
 	if runway.is_empty():
 		return
 
-	var building_key := airport_grid.get_building_key(
+	var building_key: String = airport_grid.get_building_key(
 		runway
 	)
 	var updated_profile := ProfileStore.set_runway_strategy(

@@ -165,7 +165,7 @@ static func all() -> Array[Dictionary]:
 			"menu_name": "REGIONAL FUEL",
 			"category": "Services",
 			"footprint": Vector2i(3, 3),
-			"cost": 45000,
+			"cost": 60000,
 			"level": 8,
 			"color": Color("cfa247"),
 			"rotatable": true,

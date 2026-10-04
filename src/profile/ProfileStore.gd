@@ -29,6 +29,11 @@ static func load_profile() -> Dictionary:
 	if stored_upgrades is Dictionary:
 		building_upgrades = stored_upgrades.duplicate(true)
 
+	var aircraft_mastery := {}
+	var stored_mastery = config.get_value("profile", "aircraft_mastery_hours", {})
+	if stored_mastery is Dictionary:
+		aircraft_mastery = stored_mastery.duplicate(true)
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -44,7 +49,8 @@ static func load_profile() -> Dictionary:
 		"passenger_balance": int(
 			config.get_value("profile", "passenger_balance", 20)
 		),
-		"building_upgrades": building_upgrades
+		"building_upgrades": building_upgrades,
+		"aircraft_mastery_hours": aircraft_mastery
 	}
 
 
@@ -75,7 +81,8 @@ static func create_guest_airport(
 		"created_at_unix": int(Time.get_unix_time_from_system()),
 		"resource_inventory": {},
 		"passenger_balance": 20,
-		"building_upgrades": {}
+		"building_upgrades": {},
+		"aircraft_mastery_hours": {}
 	}
 	if not _save_profile(profile):
 		return {}
@@ -152,6 +159,48 @@ static func apply_building_upgrade(
 	if not _save_profile(profile):
 		return {}
 	return profile
+
+
+
+
+static func add_aircraft_mastery_hours(
+	aircraft_type_id: String,
+	hours: float
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty() or aircraft_type_id.is_empty():
+		return {}
+
+	var mastery: Dictionary = profile.get(
+		"aircraft_mastery_hours",
+		{}
+	).duplicate(true)
+	mastery[aircraft_type_id] = maxf(
+		float(mastery.get(aircraft_type_id, 0.0)) + maxf(hours, 0.0),
+		0.0
+	)
+
+	profile["aircraft_mastery_hours"] = mastery
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func get_aircraft_mastery_hours(
+	aircraft_type_id: String
+) -> float:
+	var profile := load_profile()
+	if profile.is_empty():
+		return 0.0
+
+	var mastery: Dictionary = profile.get(
+		"aircraft_mastery_hours",
+		{}
+	)
+	return maxf(
+		float(mastery.get(aircraft_type_id, 0.0)),
+		0.0
+	)
 
 
 static func attach_linked_account(

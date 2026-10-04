@@ -16,3 +16,6 @@ jobs:
 
       - name: Import project and parse scripts
         run: godot --headless --editor --path . --quit --verbose
+
+      - name: Start main scene smoke test
+        run: godot --headless --path . --quit-after 3 --verbose

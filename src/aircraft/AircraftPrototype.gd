@@ -105,9 +105,13 @@ func get_service_docking_local_offset(
 		{}
 	)
 	if overrides.has(service_key):
-		return Vector2(overrides[service_key])
+		var key_value = overrides[service_key]
+		if key_value is Vector2:
+			return key_value
 	if overrides.has(service_type):
-		return Vector2(overrides[service_type])
+		var type_value = overrides[service_type]
+		if type_value is Vector2:
+			return type_value
 
 	var scale := 1.0
 	match aircraft_size:

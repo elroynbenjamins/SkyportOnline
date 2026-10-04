@@ -13,6 +13,13 @@ var route_index := 0
 var service_duration := 4.0
 var service_remaining := 0.0
 var phase := "IDLE"
+var service_pose_rotation := 0.0
+var has_service_pose_rotation := false
+
+
+func set_service_pose_rotation(value: float) -> void:
+	service_pose_rotation = value
+	has_service_pose_rotation = true
 
 
 func start_service(route: PackedVector2Array, duration: float) -> void:
@@ -37,6 +44,8 @@ func _process(delta: float) -> void:
 		"OUTBOUND":
 			if _follow_route(outbound_route, delta):
 				phase = "SERVICING"
+				if has_service_pose_rotation:
+					rotation = service_pose_rotation
 				service_started.emit()
 				queue_redraw()
 		"SERVICING":

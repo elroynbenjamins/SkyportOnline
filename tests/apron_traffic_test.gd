@@ -46,6 +46,20 @@ func _run() -> void:
 		_fail("Stand approach staggering should be capped.")
 		return
 
+	if absf(
+		ApronTrafficRules.station_stagger_delay(1) - 0.30
+	) > 0.001:
+		_fail("Second vehicle from a multi-capacity depot should stagger by 0.30 seconds.")
+		return
+	if absf(
+		ApronTrafficRules.station_stagger_delay(2) - 0.60
+	) > 0.001:
+		_fail("Third vehicle from a multi-capacity depot should stagger by 0.60 seconds.")
+		return
+	if ApronTrafficRules.station_stagger_delay(20) > 1.801:
+		_fail("Depot-exit staggering should also be capped.")
+		return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame

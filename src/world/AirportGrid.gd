@@ -2233,6 +2233,7 @@ func get_runway_buildings(
 		)
 		result.append({
 			"uid": int(building.get("uid", -1)),
+			"building_key": get_building_key(building),
 			"definition_id": String(
 				building.get("definition_id", "")
 			),

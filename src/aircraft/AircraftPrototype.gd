@@ -31,6 +31,12 @@ var delay_remaining := 0.0
 var flight_remaining := 0.0
 var takeoff_velocity := 0.0
 var arrival_runway_cleared := false
+var turnaround_panel: PanelContainer
+var turnaround_label: Label
+
+
+func _ready() -> void:
+	_build_turnaround_status()
 
 
 func configure_aircraft_type(type_id: String) -> void:
@@ -86,6 +92,91 @@ func begin_ground_service(stage: String) -> void:
 		"PUSHBACK_PREP"
 	]:
 		_set_state(stage)
+
+
+func set_turnaround_status(
+	text: String,
+	tone: String = "normal"
+) -> void:
+	if turnaround_panel == null:
+		return
+	turnaround_label.text = text
+	turnaround_panel.visible = not text.is_empty()
+	match tone:
+		"warning":
+			turnaround_label.add_theme_color_override(
+				"font_color",
+				Color("ffd27a")
+			)
+		"success":
+			turnaround_label.add_theme_color_override(
+				"font_color",
+				Color("a8efbf")
+			)
+		_:
+			turnaround_label.add_theme_color_override(
+				"font_color",
+				Color("f4f7f7")
+			)
+	_sync_turnaround_status_transform()
+
+
+func clear_turnaround_status() -> void:
+	if turnaround_panel != null:
+		turnaround_panel.visible = false
+
+
+func _build_turnaround_status() -> void:
+	turnaround_panel = PanelContainer.new()
+	turnaround_panel.custom_minimum_size = Vector2(156, 42)
+	turnaround_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	turnaround_panel.z_index = 160
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.035, 0.10, 0.14, 0.92)
+	style.border_color = Color("5f8798")
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	turnaround_panel.add_theme_stylebox_override(
+		"panel",
+		style
+	)
+	add_child(turnaround_panel)
+
+	turnaround_label = Label.new()
+	turnaround_label.horizontal_alignment = (
+		HORIZONTAL_ALIGNMENT_CENTER
+	)
+	turnaround_label.vertical_alignment = (
+		VERTICAL_ALIGNMENT_CENTER
+	)
+	turnaround_label.autowrap_mode = (
+		TextServer.AUTOWRAP_WORD_SMART
+	)
+	turnaround_label.add_theme_font_size_override(
+		"font_size",
+		11
+	)
+	turnaround_label.add_theme_color_override(
+		"font_color",
+		Color("f4f7f7")
+	)
+	turnaround_panel.add_child(turnaround_label)
+	turnaround_panel.visible = false
+	_sync_turnaround_status_transform()
+
+
+func _sync_turnaround_status_transform() -> void:
+	if turnaround_panel == null:
+		return
+	var anchor := Vector2(-78, -72).rotated(-rotation)
+	turnaround_panel.position = anchor
+	turnaround_panel.rotation = -rotation
 
 
 func can_change_flight_plan() -> bool:
@@ -176,6 +267,7 @@ func begin_arrival_after_clearance() -> void:
 
 
 func _process(delta: float) -> void:
+	_sync_turnaround_status_transform()
 	match state:
 		"CLEARED":
 			delay_remaining -= delta
@@ -315,6 +407,17 @@ func _set_state(new_state: String) -> void:
 	if state == new_state:
 		return
 	state = new_state
+	if new_state in [
+		"TAXIING_OUT",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING",
+		"EN_ROUTE",
+		"APPROACH",
+		"LANDING_ROLL",
+		"TAXIING_IN"
+	]:
+		clear_turnaround_status()
 	state_changed.emit(state)
 	queue_redraw()
 

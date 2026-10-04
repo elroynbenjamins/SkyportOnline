@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 9 — Passenger bottleneck + regional-resource upgrade sinks
+## Current milestone: Reconciled V1 aircraft + passenger/resource foundation
 
 Skyport Online now connects the international country economy directly back into airport progression.
 
@@ -53,6 +53,33 @@ A faster fuel building modifies only the fuel timer. Future passenger, cargo, cl
 
 The starter airport uses **2× Pico P8** aircraft. L and XL remain future-ready and are intentionally not implemented in the V1 aircraft catalog.
 
+## Reconciled S → M infrastructure wall
+
+The airport catalog now carries the agreed hangar and regional-upgrade metadata alongside the newer passenger systems:
+
+- **Small Hangar** — S-only, 3 aircraft-capacity slots.
+- **Medium Stand** — Lv8, 45,000 coins.
+- **Regional Fuel Depot** — Lv8, 60,000 coins.
+- **Regional Hangar** — Lv8, 105,000 coins, S/M, 5 capacity slots.
+- **Regional Runway** — Lv8, 150,000 coins.
+- **Nimbus N40** — Lv8, 185,000 coins.
+
+The first complete M-aircraft project therefore remains **545,000 coins**.
+
+The current starter parcel is already packed by the Travel Office, terminal, two stands, fuel station, taxiway/service roads, and runway. A physical starter hangar is therefore **not force-placed during reconciliation**; its layout should be resolved in a dedicated airport-layout pass rather than overlapping the passenger building. The hangar-capacity metadata is already in the building catalog for the future Fleet purchase screen.
+
+## Reconciled route-choice lifecycle
+
+Starter Pico P8 aircraft no longer receive a hidden default destination.
+
+The reconciled flow is:
+
+**Turnaround → choose destination in World Map → board passengers → runway → flight → return/reward → clear completed route → choose next destination**
+
+Passenger stock is not consumed until a valid route has been selected.
+
+Bremen is now available as a second Pico-range starter destination, which keeps the first Travel Office resource upgrade reachable through **Belgium + Germany** with the agreed 320 km Pico range.
+
 ## Passenger bottleneck
 
 Passenger aircraft now consume passengers before departure.
@@ -67,10 +94,7 @@ If the airport does not have enough passengers for that aircraft's seat requirem
 
 Passenger generation continues in the background. As soon as enough passengers are available, the waiting aircraft automatically boards them and enters the runway queue.
 
-The current prototype aircraft use their passenger capacity as the boarding requirement:
-
-- Aerolet 100 — 18 passengers.
-- Aerolet 120 — 24 passengers.
+The V1 aircraft use their passenger capacity as the base boarding requirement. The starter fleet is **2× Pico P8**, so each starter departure begins from an 8-passenger base requirement. Aircraft mastery may later reduce the effective boarding requirement through the live mastery rules.
 
 This makes passenger production a real operational bottleneck rather than a cosmetic counter.
 
@@ -91,7 +115,7 @@ Internal upgrades improve production and storage only. The building keeps the sa
 | Level | Passengers / min | Storage | Coin cost | Regional-resource cost |
 | --- | ---: | ---: | ---: | --- |
 | 1 | 1.5 | 40 | — | — |
-| 2 | 2.2 | 55 | 2,500 | 2 Belgium Chocolate + 1 UK Specialty Goods |
+| 2 | 2.2 | 55 | 2,500 | 2 Belgium Chocolate + 1 Germany Industrial Tools |
 | 3 | 3.2 | 75 | 6,000 | 2 France Cosmetics + 2 Germany Industrial Tools |
 | 4 | 4.5 | 100 | 12,000 | 3 Denmark Design Goods + 2 UK Specialty Goods |
 | 5 | 6.0 | 135 | 22,000 | 3 Germany Machinery + 3 France Luxury Goods + 2 Netherlands Horticulture |
@@ -135,28 +159,11 @@ A successful upgrade atomically consumes the regional resources from the persist
 
 Each configured country has exactly three regional resources.
 
-Completed flights roll all three independently.
-
-Base chance:
+Completed flights roll all three independently at a fixed base chance of:
 
 **40% per resource**
 
-Adjusted by:
-
-- Aircraft-specific modifier: −20% to +20%.
-- Flight-duration modifier.
-- Aircraft-size modifier.
-
-The current result is clamped between 20% and 70%.
-
-Current tested examples:
-
-| Aircraft / route | Resource chance per item |
-| --- | ---: |
-| Aerolet 100 → London | 40.0% |
-| Aerolet 120 → London | 30.4% |
-| Regional 200 → London | 47.9% |
-| Regional 200 → Copenhagen | 50.4% |
+A single completed flight can therefore return **0, 1, 2, or all 3** country resources. The current resource-rule implementation intentionally keeps this at a fixed 40% while aircraft mastery separately improves coin/XP and passenger efficiency.
 
 Rewards are granted only after the aircraft physically lands, taxis back, and reaches its stand.
 
@@ -217,15 +224,8 @@ Current passenger regression verifies:
 **Aircraft boarding deducts passenger stock**  
 **An aircraft cannot board when stock is insufficient**
 
-## Next pass
+## Reconciliation gate
 
-**Pass 10 — Passenger acquisition options + deeper airport economy**
+Do not start another overlapping economy/passenger pass from this branch until the reconciliation PR has been reviewed against current `main`.
 
-Recommended next work:
-
-- Add the agreed rewarded-ad passenger boost: +25 passengers, capped by available storage.
-- Add daily friend / Alliance passenger gifting groundwork.
-- Add a second physical passenger-building family with a different footprint / production profile.
-- Begin requiring passenger counts by route / aircraft role rather than always filling every seat.
-- Add passenger demand preview to the World Map before dispatch.
-- Start an economy/history panel showing passenger generation, flight consumption, resource income, and bottlenecks.
+After reconciliation, the clean next project-owned gap is the **Fleet purchase / hangar-capacity UI**, using the purchase-price and hangar-space metadata now stored on all nine V1 aircraft.

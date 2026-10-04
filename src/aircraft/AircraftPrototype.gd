@@ -68,6 +68,26 @@ func get_taxi_hold_reason() -> String:
 	return taxi_hold_reason
 
 
+func get_interaction_radius() -> float:
+	match aircraft_size:
+		"M":
+			return 44.0
+		"L":
+			return 54.0
+		"XL":
+			return 64.0
+		_:
+			return 36.0
+
+
+func contains_world_point(world_position: Vector2) -> bool:
+	if not visible:
+		return false
+	return global_position.distance_to(world_position) <= (
+		get_interaction_radius()
+	)
+
+
 func configure_aircraft_type(type_id: String) -> void:
 	var profile: Dictionary = AircraftCatalog.get_profile(type_id)
 	if profile.is_empty():

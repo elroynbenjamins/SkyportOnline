@@ -7,19 +7,26 @@ signal returned_to_station
 
 @export var drive_speed: float = 125.0
 
-var station_position := Vector2.ZERO
-var target_position := Vector2.ZERO
+var outbound_route := PackedVector2Array()
+var return_route := PackedVector2Array()
+var route_index := 0
 var service_duration := 4.0
 var service_remaining := 0.0
 var phase := "IDLE"
 
 
-func start_service(from_position: Vector2, to_position: Vector2, duration: float) -> void:
-	station_position = from_position
-	target_position = to_position
+func start_service(route: PackedVector2Array, duration: float) -> void:
+	if route.size() < 2:
+		queue_free()
+		return
+
+	outbound_route = route
+	return_route = route.duplicate()
+	return_route.reverse()
+	route_index = 0
 	service_duration = maxf(duration, 0.4)
 	service_remaining = service_duration
-	position = station_position
+	position = outbound_route[0]
 	visible = true
 	phase = "OUTBOUND"
 	queue_redraw()
@@ -28,7 +35,7 @@ func start_service(from_position: Vector2, to_position: Vector2, duration: float
 func _process(delta: float) -> void:
 	match phase:
 		"OUTBOUND":
-			if _move_toward(target_position, delta):
+			if _follow_route(outbound_route, delta):
 				phase = "SERVICING"
 				service_started.emit()
 				queue_redraw()
@@ -36,25 +43,34 @@ func _process(delta: float) -> void:
 			service_remaining -= delta
 			if service_remaining <= 0.0:
 				phase = "RETURNING"
+				route_index = 0
 				service_completed.emit()
 				queue_redraw()
 		"RETURNING":
-			if _move_toward(station_position, delta):
+			if _follow_route(return_route, delta):
 				phase = "DONE"
 				returned_to_station.emit()
 				queue_free()
 
 
-func _move_toward(target: Vector2, delta: float) -> bool:
+func _follow_route(points: PackedVector2Array, delta: float) -> bool:
+	if points.size() < 2:
+		return true
+
+	var target_index := mini(route_index + 1, points.size() - 1)
+	var target := points[target_index]
 	var to_target := target - position
 	var distance := to_target.length()
+
 	if distance <= drive_speed * delta:
 		position = target
-		return true
+		route_index = target_index
+		return route_index >= points.size() - 1
 
 	var direction := to_target.normalized()
 	position += direction * drive_speed * delta
 	rotation = direction.angle()
+	queue_redraw()
 	return false
 
 

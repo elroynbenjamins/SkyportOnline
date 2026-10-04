@@ -206,19 +206,8 @@ func _spawn_aircraft_demos() -> void:
 		var aircraft := AircraftPrototype.new()
 
 		var profile_ids: Array[String] = ["pico_p8", "pico_p8"]
-		var default_destinations: Array[String] = ["brussels", "brussels"]
 		var profile_id: String = profile_ids[index % profile_ids.size()]
-		var destination_id: String = default_destinations[
-			index % default_destinations.size()
-		]
 		aircraft.configure_aircraft_type(profile_id)
-
-		var destination := DestinationCatalog.get_destination(destination_id)
-		var initial_plan := FlightRules.create_flight_plan(
-			aircraft.get_aircraft_profile(),
-			destination
-		)
-		aircraft.assign_flight_plan(initial_plan)
 		aircraft.name = label
 		aircraft.z_index = 80 + index
 		aircraft.state_changed.connect(
@@ -246,7 +235,8 @@ func _spawn_aircraft_demos() -> void:
 		ground_services.request_turnaround(aircraft, label, false)
 
 	hud.set_operation_status(
-		"%d aircraft awaiting turnaround" % aircraft_demos.size()
+		"%d Pico P8 aircraft in turnaround • choose routes in WORLD" % aircraft_demos.size(),
+		"warning"
 	)
 
 
@@ -453,6 +443,8 @@ func _on_demo_arrival_completed(
 	label: String
 ) -> void:
 	_apply_completed_flight_reward(aircraft, label)
+	aircraft.clear_flight_plan()
+	_remove_passenger_waiter(aircraft)
 
 	var route_info: Dictionary = airport_grid.get_departure_route_for_stand(
 		aircraft.stand_uid,
@@ -605,7 +597,8 @@ func _on_navigation_requested(tab: String) -> void:
 				passenger_economy.get_passengers(),
 				passenger_economy.get_capacity(),
 				passenger_economy.get_production_per_minute(),
-				rewarded_passenger_ad_bridge.provider_connected
+				rewarded_passenger_ad_bridge.provider_connected,
+				ProfileStore.get_passenger_ad_status()
 			)
 
 
@@ -672,6 +665,19 @@ func _on_world_tapped(world_position: Vector2) -> void:
 
 
 func _on_rewarded_passenger_boost_requested() -> void:
+	var ad_status := ProfileStore.get_passenger_ad_status()
+	if not bool(ad_status.get("can_claim", false)):
+		hud.set_operation_status(
+			"Daily rewarded passenger limit reached • 3 / 3 used.",
+			"warning"
+		)
+		return
+	if passenger_economy.get_passengers() >= passenger_economy.get_capacity():
+		hud.set_operation_status(
+			"Passenger storage is full. Use some passengers first.",
+			"warning"
+		)
+		return
 	rewarded_passenger_ad_bridge.request_ad()
 
 
@@ -683,6 +689,14 @@ func _on_rewarded_passenger_ad_unavailable() -> void:
 
 
 func _on_rewarded_passenger_ad_reward_granted() -> void:
+	var ad_status := ProfileStore.get_passenger_ad_status()
+	if not bool(ad_status.get("can_claim", false)):
+		hud.set_operation_status(
+			"Daily rewarded passenger limit reached • 3 / 3 used.",
+			"warning"
+		)
+		return
+
 	var added := PassengerSupportRules.grant_rewarded_ad_passengers(
 		passenger_economy
 	)
@@ -692,6 +706,9 @@ func _on_rewarded_passenger_ad_reward_granted() -> void:
 			"warning"
 		)
 	else:
+		var updated_profile := ProfileStore.record_rewarded_passenger_ad()
+		if not updated_profile.is_empty():
+			current_profile = updated_profile
 		hud.set_operation_status(
 			"Rewarded ad complete • +%d passengers" % added,
 			"success"
@@ -702,7 +719,8 @@ func _on_rewarded_passenger_ad_reward_granted() -> void:
 		passenger_economy.get_passengers(),
 		passenger_economy.get_capacity(),
 		passenger_economy.get_production_per_minute(),
-		rewarded_passenger_ad_bridge.provider_connected
+		rewarded_passenger_ad_bridge.provider_connected,
+		ProfileStore.get_passenger_ad_status()
 	)
 
 
@@ -844,7 +862,7 @@ func _on_building_selected_world(building: Dictionary) -> void:
 	var definition := BuildingCatalog.get_definition(
 		String(building.get("definition_id", ""))
 	)
-	if not bool(definition.get("passenger_generator", false)):
+	if not bool(definition.get("passenger_upgradable", false)):
 		hud.set_operation_status(
 			String(definition.get("name", "Airport building"))
 		)

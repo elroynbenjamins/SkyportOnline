@@ -48,7 +48,7 @@ func _build_ui() -> void:
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color("071923", 0.97)
+	backdrop.color = Color("07151d", 0.97)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(backdrop)
 
@@ -59,6 +59,7 @@ func _build_ui() -> void:
 	panel.offset_right = -80
 	panel.offset_bottom = -45
 	root.add_child(panel)
+	GameUIStyle.apply_panel(panel, "raised")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 24)
@@ -77,18 +78,22 @@ func _build_ui() -> void:
 	var title := Label.new()
 	title.text = "REGIONAL RESOURCES"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 26)
+	GameUIStyle.heading(title, 26)
 	header.add_child(title)
 
 	var close_button := Button.new()
 	close_button.text = "✕  AIRPORT"
 	close_button.custom_minimum_size = Vector2(140, 44)
 	close_button.pressed.connect(close_inventory)
+	GameUIStyle.apply_button(close_button, "secondary", true)
 	header.add_child(close_button)
 
 	passenger_label = Label.new()
 	passenger_label.add_theme_font_size_override("font_size", 16)
-	passenger_label.add_theme_color_override("font_color", Color("f1d27a"))
+	passenger_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
 	column.add_child(passenger_label)
 
 
@@ -102,6 +107,7 @@ func _build_ui() -> void:
 	passenger_boost_button.pressed.connect(
 		_on_rewarded_passenger_boost_pressed
 	)
+	GameUIStyle.apply_button(passenger_boost_button, "primary")
 	passenger_actions.add_child(passenger_boost_button)
 
 	passenger_support_label = Label.new()
@@ -110,7 +116,7 @@ func _build_ui() -> void:
 	passenger_support_label.add_theme_font_size_override("font_size", 13)
 	passenger_support_label.add_theme_color_override(
 		"font_color",
-		Color("a9c6cf")
+		GameUIStyle.COLOR_MUTED
 	)
 	passenger_actions.add_child(passenger_support_label)
 
@@ -130,7 +136,7 @@ func _build_ui() -> void:
 	economy_history_label.add_theme_font_size_override("font_size", 13)
 	economy_history_label.add_theme_color_override(
 		"font_color",
-		Color("9fe3b7")
+		GameUIStyle.COLOR_SUCCESS
 	)
 	column.add_child(economy_history_label)
 
@@ -205,7 +211,10 @@ func _refresh(
 			String(country.get("name", "Country"))
 		]
 		country_title.add_theme_font_size_override("font_size", 17)
-		country_title.add_theme_color_override("font_color", Color("8dd6e8"))
+		country_title.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_ACCENT
+		)
 		resource_list.add_child(country_title)
 
 		var row := HBoxContainer.new()
@@ -220,6 +229,7 @@ func _refresh(
 
 			var card := PanelContainer.new()
 			card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			GameUIStyle.apply_panel(card, "dark")
 			row.add_child(card)
 
 			var label := Label.new()
@@ -241,6 +251,7 @@ func _refresh(
 		)
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.add_theme_font_size_override("font_size", 18)
+		GameUIStyle.muted(empty)
 		resource_list.add_child(empty)
 
 

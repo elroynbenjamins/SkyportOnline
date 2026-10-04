@@ -102,7 +102,7 @@ func _run() -> void:
 		_fail("Second aircraft should queue for the occupied runway.")
 		return
 
-	plane_a.route_completed.emit()
+	plane_a.runway_cleared.emit()
 	await process_frame
 
 	if runway_dispatcher.get_active_count() != 1:
@@ -113,6 +113,65 @@ func _run() -> void:
 		return
 	if plane_b.state != "CLEARED":
 		_fail("Second aircraft should enter CLEARED state after runway release.")
+		return
+
+
+	var arrival_routes: Array[Dictionary] = grid.get_arrival_routes("S")
+	if arrival_routes.size() != 2:
+		_fail("Starter airport should expose two S-class arrival routes.")
+		return
+
+	for arrival_info in arrival_routes:
+		var arrival_route: PackedVector2Array = arrival_info.get(
+			"route",
+			PackedVector2Array()
+		)
+		if arrival_route.size() < 4:
+			_fail("Arrival route should include runway, taxiway, and stand.")
+			return
+		if int(arrival_info.get("runway_uid", -1)) < 0:
+			_fail("Arrival route should identify its runway.")
+			return
+
+	var arrival_a := AircraftPrototype.new()
+	var arrival_b := AircraftPrototype.new()
+	root.add_child(arrival_a)
+	root.add_child(arrival_b)
+
+	arrival_a.set_arrival_route(
+		arrival_routes[0]["route"],
+		int(arrival_routes[0]["stand_uid"]),
+		int(arrival_routes[0]["runway_uid"])
+	)
+	arrival_b.set_arrival_route(
+		arrival_routes[1]["route"],
+		int(arrival_routes[1]["stand_uid"]),
+		int(arrival_routes[1]["runway_uid"])
+	)
+
+	var arrival_runway := RunwayDispatcher.new()
+	root.add_child(arrival_runway)
+	arrival_runway.request_arrival(arrival_a, "Arrival A")
+	arrival_runway.request_arrival(arrival_b, "Arrival B")
+
+	if arrival_runway.get_active_count() != 1:
+		_fail("Only one arrival should occupy the runway at a time.")
+		return
+	if arrival_runway.get_waiting_count() != 1:
+		_fail("Second arrival should wait while runway is occupied.")
+		return
+	if arrival_a.state != "APPROACH":
+		_fail("Cleared arrival should enter APPROACH state.")
+		return
+
+	arrival_a.runway_cleared.emit()
+	await process_frame
+
+	if arrival_runway.get_waiting_count() != 0:
+		_fail("Second arrival should receive clearance after runway release.")
+		return
+	if arrival_b.state != "APPROACH":
+		_fail("Second arrival should enter APPROACH after clearance.")
 		return
 
 	var disconnected_position := grid.tile_to_world(Vector2(8, 10))
@@ -212,7 +271,7 @@ func _run() -> void:
 		_fail("No aircraft should queue when rapid fuel has two free trucks.")
 		return
 
-	print("Landscape airside, service-road, fuel capacity, and runway queue tests passed.")
+	print("Landscape airside, service roads, fuel capacity, departure queues, and arrival queues passed.")
 	quit(0)
 
 

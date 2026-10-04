@@ -722,7 +722,7 @@ func _refresh_details() -> void:
 
 	details_body.text = (
 		"Condition: %s • %s left\n"
-		+ "Priority Contract: %s\n"
+		+ "PRIORITY CONTRACT: %s\n"
 		+ "Route History: %s\n"
 		+ "Current route: %s\n"
 		+ "Aircraft: %s"

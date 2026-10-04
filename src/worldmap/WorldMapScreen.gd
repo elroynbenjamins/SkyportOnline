@@ -107,6 +107,12 @@ func set_passenger_stock(
 		_refresh_details()
 
 
+func set_route_history(history: Dictionary) -> void:
+	route_history = history.duplicate(true)
+	if root != null and root.visible:
+		_refresh_details()
+
+
 func set_assignment_status(text: String) -> void:
 	assignment_status.text = text
 	_refresh_aircraft_buttons()

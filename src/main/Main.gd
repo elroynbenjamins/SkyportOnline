@@ -667,10 +667,12 @@ func _on_world_map_flight_assignment_requested(
 	var plan := FlightRules.create_flight_plan(profile, destination)
 	aircraft.assign_flight_plan(plan)
 
+	var route_passengers := _passenger_requirement(aircraft)
 	world_map.set_assignment_status(
-		"%s assigned to %s • %s" % [
+		"%s → %s • %d passengers • %s" % [
 			aircraft.name,
 			String(destination.get("city", "")),
+			route_passengers,
 			FlightRules.format_duration(
 				float(plan.get("duration_seconds", 0.0))
 			)

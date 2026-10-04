@@ -84,6 +84,82 @@ func get_turnaround_seconds(
 	)
 
 
+func get_service_docking_position(
+	service_type: String,
+	service_key: String = ""
+) -> Vector2:
+	return to_global(
+		get_service_docking_local_offset(
+			service_type,
+			service_key
+		)
+	)
+
+
+func get_service_docking_local_offset(
+	service_type: String,
+	service_key: String = ""
+) -> Vector2:
+	var overrides: Dictionary = aircraft_profile.get(
+		"service_anchors",
+		{}
+	)
+	if overrides.has(service_key):
+		return Vector2(overrides[service_key])
+	if overrides.has(service_type):
+		return Vector2(overrides[service_type])
+
+	var scale := 1.0
+	match aircraft_size:
+		"M":
+			scale = 1.35
+		"L":
+			scale = 1.65
+		"XL":
+			scale = 2.0
+
+	var base := Vector2.ZERO
+	match service_type:
+		"passenger":
+			base = Vector2(10, -34)
+		"cargo":
+			base = Vector2(-10, 32)
+		"cleaning":
+			base = Vector2(-14, -30)
+		"catering":
+			base = Vector2(14, 30)
+		"fuel":
+			base = Vector2(-2, -40)
+		_:
+			base = Vector2(0, 34)
+
+	return base * scale
+
+
+func get_service_docking_rotation(
+	service_type: String,
+	service_key: String = ""
+) -> float:
+	var rotation_overrides: Dictionary = aircraft_profile.get(
+		"service_anchor_rotations",
+		{}
+	)
+	if rotation_overrides.has(service_key):
+		return rotation + float(
+			rotation_overrides[service_key]
+		)
+	if rotation_overrides.has(service_type):
+		return rotation + float(
+			rotation_overrides[service_type]
+		)
+
+	match service_type:
+		"cargo", "catering":
+			return rotation + PI
+		_:
+			return rotation
+
+
 func begin_ground_service(stage: String) -> void:
 	if stage in [
 		"UNLOADING",

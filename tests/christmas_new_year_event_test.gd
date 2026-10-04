@@ -188,6 +188,19 @@ func _run() -> void:
 		_fail("Featured Christmas routes should not create unlimited event currency.")
 		return
 
+	var screen := EventScreen.new()
+	root.add_child(screen)
+	await process_frame
+	screen.open_event(manager.get_snapshot())
+	if not screen.featured_routes_label.text.contains(
+		"FEATURED QUEST ROUTES"
+	):
+		_fail("Christmas featured destinations should be presented as quest routes.")
+		return
+	if screen.featured_routes_label.text.contains("+0"):
+		_fail("Event UI should never advertise a +0 currency route reward.")
+		return
+
 	_cleanup_profile()
 	print(
 		"Christmas/New Year launch event passed: disabled until release, "

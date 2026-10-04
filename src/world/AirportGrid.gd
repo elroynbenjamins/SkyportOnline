@@ -66,7 +66,9 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("short_runway", Vector2i(8, 8), 0)
 	_place_building_internal("taxiway", Vector2i(11, 10), 0)
 	_place_building_internal("taxiway", Vector2i(12, 10), 0)
+	_place_building_internal("taxiway", Vector2i(13, 10), 0)
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
+	_place_building_internal("small_stand", Vector2i(13, 11), 0)
 	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
 	_rebuild_occupied_cells()
@@ -593,9 +595,8 @@ func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
 
 
-func get_best_service_building(service_type: String, aircraft_size: String) -> Dictionary:
-	var best: Dictionary = {}
-	var best_speed := -1.0
+func get_compatible_service_buildings(service_type: String, aircraft_size: String) -> Array[Dictionary]:
+	var results: Array[Dictionary] = []
 
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
@@ -606,22 +607,27 @@ func get_best_service_building(service_type: String, aircraft_size: String) -> D
 		if not _definition_supports_size(definition, aircraft_size):
 			continue
 
-		var speed := float(definition.get("service_speed", 1.0))
-		if speed <= best_speed:
-			continue
-
 		var footprint := _footprint_for(definition, int(building["rotation"]))
-		best = {
+		results.append({
 			"uid": int(building["uid"]),
 			"definition_id": String(building["definition_id"]),
 			"world_position": _footprint_center_world(building["origin"], footprint),
-			"service_speed": speed,
+			"service_speed": float(definition.get("service_speed", 1.0)),
 			"vehicle_capacity": int(definition.get("vehicle_capacity", 1)),
 			"sizes": definition.get("sizes", PackedStringArray())
-		}
-		best_speed = speed
+		})
 
-	return best
+	results.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("service_speed", 1.0)) > float(b.get("service_speed", 1.0))
+	)
+	return results
+
+
+func get_best_service_building(service_type: String, aircraft_size: String) -> Dictionary:
+	var compatible := get_compatible_service_buildings(service_type, aircraft_size)
+	if compatible.is_empty():
+		return {}
+	return compatible[0].duplicate(true)
 
 
 func _definition_supports_size(definition: Dictionary, aircraft_size: String) -> bool:
@@ -629,10 +635,11 @@ func _definition_supports_size(definition: Dictionary, aircraft_size: String) ->
 	return sizes.has(aircraft_size)
 
 
-func get_first_departure_route(aircraft_size: String = "S") -> PackedVector2Array:
+func get_departure_routes(aircraft_size: String = "S") -> Array[Dictionary]:
+	var routes: Array[Dictionary] = []
 	var connected_uids: Array = airside_status.get("connected_uids", [])
 	if connected_uids.is_empty():
-		return PackedVector2Array()
+		return routes
 
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
@@ -640,7 +647,9 @@ func get_first_departure_route(aircraft_size: String = "S") -> PackedVector2Arra
 			continue
 		if not _definition_supports_size(definition, aircraft_size):
 			continue
-		if not connected_uids.has(int(building["uid"])):
+
+		var stand_uid := int(building["uid"])
+		if not connected_uids.has(stand_uid):
 			continue
 
 		var footprint := _footprint_for(definition, int(building["rotation"]))
@@ -658,16 +667,30 @@ func get_first_departure_route(aircraft_size: String = "S") -> PackedVector2Arra
 			continue
 
 		var runway_exit := _farthest_cell_on_same_runway(runway_entry, aircraft_size)
-		var result := PackedVector2Array()
-		result.append(_footprint_center_world(building["origin"], footprint))
+		var points := PackedVector2Array()
+		var stand_position := _footprint_center_world(building["origin"], footprint)
+		points.append(stand_position)
 		for taxi_cell in taxi_path:
-			result.append(tile_to_world(Vector2(taxi_cell.x, taxi_cell.y)))
-		result.append(tile_to_world(Vector2(runway_entry.x, runway_entry.y)))
+			points.append(tile_to_world(Vector2(taxi_cell.x, taxi_cell.y)))
+		points.append(tile_to_world(Vector2(runway_entry.x, runway_entry.y)))
 		if runway_exit != runway_entry:
-			result.append(tile_to_world(Vector2(runway_exit.x, runway_exit.y)))
-		return result
+			points.append(tile_to_world(Vector2(runway_exit.x, runway_exit.y)))
 
-	return PackedVector2Array()
+		routes.append({
+			"stand_uid": stand_uid,
+			"stand_definition_id": String(building["definition_id"]),
+			"stand_world_position": stand_position,
+			"route": points
+		})
+
+	return routes
+
+
+func get_first_departure_route(aircraft_size: String = "S") -> PackedVector2Array:
+	var routes := get_departure_routes(aircraft_size)
+	if routes.is_empty():
+		return PackedVector2Array()
+	return routes[0]["route"] as PackedVector2Array
 
 
 func _first_adjacent_reachable_taxiway(cells: Array[Vector2i]) -> Vector2i:

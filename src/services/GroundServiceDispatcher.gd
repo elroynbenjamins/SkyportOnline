@@ -588,6 +588,18 @@ func _dispatch_service(
 	var service_key := String(
 		request.get("service_key", service_type)
 	)
+	route = _route_to_aircraft_service_anchor(
+		route,
+		aircraft,
+		service_type,
+		service_key
+	)
+	var docking_rotation := (
+		aircraft.get_service_docking_rotation(
+			service_type,
+			service_key
+		)
+	)
 	var legacy_fuel_only := bool(
 		request.get("legacy_fuel_only", false)
 	)
@@ -628,6 +640,9 @@ func _dispatch_service(
 				service_type
 			)
 		)
+		truck.set_service_pose_rotation(
+			docking_rotation
+		)
 		truck.start_service(route, duration)
 	else:
 		var vehicle := GroundServiceVehiclePrototype.new()
@@ -657,6 +672,9 @@ func _dispatch_service(
 				service_type
 			)
 		)
+		vehicle.set_service_pose_rotation(
+			docking_rotation
+		)
 		vehicle.start_service(
 			route,
 			duration,
@@ -672,6 +690,25 @@ func _dispatch_service(
 		],
 		"normal"
 	)
+
+
+func _route_to_aircraft_service_anchor(
+	base_route: PackedVector2Array,
+	aircraft: AircraftPrototype,
+	service_type: String,
+	service_key: String
+) -> PackedVector2Array:
+	if base_route.size() < 2:
+		return base_route
+
+	var result := base_route.duplicate()
+	result[result.size() - 1] = (
+		aircraft.get_service_docking_position(
+			service_type,
+			service_key
+		)
+	)
+	return result
 
 
 func _on_service_started(

@@ -43,22 +43,18 @@ func _run() -> void:
 		_fail("World Map should open for demand preview.")
 		return
 
-	if not screen.details_body.text.contains(
-		"Passenger demand: Feeder • 65% load"
-	):
-		_fail("World Map should show Brussels Feeder demand at 65%.")
+	if not screen.route_card_label.text.contains("Feeder • 65% load"):
+		_fail("Route card should show Brussels Feeder demand at 65%.")
 		return
 
-	if not screen.details_body.text.contains(
-		"Seats 8 → route 6 → Mastery 5"
-	):
+	if not screen.route_card_label.text.contains("6 → 5 pax"):
 		_fail(
-			"World Map should show seat → route → Mastery demand."
+			"Route card should show route demand → Mastery demand."
 		)
 		return
 
-	if not screen.details_body.text.contains("Airport stock: 3 / 40"):
-		_fail("World Map should show live passenger stock.")
+	if not screen.reward_card_label.text.contains("Stock 3/40"):
+		_fail("Reward card should show live passenger stock.")
 		return
 	if not screen.details_body.text.contains("Condition: Normal"):
 		_fail("Fixed Normal test slot should render on World Map.")

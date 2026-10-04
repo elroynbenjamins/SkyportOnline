@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="192" viewBox="0 0 256 192" shape-rendering="crispEdges">
+<g transform="translate(256 0) scale(-1 1)">
 <polygon points="28,135 116,83 230,119 142,172" fill="#111a1e" opacity=".55"/>
 <polygon points="36,120 113,76 219,109 142,154" fill="#687176"/>
 <polygon points="50,97 112,61 201,88 138,125" fill="#c5ccd0"/>
@@ -15,4 +16,5 @@
 <rect x="180" y="107" width="4" height="4" fill="#1d272b"/>
 <rect x="59" y="120" width="4" height="8" fill="#e3bb42"/>
 <rect x="190" y="111" width="4" height="8" fill="#e3bb42"/>
+</g>
 </svg>

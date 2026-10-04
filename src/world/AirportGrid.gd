@@ -132,17 +132,17 @@ func _draw_buildings() -> void:
 		var footprint := _footprint_for(definition, int(building["rotation"]))
 		var origin: Vector2i = building["origin"]
 		var color: Color = definition["color"]
-		if not String(definition.get("world_sprite_path", "")).is_empty():
+		if _definition_has_world_sprite(definition):
 			color.a = 0.72
 
 		for y in range(footprint.y):
 			for x in range(footprint.x):
 				_draw_tile_overlay(origin + Vector2i(x, y), color, Color("eef2f1", 0.30), 1.0)
 
-		if String(definition.get("world_sprite_path", "")).is_empty():
+		if not _definition_has_world_sprite(definition):
 			_draw_building_detail(building, definition, footprint)
 		else:
-			_draw_building_sprite(definition, origin, footprint)
+			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
 
 
 func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:
@@ -164,8 +164,7 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 		draw_dashed_line(start, finish, Color("f4f2df"), 2.0, 8.0)
 
 	elif id == "taxiway":
-		var center := tile_to_world(Vector2(origin.x, origin.y))
-		draw_circle(center, 4.0, Color("f0c94c"))
+		_draw_taxiway_detail(origin)
 
 	elif id.contains("fuel"):
 		var center := _footprint_center_world(origin, footprint)
@@ -177,13 +176,26 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 		draw_circle(center, 10.0, Color("dce5e7"), false, 3.0)
 
 
+func _definition_has_world_sprite(definition: Dictionary) -> bool:
+	var variants: PackedStringArray = definition.get("world_sprite_paths", PackedStringArray())
+	return variants.size() > 0 or not String(definition.get("world_sprite_path", "")).is_empty()
+
+
+func _sprite_path_for_rotation(definition: Dictionary, rotation: int) -> String:
+	var variants: PackedStringArray = definition.get("world_sprite_paths", PackedStringArray())
+	if variants.size() > 0:
+		return variants[rotation % variants.size()]
+	return String(definition.get("world_sprite_path", ""))
+
+
 func _draw_building_sprite(
 	definition: Dictionary,
 	origin: Vector2i,
 	footprint: Vector2i,
+	rotation: int,
 	modulate: Color = Color.WHITE
 ) -> void:
-	var sprite_path := String(definition.get("world_sprite_path", ""))
+	var sprite_path := _sprite_path_for_rotation(definition, rotation)
 	if sprite_path.is_empty():
 		return
 
@@ -196,6 +208,45 @@ func _draw_building_sprite(
 	var center := _footprint_center_world(origin, footprint)
 	var rect := Rect2(center - draw_size * 0.5 + offset, draw_size)
 	draw_texture_rect(texture, rect, false, modulate)
+
+
+func _draw_taxiway_detail(origin: Vector2i) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var connections := 0
+	for direction in [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]:
+		var neighbor := origin + direction
+		if not _taxiway_visually_connects_to(neighbor):
+			continue
+		var edge_tile := Vector2(origin.x, origin.y) + Vector2(direction.x, direction.y) * 0.48
+		draw_line(center, tile_to_world(edge_tile), Color("f0c94c"), 3.0)
+		connections += 1
+
+	if connections == 0:
+		draw_line(center + Vector2(-8, 4), center + Vector2(8, -4), Color("f0c94c"), 3.0)
+	draw_circle(center, 3.5, Color("f4d866"))
+
+
+func _taxiway_visually_connects_to(cell: Vector2i) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+
+	var building := _building_by_uid(int(occupied_cells[key]))
+	if building.is_empty():
+		return false
+
+	var id := String(building["definition_id"])
+	return (
+		id == "taxiway"
+		or id.contains("runway")
+		or id.contains("stand")
+		or id.contains("hangar")
+	)
 
 
 func _get_building_texture(path: String) -> Texture2D:
@@ -225,9 +276,9 @@ func _draw_build_preview() -> void:
 		for x in range(footprint.x):
 			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
 
-	if not String(definition.get("world_sprite_path", "")).is_empty():
+	if _definition_has_world_sprite(definition):
 		var ghost := Color(0.72, 1.0, 0.78, 0.72) if valid else Color(1.0, 0.65, 0.65, 0.72)
-		_draw_building_sprite(definition, preview_origin, footprint, ghost)
+		_draw_building_sprite(definition, preview_origin, footprint, preview_rotation, ghost)
 
 
 func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:

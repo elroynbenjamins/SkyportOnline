@@ -221,9 +221,10 @@ func _run() -> void:
 		int(arrival_routes[0]["stand_uid"]),
 		int(arrival_routes[0]["runway_uid"])
 	)
-	lifecycle_plane._process(0.6)
+	var assigned_duration := lifecycle_plane.get_flight_remaining_seconds()
+	lifecycle_plane._process(assigned_duration + 0.1)
 	if lifecycle_plane.state != "HOLDING_FOR_ARRIVAL":
-		_fail("Finished demo flight should request an arrival.")
+		_fail("Finished assigned flight should request an arrival.")
 		return
 
 	lifecycle_plane.begin_arrival_after_clearance()

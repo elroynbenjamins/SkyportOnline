@@ -34,6 +34,11 @@ static func load_profile() -> Dictionary:
 	if stored_mastery is Dictionary:
 		aircraft_mastery = stored_mastery.duplicate(true)
 
+	var economy_stats := {}
+	var stored_economy = config.get_value("profile", "economy_stats", {})
+	if stored_economy is Dictionary:
+		economy_stats = stored_economy.duplicate(true)
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -51,6 +56,7 @@ static func load_profile() -> Dictionary:
 		),
 		"building_upgrades": building_upgrades,
 		"aircraft_mastery_hours": aircraft_mastery,
+		"economy_stats": economy_stats,
 		"passenger_gift_day": String(
 			config.get_value("profile", "passenger_gift_day", "")
 		),
@@ -93,6 +99,7 @@ static func create_guest_airport(
 		"passenger_balance": 20,
 		"building_upgrades": {},
 		"aircraft_mastery_hours": {},
+		"economy_stats": {},
 		"passenger_gift_day": "",
 		"passenger_gifts_received_today": 0
 	}
@@ -173,6 +180,30 @@ static func apply_building_upgrade(
 	return profile
 
 
+
+
+
+
+static func add_economy_stats(delta: Dictionary) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var stats: Dictionary = profile.get(
+		"economy_stats",
+		{}
+	).duplicate(true)
+
+	for key in delta.keys():
+		var amount := int(delta[key])
+		if amount == 0:
+			continue
+		stats[key] = int(stats.get(key, 0)) + amount
+
+	profile["economy_stats"] = stats
+	if not _save_profile(profile):
+		return {}
+	return profile
 
 
 static func add_aircraft_mastery_hours(

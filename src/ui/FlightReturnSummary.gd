@@ -41,6 +41,7 @@ func _build_ui() -> void:
 	panel.offset_bottom = 190
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel)
+	GameUIStyle.apply_panel(panel, "gold")
 
 	var wrapper := VBoxContainer.new()
 	wrapper.add_theme_constant_override("separation", 12)
@@ -48,13 +49,21 @@ func _build_ui() -> void:
 
 	title_label = Label.new()
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 23)
+	GameUIStyle.heading(title_label, 23)
+	title_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
 	wrapper.add_child(title_label)
 
 	body_label = Label.new()
 	body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body_label.add_theme_font_size_override("font_size", 16)
+	body_label.add_theme_font_size_override("font_size", 15)
+	body_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_TEXT
+	)
 	wrapper.add_child(body_label)
 
 	var close_button := Button.new()
@@ -62,6 +71,7 @@ func _build_ui() -> void:
 	close_button.custom_minimum_size = Vector2(0, 52)
 	close_button.add_theme_font_size_override("font_size", 17)
 	close_button.pressed.connect(_on_close_pressed)
+	GameUIStyle.apply_button(close_button, "gold")
 	wrapper.add_child(close_button)
 
 

@@ -1,0 +1,120 @@
+class_name AircraftMastery
+extends RefCounted
+
+const STAR_MILESTONES_HOURS := [
+	10.0,
+	50.0,
+	150.0,
+	400.0,
+	1000.0
+]
+
+
+static func stars_for_hours(hours: float) -> int:
+	var stars := 0
+	for milestone in STAR_MILESTONES_HOURS:
+		if hours >= milestone:
+			stars += 1
+	return stars
+
+
+static func bonuses_for_stars(stars: int) -> Dictionary:
+	var clamped := clampi(stars, 0, 5)
+	match clamped:
+		0:
+			return {
+				"passenger_reduction": 0.00,
+				"xp_bonus": 0.00,
+				"coin_bonus": 0.00
+			}
+		1:
+			return {
+				"passenger_reduction": 0.05,
+				"xp_bonus": 0.00,
+				"coin_bonus": 0.00
+			}
+		2:
+			return {
+				"passenger_reduction": 0.05,
+				"xp_bonus": 0.05,
+				"coin_bonus": 0.00
+			}
+		3:
+			return {
+				"passenger_reduction": 0.05,
+				"xp_bonus": 0.05,
+				"coin_bonus": 0.05
+			}
+		4:
+			return {
+				"passenger_reduction": 0.10,
+				"xp_bonus": 0.10,
+				"coin_bonus": 0.05
+			}
+		_:
+			return {
+				"passenger_reduction": 0.10,
+				"xp_bonus": 0.10,
+				"coin_bonus": 0.10
+			}
+
+
+static func status(hours: float) -> Dictionary:
+	var stars := stars_for_hours(hours)
+	var next_star := stars + 1
+	var next_hours := 0.0
+	if next_star <= 5:
+		next_hours = float(STAR_MILESTONES_HOURS[next_star - 1])
+
+	return {
+		"hours": maxf(hours, 0.0),
+		"stars": stars,
+		"next_star": next_star if next_star <= 5 else 5,
+		"next_hours": next_hours,
+		"bonuses": bonuses_for_stars(stars)
+	}
+
+
+static func passenger_requirement(
+	base_passengers: int,
+	hours: float
+) -> int:
+	var bonuses := bonuses_for_stars(stars_for_hours(hours))
+	var reduction := float(
+		bonuses.get("passenger_reduction", 0.0)
+	)
+	return maxi(
+		int(ceil(
+			float(base_passengers) * (1.0 - reduction)
+		)),
+		0
+	)
+
+
+static func apply_coin_bonus(base_coins: int, hours: float) -> int:
+	var bonuses := bonuses_for_stars(stars_for_hours(hours))
+	return maxi(
+		int(round(
+			float(base_coins)
+			* (1.0 + float(bonuses.get("coin_bonus", 0.0)))
+		)),
+		0
+	)
+
+
+static func apply_xp_bonus(base_xp: int, hours: float) -> int:
+	var bonuses := bonuses_for_stars(stars_for_hours(hours))
+	return maxi(
+		int(round(
+			float(base_xp)
+			* (1.0 + float(bonuses.get("xp_bonus", 0.0)))
+		)),
+		0
+	)
+
+
+static func format_stars(stars: int) -> String:
+	var result := ""
+	for index in range(5):
+		result += "★" if index < stars else "☆"
+	return result

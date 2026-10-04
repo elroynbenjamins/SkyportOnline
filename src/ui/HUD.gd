@@ -48,7 +48,7 @@ func _build_interface() -> void:
 	top_panel.offset_left = 12
 	top_panel.offset_top = 12
 	top_panel.offset_right = -12
-	top_panel.offset_bottom = 84
+	top_panel.offset_bottom = 72
 	root.add_child(top_panel)
 
 	var top_row := HBoxContainer.new()
@@ -82,9 +82,9 @@ func _build_interface() -> void:
 	var objective_panel := PanelContainer.new()
 	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	objective_panel.offset_left = -250
-	objective_panel.offset_top = 96
+	objective_panel.offset_top = 82
 	objective_panel.offset_right = -12
-	objective_panel.offset_bottom = 160
+	objective_panel.offset_bottom = 146
 	root.add_child(objective_panel)
 
 	var objective := Label.new()
@@ -97,9 +97,9 @@ func _build_interface() -> void:
 	var airside_panel := PanelContainer.new()
 	airside_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	airside_panel.offset_left = 12
-	airside_panel.offset_top = 96
+	airside_panel.offset_top = 82
 	airside_panel.offset_right = 250
-	airside_panel.offset_bottom = 160
+	airside_panel.offset_bottom = 146
 	root.add_child(airside_panel)
 
 	airside_status_label = Label.new()
@@ -112,9 +112,9 @@ func _build_interface() -> void:
 	var operation_panel := PanelContainer.new()
 	operation_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	operation_panel.offset_left = 260
-	operation_panel.offset_top = 96
+	operation_panel.offset_top = 82
 	operation_panel.offset_right = 460
-	operation_panel.offset_bottom = 160
+	operation_panel.offset_bottom = 146
 	root.add_child(operation_panel)
 
 	operation_status_label = Label.new()
@@ -127,9 +127,9 @@ func _build_interface() -> void:
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	build_hint.offset_left = 18
-	build_hint.offset_top = -610
-	build_hint.offset_right = 520
-	build_hint.offset_bottom = -574
+	build_hint.offset_top = -192
+	build_hint.offset_right = 760
+	build_hint.offset_bottom = -160
 	build_hint.text = "BUILD MODE  •  Tap a building, then tap owned land"
 	build_hint.add_theme_font_size_override("font_size", 14)
 	root.add_child(build_hint)
@@ -143,9 +143,9 @@ func _build_context_panel(root: Control) -> void:
 	parcel_panel = PanelContainer.new()
 	parcel_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	parcel_panel.offset_left = 12
-	parcel_panel.offset_top = -568
-	parcel_panel.offset_right = -12
-	parcel_panel.offset_bottom = -462
+	parcel_panel.offset_top = -154
+	parcel_panel.offset_right = -450
+	parcel_panel.offset_bottom = -82
 	root.add_child(parcel_panel)
 
 	var parcel_row := HBoxContainer.new()
@@ -176,9 +176,9 @@ func _build_context_panel(root: Control) -> void:
 	build_action_panel = PanelContainer.new()
 	build_action_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	build_action_panel.offset_left = 12
-	build_action_panel.offset_top = -568
-	build_action_panel.offset_right = -12
-	build_action_panel.offset_bottom = -462
+	build_action_panel.offset_top = -154
+	build_action_panel.offset_right = -450
+	build_action_panel.offset_bottom = -82
 	build_action_panel.visible = false
 	root.add_child(build_action_panel)
 
@@ -222,11 +222,11 @@ func _build_context_panel(root: Control) -> void:
 
 func _build_catalog_panel(root: Control) -> void:
 	var catalog_panel := PanelContainer.new()
-	catalog_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	catalog_panel.offset_left = 8
-	catalog_panel.offset_top = -450
+	catalog_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	catalog_panel.offset_left = -438
+	catalog_panel.offset_top = 158
 	catalog_panel.offset_right = -8
-	catalog_panel.offset_bottom = -116
+	catalog_panel.offset_bottom = -82
 	root.add_child(catalog_panel)
 
 	var catalog_wrapper := VBoxContainer.new()
@@ -241,7 +241,7 @@ func _build_catalog_panel(root: Control) -> void:
 
 	var grid := GridContainer.new()
 	grid.name = "BuildingGrid"
-	grid.columns = 4
+	grid.columns = 2
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 5)
 	grid.add_theme_constant_override("v_separation", 5)
@@ -252,7 +252,7 @@ func _build_bottom_navigation(root: Control) -> void:
 	var bottom_nav := PanelContainer.new()
 	bottom_nav.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_nav.offset_left = 8
-	bottom_nav.offset_top = -104
+	bottom_nav.offset_top = -72
 	bottom_nav.offset_right = -8
 	bottom_nav.offset_bottom = -8
 	root.add_child(bottom_nav)
@@ -265,7 +265,7 @@ func _build_bottom_navigation(root: Control) -> void:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0, 80)
+		button.custom_minimum_size = Vector2(0, 54)
 		button.add_theme_font_size_override("font_size", 15)
 		if item.begins_with("🔨"):
 			button.disabled = true
@@ -284,13 +284,13 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(155, 88)
+		button.custom_minimum_size = Vector2(195, 70)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 12)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
-		button.icon_max_width = 42
+		button.icon_max_width = 36
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		button.tooltip_text = String(definition.get("description", ""))
 		var icon := _catalog_icon_for(definition)

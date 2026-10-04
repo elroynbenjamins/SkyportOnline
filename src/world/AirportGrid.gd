@@ -2,6 +2,8 @@ class_name AirportGrid
 extends Node2D
 
 signal parcel_selected(parcel_id: String, data: Dictionary)
+signal build_preview_changed(data: Dictionary)
+signal building_placed(data: Dictionary)
 
 const TILE_WIDTH := 64.0
 const TILE_HEIGHT := 32.0
@@ -16,20 +18,29 @@ const LOCKED_B := Color("334640")
 const GRID_LINE := Color("8fbc86", 0.32)
 const LOCKED_GRID_LINE := Color("84958d", 0.22)
 const SELECTED_LINE := Color("ffd166")
-const RUNWAY := Color("323a40")
-const RUNWAY_EDGE := Color("e7e9e8")
-const APRON := Color("747f85")
-const TERMINAL := Color("bdc4c6")
-const FUEL := Color("c59c45")
+const PREVIEW_VALID := Color("68d391", 0.62)
+const PREVIEW_INVALID := Color("ef6461", 0.68)
 
 var parcels: Dictionary = {}
 var selected_id := ""
 var parcel_labels: Dictionary = {}
 
+var placed_buildings: Array[Dictionary] = []
+var occupied_cells: Dictionary = {}
+var next_building_uid := 1
+var building_labels: Array[Label] = []
+
+var preview_building_id := ""
+var preview_origin := Vector2i(-1, -1)
+var preview_rotation := 0
+var preview_status: Dictionary = {}
+
 
 func _ready() -> void:
 	_initialize_parcels()
+	_initialize_starter_airport()
 	_create_parcel_labels()
+	_refresh_building_labels()
 	queue_redraw()
 
 
@@ -43,6 +54,16 @@ func _initialize_parcels() -> void:
 	_add_parcel("south_west", 0, 2, 25, 800000, false)
 	_add_parcel("south", 1, 2, 16, 250000, false)
 	_add_parcel("south_east", 2, 2, 20, 500000, false)
+
+
+func _initialize_starter_airport() -> void:
+	_place_building_internal("short_runway", Vector2i(8, 8), 0)
+	_place_building_internal("taxiway", Vector2i(11, 10), 0)
+	_place_building_internal("taxiway", Vector2i(12, 10), 0)
+	_place_building_internal("small_stand", Vector2i(11, 11), 0)
+	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
+	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
+	_rebuild_occupied_cells()
 
 
 func _add_parcel(id: String, px: int, py: int, level: int, cost: int, owned: bool) -> void:
@@ -66,7 +87,8 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
-	_draw_starter_airport()
+	_draw_buildings()
+	_draw_build_preview()
 	_draw_selected_outline()
 
 
@@ -89,37 +111,71 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
 
 
-func _draw_starter_airport() -> void:
-	# Temporary code-drawn airport markers. These are deliberately simple and
-	# will be replaced with the proper Skyport pixel-art building pack.
-	var home := parcels["home"]
-	if not home["owned"]:
+func _draw_buildings() -> void:
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty():
+			continue
+
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var origin: Vector2i = building["origin"]
+		var color: Color = definition["color"]
+
+		for y in range(footprint.y):
+			for x in range(footprint.x):
+				_draw_tile_overlay(origin + Vector2i(x, y), color, Color("eef2f1", 0.30), 1.0)
+
+		_draw_building_detail(building, definition, footprint)
+
+
+func _draw_building_detail(building: Dictionary, definition: Dictionary, footprint: Vector2i) -> void:
+	var origin: Vector2i = building["origin"]
+	var id := String(definition["id"])
+
+	if id.contains("runway"):
+		var start := tile_to_world(Vector2(origin.x, origin.y) + Vector2(0.1, float(footprint.y - 1) * 0.5))
+		var finish := tile_to_world(Vector2(origin.x + footprint.x - 1, origin.y) + Vector2(-0.1, float(footprint.y - 1) * 0.5))
+		if footprint.y > footprint.x:
+			start = tile_to_world(Vector2(origin.x, origin.y) + Vector2(float(footprint.x - 1) * 0.5, 0.1))
+			finish = tile_to_world(Vector2(origin.x, origin.y + footprint.y - 1) + Vector2(float(footprint.x - 1) * 0.5, -0.1))
+		draw_dashed_line(start, finish, Color("f4f2df"), 2.0, 8.0)
+
+	elif id == "taxiway":
+		var center := tile_to_world(Vector2(origin.x, origin.y))
+		draw_circle(center, 4.0, Color("f0c94c"))
+
+	elif id == "basic_fuel" or id == "rapid_regional_fuel":
+		var center := _footprint_center_world(origin, footprint)
+		draw_circle(center + Vector2(-10, 0), 8.0, Color("f4e4b0"))
+		draw_circle(center + Vector2(10, 0), 8.0, Color("f4e4b0"))
+
+	elif id == "small_stand":
+		var center := _footprint_center_world(origin, footprint)
+		draw_circle(center, 10.0, Color("dce5e7"), false, 3.0)
+
+
+func _draw_build_preview() -> void:
+	if preview_building_id.is_empty() or preview_origin.x < 0 or preview_origin.y < 0:
 		return
 
-	for x in range(8, 16):
-		for y in range(10, 12):
-			_draw_tile_overlay(x, y, RUNWAY)
+	var definition := BuildingCatalog.get_definition(preview_building_id)
+	if definition.is_empty():
+		return
 
-	var runway_start := tile_to_world(Vector2(8, 10.5))
-	var runway_end := tile_to_world(Vector2(15, 10.5))
-	draw_line(runway_start, runway_end, RUNWAY_EDGE, 3.0)
+	var footprint := _footprint_for(definition, preview_rotation)
+	var valid: bool = bool(preview_status.get("valid", false))
+	var fill := PREVIEW_VALID if valid else PREVIEW_INVALID
 
-	for x in range(9, 12):
-		for y in range(13, 15):
-			_draw_tile_overlay(x, y, APRON)
-
-	for x in range(9, 11):
-		_draw_tile_overlay(x, 15, TERMINAL)
-
-	_draw_tile_overlay(13, 14, FUEL)
-	_draw_tile_overlay(14, 14, FUEL)
+	for y in range(footprint.y):
+		for x in range(footprint.x):
+			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
 
 
-func _draw_tile_overlay(x: int, y: int, color: Color) -> void:
-	var center := tile_to_world(Vector2(x, y))
+func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:
+	var center := tile_to_world(Vector2(tile.x, tile.y))
 	var points := _tile_points(center)
 	draw_colored_polygon(points, color)
-	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), Color("d7e0de", 0.3), 1.0)
+	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line_color, width)
 
 
 func _draw_selected_outline() -> void:
@@ -161,14 +217,10 @@ func world_to_tile(world_position: Vector2) -> Vector2i:
 
 func select_world_position(world_position: Vector2) -> void:
 	var tile := world_to_tile(world_position)
-	if tile.x < 0 or tile.y < 0:
-		return
-	if tile.x >= PARCEL_COLUMNS * PARCEL_SIZE or tile.y >= PARCEL_ROWS * PARCEL_SIZE:
+	if not _tile_in_world(tile):
 		return
 
-	var px := tile.x / PARCEL_SIZE
-	var py := tile.y / PARCEL_SIZE
-	var parcel := _parcel_at(px, py)
+	var parcel := _parcel_for_tile(tile)
 	if not parcel.is_empty():
 		select_parcel(String(parcel["id"]))
 
@@ -179,6 +231,11 @@ func select_parcel(parcel_id: String) -> void:
 	selected_id = parcel_id
 	queue_redraw()
 	parcel_selected.emit(parcel_id, parcels[parcel_id].duplicate(true))
+
+
+func clear_parcel_selection() -> void:
+	selected_id = ""
+	queue_redraw()
 
 
 func get_selected_parcel() -> Dictionary:
@@ -199,11 +256,175 @@ func purchase_selected() -> void:
 	parcel_selected.emit(selected_id, parcels[selected_id].duplicate(true))
 
 
+func set_build_preview(building_id: String, world_position: Vector2, rotation: int) -> Dictionary:
+	preview_building_id = building_id
+	preview_origin = world_to_tile(world_position)
+	preview_rotation = rotation % 2
+	preview_status = _get_placement_status(building_id, preview_origin, preview_rotation)
+	queue_redraw()
+	build_preview_changed.emit(preview_status.duplicate(true))
+	return preview_status.duplicate(true)
+
+
+func refresh_build_preview(rotation: int) -> Dictionary:
+	if preview_building_id.is_empty():
+		return {}
+	preview_rotation = rotation % 2
+	preview_status = _get_placement_status(preview_building_id, preview_origin, preview_rotation)
+	queue_redraw()
+	build_preview_changed.emit(preview_status.duplicate(true))
+	return preview_status.duplicate(true)
+
+
+func get_build_preview_status() -> Dictionary:
+	return preview_status.duplicate(true)
+
+
+func has_build_preview() -> bool:
+	return not preview_building_id.is_empty() and preview_origin.x >= 0 and preview_origin.y >= 0
+
+
+func clear_build_preview() -> void:
+	preview_building_id = ""
+	preview_origin = Vector2i(-1, -1)
+	preview_rotation = 0
+	preview_status = {}
+	queue_redraw()
+
+
+func confirm_build_preview() -> Dictionary:
+	if not bool(preview_status.get("valid", false)):
+		return {}
+
+	var placed := _place_building_internal(preview_building_id, preview_origin, preview_rotation)
+	_rebuild_occupied_cells()
+	_refresh_building_labels()
+	clear_build_preview()
+	queue_redraw()
+	building_placed.emit(placed.duplicate(true))
+	return placed
+
+
+func _get_placement_status(building_id: String, origin: Vector2i, rotation: int) -> Dictionary:
+	var definition := BuildingCatalog.get_definition(building_id)
+	if definition.is_empty():
+		return {
+			"valid": false,
+			"reason": "Unknown building."
+		}
+
+	var footprint := _footprint_for(definition, rotation)
+	var cells := _cells_for(origin, footprint)
+
+	for cell in cells:
+		if not _tile_in_world(cell):
+			return {
+				"valid": false,
+				"reason": "Outside the airport map.",
+				"origin": origin,
+				"footprint": footprint
+			}
+		if not _is_tile_owned(cell):
+			return {
+				"valid": false,
+				"reason": "This land parcel is still locked.",
+				"origin": origin,
+				"footprint": footprint
+			}
+		if occupied_cells.has(_cell_key(cell)):
+			return {
+				"valid": false,
+				"reason": "Another airport building already occupies this space.",
+				"origin": origin,
+				"footprint": footprint
+			}
+
+	return {
+		"valid": true,
+		"reason": "Ready to build.",
+		"origin": origin,
+		"footprint": footprint
+	}
+
+
+func _footprint_for(definition: Dictionary, rotation: int) -> Vector2i:
+	var base: Vector2i = definition["footprint"]
+	if bool(definition.get("rotatable", false)) and rotation % 2 == 1:
+		return Vector2i(base.y, base.x)
+	return base
+
+
+func _cells_for(origin: Vector2i, footprint: Vector2i) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for y in range(footprint.y):
+		for x in range(footprint.x):
+			cells.append(origin + Vector2i(x, y))
+	return cells
+
+
+func _place_building_internal(definition_id: String, origin: Vector2i, rotation: int) -> Dictionary:
+	var placed := {
+		"uid": next_building_uid,
+		"definition_id": definition_id,
+		"origin": origin,
+		"rotation": rotation % 2
+	}
+	next_building_uid += 1
+	placed_buildings.append(placed)
+	return placed
+
+
+func _rebuild_occupied_cells() -> void:
+	occupied_cells.clear()
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty():
+			continue
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var origin: Vector2i = building["origin"]
+		for cell in _cells_for(origin, footprint):
+			occupied_cells[_cell_key(cell)] = int(building["uid"])
+
+
+func _cell_key(cell: Vector2i) -> String:
+	return "%d:%d" % [cell.x, cell.y]
+
+
+func _tile_in_world(tile: Vector2i) -> bool:
+	return (
+		tile.x >= 0
+		and tile.y >= 0
+		and tile.x < PARCEL_COLUMNS * PARCEL_SIZE
+		and tile.y < PARCEL_ROWS * PARCEL_SIZE
+	)
+
+
+func _is_tile_owned(tile: Vector2i) -> bool:
+	var parcel := _parcel_for_tile(tile)
+	return not parcel.is_empty() and bool(parcel["owned"])
+
+
+func _parcel_for_tile(tile: Vector2i) -> Dictionary:
+	if not _tile_in_world(tile):
+		return {}
+	var px := floori(float(tile.x) / float(PARCEL_SIZE))
+	var py := floori(float(tile.y) / float(PARCEL_SIZE))
+	return _parcel_at(px, py)
+
+
 func _parcel_at(px: int, py: int) -> Dictionary:
 	for parcel in parcels.values():
 		if int(parcel["px"]) == px and int(parcel["py"]) == py:
 			return parcel
 	return {}
+
+
+func _footprint_center_world(origin: Vector2i, footprint: Vector2i) -> Vector2:
+	var center_tile := Vector2(
+		float(origin.x) + float(footprint.x - 1) * 0.5,
+		float(origin.y) + float(footprint.y - 1) * 0.5
+	)
+	return tile_to_world(center_tile)
 
 
 func _create_parcel_labels() -> void:
@@ -212,6 +433,7 @@ func _create_parcel_labels() -> void:
 		var label := Label.new()
 		label.name = "Parcel_%s" % id
 		label.size = Vector2(190, 70)
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.add_theme_font_size_override("font_size", 18)
@@ -242,6 +464,59 @@ func _update_parcel_label(id: String) -> void:
 			label.text = "YOUR AIRPORT"
 	else:
 		label.text = "🔒  Lv %d\n%s coins" % [int(parcel["level"]), _format_number(int(parcel["cost"]))]
+
+
+func _refresh_building_labels() -> void:
+	for label in building_labels:
+		if is_instance_valid(label):
+			label.queue_free()
+	building_labels.clear()
+
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty() or String(definition["id"]) == "taxiway":
+			continue
+
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var label := Label.new()
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.size = Vector2(150, 34)
+		label.position = _footprint_center_world(building["origin"], footprint) - Vector2(75, 42)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 13)
+		label.add_theme_color_override("font_color", Color("f8faf9"))
+		label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 2)
+		label.text = _building_label_text(definition)
+		add_child(label)
+		building_labels.append(label)
+
+
+func _building_label_text(definition: Dictionary) -> String:
+	var id := String(definition["id"])
+	if id.contains("runway"):
+		return "RUNWAY  •  " + _size_text(definition)
+	if id.contains("fuel"):
+		return "FUEL  •  " + _size_text(definition)
+	if id.contains("stand"):
+		return "STAND  •  " + _size_text(definition)
+	if id.contains("terminal"):
+		return "TERMINAL"
+	if id.contains("hangar"):
+		return "HANGAR  •  " + _size_text(definition)
+	return String(definition["name"]).to_upper()
+
+
+func _size_text(definition: Dictionary) -> String:
+	var sizes: PackedStringArray = definition["sizes"]
+	var result := ""
+	for index in range(sizes.size()):
+		if index > 0:
+			result += "/"
+		result += sizes[index]
+	return result
 
 
 func _format_number(value: int) -> String:

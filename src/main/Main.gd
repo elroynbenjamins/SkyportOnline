@@ -335,13 +335,17 @@ func _on_departure_route_requested(
 	if aircraft == null or not is_instance_valid(aircraft):
 		return
 
-	var options := airport_grid.get_departure_route_options_for_stand(
+	var options: Array[Dictionary] = (
+		airport_grid.get_departure_route_options_for_stand(
 		aircraft.stand_uid,
-		aircraft.aircraft_size
+			aircraft.aircraft_size
+		)
 	)
-	var selected := runway_dispatcher.select_best_runway_option(
-		options,
-		"departure"
+	var selected: Dictionary = (
+		runway_dispatcher.select_best_runway_option(
+			options,
+			"departure"
+		)
 	)
 	if selected.is_empty():
 		runway_dispatcher.release_departure_assignment(
@@ -603,9 +607,11 @@ func _assign_arrival_if_possible(
 	if candidates.is_empty():
 		return false
 
-	var selected := runway_dispatcher.select_best_runway_option(
-		candidates,
-		"arrival"
+	var selected: Dictionary = (
+		runway_dispatcher.select_best_runway_option(
+			candidates,
+			"arrival"
+		)
 	)
 	if selected.is_empty():
 		return false

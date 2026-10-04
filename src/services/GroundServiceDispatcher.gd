@@ -15,6 +15,7 @@ signal aircraft_serviced(
 var airport_grid: AirportGrid
 var pending_requests: Array[Dictionary] = []
 var station_active: Dictionary = {}
+var stand_approach_active: Dictionary = {}
 var turnaround_jobs: Dictionary = {}
 var active_jobs := 0
 
@@ -549,6 +550,15 @@ func _dispatch_service(
 	var service_key := String(
 		request.get("service_key", service_type)
 	)
+	var stand_uid := aircraft.stand_uid
+	var approach_count := int(
+		stand_approach_active.get(stand_uid, 0)
+	)
+	var launch_delay := ApronTrafficRules.stagger_delay(
+		approach_count
+	)
+	stand_approach_active[stand_uid] = approach_count + 1
+
 	route = _route_to_aircraft_service_anchor(
 		route,
 		aircraft,
@@ -563,6 +573,11 @@ func _dispatch_service(
 	)
 	var legacy_fuel_only := bool(
 		request.get("legacy_fuel_only", false)
+	)
+
+	route = ApronTrafficRules.offset_route(
+		route,
+		service_type
 	)
 
 	if not legacy_fuel_only and job_id >= 0:
@@ -583,7 +598,8 @@ func _dispatch_service(
 				service_type,
 				duration,
 				job_id,
-				service_key
+				service_key,
+				stand_uid
 			)
 		)
 		truck.service_completed.connect(
@@ -601,6 +617,7 @@ func _dispatch_service(
 				service_type
 			)
 		)
+		truck.set_launch_delay(launch_delay)
 		truck.set_service_pose_rotation(
 			docking_rotation
 		)
@@ -618,7 +635,8 @@ func _dispatch_service(
 				service_type,
 				duration,
 				job_id,
-				service_key
+				service_key,
+				stand_uid
 			)
 		)
 		vehicle.service_completed.connect(
@@ -636,6 +654,7 @@ func _dispatch_service(
 				service_type
 			)
 		)
+		vehicle.set_launch_delay(launch_delay)
 		vehicle.set_service_pose_rotation(
 			docking_rotation
 		)
@@ -673,13 +692,18 @@ func _route_to_aircraft_service_anchor(
 	if base_route.size() < 2:
 		return base_route
 
-	var result := base_route.duplicate()
-	result[result.size() - 1] = (
-		aircraft.get_service_docking_position(
-			service_type,
-			service_key
-		)
+	var docking := aircraft.get_service_docking_position(
+		service_type,
+		service_key
 	)
+	var from_aircraft := docking - aircraft.global_position
+	var staging := docking
+	if from_aircraft.length() > 0.01:
+		staging = docking + from_aircraft.normalized() * 18.0
+
+	var result := base_route.duplicate()
+	result[result.size() - 1] = staging
+	result.append(docking)
 	return result
 
 
@@ -688,8 +712,10 @@ func _on_service_started(
 	service_type: String,
 	duration: float,
 	job_id: int,
-	service_key: String
+	service_key: String,
+	stand_uid: int
 ) -> void:
+	_release_stand_approach(stand_uid)
 	if job_id >= 0:
 		_set_service_status(
 			job_id,
@@ -764,6 +790,23 @@ func _on_vehicle_returned(
 	)
 	active_jobs = maxi(active_jobs - 1, 0)
 	_try_dispatch()
+
+
+func get_stand_approach_count(stand_uid: int) -> int:
+	return int(stand_approach_active.get(stand_uid, 0))
+
+
+func _release_stand_approach(stand_uid: int) -> void:
+	if stand_uid < 0:
+		return
+	var remaining := maxi(
+		int(stand_approach_active.get(stand_uid, 1)) - 1,
+		0
+	)
+	if remaining <= 0:
+		stand_approach_active.erase(stand_uid)
+	else:
+		stand_approach_active[stand_uid] = remaining
 
 
 func _set_service_status(

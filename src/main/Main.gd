@@ -345,7 +345,7 @@ func _on_demo_aircraft_state_changed(
 			)
 		"PUSHBACK_PREP":
 			hud.set_operation_status(
-				"%s completing pushback checks" % label
+				"%s awaiting / completing tug pushback" % label
 			)
 		"READY_FOR_DESTINATION":
 			hud.set_operation_status(

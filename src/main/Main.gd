@@ -19,6 +19,7 @@ var world_map: WorldMapScreen
 var passenger_economy: PassengerEconomy
 var passenger_waiting_departures: Array[Dictionary] = []
 var demo_friend_gift_index := 1
+var selected_passenger_building_uid := -1
 
 
 func _ready() -> void:
@@ -34,8 +35,14 @@ func _ready() -> void:
 	hud.collect_passengers_requested.connect(_on_collect_passengers_requested)
 	hud.rewarded_passengers_requested.connect(_on_rewarded_passengers_requested)
 	hud.friend_passengers_requested.connect(_on_friend_passengers_requested)
+	hud.passenger_building_upgrade_requested.connect(
+		_on_passenger_building_upgrade_requested
+	)
 	hud.navigation_requested.connect(_on_navigation_requested)
 	airport_grid.building_placed.connect(_on_building_placed_for_passengers)
+	airport_grid.placed_building_selected.connect(
+		_on_placed_passenger_building_selected
+	)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
 	hud.set_player_data(player_level, coins, gems)
@@ -438,6 +445,8 @@ func _award_country_resources_for_completed_flight(
 
 func _on_passenger_economy_changed(snapshot: Dictionary) -> void:
 	hud.set_passenger_status(snapshot)
+	if selected_passenger_building_uid >= 0:
+		_refresh_selected_passenger_building()
 
 
 func _on_collect_passengers_requested() -> void:
@@ -505,6 +514,61 @@ func _on_building_placed_for_passengers(building: Dictionary) -> void:
 		int(building.get("uid", -1)),
 		String(building.get("definition_id", ""))
 	)
+
+
+func _on_placed_passenger_building_selected(building: Dictionary) -> void:
+	if passenger_economy == null:
+		return
+
+	var uid := int(building.get("uid", -1))
+	var state := passenger_economy.get_building_state(uid)
+	if state.is_empty():
+		return
+
+	selected_passenger_building_uid = uid
+	_refresh_selected_passenger_building()
+
+
+func _refresh_selected_passenger_building() -> void:
+	if passenger_economy == null or selected_passenger_building_uid < 0:
+		return
+
+	var building := airport_grid.get_building_by_uid(
+		selected_passenger_building_uid
+	)
+	if building.is_empty():
+		selected_passenger_building_uid = -1
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	var state := passenger_economy.get_building_state(
+		selected_passenger_building_uid
+	)
+	if definition.is_empty() or state.is_empty():
+		selected_passenger_building_uid = -1
+		return
+
+	hud.show_passenger_building(building, definition, state)
+
+
+func _on_passenger_building_upgrade_requested(uid: int) -> void:
+	if passenger_economy == null:
+		return
+
+	selected_passenger_building_uid = uid
+	if passenger_economy.try_upgrade_building(uid):
+		hud.set_operation_status(
+			"Passenger building upgraded using country resources",
+			"success"
+		)
+	else:
+		hud.set_operation_status(
+			"Missing country resources for this upgrade",
+			"warning"
+		)
+	_refresh_selected_passenger_building()
 
 
 func _on_navigation_requested(tab: String) -> void:
@@ -582,6 +646,7 @@ func _on_network_status_changed(status: Dictionary) -> void:
 
 
 func _on_parcel_selected(_parcel_id: String, parcel_data: Dictionary) -> void:
+	selected_passenger_building_uid = -1
 	if selected_building_id.is_empty():
 		hud.show_parcel(parcel_data, player_level, coins)
 
@@ -608,6 +673,7 @@ func _on_building_selected(building_id: String) -> void:
 	if definition.is_empty():
 		return
 
+	selected_passenger_building_uid = -1
 	selected_building_id = building_id
 	selected_building_rotation = 0
 	airport_grid.clear_parcel_selection()

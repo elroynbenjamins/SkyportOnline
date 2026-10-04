@@ -882,6 +882,82 @@ func _on_navigation_requested(tab: String) -> void:
 			)
 
 
+func _refresh_aircraft_event_visuals(
+	snapshot: Dictionary
+) -> void:
+	for aircraft in aircraft_demos:
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+		_apply_event_visual_to_aircraft(
+			aircraft,
+			snapshot
+		)
+
+
+func _apply_event_visual_to_aircraft(
+	aircraft: AircraftPrototype,
+	snapshot: Dictionary
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	if not bool(snapshot.get("active", false)):
+		aircraft.set_event_visual(
+			false,
+			"",
+			"",
+			false
+		)
+		return
+
+	var theme := String(snapshot.get("theme", ""))
+	var featured_destinations: Array = snapshot.get(
+		"featured_destinations",
+		[]
+	)
+	var destination_id := String(
+		aircraft.get_flight_plan().get(
+			"destination_id",
+			""
+		)
+	)
+	var featured := featured_destinations.has(
+		destination_id
+	)
+	var route_currency := maxi(
+		int(snapshot.get("featured_route_currency", 0)),
+		0
+	)
+	var marker := ""
+	if featured and route_currency > 0:
+		marker = "+%d" % route_currency
+
+	var owned_cosmetics: Dictionary = current_profile.get(
+		"owned_cosmetics",
+		{}
+	)
+	var livery_id := ""
+	if not theme.is_empty():
+		livery_id = "event_%s_pico_livery" % theme
+	var livery_enabled := (
+		aircraft.aircraft_type_id == "pico_p8"
+		and not livery_id.is_empty()
+		and bool(
+			owned_cosmetics.get(
+				livery_id,
+				false
+			)
+		)
+	)
+
+	aircraft.set_event_visual(
+		featured,
+		theme,
+		marker,
+		livery_enabled
+	)
+
+
 func _on_event_changed(snapshot: Dictionary) -> void:
 	current_event_snapshot = snapshot.duplicate(true)
 

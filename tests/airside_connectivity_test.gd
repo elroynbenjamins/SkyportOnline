@@ -111,7 +111,27 @@ func _run() -> void:
 		_fail("Rapid small fuel station should use x1.6 service speed.")
 		return
 
-	print("Airside connectivity and service selection test passed.")
+	var rapid_dispatcher := GroundServiceDispatcher.new()
+	root.add_child(rapid_dispatcher)
+	rapid_dispatcher.configure(grid)
+
+	var rapid_plane_a := AircraftPrototype.new()
+	var rapid_plane_b := AircraftPrototype.new()
+	root.add_child(rapid_plane_a)
+	root.add_child(rapid_plane_b)
+	rapid_plane_a.set_departure_route(starter_routes[0]["route"], "S")
+	rapid_plane_b.set_departure_route(starter_routes[1]["route"], "S")
+	rapid_dispatcher.request_fuel(rapid_plane_a, "Rapid A")
+	rapid_dispatcher.request_fuel(rapid_plane_b, "Rapid B")
+
+	if rapid_dispatcher.get_active_count() != 2:
+		_fail("Two-truck rapid fuel station should service two aircraft in parallel.")
+		return
+	if rapid_dispatcher.get_waiting_count() != 0:
+		_fail("No aircraft should queue when rapid fuel has two free trucks.")
+		return
+
+	print("Airside connectivity, fuel speed, and service capacity tests passed.")
 	quit(0)
 
 

@@ -120,6 +120,21 @@ func _run() -> void:
 		_fail("ATC queue should show the next departure.")
 		return
 
+	var hud_script = load("res://src/ui/HUD.gd")
+	var hud = hud_script.new()
+	root.add_child(hud)
+	await process_frame
+	hud.set_atc_state(snapshot)
+	if not hud.atc_status_label.text.contains("RUNWAY CONTROL"):
+		_fail("HUD should expose the runway control panel.")
+		return
+	if not hud.atc_status_label.text.contains("DEP DEP-B"):
+		_fail("HUD runway control panel should show next aircraft.")
+		return
+	if not hud.atc_status_label.text.contains("SEP 3s"):
+		_fail("HUD runway control panel should show separation countdown.")
+		return
+
 	dispatcher._process(2.0)
 	if dispatcher.get_active_count() != 0:
 		_fail("Second departure should not clear before full spacing.")

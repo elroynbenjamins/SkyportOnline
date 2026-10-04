@@ -402,7 +402,8 @@ func set_world_data(
 	fleet_entries: Array[Dictionary],
 	route_entries: Array[Dictionary],
 	selected_fleet_uid: int,
-	resource_inventory: Dictionary
+	resource_inventory: Dictionary,
+	origin_country_code: String = "NL"
 ) -> void:
 	if world_map_panel == null:
 		return
@@ -410,7 +411,8 @@ func set_world_data(
 		fleet_entries,
 		route_entries,
 		selected_fleet_uid,
-		resource_inventory
+		resource_inventory,
+		origin_country_code
 	)
 
 

@@ -569,7 +569,7 @@ func _on_building_selected_world(building: Dictionary) -> void:
 
 
 func _on_passenger_upgrade_requested(building_uid: int) -> void:
-	var building := airport_grid.get_building(building_uid)
+	var building: Dictionary = airport_grid.get_building(building_uid)
 	if building.is_empty():
 		return
 
@@ -595,7 +595,7 @@ func _on_passenger_upgrade_requested(building_uid: int) -> void:
 		"resource_cost",
 		{}
 	).duplicate(true)
-	var building_key := airport_grid.get_building_key(building)
+	var building_key: String = airport_grid.get_building_key(building)
 	var updated_profile := ProfileStore.apply_building_upgrade(
 		building_key,
 		int(next.get("level", current_level + 1)),
@@ -623,7 +623,7 @@ func _on_passenger_upgrade_requested(building_uid: int) -> void:
 	passenger_economy.refresh_building_stats()
 	hud.set_player_data(player_level, coins, gems)
 
-	var refreshed := airport_grid.get_building(building_uid)
+	var refreshed: Dictionary = airport_grid.get_building(building_uid)
 	passenger_upgrade_panel.open_building(
 		refreshed,
 		resource_inventory,

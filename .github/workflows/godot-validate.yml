@@ -19,3 +19,6 @@ jobs:
 
       - name: Start main scene smoke test
         run: godot --headless --path . --quit-after 3 --verbose
+
+      - name: Test airside connectivity
+        run: godot --headless --path . --script res://tests/airside_connectivity_test.gd

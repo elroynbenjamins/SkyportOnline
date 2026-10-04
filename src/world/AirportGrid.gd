@@ -937,7 +937,7 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 		return "STAND  •  " + _size_text(definition) + "  ✓"
 	if id.contains("terminal"):
 		return "TERMINAL"
-	if id == "travel_office":
+	if bool(definition.get("passenger_generator", false)):
 		return "PASSENGERS  •  LV %d" % int(
 			building.get("upgrade_level", 1)
 		)

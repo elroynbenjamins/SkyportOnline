@@ -27,6 +27,44 @@ normally remain 21 so all events share the same structure.
 
 The included **Sky Lantern Festival** is a disabled example/template.
 
+The current live configuration also includes **Autumn Airbridge**, which is an
+enabled event using the same framework but slightly different quest tuning.
+
+## Operator safety
+
+The runtime validates the entire event catalog before selecting an active event.
+If validation fails, Events stay disabled and a warning is shown rather than
+silently choosing a broken configuration.
+
+`EventCatalog.validate_catalog()` currently checks:
+
+- Unique event IDs.
+- Unique quest, shop-item and Alliance milestone IDs.
+- Week 1 / 2 / 3 content exists.
+- Quest weeks and targets are valid.
+- Event passenger-shop total does not exceed **150 passengers**.
+- Alliance milestone targets increase.
+- Enabled 21-day event windows do not overlap.
+
+Back-to-back events are valid when the next event starts exactly when the
+previous 21-day window ends.
+
+Operator summary helpers:
+
+- `total_personal_currency(event)`
+- `total_shop_passengers(event)`
+- `total_alliance_currency(event)`
+
+The disabled Sky Lantern template remains the baseline:
+
+**600 personal currency • 150 event-shop passengers • 300 Alliance currency**
+
+The live Autumn Airbridge intentionally uses featured-destination quests and
+currently totals:
+
+**620 personal quest currency • 150 event-shop passengers • 300 Alliance currency**
+
+
 ## Fixed event structure
 
 Every event follows the same loop:
@@ -212,3 +250,5 @@ Each event state contains:
 - Cosmetic persistence.
 - Alliance milestone rewards.
 - The sample event shipping disabled by default.
+- Live event catalog validation and overlap detection.
+- Standard-template and Autumn Airbridge economy totals.

@@ -506,7 +506,7 @@ func _operations_analytics_snapshot() -> Dictionary:
 			passenger_economy.get_production_per_minute()
 		)
 
-	var airside := airport_grid.get_airside_status()
+	var airside: Dictionary = airport_grid.get_airside_status()
 	var stand_snapshot := {
 		"total": int(
 			airside.get("stands_total", 0)

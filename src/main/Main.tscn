@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/main/Main.gd" id="1_main"]
+[ext_resource type="Script" path="res://src/world/AirportGrid.gd" id="2_grid"]
+[ext_resource type="Script" path="res://src/world/CameraController.gd" id="3_camera"]
+[ext_resource type="Script" path="res://src/ui/HUD.gd" id="4_hud"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="AirportGrid" type="Node2D" parent="."]
+script = ExtResource("2_grid")
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(0, 384)
+zoom = Vector2(0.68, 0.68)
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+limit_left = -1200
+limit_top = -500
+limit_right = 1200
+limit_bottom = 1450
+script = ExtResource("3_camera")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("4_hud")

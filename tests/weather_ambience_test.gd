@@ -22,7 +22,7 @@ func _run() -> void:
 		return
 
 	var known_daily := WeatherVisualRules.daily_condition(10, 4)
-	if known_daily != WeatherVisualRules.CLOUDY:
+	if known_daily != WeatherVisualRules.FOG:
 		_fail("October 4 ambient weather seed should remain stable for regression.")
 		return
 

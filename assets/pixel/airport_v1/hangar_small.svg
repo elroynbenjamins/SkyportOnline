@@ -1,14 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="192" viewBox="0 0 256 192" shape-rendering="crispEdges">
-<polygon points="28,132 115,82 229,118 141,170" fill="#111a1e" opacity=".55"/>
-<polygon points="36,119 112,76 218,109 142,153" fill="#666f73"/>
-<polygon points="52,95 111,62 198,88 138,123" fill="#aeb7ba"/>
-<polygon points="52,95 138,123 138,153 52,125" fill="#899397"/>
-<polygon points="138,123 198,88 198,118 138,153" fill="#717b80"/>
-<rect x="80" y="88" width="49" height="48" fill="#202b31"/>
-<polygon points="80,88 105,73 130,81 130,93 105,85 80,99" fill="#c8ced0"/>
-<polygon points="68,87 108,64 167,82 128,105" fill="#d5dade"/>
-<polygon points="76,82 109,66 157,81 126,99" fill="#c2c9cc"/>
-<rect x="86" y="96" width="8" height="36" fill="#39474d"/><rect x="100" y="91" width="8" height="45" fill="#334148"/><rect x="114" y="91" width="8" height="45" fill="#334148"/>
-<polygon points="105,118 125,106 139,111 121,122" fill="#eff1ef"/><polygon points="119,120 145,111 149,115 127,125" fill="#dfe3e0"/><polygon points="119,119 101,107 105,104 126,115" fill="#dfe3e0"/><rect x="118" y="123" width="7" height="8" fill="#325f72"/>
-<rect x="171" y="96" width="12" height="10" fill="#d4a83a"/><rect x="174" y="92" width="7" height="5" fill="#f0c34a"/><rect x="173" y="106" width="3" height="3" fill="#1c2529"/><rect x="180" y="106" width="3" height="3" fill="#1c2529"/>
+<polygon points="28,135 116,83 230,119 142,172" fill="#111a1e" opacity=".55"/>
+<polygon points="36,120 113,76 219,109 142,154" fill="#687176"/>
+<polygon points="50,97 112,61 201,88 138,125" fill="#c5ccd0"/>
+<polygon points="50,97 138,125 138,155 50,126" fill="#8a969b"/>
+<polygon points="138,125 201,88 201,118 138,155" fill="#707c82"/>
+<path d="M65 96 Q112 52 159 82 L159 135 L65 118 Z" fill="#b9c1c6"/>
+<path d="M74 96 Q112 62 150 83 L150 128 L74 115 Z" fill="#858f94"/>
+<path d="M82 96 Q112 70 142 85 L142 121 L82 111 Z" fill="#6d777c"/>
+<path d="M89 96 L89 112 M101 88 L101 115 M113 82 L113 117 M125 82 L125 119 M137 87 L137 120" stroke="#aeb6b8" stroke-width="3"/>
+<path d="M78 88 Q112 58 152 81" fill="none" stroke="#e3e8e7" stroke-width="5"/>
+<polygon points="165,101 183,91 194,95 176,106" fill="#d7a73a"/>
+<rect x="170" y="99" width="11" height="9" fill="#bd8420"/>
+<rect x="172" y="108" width="4" height="4" fill="#1d272b"/>
+<rect x="180" y="107" width="4" height="4" fill="#1d272b"/>
+<rect x="59" y="120" width="4" height="8" fill="#e3bb42"/>
+<rect x="190" y="111" width="4" height="8" fill="#e3bb42"/>
 </svg>

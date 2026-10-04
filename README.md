@@ -2,188 +2,199 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 8B — Guest airport creation + country resource economy
+## Current milestone: Pass 9 — Passenger bottleneck + regional-resource upgrade sinks
 
-Skyport Online now has a complete local airport loop, a first World Map, aircraft-specific route timers, and the first destination economy.
+Skyport Online now connects the international country economy directly back into airport progression.
 
 ### Current foundation
 
-- Godot 4 mobile project using a landscape 1280×720 reference viewport.
-- Isometric airport grid with level-gated and coin-gated land expansion.
-- Landscape airport HUD and interactive Europe World Map.
-- Placeable airport buildings, taxiways, and service roads.
-- Airside connectivity validation.
-- Ground-service queues and fuel-station vehicle-capacity bottlenecks.
-- Shared runway arrival / departure queues.
-- Physical takeoff, landing, taxi-out, and taxi-in lifecycle.
-- Aircraft-specific range, speed, and flight timers.
-- Guest-first airport creation with persistent airport name, code, and home country.
-- Interactive curated world-map country selector.
-- Three country resources per launch country.
-- Fixed 40% independent resource rolls on successful flight returns.
-- Completed-flight coin, XP, and regional-resource rewards.
-- Persistent guest-profile country-resource inventory.
+- Godot 4 landscape project using a 1280×720 reference viewport.
+- Guest-first airport creation with airport name, code, home-country selection, and persistent profile.
+- Interactive country selection backed by the regional-resource catalog.
+- Isometric airport grid with land expansion.
+- Physical airport buildings, taxiways, service roads, stands, and runways.
+- Ground-service and runway queues.
+- Aircraft-specific flight timers and range.
+- Interactive Europe World Map.
+- Three independently rolled country resources per completed flight.
+- Persistent regional-resource inventory.
+- Passive passenger generation and passenger storage.
+- Passenger stock now gates aircraft departures.
+- Country resources now have their first real upgrade sink.
 
-## Aircraft lifecycle
+## Passenger bottleneck
 
-The physical loop is:
+Passenger aircraft now consume passengers before departure.
 
-**Parked → Fuel request → Fuel truck → Destination → Ready → Runway queue → Taxi out → Line up → Takeoff → Climb → En route → Inbound → Approach → Landing → Taxi in → Parked → Rewards**
+The aircraft flow is therefore:
 
-The flight is not rewarded when it is dispatched.
+**Fuel / service → destination ready → passenger boarding → runway request → departure**
 
-Coins, XP, and country resources are awarded only after the aircraft physically returns and reaches its stand.
+If the airport does not have enough passengers for that aircraft's seat requirement, the aircraft remains at its stand in:
 
-## Aircraft-specific flight timers
+**WAITING PASSENGERS**
 
-The fixed demo timer has been removed from the real flight path.
+Passenger generation continues in the background. As soon as enough passengers are available, the waiting aircraft automatically boards them and enters the runway queue.
 
-Flight duration comes from:
+The current prototype aircraft use their passenger capacity as the boarding requirement:
 
-**Destination distance ÷ aircraft cruise speed × gameplay compression × aircraft timer factor**
+- Aerolet 100 — 18 passengers.
+- Aerolet 120 — 24 passengers.
 
-Current tested prototype example for Amsterdam → London:
+This makes passenger production a real operational bottleneck rather than a cosmetic counter.
 
-- Aerolet 100 — about 11m 15s.
-- Aerolet 120 — about 8m 26s.
+The passenger balance is persisted in the guest profile.
 
-These aircraft names and balance values are prototype data. The final V1 plane catalog can replace them without rewriting the flight or reward systems.
+## Travel Office
 
-## Guest airport creation
+The first passenger-generation building is the **Travel Office**.
 
-First launch now opens the airport-establishment flow before normal gameplay.
+It is a distinct 2×2 physical building. Additional Travel Offices cost 6,500 coins and unlock at airport Lv2.
 
-The player starts as a **guest** and chooses:
+The starter airport currently includes one Travel Office.
 
-- Airport name.
-- Three-character airport code.
-- Home country from an interactive schematic world map.
+Internal upgrades improve production and storage only. The building keeps the same visual, matching the intended Skyport Online rule that internal numerical upgrades do not need to visually transform the building.
 
-The local profile stores a separate guest ID and airport ID. This is intentional: when online account linking is added, the authenticated account can attach to the same airport rather than replacing its progress.
+### Travel Office progression
 
-The current repository can validate the airport name format locally, but **global name uniqueness requires the future server/backend** and is not faked by the offline client.
+| Level | Passengers / min | Storage | Coin cost | Regional-resource cost |
+| --- | ---: | ---: | ---: | --- |
+| 1 | 1.5 | 40 | — | — |
+| 2 | 2.2 | 55 | 2,500 | 2 Belgium Chocolate + 1 UK Specialty Goods |
+| 3 | 3.2 | 75 | 6,000 | 2 France Cosmetics + 2 Germany Industrial Tools |
+| 4 | 4.5 | 100 | 12,000 | 3 Denmark Design Goods + 2 UK Specialty Goods |
+| 5 | 6.0 | 135 | 22,000 | 3 Germany Machinery + 3 France Luxury Goods + 2 Netherlands Horticulture |
 
-## Country resources
+The first upgrade deliberately uses resources from early World Map destinations so the system is reachable without late-game routes.
 
-The curated launch roster currently contains **23 countries** across Europe, North America, South America, Africa, the Middle East, Asia, and Oceania.
+Building upgrade levels are persisted in the guest profile.
 
-Every selectable country exposes exactly **3 regional resources**. Examples:
+## Regional-resource inventory
 
-- Netherlands — Flowers, Dairy, Horticulture.
-- Belgium — Chocolate, Specialty Chemicals, Precision Parts.
-- Germany — Machinery, Automotive Parts, Industrial Tools.
-- United Kingdom — Aerospace Parts, Financial Documents, Specialty Goods.
-- Brazil — Coffee, Biofuel, Regional Aircraft Parts.
-- Japan — Precision Electronics, Robotics Parts, Optical Instruments.
-- Australia — Iron Ore, Wool, Lithium Components.
+The bottom **MORE** button currently opens the first regional-resource inventory screen.
 
-The airport-creation screen shows all three resources before the home country is confirmed. The flight World Map also shows the three resources belonging to a destination country.
+It shows:
 
-## Resource drop chance
+- Current passengers.
+- Passenger storage.
+- Passenger production per minute.
+- Owned country resources grouped by country.
+- Current quantity of each owned material.
 
-The resource rule is deliberately simple and predictable:
+Flight-return drops are persisted to the profile and immediately become available for upgrades.
 
-**40% per resource, rolled independently.**
+## Passenger building interaction
 
-There are no aircraft-speed, flight-time, or aircraft-size modifiers to this chance.
+Passenger-generation buildings are directly selectable in the airport view.
 
-Every successful qualifying return rolls the destination country's three resources separately. Therefore one flight can return with **0, 1, 2, or all 3** materials.
+Tapping the Travel Office opens an upgrade panel showing:
 
-For three independent 40% rolls:
+- Current internal level.
+- Current passenger generation rate.
+- Current passenger storage.
+- Next-level generation/storage.
+- Coin requirement.
+- Every required regional resource.
+- Owned amount versus required amount.
+- Whether the upgrade can currently be purchased.
 
-- No resources — **21.6%**.
-- Exactly one — **43.2%**.
-- Exactly two — **28.8%**.
-- All three — **6.4%**.
-- Expected return — **1.2 resources per completed flight**.
+A successful upgrade atomically consumes the regional resources from the persistent profile, deducts the coin cost, applies the new building level, and immediately recalculates airport passenger production/storage.
 
-## Flight-return rewards
+## Country-resource economy
 
-After the aircraft lands and parks, the game now awards:
+Each configured country has exactly three regional resources.
 
-- Destination coins.
-- Destination XP.
-- Three independent country-resource rolls.
+Completed flights roll all three independently.
 
-A return summary appears with:
+Base chance:
 
-- Flight / destination.
-- Coins earned.
-- XP earned.
-- Final resource chance.
-- Each of the three resource successes / failures.
-- Updated owned count for resources that dropped.
+**40% per resource**
 
-Example flow:
+Adjusted by:
 
-**SO-001 returned from London**  
-**Coins +760 • XP +48**  
-**Country resource chance: 40.0% each**  
-**✓ Aerospace Parts +1**  
-**✕ Financial Documents**  
-**✓ Specialty Goods +1**
+- Aircraft-specific modifier: −20% to +20%.
+- Flight-duration modifier.
+- Aircraft-size modifier.
 
-Resource results are stored in the player's resource inventory for later construction, upgrades, contracts, and other systems.
+The current result is clamped between 20% and 70%.
 
-## World Map
+Current tested examples:
 
-The current first Europe network contains:
+| Aircraft / route | Resource chance per item |
+| --- | ---: |
+| Aerolet 100 → London | 40.0% |
+| Aerolet 120 → London | 30.4% |
+| Regional 200 → London | 47.9% |
+| Regional 200 → Copenhagen | 50.4% |
 
-- Brussels.
-- London.
-- Frankfurt.
-- Paris.
-- Berlin.
-- Copenhagen.
+Rewards are granted only after the aircraft physically lands, taxis back, and reaches its stand.
 
-The player can:
+## Flight-return economy
 
-- Select an aircraft.
-- Select a destination.
-- View route distance.
-- View that aircraft's flight timer.
-- View range compatibility.
-- View coin and XP rewards.
-- View all three regional resources.
-- View the fixed 40% chance for each of the three country resources.
-- See that the three resource rolls are independent.
-- Assign or change a route while the aircraft is still available on the ground.
-- Watch the remaining timer while the aircraft is en route.
+Successful completed flights currently award:
 
-Amsterdam remains only the temporary development origin. The airport-creation / country-selection flow will replace it with the player's selected home country.
+- Coins.
+- XP.
+- Three country-resource rolls.
+
+The return summary shows all resource successes/failures and the player's updated owned count.
+
+The resulting loop is now:
+
+**Fly internationally → return safely → collect regional resources → upgrade passenger infrastructure → generate/store more passengers → support a larger/faster flight schedule**
+
+## Persistence
+
+The local guest profile currently stores:
+
+- Airport identity.
+- Home country.
+- Account / guest identifiers.
+- Regional-resource inventory.
+- Passenger balance.
+- Passenger-building internal upgrade levels.
+
+The profile structure remains ready for attaching a linked account later without replacing the airport.
 
 ## Automated validation
 
 GitHub Actions currently validates:
 
-- Godot project import and GDScript parsing.
-- Landscape main-scene startup.
-- Taxiway / runway connectivity.
-- Service-road vehicle routing.
-- Fuel speed and vehicle-capacity queues.
+- Godot project import / GDScript parsing.
+- Landscape startup.
+- Airport country selection and country-resource catalog.
+- Airside taxiway / runway connectivity.
+- Ground-service road routing.
+- Fuel queues and vehicle capacity.
 - Arrival and departure runway queues.
-- Full takeoff → flight → landing → parking lifecycle.
-- Aircraft range validation.
-- Aircraft-specific flight timers.
-- Country code propagation through flight plans.
-- Exactly three configured resources per country.
-- Independent resource rolls.
-- Fixed 40% chance for every country resource.
-- 0 / 1 / 2 / 3 independent-drop outcomes and probability math.
-- Curated country catalog integrity and exactly three resources per country.
-- Airport name / airport-code validation.
-- Completed-flight reward construction and country-resource persistence.
+- Full aircraft lifecycle.
+- Aircraft-specific flight timers and range.
+- Country-resource drop modifiers.
+- Passenger Travel Office production.
+- Passenger storage.
+- Passenger boarding consumption.
+- Insufficient-passenger blocking.
+- Resource-funded Travel Office upgrade.
+- Upgrade resource consumption.
+- Passenger balance persistence.
+- Passenger building-level persistence.
+
+Current passenger regression verifies:
+
+**Lv1: 1.5 passengers/min + 40 storage**  
+**Lv2: 2.2 passengers/min + 55 storage**  
+**Aircraft boarding deducts passenger stock**  
+**An aircraft cannot board when stock is insufficient**
 
 ## Next pass
 
-**Pass 9 — Resource inventory + social airport destinations**
+**Pass 10 — Passenger acquisition options + deeper airport economy**
 
 Recommended next work:
 
-- Add a dedicated regional-resource inventory screen.
-- Start using country resources for airport building production/storage upgrades.
-- Add player, friend, and Alliance airports as destination choices.
-- Award Gold / XP to the receiving player when another player services a visit.
-- Keep NPC destinations as a fallback so resource progression never depends completely on friends.
-- Add server-backed globally unique airport-name reservation and guest-account linking.
-- Expand the destination network beyond the current Europe prototype while recalculating route distance from the selected home country.
+- Add the agreed rewarded-ad passenger boost: +25 passengers, capped by available storage.
+- Add daily friend / Alliance passenger gifting groundwork.
+- Add a second physical passenger-building family with a different footprint / production profile.
+- Begin requiring passenger counts by route / aircraft role rather than always filling every seat.
+- Add passenger demand preview to the World Map before dispatch.
+- Start an economy/history panel showing passenger generation, flight consumption, resource income, and bottlenecks.

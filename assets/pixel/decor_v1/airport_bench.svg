@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="160" viewBox="0 0 192 160" shape-rendering="crispEdges"><g><g stroke="#263a46" stroke-width="4" stroke-linejoin="miter">
+    <polygon fill="#78898d" points="27,120 80,94 144,119 90,147"/>
+    <polygon fill="#9b7049" points="55,104 105,80 126,89 75,114"/>
+    <polygon fill="#7e593e" points="55,104 75,114 75,122 55,112"/>
+    <line x1="63" y1="111" x2="63" y2="127" stroke="#434d50" stroke-width="5"/>
+    <line x1="112" y1="91" x2="112" y2="108" stroke="#434d50" stroke-width="5"/>
+    <polygon fill="#a77b52" points="58,92 108,68 128,77 78,102"/>
+    <line x1="64" y1="93" x2="64" y2="107" stroke="#434d50" stroke-width="4"/>
+    <line x1="117" y1="76" x2="117" y2="91" stroke="#434d50" stroke-width="4"/>
+    <circle fill="#4f8d48" cx="43" cy="116" r="10"/>
+    <circle fill="#69aa58" cx="39" cy="111" r="7"/>
+  </g></g></svg>

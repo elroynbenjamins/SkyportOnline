@@ -227,7 +227,7 @@ func _spawn_aircraft_demos() -> void:
 		aircraft.configure_aircraft_type(profile_id)
 
 		var destination := DestinationCatalog.get_destination(destination_id)
-		var initial_plan := FlightRules.create_flight_plan(
+		var initial_plan := _create_current_flight_plan(
 			aircraft.get_aircraft_profile(),
 			destination
 		)
@@ -583,6 +583,21 @@ func _apply_completed_flight_reward(
 			{}
 		).duplicate(true)
 
+	var route_profile := ProfileStore.record_route_completion(
+		String(plan.get("destination_id", "")),
+		aircraft.get_boarded_passengers(),
+		int(reward.get("coins", 0)),
+		int(reward.get("xp", 0)),
+		resources_won.size(),
+		String(plan.get("demand_condition_id", "normal"))
+	)
+	if not route_profile.is_empty():
+		current_profile = route_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+
 	if fleet_screen != null:
 		fleet_screen.set_mastery_hours(
 			current_profile.get("aircraft_mastery_hours", {})
@@ -614,7 +629,8 @@ func _on_navigation_requested(tab: String) -> void:
 					{}
 				),
 				passenger_economy.get_passengers(),
-				passenger_economy.get_capacity()
+				passenger_economy.get_capacity(),
+				current_profile.get("route_history", {})
 			)
 		"fleet":
 			fleet_screen.open_fleet(
@@ -636,6 +652,26 @@ func _on_navigation_requested(tab: String) -> void:
 				rewarded_passenger_ad_bridge.provider_connected,
 				current_profile.get("economy_stats", {})
 			)
+
+
+func _create_current_flight_plan(
+	profile: Dictionary,
+	destination: Dictionary
+) -> Dictionary:
+	var base_plan := FlightRules.create_flight_plan(
+		profile,
+		destination
+	)
+	if base_plan.is_empty():
+		return {}
+
+	var condition := DynamicDemandRules.condition_for(
+		String(destination.get("id", ""))
+	)
+	return DynamicDemandRules.apply_to_flight_plan(
+		base_plan,
+		condition
+	)
 
 
 func _on_world_map_flight_assignment_requested(
@@ -664,7 +700,7 @@ func _on_world_map_flight_assignment_requested(
 		return
 
 	var previous_state := aircraft.state
-	var plan := FlightRules.create_flight_plan(profile, destination)
+	var plan := _create_current_flight_plan(profile, destination)
 	aircraft.assign_flight_plan(plan)
 
 	var route_passengers := _passenger_requirement(aircraft)
@@ -809,6 +845,7 @@ func _attempt_boarding_and_departure(
 
 	if boarded:
 		_remove_passenger_waiter(aircraft)
+		aircraft.record_boarded_passengers(required)
 		_record_boarded_passengers(required)
 		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(
@@ -869,6 +906,7 @@ func _try_board_waiting_aircraft() -> void:
 			continue
 
 		pending_passenger_departures.remove_at(index)
+		aircraft.record_boarded_passengers(required)
 		_record_boarded_passengers(required)
 		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(

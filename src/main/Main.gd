@@ -24,6 +24,7 @@ var pending_passenger_departures: Array[Dictionary] = []
 var processing_passenger_queue := false
 var world_map: WorldMapScreen
 var fleet_screen: FleetScreen
+var aircraft_context_card: AircraftContextCard
 var return_summary: FlightReturnSummary
 var resource_inventory_screen: ResourceInventoryScreen
 var passenger_upgrade_panel: PassengerUpgradePanel
@@ -107,6 +108,7 @@ func _start_gameplay() -> void:
 	_setup_taxi_traffic()
 	_setup_world_map()
 	_setup_fleet_screen()
+	_setup_aircraft_context_card()
 	_setup_return_summary()
 	_setup_passenger_system()
 	_setup_event_system()
@@ -178,6 +180,17 @@ func _setup_world_map() -> void:
 func _setup_fleet_screen() -> void:
 	fleet_screen = FleetScreen.new()
 	add_child(fleet_screen)
+
+
+func _setup_aircraft_context_card() -> void:
+	aircraft_context_card = AircraftContextCard.new()
+	aircraft_context_card.choose_route_requested.connect(
+		_on_aircraft_context_choose_route_requested
+	)
+	aircraft_context_card.fleet_requested.connect(
+		_on_aircraft_context_fleet_requested
+	)
+	add_child(aircraft_context_card)
 
 
 func _setup_return_summary() -> void:
@@ -871,6 +884,13 @@ func _apply_completed_flight_reward(
 		fleet_screen.set_mastery_hours(
 			current_profile.get("aircraft_mastery_hours", {})
 		)
+	if aircraft_context_card != null:
+		aircraft_context_card.set_mastery_hours(
+			current_profile.get(
+				"aircraft_mastery_hours",
+				{}
+			)
+		)
 
 	hud.set_player_data(player_level, coins, gems)
 	return_summary.show_reward(
@@ -985,6 +1005,9 @@ func _process_priority_contract_return(
 
 
 func _on_navigation_requested(tab: String) -> void:
+	if aircraft_context_card != null:
+		aircraft_context_card.close_card()
+
 	match tab:
 		"world":
 			world_map.open_map(
@@ -1345,11 +1368,93 @@ func _on_world_tapped(world_position: Vector2) -> void:
 			world_position,
 			selected_building_rotation
 		)
-		var definition: Dictionary = BuildingCatalog.get_definition(selected_building_id)
-		hud.show_build_preview(definition, status, player_level, coins)
+		var definition: Dictionary = BuildingCatalog.get_definition(
+			selected_building_id
+		)
+		hud.show_build_preview(
+			definition,
+			status,
+			player_level,
+			coins
+		)
 		return
 
+	var tapped_aircraft := _aircraft_at_world_position(
+		world_position
+	)
+	if tapped_aircraft != null:
+		_show_aircraft_context(tapped_aircraft)
+		return
+
+	if aircraft_context_card != null:
+		aircraft_context_card.close_card()
 	airport_grid.select_world_position(world_position)
+
+
+func _aircraft_at_world_position(
+	world_position: Vector2
+) -> AircraftPrototype:
+	var closest: AircraftPrototype = null
+	var closest_distance := INF
+
+	for aircraft in aircraft_demos:
+		if (
+			aircraft == null
+			or not is_instance_valid(aircraft)
+			or not aircraft.contains_world_point(world_position)
+		):
+			continue
+
+		var distance := aircraft.global_position.distance_to(
+			world_position
+		)
+		if distance < closest_distance:
+			closest = aircraft
+			closest_distance = distance
+
+	return closest
+
+
+func _show_aircraft_context(
+	aircraft: AircraftPrototype
+) -> void:
+	if (
+		aircraft_context_card == null
+		or passenger_economy == null
+	):
+		return
+
+	aircraft_context_card.show_aircraft(
+		aircraft,
+		current_profile.get(
+			"aircraft_mastery_hours",
+			{}
+		),
+		passenger_economy.get_passengers(),
+		passenger_economy.get_capacity()
+	)
+
+
+func _on_aircraft_context_choose_route_requested(
+	aircraft: AircraftPrototype
+) -> void:
+	var index := aircraft_demos.find(aircraft)
+	if index < 0:
+		return
+
+	world_map.selected_aircraft_index = index
+	_on_navigation_requested("world")
+
+
+func _on_aircraft_context_fleet_requested(
+	aircraft: AircraftPrototype
+) -> void:
+	var index := aircraft_demos.find(aircraft)
+	if index < 0:
+		return
+
+	fleet_screen.selected_index = index
+	_on_navigation_requested("fleet")
 
 
 func _on_rewarded_passenger_boost_requested() -> void:
@@ -1407,6 +1512,11 @@ func _on_passenger_economy_changed(
 	hud.set_passenger_data(passengers, capacity, per_minute)
 	if world_map != null:
 		world_map.set_passenger_stock(passengers, capacity)
+	if aircraft_context_card != null:
+		aircraft_context_card.set_passenger_stock(
+			passengers,
+			capacity
+		)
 	var updated := ProfileStore.save_passenger_balance(passengers)
 	if not updated.is_empty():
 		current_profile = updated
@@ -1995,6 +2105,9 @@ func _on_purchase_expansion_requested() -> void:
 
 
 func _on_building_selected(building_id: String) -> void:
+	if aircraft_context_card != null:
+		aircraft_context_card.close_card()
+
 	var definition := BuildingCatalog.get_definition(building_id)
 	if definition.is_empty():
 		return

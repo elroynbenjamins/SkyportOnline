@@ -20,9 +20,8 @@ func _run() -> void:
 		_fail("Primary game button style should be installed.")
 		return
 
-	var hud := HUD.new() if false else null
-	# HUD is not a class_name; instantiate its script through the main scene
-	# smoke test instead. The rest of the screens can be created directly.
+	# HUD has no global class_name; the existing main-scene smoke test
+	# validates HUD construction. The remaining screens can be built directly.
 
 	var world := WorldMapScreen.new()
 	root.add_child(world)

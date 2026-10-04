@@ -107,6 +107,31 @@ func _run() -> void:
 	if alliance_cosmetics != 1:
 		_fail("Christmas Alliance track should include one exclusive cosmetic.")
 		return
+
+	var flag_definition := BuildingCatalog.get_definition(
+		"xmas_event_flag"
+	)
+	if flag_definition.is_empty():
+		_fail("New Year Event Flag should exist as a placeable cosmetic.")
+		return
+	if String(
+		flag_definition.get("required_cosmetic_id", "")
+	) != "event_xmas_alliance_flag":
+		_fail("New Year Event Flag should require its event cosmetic unlock.")
+		return
+
+	var garden_definition := BuildingCatalog.get_definition(
+		"xmas_snow_globe_garden"
+	)
+	if garden_definition.is_empty():
+		_fail("Snow Globe Garden should exist as a placeable cosmetic.")
+		return
+	if String(
+		garden_definition.get("required_cosmetic_id", "")
+	) != "event_xmas_snow_globe_garden":
+		_fail("Snow Globe Garden should require its event cosmetic unlock.")
+		return
+
 	if personal_currency + alliance_currency != 920:
 		_fail("Full personal + Alliance completion should award 920 vouchers.")
 		return
@@ -187,6 +212,33 @@ func _run() -> void:
 	if manager.get_currency() != 0:
 		_fail("Featured Christmas flights must not generate repeatable event currency.")
 		return
+
+	var plane := AircraftPrototype.new()
+	root.add_child(plane)
+	plane.configure_aircraft_type("pico_p8")
+	plane.set_event_visual(
+		true,
+		"christmas_new_year",
+		"XMAS",
+		true
+	)
+	if not plane.event_featured:
+		_fail("Christmas featured aircraft should retain event marker state.")
+		return
+	if plane.event_theme != "christmas_new_year":
+		_fail("Christmas aircraft should use christmas_new_year theme.")
+		return
+	if not plane.event_livery_enabled:
+		_fail("Owned Christmas Pico livery should enable event livery state.")
+		return
+
+	grid.set_event_visual_state(
+		manager.get_snapshot(),
+		{
+			"event_xmas_terminal_skin": true,
+			"event_xmas_airport_border": true
+		}
+	)
 
 	var screen := EventScreen.new()
 	root.add_child(screen)

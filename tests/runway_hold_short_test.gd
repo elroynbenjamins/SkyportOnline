@@ -126,24 +126,47 @@ func _run() -> void:
 	arrival_a.runway_cleared.emit()
 	await process_frame
 
+	if arrival_b.state == "APPROACH":
+		_fail("Priority arrival should still respect arrival separation.")
+		return
+	if departure.state != "HOLD_SHORT":
+		_fail("Departure should remain holding during arrival separation.")
+		return
+	if runway.get_waiting_arrival_count() != 1:
+		_fail("Priority arrival should remain first in the paced queue.")
+		return
+	if runway.get_waiting_departure_count() != 1:
+		_fail("Departure should remain queued behind priority arrival.")
+		return
+
+	runway._process(
+		RunwayPacingRules.ARRIVAL_TO_ARRIVAL + 0.1
+	)
 	if arrival_b.state != "APPROACH":
-		_fail("Queued arrival should receive priority over hold-short departure.")
+		_fail("Priority arrival should clear after landing separation.")
 		return
 	if departure.state != "HOLD_SHORT":
 		_fail("Departure should remain holding while priority arrival lands.")
-		return
-	if runway.get_waiting_departure_count() != 1:
-		_fail("Departure should remain in queue during priority arrival.")
 		return
 
 	arrival_b.runway_cleared.emit()
 	await process_frame
 
+	if departure.state != "HOLD_SHORT":
+		_fail("Departure should remain at hold short during arrival-to-departure spacing.")
+		return
+	if runway.get_waiting_departure_count() != 1:
+		_fail("Departure should remain queued through runway separation.")
+		return
+
+	runway._process(
+		RunwayPacingRules.ARRIVAL_TO_DEPARTURE + 0.1
+	)
 	if departure.state != "CLEARED":
-		_fail("Departure should be cleared after all queued arrivals.")
+		_fail("Departure should clear after all arrivals and separation.")
 		return
 	if runway.get_waiting_count() != 0:
-		_fail("Runway queue should empty after departure clearance.")
+		_fail("Runway queue should empty after paced departure clearance.")
 		return
 
 	departure._process(0.60)

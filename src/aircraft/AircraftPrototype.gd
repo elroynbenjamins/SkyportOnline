@@ -952,8 +952,12 @@ func _draw() -> void:
 		Vector2(12, 5)
 	])
 	var fuselage_color := Color("f4f7f7")
-	if event_livery_enabled and event_theme == "autumn":
-		fuselage_color = Color("f4e6d0")
+	if event_livery_enabled:
+		match event_theme:
+			"autumn":
+				fuselage_color = Color("f4e6d0")
+			"winter":
+				fuselage_color = Color("f7fcff")
 	draw_colored_polygon(fuselage, fuselage_color)
 
 	var wing := PackedVector2Array([
@@ -979,8 +983,12 @@ func _draw() -> void:
 		Vector2(-14, 4)
 	])
 	var tail_color := Color("5d90b8")
-	if event_livery_enabled and event_theme == "autumn":
-		tail_color = Color("c35f2d")
+	if event_livery_enabled:
+		match event_theme:
+			"autumn":
+				tail_color = Color("c35f2d")
+			"winter":
+				tail_color = Color("c8373c")
 	draw_colored_polygon(tail, tail_color)
 
 	draw_rect(Rect2(Vector2(2, -4), Vector2(7, 8)), Color("4a7898"))
@@ -995,6 +1003,25 @@ func _draw() -> void:
 			Vector2(-10, -14),
 			Vector2(1, -4),
 			Color("a94b2b"),
+			3.0
+		)
+
+	if event_livery_enabled and event_theme == "winter":
+		draw_line(
+			Vector2(-15, 0),
+			Vector2(10, 0),
+			Color("2f8f58"),
+			3.0
+		)
+		draw_circle(
+			Vector2(-17, 0),
+			3.0,
+			Color("f2c94c")
+		)
+		draw_line(
+			Vector2(-9, -14),
+			Vector2(1, -4),
+			Color("c8373c"),
 			3.0
 		)
 
@@ -1032,8 +1059,11 @@ func _draw() -> void:
 func _draw_event_badge() -> void:
 	var center := Vector2(-2, -39)
 	var fill := Color("e6a83f")
-	if event_theme == "autumn":
-		fill = Color("d66d30")
+	match event_theme:
+		"autumn":
+			fill = Color("d66d30")
+		"winter":
+			fill = Color("3f8ebd")
 
 	draw_circle(center, 9.0, Color(0, 0, 0, 0.35))
 	draw_circle(center, 7.0, fill)

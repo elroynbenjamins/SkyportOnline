@@ -121,6 +121,15 @@ func _run() -> void:
 		_fail("Catering truck should use the third 0.90 second launch slot.")
 		return
 
+	if cleaning_van.outbound_route.size() < 3 or catering_truck.outbound_route.size() < 3:
+		_fail("Staggered service vehicles should retain full apron routes.")
+		return
+	if cleaning_van.outbound_route[1].distance_to(
+		catering_truck.outbound_route[1]
+	) < 2.0:
+		_fail("Cleaning and catering vehicles should occupy different apron lanes.")
+		return
+
 	cleaning_van._process(0.46)
 	if cleaning_van.phase != "OUTBOUND":
 		_fail("Cleaning van should launch after its stagger expires.")

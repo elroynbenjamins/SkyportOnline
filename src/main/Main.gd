@@ -15,6 +15,7 @@ var selected_building_rotation := 0
 func _ready() -> void:
 	camera_controller.world_tapped.connect(_on_world_tapped)
 	airport_grid.parcel_selected.connect(_on_parcel_selected)
+	airport_grid.network_status_changed.connect(_on_network_status_changed)
 
 	hud.purchase_expansion_requested.connect(_on_purchase_expansion_requested)
 	hud.building_selected.connect(_on_building_selected)
@@ -24,6 +25,7 @@ func _ready() -> void:
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
 	hud.set_player_data(player_level, coins, gems)
+	hud.set_airside_status(airport_grid.get_airside_status())
 	airport_grid.select_parcel("north")
 
 
@@ -39,6 +41,10 @@ func _on_world_tapped(world_position: Vector2) -> void:
 		return
 
 	airport_grid.select_world_position(world_position)
+
+
+func _on_network_status_changed(status: Dictionary) -> void:
+	hud.set_airside_status(status)
 
 
 func _on_parcel_selected(_parcel_id: String, parcel_data: Dictionary) -> void:

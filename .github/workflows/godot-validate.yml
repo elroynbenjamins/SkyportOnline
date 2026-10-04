@@ -97,6 +97,9 @@ jobs:
       - name: Test physical event visuals
         run: timeout 20s godot --headless --path . --script res://tests/event_visual_presence_test.gd
 
+      - name: Test UI modernization
+        run: timeout 20s godot --headless --path . --script res://tests/ui_modernization_test.gd
+
 
       - name: Test aircraft taxi traffic
         run: timeout 20s godot --headless --path . --script res://tests/taxi_traffic_test.gd

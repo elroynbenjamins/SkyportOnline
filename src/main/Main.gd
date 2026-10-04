@@ -748,9 +748,9 @@ func _mastery_hours_for_aircraft(
 
 func _passenger_requirement(aircraft: AircraftPrototype) -> int:
 	var profile := aircraft.get_aircraft_profile()
-	var base_passengers := maxi(int(profile.get("passengers", 0)), 0)
-	return AircraftMastery.passenger_requirement(
-		base_passengers,
+	return PassengerDemandRules.required_from_plan(
+		profile,
+		aircraft.get_flight_plan(),
 		_mastery_hours_for_aircraft(aircraft)
 	)
 

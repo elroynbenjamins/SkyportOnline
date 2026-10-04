@@ -938,8 +938,16 @@ func _apply_event_visual_to_aircraft(
 		0
 	)
 	var marker := ""
-	if featured and route_currency > 0:
-		marker = "+%d" % route_currency
+	if featured:
+		if route_currency > 0:
+			marker = "+%d" % route_currency
+		else:
+			marker = String(
+				snapshot.get(
+					"featured_marker_text",
+					"WINTER"
+				)
+			)
 
 	var owned_cosmetics: Dictionary = current_profile.get(
 		"owned_cosmetics",

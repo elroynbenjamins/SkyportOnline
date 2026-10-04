@@ -302,10 +302,10 @@ func _draw_runway_hold_short_markings() -> void:
 				)
 
 			for side in [-1.0, 1.0]:
-				var dash_center := (
+				var dash_center: Vector2 = (
 					hold
 					+ direction * 5.0
-					+ normal * 6.0 * side
+					+ normal * 6.0 * float(side)
 				)
 				draw_line(
 					dash_center - normal * 3.0,

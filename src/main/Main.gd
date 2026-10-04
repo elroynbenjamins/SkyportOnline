@@ -456,6 +456,21 @@ func _apply_completed_flight_reward(
 	if reward.is_empty():
 		return
 
+	var old_mastery_hours := _mastery_hours_for_aircraft(aircraft)
+	var old_mastery_stars := AircraftMastery.stars_for_hours(
+		old_mastery_hours
+	)
+	reward["base_coins"] = int(reward.get("coins", 0))
+	reward["base_xp"] = int(reward.get("xp", 0))
+	reward["coins"] = AircraftMastery.apply_coin_bonus(
+		int(reward.get("coins", 0)),
+		old_mastery_hours
+	)
+	reward["xp"] = AircraftMastery.apply_xp_bonus(
+		int(reward.get("xp", 0)),
+		old_mastery_hours
+	)
+
 	coins += int(reward.get("coins", 0))
 	player_xp += int(reward.get("xp", 0))
 
@@ -477,6 +492,32 @@ func _apply_completed_flight_reward(
 				int(resource_inventory.get(resource_id, 0)) + amount
 			)
 
+	var completed_hours := maxf(
+		float(plan.get("flight_hours", 0.0)),
+		0.0
+	)
+	var mastery_profile := ProfileStore.add_aircraft_mastery_hours(
+		aircraft.aircraft_type_id,
+		completed_hours
+	)
+	if not mastery_profile.is_empty():
+		current_profile = mastery_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+
+	var new_mastery_hours := _mastery_hours_for_aircraft(aircraft)
+	var new_mastery_stars := AircraftMastery.stars_for_hours(
+		new_mastery_hours
+	)
+	reward["mastery_hours_before"] = old_mastery_hours
+	reward["mastery_hours_after"] = new_mastery_hours
+	reward["mastery_stars_before"] = old_mastery_stars
+	reward["mastery_stars_after"] = new_mastery_stars
+	reward["mastery_star_up"] = new_mastery_stars > old_mastery_stars
+	reward["aircraft_name"] = aircraft.aircraft_display_name
+
 	hud.set_player_data(player_level, coins, gems)
 	return_summary.show_reward(
 		label,
@@ -495,7 +536,14 @@ func _apply_completed_flight_reward(
 func _on_navigation_requested(tab: String) -> void:
 	match tab:
 		"world":
-			world_map.open_map(aircraft_demos, player_level)
+			world_map.open_map(
+				aircraft_demos,
+				player_level,
+				current_profile.get(
+					"aircraft_mastery_hours",
+					{}
+				)
+			)
 		"fleet":
 			hud.set_operation_status("Fleet screen comes in a later pass.")
 		"alliance":
@@ -584,9 +632,28 @@ func _on_passenger_economy_changed(
 		_try_board_waiting_aircraft()
 
 
+func _mastery_hours_for_aircraft(
+	aircraft: AircraftPrototype
+) -> float:
+	if aircraft == null:
+		return 0.0
+	var mastery: Dictionary = current_profile.get(
+		"aircraft_mastery_hours",
+		{}
+	)
+	return maxf(
+		float(mastery.get(aircraft.aircraft_type_id, 0.0)),
+		0.0
+	)
+
+
 func _passenger_requirement(aircraft: AircraftPrototype) -> int:
 	var profile := aircraft.get_aircraft_profile()
-	return maxi(int(profile.get("passengers", 0)), 0)
+	var base_passengers := maxi(int(profile.get("passengers", 0)), 0)
+	return AircraftMastery.passenger_requirement(
+		base_passengers,
+		_mastery_hours_for_aircraft(aircraft)
+	)
 
 
 func _attempt_boarding_and_departure(

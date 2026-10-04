@@ -65,8 +65,19 @@ func _run() -> void:
 	var resource_choice_total := 0
 	var cosmetic_count := 0
 	var shop_cost := 0
+	var seen_purpose_tags := {}
 	for item_variant in event.get("shop", []):
 		var item: Dictionary = item_variant
+		var purpose_tag := String(item.get("purpose_tag", ""))
+		var value_hint := String(item.get("value_hint", ""))
+		if purpose_tag.is_empty():
+			_fail("Every Winter shop item should expose a purpose tag.")
+			return
+		if value_hint.is_empty():
+			_fail("Every Winter shop item should expose a value hint.")
+			return
+		seen_purpose_tags[purpose_tag] = true
+
 		var limit := int(item.get("purchase_limit", 1))
 		shop_cost += int(item.get("price", 0)) * limit
 		match String(item.get("type", "")):
@@ -98,6 +109,16 @@ func _run() -> void:
 	if shop_cost != 1310:
 		_fail("Expanded Winter shop stock should total 1,310 vouchers.")
 		return
+
+	for required_tag in [
+		"PERMANENT",
+		"AIRPORT FLOW",
+		"INFRASTRUCTURE",
+		"UPGRADE TARGET"
+	]:
+		if not seen_purpose_tags.has(required_tag):
+			_fail("Winter shop should include purpose tag %s." % required_tag)
+			return
 
 	var plus_50 := EventCatalog.shop_item_by_id(
 		event,

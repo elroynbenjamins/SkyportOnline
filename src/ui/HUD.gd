@@ -5,11 +5,19 @@ signal building_selected(building_id: String)
 signal rotate_building_requested
 signal confirm_building_requested
 signal cancel_building_requested
+signal collect_passengers_requested
+signal rewarded_passengers_requested
+signal friend_passengers_requested
 signal navigation_requested(tab: String)
 
 var level_label: Label
 var coins_label: Label
 var gems_label: Label
+var passenger_label: Label
+var passenger_status_label: Label
+var collect_passengers_button: Button
+var rewarded_passengers_button: Button
+var friend_passengers_button: Button
 var airside_status_label: Label
 var operation_status_label: Label
 
@@ -74,6 +82,13 @@ func _build_interface() -> void:
 	coins_label.add_theme_font_size_override("font_size", 19)
 	top_row.add_child(coins_label)
 
+	passenger_label = Label.new()
+	passenger_label.custom_minimum_size = Vector2(140, 0)
+	passenger_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	passenger_label.add_theme_font_size_override("font_size", 19)
+	passenger_label.text = "👥 0 / 0"
+	top_row.add_child(passenger_label)
+
 	gems_label = Label.new()
 	gems_label.custom_minimum_size = Vector2(92, 0)
 	gems_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -124,6 +139,45 @@ func _build_interface() -> void:
 	operation_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operation_status_label.add_theme_font_size_override("font_size", 13)
 	operation_panel.add_child(operation_status_label)
+
+	var passenger_panel := PanelContainer.new()
+	passenger_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	passenger_panel.offset_left = 470
+	passenger_panel.offset_top = 82
+	passenger_panel.offset_right = 1018
+	passenger_panel.offset_bottom = 146
+	root.add_child(passenger_panel)
+
+	var passenger_row := HBoxContainer.new()
+	passenger_row.add_theme_constant_override("separation", 5)
+	passenger_panel.add_child(passenger_row)
+
+	passenger_status_label = Label.new()
+	passenger_status_label.text = "PASSENGERS\nPreparing terminal..."
+	passenger_status_label.custom_minimum_size = Vector2(180, 0)
+	passenger_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	passenger_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	passenger_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	passenger_status_label.add_theme_font_size_override("font_size", 12)
+	passenger_row.add_child(passenger_status_label)
+
+	collect_passengers_button = Button.new()
+	collect_passengers_button.custom_minimum_size = Vector2(90, 52)
+	collect_passengers_button.text = "COLLECT"
+	collect_passengers_button.pressed.connect(_on_collect_passengers_pressed)
+	passenger_row.add_child(collect_passengers_button)
+
+	rewarded_passengers_button = Button.new()
+	rewarded_passengers_button.custom_minimum_size = Vector2(94, 52)
+	rewarded_passengers_button.text = "📺 +25"
+	rewarded_passengers_button.pressed.connect(_on_rewarded_passengers_pressed)
+	passenger_row.add_child(rewarded_passengers_button)
+
+	friend_passengers_button = Button.new()
+	friend_passengers_button.custom_minimum_size = Vector2(94, 52)
+	friend_passengers_button.text = "🎁 +5"
+	friend_passengers_button.pressed.connect(_on_friend_passengers_pressed)
+	passenger_row.add_child(friend_passengers_button)
 
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -240,13 +294,19 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_header.add_theme_font_size_override("font_size", 15)
 	catalog_wrapper.add_child(catalog_header)
 
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	catalog_wrapper.add_child(scroll)
+
 	var grid := GridContainer.new()
 	grid.name = "BuildingGrid"
 	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 5)
 	grid.add_theme_constant_override("v_separation", 5)
-	catalog_wrapper.add_child(grid)
+	scroll.add_child(grid)
 
 
 func _build_bottom_navigation(root: Control) -> void:
@@ -456,6 +516,55 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	place_button.disabled = false
 
 
+func set_passenger_status(snapshot: Dictionary) -> void:
+	if snapshot.is_empty():
+		return
+
+	var current := int(snapshot.get("passengers", 0))
+	var capacity := int(snapshot.get("capacity", 0))
+	var waiting := int(snapshot.get("stored_waiting", 0))
+	var producers := int(snapshot.get("producer_count", 0))
+	var ad_reward := int(snapshot.get("ad_reward", 25))
+	var ad_uses := int(snapshot.get("ad_uses_today", 0))
+	var ad_limit := int(snapshot.get("ad_daily_limit", 3))
+	var friend_received := int(snapshot.get("friend_received_today", 0))
+	var friend_cap := int(snapshot.get("friend_receive_cap", 50))
+	var friend_amount := int(snapshot.get("friend_gift_amount", 5))
+
+	if passenger_label != null:
+		passenger_label.text = "👥 %s / %s" % [
+			_format_number(current),
+			_format_number(capacity)
+		]
+
+	if passenger_status_label != null:
+		passenger_status_label.text = "PASSENGERS\n%s waiting • %d source%s" % [
+			_format_number(waiting),
+			producers,
+			"" if producers == 1 else "s"
+		]
+
+	if collect_passengers_button != null:
+		collect_passengers_button.text = "COLLECT\n+%s" % _format_number(waiting)
+		collect_passengers_button.disabled = waiting <= 0 or current >= capacity
+
+	if rewarded_passengers_button != null:
+		rewarded_passengers_button.text = "📺 +%d\n%d/%d" % [
+			ad_reward,
+			ad_uses,
+			ad_limit
+		]
+		rewarded_passengers_button.disabled = ad_uses >= ad_limit or current >= capacity
+
+	if friend_passengers_button != null:
+		friend_passengers_button.text = "🎁 +%d\n%d/%d" % [
+			friend_amount,
+			friend_received,
+			friend_cap
+		]
+		friend_passengers_button.disabled = friend_received >= friend_cap or current >= capacity
+
+
 func set_operation_status(text: String, tone: String = "normal") -> void:
 	if operation_status_label == null:
 		return
@@ -565,6 +674,18 @@ func _on_confirm_building_pressed() -> void:
 
 func _on_cancel_building_pressed() -> void:
 	cancel_building_requested.emit()
+
+
+func _on_collect_passengers_pressed() -> void:
+	collect_passengers_requested.emit()
+
+
+func _on_rewarded_passengers_pressed() -> void:
+	rewarded_passengers_requested.emit()
+
+
+func _on_friend_passengers_pressed() -> void:
+	friend_passengers_requested.emit()
 
 
 func _format_number(value: int) -> String:

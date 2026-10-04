@@ -290,7 +290,6 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
-		button.icon_max_width = 36
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		button.tooltip_text = String(definition.get("description", ""))
 		var icon := _catalog_icon_for(definition)

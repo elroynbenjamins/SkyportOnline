@@ -127,7 +127,8 @@ static func all() -> Array[Dictionary]:
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cleaning": {"service_speed": 1.0, "vehicle_capacity": 1},
-				"catering": {"service_speed": 1.0, "vehicle_capacity": 1}
+				"catering": {"service_speed": 1.0, "vehicle_capacity": 1},
+				"pushback": {"service_speed": 1.0, "vehicle_capacity": 1}
 			}
 		},
 		{
@@ -192,6 +193,22 @@ static func all() -> Array[Dictionary]:
 			"description": "Two faster catering trucks for regional operations.",
 			"service": "catering",
 			"service_speed": 1.30,
+			"vehicle_capacity": 2
+		},
+		{
+			"id": "tow_operations",
+			"name": "Tow Operations",
+			"menu_name": "TOW OPS",
+			"category": "Services",
+			"footprint": Vector2i(2, 2),
+			"cost": 28000,
+			"level": 7,
+			"color": Color("667482"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["S", "M"]),
+			"description": "Two faster pushback tugs for busy stands.",
+			"service": "pushback",
+			"service_speed": 1.25,
 			"vehicle_capacity": 2
 		},
 		{

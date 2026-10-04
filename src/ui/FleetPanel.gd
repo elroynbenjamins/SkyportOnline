@@ -238,6 +238,8 @@ func configure(
 				reason
 			]
 
+		if bool(route.get("compatible", false)) and not can_dispatch and not reason.is_empty():
+			button.text += " • " + reason
 		if bool(route.get("selected", false)):
 			button.text = "✓ " + button.text
 		button.disabled = not can_dispatch

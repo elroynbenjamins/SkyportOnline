@@ -77,11 +77,127 @@ static func all() -> Array[Dictionary]:
 			"color": Color("bac6c8"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Basic passenger handling.",
+			"description": "Basic passenger handling and terminal storage.",
+			"passenger_capacity": 120,
+			"passenger_upgrade_costs": [
+				{"precision_parts": 2, "aerospace_parts": 2},
+				{"machinery": 3, "luxury_goods": 3, "specialty_goods": 2},
+				{"renewable_parts": 5, "industrial_tools": 5, "cosmetics": 4}
+			],
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/terminal_small.svg", "res://assets/pixel/airport_v1/terminal_small_b.svg"]),
 			"world_sprite_size": Vector2(205, 154),
 			"world_sprite_offset": Vector2(0, -50)
+		},
+		{
+			"id": "bus_stop",
+			"name": "Airport Bus Stop",
+			"menu_name": "BUS STOP",
+			"category": "Passenger",
+			"footprint": Vector2i(1, 1),
+			"cost": 3000,
+			"level": 1,
+			"color": Color("4f8c75"),
+			"rotatable": false,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Fast passenger batches for active play.",
+			"passenger_mode": "batch",
+			"passenger_yield": 8,
+			"passenger_cycle_seconds": 240.0,
+			"passenger_storage": 24,
+			"passenger_upgrade_costs": [
+				{"chemicals": 2, "aerospace_parts": 2},
+				{"machinery": 3, "cosmetics": 2, "specialty_goods": 2},
+				{"design_goods": 4, "industrial_tools": 4, "luxury_goods": 4}
+			]
+		},
+		{
+			"id": "small_hotel",
+			"name": "Small Airport Hotel",
+			"menu_name": "SMALL HOTEL",
+			"category": "Passenger",
+			"footprint": Vector2i(2, 2),
+			"cost": 6500,
+			"level": 2,
+			"color": Color("b78c68"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Produces larger passenger batches over time.",
+			"passenger_mode": "batch",
+			"passenger_yield": 18,
+			"passenger_cycle_seconds": 600.0,
+			"passenger_storage": 54,
+			"passenger_upgrade_costs": [
+				{"gourmet_food": 2, "chocolate": 3},
+				{"gourmet_food": 5, "specialty_goods": 4, "automotive_parts": 3},
+				{"renewable_parts": 5, "cosmetics": 6, "industrial_tools": 4}
+			]
+		},
+		{
+			"id": "taxi_rank",
+			"name": "Taxi Rank",
+			"menu_name": "TAXI RANK",
+			"category": "Passenger",
+			"footprint": Vector2i(1, 1),
+			"cost": 9000,
+			"level": 3,
+			"color": Color("d0aa45"),
+			"rotatable": false,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Slow passive passenger trickle with local storage.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 480.0,
+			"passenger_storage": 10,
+			"passenger_upgrade_costs": [
+				{"aerospace_parts": 2, "chemicals": 2},
+				{"machinery": 3, "aerospace_parts": 4, "cosmetics": 2},
+				{"design_goods": 5, "industrial_tools": 5, "luxury_goods": 3}
+			]
+		},
+		{
+			"id": "residential_district",
+			"name": "Residential District",
+			"menu_name": "RESIDENTIAL",
+			"category": "Passenger",
+			"footprint": Vector2i(2, 2),
+			"cost": 22000,
+			"level": 5,
+			"color": Color("879b79"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Steady offline-friendly passenger generation.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 180.0,
+			"passenger_storage": 40,
+			"passenger_upgrade_costs": [
+				{"luxury_goods": 3, "precision_parts": 3},
+				{"automotive_parts": 4, "pharma_goods": 4, "specialty_goods": 3},
+				{"renewable_parts": 6, "machinery": 5, "cosmetics": 5}
+			]
+		},
+		{
+			"id": "rail_connection",
+			"name": "Railway Connection",
+			"menu_name": "RAIL LINK",
+			"category": "Passenger",
+			"footprint": Vector2i(3, 2),
+			"cost": 65000,
+			"level": 9,
+			"color": Color("64747f"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "High-capacity passive passenger connection.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 120.0,
+			"passenger_storage": 75,
+			"passenger_upgrade_costs": [
+				{"industrial_tools": 4, "renewable_parts": 4, "precision_parts": 3},
+				{"machinery": 7, "design_goods": 6, "luxury_goods": 5},
+				{"renewable_parts": 9, "automotive_parts": 10, "cosmetics": 7}
+			]
 		},
 		{
 			"id": "small_hangar",

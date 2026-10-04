@@ -20,7 +20,8 @@ func _run() -> void:
 		"cargo",
 		"cleaning",
 		"catering",
-		"fuel"
+		"fuel",
+		"pushback"
 	]
 	var pico_positions: Array[Vector2] = []
 	for service_type in service_types:

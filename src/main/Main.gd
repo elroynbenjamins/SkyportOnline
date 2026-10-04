@@ -12,6 +12,7 @@ var selected_building_id := ""
 var selected_building_rotation := 0
 var aircraft_demos: Array[AircraftPrototype] = []
 var ground_services: GroundServiceDispatcher
+var runway_dispatcher: RunwayDispatcher
 
 
 func _ready() -> void:
@@ -31,6 +32,7 @@ func _ready() -> void:
 	airport_grid.select_parcel("north")
 
 	_setup_ground_services()
+	_setup_runway_dispatcher()
 	_spawn_aircraft_demos()
 
 
@@ -41,6 +43,14 @@ func _setup_ground_services() -> void:
 	ground_services.status_changed.connect(_on_ground_service_status)
 	ground_services.queue_changed.connect(_on_ground_service_queue_changed)
 	add_child(ground_services)
+
+
+func _setup_runway_dispatcher() -> void:
+	runway_dispatcher = RunwayDispatcher.new()
+	runway_dispatcher.status_changed.connect(_on_runway_status)
+	runway_dispatcher.queue_changed.connect(_on_runway_queue_changed)
+	add_child(runway_dispatcher)
+	ground_services.aircraft_serviced.connect(_on_aircraft_serviced)
 
 
 func _spawn_aircraft_demos() -> void:
@@ -62,13 +72,34 @@ func _spawn_aircraft_demos() -> void:
 		aircraft.z_index = 80 + index
 		aircraft.state_changed.connect(_on_demo_aircraft_state_changed.bind(label))
 		add_child(aircraft)
-		aircraft.set_departure_route(route, "S")
+		aircraft.set_departure_route(
+			route,
+			"S",
+			int(route_info.get("stand_uid", -1)),
+			int(route_info.get("runway_uid", -1))
+		)
 		aircraft_demos.append(aircraft)
 		ground_services.request_fuel(aircraft, label)
 
 	hud.set_operation_status(
 		"%d aircraft awaiting turnaround" % aircraft_demos.size()
 	)
+
+
+func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
+	runway_dispatcher.request_departure(aircraft, label)
+
+
+func _on_runway_status(text: String, tone: String) -> void:
+	hud.set_operation_status(text, tone)
+
+
+func _on_runway_queue_changed(waiting: int, active: int) -> void:
+	if waiting > 0:
+		hud.set_operation_status(
+			"Departure queue: %d waiting • %d runway active" % [waiting, active],
+			"warning"
+		)
 
 
 func _on_ground_service_status(text: String, tone: String) -> void:
@@ -88,7 +119,11 @@ func _on_demo_aircraft_state_changed(state: String, label: String) -> void:
 		"TAXIING":
 			hud.set_operation_status("%s taxiing to runway" % label)
 		"HOLDING":
-			hud.set_operation_status("%s at runway end • ready" % label, "success")
+			hud.set_operation_status("%s cleared runway" % label, "success")
+		"READY_FOR_DEPARTURE":
+			hud.set_operation_status("%s ready • waiting for runway" % label, "warning")
+		"CLEARED":
+			hud.set_operation_status("%s cleared for departure" % label, "success")
 		"WAITING_FUEL":
 			hud.set_operation_status("%s parked • fuel required" % label)
 

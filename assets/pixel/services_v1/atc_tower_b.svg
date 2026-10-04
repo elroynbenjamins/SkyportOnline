@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="192" viewBox="0 0 256 192" shape-rendering="crispEdges"><g transform="translate(256 0) scale(-1 1)"><g stroke="#263a46" stroke-width="4" stroke-linejoin="miter">
+      <polygon fill="#86979d" points="42,145 114,109 210,145 137,185"/>
+      <polygon fill="#a7b5b8" points="111,133 137,120 162,132 136,146"/>
+      <polygon fill="#7f9299" points="111,133 136,146 136,168 111,156"/>
+      <polygon fill="#687d85" points="136,146 162,132 162,154 136,168"/>
+      <rect fill="#9eb0b5" x="127" y="72" width="18" height="61"/>
+      <polygon fill="#7f9299" points="127,72 145,80 145,133 127,125"/>
+      <polygon fill="#4e6976" points="106,65 136,50 168,63 137,80"/>
+      <polygon fill="#355766" points="106,65 137,80 137,96 106,82"/>
+      <polygon fill="#294957" points="137,80 168,63 168,79 137,96"/>
+      <polygon fill="#72c1de" points="111,66 136,54 161,64 136,76"/>
+      <rect fill="#78c5df" x="115" y="68" width="13" height="10"/>
+      <rect fill="#78c5df" x="143" y="65" width="13" height="10"/>
+      <line x1="137" y1="49" x2="137" y2="31" stroke="#dbe5e6" stroke-width="4"/>
+      <circle cx="137" cy="27" r="6" fill="#f1c650"/>
+      <path d="M119 31 Q137 18 155 31" fill="none" stroke="#dbe5e6" stroke-width="3"/>
+      <circle cx="137" cy="144" r="5" fill="#45636f"/></g></g></svg>

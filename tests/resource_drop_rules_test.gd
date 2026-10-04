@@ -126,8 +126,10 @@ func _run() -> void:
 		return
 
 	print(
-		"Resource modifiers passed: Swift %.1f%%, Comet %.1f%%, "
-		+ "Nimbus %.1f%%, longer Nimbus %.1f%%."
+		(
+			"Resource modifiers passed: Swift %.1f%%, Comet %.1f%%, "
+			+ "Nimbus %.1f%%, longer Nimbus %.1f%%."
+		)
 		% [
 			swift_chance * 100.0,
 			comet_chance * 100.0,

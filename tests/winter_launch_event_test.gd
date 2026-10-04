@@ -148,6 +148,9 @@ func _run() -> void:
 	var economy := PassengerEconomy.new()
 	root.add_child(economy)
 	economy.configure(grid, 0.0)
+	# The starter Travel Office stores 40, so provision a realistic upgraded
+	# event-test capacity before validating the +50 passenger bundle.
+	economy.capacity = 120
 	economy.set_passengers(0)
 
 	var live_copy := event.duplicate(true)

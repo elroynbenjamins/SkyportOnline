@@ -951,6 +951,8 @@ func _stage_status_text(stage: String) -> String:
 			return "fuel + cleaning + catering"
 		"LOADING":
 			return "boarding + baggage load"
+		"PUSHBACK_PREP":
+			return "tow tug pushback"
 		_:
 			return stage.to_lower()
 

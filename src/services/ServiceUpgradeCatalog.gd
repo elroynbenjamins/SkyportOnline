@@ -7,6 +7,7 @@ const UPGRADEABLE_IDS := [
 	"passenger_service_hub",
 	"baggage_depot",
 	"catering_kitchen",
+	"tow_operations",
 	"basic_fuel",
 	"rapid_small_fuel",
 	"regional_fuel",
@@ -100,6 +101,15 @@ static func get_levels(building_id: String) -> Array[Dictionary]:
 				{"fr_gourmet_food": 2, "be_chocolate": 1},
 				{"nl_horticulture": 2, "dk_design_goods": 2},
 				{"fr_luxury_goods": 3, "gb_specialty_goods": 2}
+			)
+		"tow_operations":
+			return _specialized_levels(
+				9000,
+				21000,
+				39000,
+				{"de_automotive_parts": 1, "be_precision_parts": 1},
+				{"gb_aerospace_parts": 2, "dk_renewable_parts": 2},
+				{"de_machinery": 3, "fr_luxury_goods": 2}
 			)
 		_:
 			return []

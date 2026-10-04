@@ -70,6 +70,8 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
 	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
+	_place_building_internal("bus_stop", Vector2i(8, 10), 0)
+	_place_building_internal("small_hotel", Vector2i(8, 11), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
 	_place_building_internal("service_road", Vector2i(11, 13), 0)
 	_place_building_internal("service_road", Vector2i(12, 13), 0)
@@ -635,6 +637,9 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 		return "STAND  •  " + _size_text(definition) + "  ✓"
 	if id.contains("terminal"):
 		return "TERMINAL"
+	if not String(definition.get("passenger_mode", "")).is_empty():
+		var mode := String(definition.get("passenger_mode", "")).to_upper()
+		return "PASSENGERS  •  " + mode
 	if id.contains("hangar"):
 		if not _is_airside_building_connected(int(building["uid"])):
 			return "HANGAR  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
@@ -655,6 +660,14 @@ func _size_text(definition: Dictionary) -> String:
 
 func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
+
+
+func get_placed_buildings() -> Array[Dictionary]:
+	return placed_buildings.duplicate(true)
+
+
+func get_building_by_uid(uid: int) -> Dictionary:
+	return _building_by_uid(uid).duplicate(true)
 
 
 func get_compatible_service_buildings(service_type: String, aircraft_size: String) -> Array[Dictionary]:

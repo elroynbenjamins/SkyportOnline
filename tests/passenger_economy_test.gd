@@ -38,6 +38,16 @@ func _run() -> void:
 		_fail("One minute should add 1.5 passengers from the Lv1 office.")
 		return
 
+	if not economy.spend_passengers(18):
+		_fail("Passenger stock should be spendable for aircraft boarding.")
+		return
+	if economy.get_passengers() != 3:
+		_fail("Boarding should deduct the aircraft passenger requirement.")
+		return
+	if economy.spend_passengers(24):
+		_fail("Aircraft should wait when passenger stock is insufficient.")
+		return
+
 	if not grid.set_building_upgrade_level(
 		int(office.get("uid", -1)),
 		2
@@ -62,10 +72,22 @@ func _run() -> void:
 		_fail("Passenger persistence test profile should be created.")
 		return
 
-	profile = ProfileStore.add_resource_drops([
-		{"id": "nl_flowers", "amount": 2},
-		{"id": "be_chocolate", "amount": 1}
-	])
+	var next_upgrade := PassengerUpgradeCatalog.get_next_level(
+		"travel_office",
+		1
+	)
+	var upgrade_cost: Dictionary = next_upgrade.get(
+		"resource_cost",
+		{}
+	).duplicate(true)
+	var drops: Array[Dictionary] = []
+	for resource_id in upgrade_cost.keys():
+		drops.append({
+			"id": String(resource_id),
+			"amount": int(upgrade_cost[resource_id])
+		})
+
+	profile = ProfileStore.add_resource_drops(drops)
 	if profile.is_empty():
 		_fail("Test resources should be added to profile.")
 		return
@@ -74,10 +96,7 @@ func _run() -> void:
 	profile = ProfileStore.apply_building_upgrade(
 		building_key,
 		2,
-		{
-			"nl_flowers": 2,
-			"be_chocolate": 1
-		}
+		upgrade_cost
 	)
 	if profile.is_empty():
 		_fail("Resource-funded Travel Office upgrade should persist.")
@@ -87,12 +106,12 @@ func _run() -> void:
 		"resource_inventory",
 		{}
 	)
-	if int(inventory.get("nl_flowers", -1)) != 0:
-		_fail("Upgrade should consume the required Netherlands Flowers.")
-		return
-	if int(inventory.get("be_chocolate", -1)) != 0:
-		_fail("Upgrade should consume the required Belgium Chocolate.")
-		return
+	for resource_id in upgrade_cost.keys():
+		if int(inventory.get(resource_id, -1)) != 0:
+			_fail(
+				"Upgrade should consume all required regional resources."
+			)
+			return
 
 	var upgrades: Dictionary = profile.get("building_upgrades", {})
 	if int(upgrades.get(building_key, 0)) != 2:
@@ -119,8 +138,8 @@ func _run() -> void:
 
 	_cleanup_profile()
 	print(
-		"Passenger economy passed: Lv1 1.5/min 40 storage, "
-		+ "Lv2 2.2/min 55 storage, resource costs persisted."
+		"Passenger economy passed: production/storage upgrades, "
+		+ "boarding consumption, and resource costs persisted."
 	)
 	quit(0)
 

@@ -4,6 +4,7 @@ extends Node2D
 signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
+signal placed_building_selected(data: Dictionary)
 signal network_status_changed(data: Dictionary)
 
 const TILE_WIDTH := 64.0
@@ -70,6 +71,8 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
 	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
+	_place_building_internal("bus_stop", Vector2i(8, 10), 0)
+	_place_building_internal("small_hotel", Vector2i(8, 11), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
 	_place_building_internal("service_road", Vector2i(11, 13), 0)
 	_place_building_internal("service_road", Vector2i(12, 13), 0)
@@ -340,6 +343,22 @@ func select_world_position(world_position: Vector2) -> void:
 	var tile := world_to_tile(world_position)
 	if not _tile_in_world(tile):
 		return
+
+	var key := _cell_key(tile)
+	if occupied_cells.has(key):
+		var building := _building_by_uid(int(occupied_cells[key]))
+		if not building.is_empty():
+			var definition := BuildingCatalog.get_definition(
+				String(building.get("definition_id", ""))
+			)
+			var is_passenger_building := (
+				int(definition.get("passenger_capacity", 0)) > 0
+				or not String(definition.get("passenger_mode", "")).is_empty()
+			)
+			if is_passenger_building:
+				clear_parcel_selection()
+				placed_building_selected.emit(building.duplicate(true))
+				return
 
 	var parcel := _parcel_for_tile(tile)
 	if not parcel.is_empty():
@@ -635,6 +654,9 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 		return "STAND  •  " + _size_text(definition) + "  ✓"
 	if id.contains("terminal"):
 		return "TERMINAL"
+	if not String(definition.get("passenger_mode", "")).is_empty():
+		var mode := String(definition.get("passenger_mode", "")).to_upper()
+		return "PASSENGERS  •  " + mode
 	if id.contains("hangar"):
 		if not _is_airside_building_connected(int(building["uid"])):
 			return "HANGAR  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
@@ -655,6 +677,14 @@ func _size_text(definition: Dictionary) -> String:
 
 func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
+
+
+func get_placed_buildings() -> Array[Dictionary]:
+	return placed_buildings.duplicate(true)
+
+
+func get_building_by_uid(uid: int) -> Dictionary:
+	return _building_by_uid(uid).duplicate(true)
 
 
 func get_compatible_service_buildings(service_type: String, aircraft_size: String) -> Array[Dictionary]:

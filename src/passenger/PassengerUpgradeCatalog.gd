@@ -19,8 +19,8 @@ static func get_levels(building_id: String) -> Array[Dictionary]:
 					"storage": 55,
 					"coin_cost": 2500,
 					"resource_cost": {
-						"nl_flowers": 2,
-						"be_chocolate": 1
+						"be_chocolate": 2,
+						"gb_specialty_goods": 1
 					}
 				},
 				{

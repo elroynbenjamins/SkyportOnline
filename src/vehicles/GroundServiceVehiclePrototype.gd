@@ -14,6 +14,7 @@ var service_duration := 4.0
 var service_remaining := 0.0
 var service_type := "cargo"
 var phase := "IDLE"
+var launch_delay_remaining := 0.0
 var service_pose_rotation := 0.0
 var has_service_pose_rotation := false
 var service_connection_target := Vector2.ZERO
@@ -23,6 +24,10 @@ var tow_start_aircraft_position := Vector2.ZERO
 var tow_end_aircraft_position := Vector2.ZERO
 var tow_start_vehicle_position := Vector2.ZERO
 var tow_initialized := false
+
+
+func set_launch_delay(seconds: float) -> void:
+	launch_delay_remaining = maxf(seconds, 0.0)
 
 
 func set_service_pose_rotation(value: float) -> void:
@@ -64,12 +69,20 @@ func start_service(
 	service_type = kind
 	position = outbound_route[0]
 	visible = true
-	phase = "OUTBOUND"
+	phase = "WAITING_LAUNCH" if launch_delay_remaining > 0.0 else "OUTBOUND"
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
 	match phase:
+		"WAITING_LAUNCH":
+			launch_delay_remaining = maxf(
+				launch_delay_remaining - delta,
+				0.0
+			)
+			if launch_delay_remaining <= 0.0:
+				phase = "OUTBOUND"
+				queue_redraw()
 		"OUTBOUND":
 			if _follow_route(outbound_route, delta):
 				phase = "SERVICING"

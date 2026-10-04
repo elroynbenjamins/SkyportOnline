@@ -2,23 +2,26 @@ class_name AircraftPrototype
 extends Node2D
 
 signal route_completed
+signal state_changed(state: String)
 
 @export var taxi_speed: float = 105.0
-@export var start_delay: float = 1.2
+@export var departure_delay: float = 0.8
 
 var route := PackedVector2Array()
 var route_index := 0
 var moving := false
 var delay_remaining := 0.0
 var state := "PARKED"
+var aircraft_size := "S"
 
 
-func set_route(points: PackedVector2Array) -> void:
+func set_departure_route(points: PackedVector2Array, size_class: String = "S") -> void:
 	route = points
+	aircraft_size = size_class
 	route_index = 0
 	moving = false
-	state = "PARKED"
-	delay_remaining = start_delay
+	delay_remaining = 0.0
+	_set_state("WAITING_FUEL")
 
 	if route.is_empty():
 		visible = false
@@ -29,15 +32,23 @@ func set_route(points: PackedVector2Array) -> void:
 	queue_redraw()
 
 
+func begin_departure_after_service() -> void:
+	if route.size() < 2:
+		return
+	delay_remaining = departure_delay
+	moving = false
+	_set_state("READY")
+
+
 func _process(delta: float) -> void:
 	if route.size() < 2:
 		return
 
-	if delay_remaining > 0.0:
+	if state == "READY":
 		delay_remaining -= delta
 		if delay_remaining <= 0.0:
 			moving = true
-			state = "TAXIING"
+			_set_state("TAXIING")
 		return
 
 	if not moving:
@@ -53,7 +64,7 @@ func _process(delta: float) -> void:
 		route_index = target_index
 		if route_index >= route.size() - 1:
 			moving = false
-			state = "HOLDING"
+			_set_state("HOLDING")
 			route_completed.emit()
 			queue_redraw()
 			return
@@ -65,10 +76,16 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+func _set_state(new_state: String) -> void:
+	if state == new_state:
+		return
+	state = new_state
+	state_changed.emit(state)
+	queue_redraw()
+
+
 func _draw() -> void:
-	# Temporary code-drawn S-class commuter plane. This will be replaced by
-	# the dedicated pixel-aircraft sprite pack once pathing is locked.
-	draw_ellipse_shadow()
+	_draw_shadow()
 
 	var fuselage := PackedVector2Array([
 		Vector2(22, 0),
@@ -107,8 +124,13 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2(2, -4), Vector2(7, 8)), Color("4a7898"))
 	draw_circle(Vector2(14, 0), 2.2, Color("c8e9f1"))
 
+	if state == "WAITING_FUEL":
+		draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
+	elif state == "READY":
+		draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
 
-func draw_ellipse_shadow() -> void:
+
+func _draw_shadow() -> void:
 	draw_set_transform(Vector2(2, 4), 0.0, Vector2(1.0, 0.45))
 	draw_circle(Vector2.ZERO, 20.0, Color(0, 0, 0, 0.25))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

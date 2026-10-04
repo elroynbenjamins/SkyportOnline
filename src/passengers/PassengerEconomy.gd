@@ -102,6 +102,7 @@ func advance_time(seconds: float) -> void:
 	var any_change := false
 
 	for uid_variant in building_states.keys():
+		var building_changed_this_tick := false
 		var uid := int(uid_variant)
 		var state: Dictionary = building_states[uid]
 		var definition := BuildingCatalog.get_definition(String(state["definition_id"]))
@@ -131,13 +132,14 @@ func advance_time(seconds: float) -> void:
 			while progress >= cycle and stored < storage_cap:
 				progress -= cycle
 				stored = mini(storage_cap, stored + base_yield)
+				building_changed_this_tick = true
 				any_change = true
 
 		state["stored"] = stored
 		state["progress_seconds"] = progress
 		building_states[uid] = state
 
-		if any_change:
+		if building_changed_this_tick:
 			building_changed.emit(uid, get_building_state(uid))
 
 	if any_change:
@@ -339,7 +341,11 @@ func get_building_state(uid: int) -> Dictionary:
 	var definition := BuildingCatalog.get_definition(String(state["definition_id"]))
 	var level := int(state.get("upgrade_level", 1))
 	var base_storage := int(definition.get("passenger_storage", 0))
+	var base_terminal_capacity := int(definition.get("passenger_capacity", 0))
 	state["storage_capacity"] = roundi(float(base_storage) * _storage_multiplier(level))
+	state["terminal_capacity"] = roundi(
+		float(base_terminal_capacity) * _terminal_capacity_multiplier(level)
+	)
 	state["rate_multiplier"] = _rate_multiplier(level)
 	state["upgrade_quote"] = get_upgrade_quote(uid)
 	return state

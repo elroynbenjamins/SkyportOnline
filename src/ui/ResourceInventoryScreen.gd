@@ -7,6 +7,7 @@ var root: Control
 var passenger_label: Label
 var passenger_boost_button: Button
 var passenger_support_label: Label
+var economy_history_label: Label
 var resource_list: VBoxContainer
 
 
@@ -21,14 +22,16 @@ func open_inventory(
 	passengers: int,
 	passenger_capacity: int,
 	passengers_per_minute: float,
-	rewarded_ad_available: bool = false
+	rewarded_ad_available: bool = false,
+	economy_stats: Dictionary = {}
 ) -> void:
 	_refresh(
 		inventory,
 		passengers,
 		passenger_capacity,
 		passengers_per_minute,
-		rewarded_ad_available
+		rewarded_ad_available,
+		economy_stats
 	)
 	root.visible = true
 
@@ -121,6 +124,16 @@ func _build_ui() -> void:
 	explanation.add_theme_color_override("font_color", Color("a9c6cf"))
 	column.add_child(explanation)
 
+
+	economy_history_label = Label.new()
+	economy_history_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	economy_history_label.add_theme_font_size_override("font_size", 13)
+	economy_history_label.add_theme_color_override(
+		"font_color",
+		Color("9fe3b7")
+	)
+	column.add_child(economy_history_label)
+
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(scroll)
@@ -136,7 +149,8 @@ func _refresh(
 	passengers: int,
 	passenger_capacity: int,
 	passengers_per_minute: float,
-	rewarded_ad_available: bool
+	rewarded_ad_available: bool,
+	economy_stats: Dictionary
 ) -> void:
 	passenger_label.text = (
 		"👥 Passengers: %d / %d   •   +%.1f per minute"
@@ -154,6 +168,19 @@ func _refresh(
 			"Rewarded +25 passenger hook is ready; ad provider not "
 			+ "connected yet. Friend gifts later: +10 each, max 3/day."
 		)
+
+
+	economy_history_label.text = (
+		"LIFETIME AIRPORT FLOW  •  Generated %d pax  •  Boarded %d pax  "
+		+ "•  Flights %d  •  Flight coins %d  •  XP %d  •  Resources %d"
+	) % [
+		int(economy_stats.get("passengers_generated", 0)),
+		int(economy_stats.get("passengers_boarded", 0)),
+		int(economy_stats.get("flights_completed", 0)),
+		int(economy_stats.get("flight_coins", 0)),
+		int(economy_stats.get("flight_xp", 0)),
+		int(economy_stats.get("resources_earned", 0))
+	]
 
 	for child in resource_list.get_children():
 		child.queue_free()

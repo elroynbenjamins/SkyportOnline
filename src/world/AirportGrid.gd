@@ -638,7 +638,11 @@ func _draw_runway_operational_indicators() -> void:
 			color = RUNWAY_OCCUPIED
 		elif bool(state.get("arrival_priority", false)):
 			color = RUNWAY_PRIORITY
-		elif status in ["departure_wait", "departure_approaching"]:
+		elif status in [
+			"departure_wait",
+			"departure_approaching",
+			"runway_spacing"
+		]:
 			color = STOP_BAR_AMBER
 
 		draw_circle(

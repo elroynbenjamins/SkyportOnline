@@ -200,7 +200,19 @@ func _run() -> void:
 
 	snapshot = dispatcher.get_turnaround_snapshot(plane_a)
 	if String(snapshot.get("stage", "")) != "PUSHBACK_PREP":
-		_fail("Completed loading should advance to pushback checks.")
+		_fail("Completed loading should advance to queued pushback.")
+		return
+
+	var pushback_status: Dictionary = (
+		snapshot.get("service_status", {}) as Dictionary
+	)
+	if String(
+		(pushback_status.get("pushback", {}) as Dictionary).get(
+			"state",
+			""
+		)
+	) != "en_route":
+		_fail("Available starter tug should dispatch for pushback.")
 		return
 
 	dispatcher._process(
@@ -211,9 +223,22 @@ func _run() -> void:
 			)
 		) + 0.1
 	)
+	if plane_a.state == "READY_FOR_DEPARTURE":
+		_fail(
+			"Pushback should not finish from dispatcher time alone."
+		)
+		return
+
+	dispatcher._on_service_completed(
+		plane_a,
+		"Ops A",
+		job_id,
+		"pushback",
+		false
+	)
 	if plane_a.state != "READY_FOR_DEPARTURE":
 		_fail(
-			"Completed ground handling should release the aircraft for departure."
+			"Completed tow service should release the aircraft for departure."
 		)
 		return
 

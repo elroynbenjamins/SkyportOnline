@@ -101,8 +101,8 @@ static func best_manifest_for_aircraft(
 		var manifest := calculate_manifest(aircraft, route, player_level)
 		if manifest.is_empty():
 			continue
-		if best.is_empty() or float(manifest.get("profit_per_minute", -INF)) > float(
-			best.get("profit_per_minute", -INF)
+		if best.is_empty() or float(manifest.get("profit_per_minute", -1.0e30)) > float(
+			best.get("profit_per_minute", -1.0e30)
 		):
 			best = manifest
 	return best

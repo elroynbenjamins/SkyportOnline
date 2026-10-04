@@ -44,11 +44,35 @@ var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
 var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
+var cosmetic_loadout: Dictionary = {}
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
 var preview_rotation := 0
 var preview_status: Dictionary = {}
+
+
+func set_cosmetic_loadout(loadout: Dictionary) -> void:
+	cosmetic_loadout = loadout.duplicate(true)
+	queue_redraw()
+
+
+func _terminal_cosmetic_modulate(definition: Dictionary) -> Color:
+	var building_id := String(definition.get("id", ""))
+	if not building_id.contains("terminal"):
+		return Color.WHITE
+
+	var cosmetic_id := String(
+		cosmetic_loadout.get(
+			CosmeticCatalog.SLOT_TERMINAL_SKIN,
+			""
+		)
+	)
+	if cosmetic_id.is_empty():
+		return Color.WHITE
+
+	var accent := CosmeticCatalog.visual_color(cosmetic_id)
+	return Color.WHITE.lerp(accent, 0.38)
 
 
 func _ready() -> void:
@@ -166,7 +190,25 @@ func _draw_buildings() -> void:
 		if not _definition_has_world_sprite(definition):
 			_draw_building_detail(building, definition, footprint)
 		else:
-			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
+			var cosmetic_modulate := _terminal_cosmetic_modulate(
+				definition
+			)
+			_draw_building_sprite(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"]),
+				cosmetic_modulate
+			)
+
+			if cosmetic_modulate != Color.WHITE:
+				var center := _footprint_center_world(origin, footprint)
+				draw_circle(
+					center + Vector2(0, -54),
+					5.0,
+					cosmetic_modulate,
+					true
+				)
 
 
 func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:

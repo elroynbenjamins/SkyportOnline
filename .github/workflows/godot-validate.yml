@@ -101,3 +101,7 @@ jobs:
 
       - name: Test runway hold short and arrival priority
         run: timeout 20s godot --headless --path . --script res://tests/runway_hold_short_test.gd
+
+
+      - name: Test runway visual controls
+        run: timeout 20s godot --headless --path . --script res://tests/runway_visual_control_test.gd

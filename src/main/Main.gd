@@ -21,6 +21,9 @@ var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
 var world_map: WorldMapScreen
 var return_summary: FlightReturnSummary
+var resource_inventory_screen: ResourceInventoryScreen
+var passenger_upgrade_panel: PassengerUpgradePanel
+var passenger_economy: PassengerEconomy
 var current_profile: Dictionary = {}
 var gameplay_started := false
 
@@ -29,6 +32,7 @@ func _ready() -> void:
 	camera_controller.world_tapped.connect(_on_world_tapped)
 	airport_grid.parcel_selected.connect(_on_parcel_selected)
 	airport_grid.network_status_changed.connect(_on_network_status_changed)
+	airport_grid.building_selected_world.connect(_on_building_selected_world)
 
 	hud.purchase_expansion_requested.connect(_on_purchase_expansion_requested)
 	hud.building_selected.connect(_on_building_selected)
@@ -91,6 +95,9 @@ func _start_gameplay() -> void:
 	_setup_runway_dispatcher()
 	_setup_world_map()
 	_setup_return_summary()
+	_setup_passenger_system()
+	_setup_resource_inventory()
+	_setup_passenger_upgrade_panel()
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
 
@@ -123,6 +130,35 @@ func _setup_world_map() -> void:
 func _setup_return_summary() -> void:
 	return_summary = FlightReturnSummary.new()
 	add_child(return_summary)
+
+
+func _setup_passenger_system() -> void:
+	var saved_upgrades: Dictionary = current_profile.get(
+		"building_upgrades",
+		{}
+	).duplicate(true)
+	airport_grid.apply_saved_building_upgrades(saved_upgrades)
+
+	passenger_economy = PassengerEconomy.new()
+	passenger_economy.changed.connect(_on_passenger_economy_changed)
+	add_child(passenger_economy)
+	passenger_economy.configure(
+		airport_grid,
+		float(current_profile.get("passenger_balance", 20))
+	)
+
+
+func _setup_resource_inventory() -> void:
+	resource_inventory_screen = ResourceInventoryScreen.new()
+	add_child(resource_inventory_screen)
+
+
+func _setup_passenger_upgrade_panel() -> void:
+	passenger_upgrade_panel = PassengerUpgradePanel.new()
+	passenger_upgrade_panel.upgrade_requested.connect(
+		_on_passenger_upgrade_requested
+	)
+	add_child(passenger_upgrade_panel)
 
 
 func _spawn_aircraft_demos() -> void:
@@ -438,7 +474,12 @@ func _on_navigation_requested(tab: String) -> void:
 		"alliance":
 			hud.set_operation_status("Alliance unlocks later.")
 		"more":
-			hud.set_operation_status("More/settings screen comes later.")
+			resource_inventory_screen.open_inventory(
+				resource_inventory,
+				passenger_economy.get_passengers(),
+				passenger_economy.get_capacity(),
+				passenger_economy.get_production_per_minute()
+			)
 
 
 func _on_world_map_flight_assignment_requested(
@@ -497,6 +538,109 @@ func _on_world_tapped(world_position: Vector2) -> void:
 		return
 
 	airport_grid.select_world_position(world_position)
+
+
+func _on_passenger_economy_changed(
+	passengers: int,
+	capacity: int,
+	per_minute: float
+) -> void:
+	hud.set_passenger_data(passengers, capacity, per_minute)
+	var updated := ProfileStore.save_passenger_balance(passengers)
+	if not updated.is_empty():
+		current_profile = updated
+
+
+func _on_building_selected_world(building: Dictionary) -> void:
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if not bool(definition.get("passenger_generator", false)):
+		hud.set_operation_status(
+			String(definition.get("name", "Airport building"))
+		)
+		return
+
+	passenger_upgrade_panel.open_building(
+		building,
+		resource_inventory,
+		coins
+	)
+
+
+func _on_passenger_upgrade_requested(building_uid: int) -> void:
+	var building := airport_grid.get_building(building_uid)
+	if building.is_empty():
+		return
+
+	var building_id := String(building.get("definition_id", ""))
+	var current_level := int(building.get("upgrade_level", 1))
+	var next := PassengerUpgradeCatalog.get_next_level(
+		building_id,
+		current_level
+	)
+	if next.is_empty():
+		return
+
+	var coin_cost := int(next.get("coin_cost", 0))
+	if coins < coin_cost:
+		passenger_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
+	var resource_cost: Dictionary = next.get(
+		"resource_cost",
+		{}
+	).duplicate(true)
+	var building_key := airport_grid.get_building_key(building)
+	var updated_profile := ProfileStore.apply_building_upgrade(
+		building_key,
+		int(next.get("level", current_level + 1)),
+		resource_cost
+	)
+	if updated_profile.is_empty():
+		passenger_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
+	coins -= coin_cost
+	current_profile = updated_profile
+	resource_inventory = current_profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
+
+	airport_grid.set_building_upgrade_level(
+		building_uid,
+		int(next.get("level", current_level + 1))
+	)
+	passenger_economy.refresh_building_stats()
+	hud.set_player_data(player_level, coins, gems)
+
+	var refreshed := airport_grid.get_building(building_uid)
+	passenger_upgrade_panel.open_building(
+		refreshed,
+		resource_inventory,
+		coins
+	)
+	hud.set_operation_status(
+		"%s upgraded to Lv %d" % [
+			String(
+				BuildingCatalog.get_definition(building_id).get(
+					"name",
+					"Passenger building"
+				)
+			),
+			int(next.get("level", current_level + 1))
+		],
+		"success"
+	)
 
 
 func _on_network_status_changed(status: Dictionary) -> void:

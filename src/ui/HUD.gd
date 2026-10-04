@@ -37,6 +37,7 @@ var current_coins := 0
 var current_gems := 0
 var active_building_id := ""
 var event_nav_button: Button
+var nav_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -57,6 +58,7 @@ func _build_interface() -> void:
 	top_panel.offset_right = -12
 	top_panel.offset_bottom = 72
 	root.add_child(top_panel)
+	GameUIStyle.apply_panel(top_panel, "top")
 
 	var top_row := HBoxContainer.new()
 	top_row.add_theme_constant_override("separation", 18)
@@ -66,12 +68,20 @@ func _build_interface() -> void:
 	level_label.custom_minimum_size = Vector2(90, 0)
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level_label.add_theme_font_size_override("font_size", 20)
+	level_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
 	top_row.add_child(level_label)
 
 	title_label = Label.new()
 	title_label.text = "✈ SKYPORT ONLINE"
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_label.add_theme_font_size_override("font_size", 21)
+	title_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_TEXT
+	)
 	top_row.add_child(title_label)
 
 	passenger_label = Label.new()
@@ -79,18 +89,30 @@ func _build_interface() -> void:
 	passenger_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	passenger_label.add_theme_font_size_override("font_size", 17)
 	passenger_label.text = "👥 0 / 0"
+	passenger_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
 	top_row.add_child(passenger_label)
 
 	coins_label = Label.new()
 	coins_label.custom_minimum_size = Vector2(130, 0)
 	coins_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	coins_label.add_theme_font_size_override("font_size", 19)
+	coins_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
 	top_row.add_child(coins_label)
 
 	gems_label = Label.new()
 	gems_label.custom_minimum_size = Vector2(92, 0)
 	gems_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	gems_label.add_theme_font_size_override("font_size", 19)
+	gems_label.add_theme_color_override(
+		"font_color",
+		Color("d8b9ff")
+	)
 	top_row.add_child(gems_label)
 
 	var objective_panel := PanelContainer.new()
@@ -100,6 +122,7 @@ func _build_interface() -> void:
 	objective_panel.offset_right = -12
 	objective_panel.offset_bottom = 146
 	root.add_child(objective_panel)
+	GameUIStyle.apply_panel(objective_panel, "raised")
 
 	var objective := Label.new()
 	objective.text = "BUILD YOUR AIRPORT\nPlace infrastructure and expand"
@@ -115,6 +138,7 @@ func _build_interface() -> void:
 	airside_panel.offset_right = 250
 	airside_panel.offset_bottom = 146
 	root.add_child(airside_panel)
+	GameUIStyle.apply_panel(airside_panel, "dark")
 
 	airside_status_label = Label.new()
 	airside_status_label.text = "AIRFIELD STATUS\nChecking taxiway network..."
@@ -130,6 +154,7 @@ func _build_interface() -> void:
 	operation_panel.offset_right = 460
 	operation_panel.offset_bottom = 146
 	root.add_child(operation_panel)
+	GameUIStyle.apply_panel(operation_panel, "dark")
 
 	operation_status_label = Label.new()
 	operation_status_label.text = "GROUND OPS\nPreparing first aircraft..."
@@ -145,6 +170,7 @@ func _build_interface() -> void:
 	atc_panel.offset_right = 850
 	atc_panel.offset_bottom = 146
 	root.add_child(atc_panel)
+	GameUIStyle.apply_panel(atc_panel, "gold")
 
 	atc_status_label = Label.new()
 	atc_status_label.text = "RUNWAY CONTROL\nNo active movements"
@@ -166,6 +192,10 @@ func _build_interface() -> void:
 	build_hint.offset_bottom = -160
 	build_hint.text = "BUILD MODE  •  Tap a building, then tap owned land"
 	build_hint.add_theme_font_size_override("font_size", 14)
+	build_hint.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_MUTED
+	)
 	root.add_child(build_hint)
 
 	_build_context_panel(root)
@@ -181,6 +211,7 @@ func _build_context_panel(root: Control) -> void:
 	parcel_panel.offset_right = -450
 	parcel_panel.offset_bottom = -82
 	root.add_child(parcel_panel)
+	GameUIStyle.apply_panel(parcel_panel, "raised")
 
 	var parcel_row := HBoxContainer.new()
 	parcel_row.add_theme_constant_override("separation", 16)
@@ -205,6 +236,7 @@ func _build_context_panel(root: Control) -> void:
 	purchase_button.text = "SELECT LAND"
 	purchase_button.disabled = true
 	purchase_button.pressed.connect(_on_purchase_pressed)
+	GameUIStyle.apply_button(purchase_button, "gold")
 	parcel_row.add_child(purchase_button)
 
 	build_action_panel = PanelContainer.new()
@@ -215,6 +247,7 @@ func _build_context_panel(root: Control) -> void:
 	build_action_panel.offset_bottom = -82
 	build_action_panel.visible = false
 	root.add_child(build_action_panel)
+	GameUIStyle.apply_panel(build_action_panel, "raised")
 
 	var build_row := HBoxContainer.new()
 	build_row.add_theme_constant_override("separation", 10)
@@ -238,12 +271,14 @@ func _build_context_panel(root: Control) -> void:
 	rotate_button.custom_minimum_size = Vector2(92, 72)
 	rotate_button.text = "↻\nROTATE"
 	rotate_button.pressed.connect(_on_rotate_pressed)
+	GameUIStyle.apply_button(rotate_button, "secondary", true)
 	build_row.add_child(rotate_button)
 
 	var cancel_button := Button.new()
 	cancel_button.custom_minimum_size = Vector2(92, 72)
 	cancel_button.text = "✕\nCANCEL"
 	cancel_button.pressed.connect(_on_cancel_building_pressed)
+	GameUIStyle.apply_button(cancel_button, "danger", true)
 	build_row.add_child(cancel_button)
 
 	place_button = Button.new()
@@ -251,6 +286,7 @@ func _build_context_panel(root: Control) -> void:
 	place_button.text = "PLACE"
 	place_button.disabled = true
 	place_button.pressed.connect(_on_confirm_building_pressed)
+	GameUIStyle.apply_button(place_button, "primary")
 	build_row.add_child(place_button)
 
 
@@ -262,6 +298,7 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_panel.offset_right = -8
 	catalog_panel.offset_bottom = -82
 	root.add_child(catalog_panel)
+	GameUIStyle.apply_panel(catalog_panel, "dark")
 
 	var catalog_wrapper := VBoxContainer.new()
 	catalog_wrapper.add_theme_constant_override("separation", 5)
@@ -296,6 +333,7 @@ func _build_bottom_navigation(root: Control) -> void:
 	bottom_nav.offset_right = -8
 	bottom_nav.offset_bottom = -8
 	root.add_child(bottom_nav)
+	GameUIStyle.apply_panel(bottom_nav, "top")
 
 	var nav_row := HBoxContainer.new()
 	nav_row.add_theme_constant_override("separation", 4)
@@ -310,6 +348,12 @@ func _build_bottom_navigation(root: Control) -> void:
 
 		var parts: PackedStringArray = item.split("\n")
 		var tab: String = String(parts[1]).to_lower()
+		GameUIStyle.apply_button(
+			button,
+			"selected" if tab == "build" else "nav",
+			true
+		)
+		nav_buttons[tab] = button
 		if tab == "build":
 			button.disabled = true
 		else:
@@ -340,8 +384,10 @@ func set_event_attention(claimable: bool) -> void:
 		return
 	if claimable:
 		event_nav_button.text = "🎉 •\nEVENT"
+		GameUIStyle.apply_button(event_nav_button, "event", true)
 	else:
 		event_nav_button.text = "🎉\nEVENT"
+		GameUIStyle.apply_button(event_nav_button, "nav", true)
 
 
 func set_interface_visible(value: bool) -> void:
@@ -383,7 +429,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(195, 70)
+		button.custom_minimum_size = Vector2(195, 74)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 12)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -391,6 +437,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 		button.expand_icon = true
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		button.tooltip_text = String(definition.get("description", ""))
+		GameUIStyle.apply_button(button, "secondary", true)
 		var icon := _catalog_icon_for(definition)
 		if icon != null:
 			button.icon = icon
@@ -673,9 +720,18 @@ func _update_catalog_buttons() -> void:
 		var cost := int(definition["cost"])
 
 		if current_level < required_level:
-			button.text = "%s\n🔒 LV %d" % [String(definition["menu_name"]), required_level]
+			GameUIStyle.apply_button(button, "secondary", true)
+			button.text = "%s\n🔒 LV %d" % [
+				String(definition["menu_name"]),
+				required_level
+			]
 			button.disabled = true
 		else:
+			GameUIStyle.apply_button(
+				button,
+				"selected" if id == active_building_id else "secondary",
+				true
+			)
 			button.text = "%s\n🪙 %s • %s" % [
 				String(definition["menu_name"]),
 				_format_number(cost),

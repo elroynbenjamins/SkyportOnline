@@ -269,8 +269,8 @@ func _build_bottom_navigation(root: Control) -> void:
 		button.custom_minimum_size = Vector2(0, 54)
 		button.add_theme_font_size_override("font_size", 15)
 
-		var parts := item.split("\n")
-		var tab := String(parts[1]).to_lower()
+		var parts: PackedStringArray = item.split("\n")
+		var tab: String = String(parts[1]).to_lower()
 		if tab == "build":
 			button.disabled = true
 		else:

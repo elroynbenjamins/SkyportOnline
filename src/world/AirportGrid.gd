@@ -639,7 +639,10 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 	if id.contains("runway"):
 		return "RUNWAY  •  " + _size_text(definition)
 	if id.contains("fuel"):
-		return "FUEL  •  " + _size_text(definition)
+		var fuel_label := "FUEL  •  " + _size_text(definition)
+		if ServiceUpgradeCatalog.is_upgradeable(id):
+			fuel_label += "  •  LV %d" % int(building.get("upgrade_level", 1))
+		return fuel_label
 	if id.contains("stand"):
 		if not _is_airside_building_connected(int(building["uid"])):
 			return "STAND  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
@@ -654,6 +657,8 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 		if not _is_airside_building_connected(int(building["uid"])):
 			return "HANGAR  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
 		return "HANGAR  •  " + _size_text(definition) + "  ✓"
+	if ServiceUpgradeCatalog.is_upgradeable(id):
+		return "%s  •  LV %d" % [String(definition["menu_name"]).to_upper(), int(building.get("upgrade_level", 1))]
 	return String(definition["name"]).to_upper()
 
 
@@ -687,10 +692,16 @@ func get_compatible_service_buildings(
 		if not _definition_supports_size(definition, aircraft_size):
 			continue
 
+		var building_id := String(building.get("definition_id", ""))
+		var level := int(building.get("upgrade_level", 1))
+		var effective := ServiceUpgradeCatalog.effective_service_stats(building_id, service_type, level)
 		var service_speed := 0.0
 		var vehicle_capacity := 0
 		var legacy_service := String(definition.get("service", ""))
-		if legacy_service == service_type:
+		if not effective.is_empty():
+			service_speed = float(effective.get("service_speed", 1.0))
+			vehicle_capacity = int(effective.get("vehicle_capacity", 1))
+		elif legacy_service == service_type:
 			service_speed = float(definition.get("service_speed", 1.0))
 			vehicle_capacity = int(definition.get("vehicle_capacity", 1))
 		else:
@@ -707,7 +718,8 @@ func get_compatible_service_buildings(
 		)
 		results.append({
 			"uid": int(building["uid"]),
-			"definition_id": String(building["definition_id"]),
+			"definition_id": building_id,
+			"upgrade_level": level,
 			"world_position": _footprint_center_world(
 				building["origin"],
 				footprint

@@ -212,6 +212,20 @@ static func all() -> Array[Dictionary]:
 			"vehicle_capacity": 2
 		},
 		{
+			"id": "atc_tower",
+			"name": "Air Traffic Control Tower",
+			"menu_name": "ATC TOWER",
+			"category": "Operations",
+			"footprint": Vector2i(2, 2),
+			"cost": 55000,
+			"level": 9,
+			"color": Color("77909a"),
+			"rotatable": true,
+			"sizes": PackedStringArray([]),
+			"description": "Reduces required separation between runway movements.",
+			"air_traffic_control": true
+		},
+		{
 			"id": "small_hangar",
 			"name": "Small Hangar",
 			"menu_name": "SMALL HANGAR",

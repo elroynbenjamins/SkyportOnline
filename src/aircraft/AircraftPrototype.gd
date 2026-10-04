@@ -22,11 +22,33 @@ var state := "PARKED"
 var aircraft_size := "S"
 var stand_uid := -1
 var runway_uid := -1
+var aircraft_id := "prototype"
+var aircraft_definition: Dictionary = {}
+var flight_manifest: Dictionary = {}
 
 var delay_remaining := 0.0
 var flight_remaining := 0.0
 var takeoff_velocity := 0.0
 var arrival_runway_cleared := false
+
+
+func configure_aircraft(definition: Dictionary) -> void:
+	aircraft_definition = definition.duplicate(true)
+	aircraft_id = String(aircraft_definition.get("id", "prototype"))
+	aircraft_size = String(aircraft_definition.get("size_class", "S"))
+	queue_redraw()
+
+
+func assign_flight(manifest: Dictionary) -> void:
+	flight_manifest = manifest.duplicate(true)
+
+
+func get_flight_manifest() -> Dictionary:
+	return flight_manifest.duplicate(true)
+
+
+func clear_flight_manifest() -> void:
+	flight_manifest.clear()
 
 
 func set_departure_route(
@@ -169,7 +191,9 @@ func _process_climb(delta: float) -> void:
 	var climb_target := departure_route[departure_route.size() - 1]
 	if _move_toward_point(climb_target, takeoff_speed * 1.15, delta):
 		visible = false
-		flight_remaining = demo_flight_duration
+		flight_remaining = float(
+			flight_manifest.get("simulation_seconds", demo_flight_duration)
+		)
 		_set_state("EN_ROUTE")
 		departed.emit()
 

@@ -200,10 +200,15 @@ func get_pushback_target_position() -> Vector2:
 			distance = maxf(distance, 62.0)
 
 	if departure_route.size() >= 2:
-		var direction := (
+		var first_leg := (
 			departure_route[1] - departure_route[0]
-		).normalized()
+		)
+		var direction := first_leg.normalized()
 		if direction != Vector2.ZERO:
+			distance = minf(
+				distance,
+				first_leg.length() * 0.72
+			)
 			return departure_route[0] + direction * distance
 
 	return global_position + Vector2(-distance, 0).rotated(
@@ -666,19 +671,23 @@ func _refined_departure_route(
 	if points.size() < 4:
 		return points.duplicate()
 
-	# Keep the exact runway entry/end pair intact. Only the stand/taxiway
-	# portion is rounded.
+	# Keep the exact stand -> first taxiway leg and runway entry/end pair.
+	# Pushback uses that first leg, while later taxiway corners are rounded.
 	var taxi_points := PackedVector2Array()
-	for index in range(0, points.size() - 1):
+	for index in range(1, points.size() - 1):
 		taxi_points.append(points[index])
 
-	var refined := TaxiMotionRules.refined_route(
+	var refined_taxi := TaxiMotionRules.refined_route(
 		taxi_points,
 		aircraft_size,
 		aircraft_profile
 	)
-	refined.append(points[points.size() - 1])
-	return refined
+	var result := PackedVector2Array()
+	result.append(points[0])
+	for point in refined_taxi:
+		result.append(point)
+	result.append(points[points.size() - 1])
+	return result
 
 
 func _refined_arrival_route(

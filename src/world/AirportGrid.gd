@@ -4,6 +4,7 @@ extends Node2D
 signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
+signal network_status_changed(data: Dictionary)
 
 const TILE_WIDTH := 64.0
 const TILE_HEIGHT := 32.0
@@ -20,6 +21,8 @@ const LOCKED_GRID_LINE := Color("84958d", 0.22)
 const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
+const AIRSIDE_WARNING := Color("ffb84d")
+const AIRSIDE_CONNECTED := Color("76d39b")
 
 var parcels: Dictionary = {}
 var selected_id := ""
@@ -30,6 +33,7 @@ var occupied_cells: Dictionary = {}
 var next_building_uid := 1
 var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
+var airside_status: Dictionary = {}
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -40,6 +44,7 @@ var preview_status: Dictionary = {}
 func _ready() -> void:
 	_initialize_parcels()
 	_initialize_starter_airport()
+	_recalculate_airside_network()
 	_create_parcel_labels()
 	_refresh_building_labels()
 	queue_redraw()
@@ -89,6 +94,7 @@ func _draw() -> void:
 			_draw_parcel_tiles(parcel)
 
 	_draw_buildings()
+	_draw_airside_warnings()
 	_draw_build_preview()
 	_draw_selected_outline()
 
@@ -349,6 +355,7 @@ func confirm_build_preview() -> Dictionary:
 
 	var placed := _place_building_internal(preview_building_id, preview_origin, preview_rotation)
 	_rebuild_occupied_cells()
+	_recalculate_airside_network()
 	_refresh_building_labels()
 	clear_build_preview()
 	queue_redraw()
@@ -390,12 +397,19 @@ func _get_placement_status(building_id: String, origin: Vector2i, rotation: int)
 				"footprint": footprint
 			}
 
-	return {
+	var result := {
 		"valid": true,
 		"reason": "Ready to build.",
 		"origin": origin,
 		"footprint": footprint
 	}
+
+	if _needs_airside_connection(definition):
+		var preview_cells := _cells_for(origin, footprint)
+		if not _cells_touch_reachable_taxiway(preview_cells):
+			result["warning"] = "No taxiway connection to a runway yet."
+
+	return result
 
 
 func _footprint_for(definition: Dictionary, rotation: int) -> Vector2i:
@@ -540,23 +554,27 @@ func _refresh_building_labels() -> void:
 		label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 		label.add_theme_constant_override("shadow_offset_x", 1)
 		label.add_theme_constant_override("shadow_offset_y", 2)
-		label.text = _building_label_text(definition)
+		label.text = _building_label_text(building, definition)
 		add_child(label)
 		building_labels.append(label)
 
 
-func _building_label_text(definition: Dictionary) -> String:
+func _building_label_text(building: Dictionary, definition: Dictionary) -> String:
 	var id := String(definition["id"])
 	if id.contains("runway"):
 		return "RUNWAY  •  " + _size_text(definition)
 	if id.contains("fuel"):
 		return "FUEL  •  " + _size_text(definition)
 	if id.contains("stand"):
-		return "STAND  •  " + _size_text(definition)
+		if not _is_airside_building_connected(int(building["uid"])):
+			return "STAND  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
+		return "STAND  •  " + _size_text(definition) + "  ✓"
 	if id.contains("terminal"):
 		return "TERMINAL"
 	if id.contains("hangar"):
-		return "HANGAR  •  " + _size_text(definition)
+		if not _is_airside_building_connected(int(building["uid"])):
+			return "HANGAR  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
+		return "HANGAR  •  " + _size_text(definition) + "  ✓"
 	return String(definition["name"]).to_upper()
 
 
@@ -569,6 +587,200 @@ func _size_text(definition: Dictionary) -> String:
 		result += sizes[index]
 	return result
 
+
+
+func get_airside_status() -> Dictionary:
+	return airside_status.duplicate(true)
+
+
+func _needs_airside_connection(definition: Dictionary) -> bool:
+	var id := String(definition.get("id", ""))
+	return id.contains("stand") or id.contains("hangar")
+
+
+func _is_taxiway_definition(definition: Dictionary) -> bool:
+	return String(definition.get("id", "")) == "taxiway"
+
+
+func _is_runway_definition(definition: Dictionary) -> bool:
+	return String(definition.get("id", "")).contains("runway")
+
+
+func _is_airside_building_connected(uid: int) -> bool:
+	var connected: Array = airside_status.get("connected_uids", [])
+	return connected.has(uid)
+
+
+func _recalculate_airside_network() -> void:
+	var taxiway_cells: Dictionary = {}
+	var runway_cells: Dictionary = {}
+	var airside_buildings: Array[Dictionary] = []
+
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty():
+			continue
+
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var cells := _cells_for(building["origin"], footprint)
+
+		if _is_taxiway_definition(definition):
+			for cell in cells:
+				taxiway_cells[_cell_key(cell)] = cell
+		elif _is_runway_definition(definition):
+			for cell in cells:
+				runway_cells[_cell_key(cell)] = cell
+		elif _needs_airside_connection(definition):
+			airside_buildings.append({
+				"uid": int(building["uid"]),
+				"definition_id": String(building["definition_id"]),
+				"cells": cells
+			})
+
+	var reachable_taxiways := _reachable_taxiway_cells(taxiway_cells, runway_cells)
+	var connected_uids: Array[int] = []
+	var disconnected: Array[Dictionary] = []
+	var connected_stands := 0
+	var total_stands := 0
+	var connected_hangars := 0
+	var total_hangars := 0
+
+	for info in airside_buildings:
+		var uid := int(info["uid"])
+		var definition_id := String(info["definition_id"])
+		var connected := _cells_touch_cell_set(info["cells"], reachable_taxiways)
+
+		if definition_id.contains("stand"):
+			total_stands += 1
+			if connected:
+				connected_stands += 1
+		elif definition_id.contains("hangar"):
+			total_hangars += 1
+			if connected:
+				connected_hangars += 1
+
+		if connected:
+			connected_uids.append(uid)
+		else:
+			disconnected.append({
+				"uid": uid,
+				"definition_id": definition_id
+			})
+
+	airside_status = {
+		"runways": _count_buildings_matching("runway"),
+		"taxiways": taxiway_cells.size(),
+		"stands_total": total_stands,
+		"stands_connected": connected_stands,
+		"hangars_total": total_hangars,
+		"hangars_connected": connected_hangars,
+		"connected_uids": connected_uids,
+		"disconnected": disconnected,
+		"reachable_taxiway_cells": reachable_taxiways.keys()
+	}
+	network_status_changed.emit(get_airside_status())
+	queue_redraw()
+
+
+func _reachable_taxiway_cells(taxiway_cells: Dictionary, runway_cells: Dictionary) -> Dictionary:
+	var reachable: Dictionary = {}
+	var queue: Array[Vector2i] = []
+
+	for taxiway_variant in taxiway_cells.values():
+		var taxiway: Vector2i = taxiway_variant
+		if _cell_touches_cell_set(taxiway, runway_cells):
+			reachable[_cell_key(taxiway)] = taxiway
+			queue.append(taxiway)
+
+	var cursor := 0
+	while cursor < queue.size():
+		var current := queue[cursor]
+		cursor += 1
+
+		for neighbor in _orthogonal_neighbors(current):
+			var key := _cell_key(neighbor)
+			if taxiway_cells.has(key) and not reachable.has(key):
+				reachable[key] = neighbor
+				queue.append(neighbor)
+
+	return reachable
+
+
+func _cells_touch_reachable_taxiway(cells: Array[Vector2i]) -> bool:
+	var reachable_keys: Array = airside_status.get("reachable_taxiway_cells", [])
+	if reachable_keys.is_empty():
+		return false
+
+	var reachable: Dictionary = {}
+	for key in reachable_keys:
+		reachable[String(key)] = true
+
+	for cell in cells:
+		for neighbor in _orthogonal_neighbors(cell):
+			if reachable.has(_cell_key(neighbor)):
+				return true
+	return false
+
+
+func _cells_touch_cell_set(cells: Array, cell_set: Dictionary) -> bool:
+	for cell_variant in cells:
+		var cell: Vector2i = cell_variant
+		if _cell_touches_cell_set(cell, cell_set):
+			return true
+	return false
+
+
+func _cell_touches_cell_set(cell: Vector2i, cell_set: Dictionary) -> bool:
+	for neighbor in _orthogonal_neighbors(cell):
+		if cell_set.has(_cell_key(neighbor)):
+			return true
+	return false
+
+
+func _orthogonal_neighbors(cell: Vector2i) -> Array[Vector2i]:
+	return [
+		cell + Vector2i(1, 0),
+		cell + Vector2i(-1, 0),
+		cell + Vector2i(0, 1),
+		cell + Vector2i(0, -1)
+	]
+
+
+func _count_buildings_matching(fragment: String) -> int:
+	var count := 0
+	for building in placed_buildings:
+		if String(building["definition_id"]).contains(fragment):
+			count += 1
+	return count
+
+
+func _draw_airside_warnings() -> void:
+	var disconnected: Array = airside_status.get("disconnected", [])
+	for info in disconnected:
+		var uid := int(info.get("uid", -1))
+		var building := _building_by_uid(uid)
+		if building.is_empty():
+			continue
+
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty():
+			continue
+
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var center := _footprint_center_world(building["origin"], footprint)
+		var marker_center := center + Vector2(0, -54)
+
+		draw_circle(marker_center, 12.0, Color("402f18", 0.92))
+		draw_circle(marker_center, 9.0, AIRSIDE_WARNING)
+		draw_line(marker_center + Vector2(0, -5), marker_center + Vector2(0, 2), Color("2a2118"), 3.0)
+		draw_circle(marker_center + Vector2(0, 6), 1.8, Color("2a2118"))
+
+
+func _building_by_uid(uid: int) -> Dictionary:
+	for building in placed_buildings:
+		if int(building["uid"]) == uid:
+			return building
+	return {}
 
 func _format_number(value: int) -> String:
 	var text := str(value)

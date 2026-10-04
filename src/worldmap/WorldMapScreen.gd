@@ -150,7 +150,7 @@ func _build_ui() -> void:
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color("0a1d27", 0.98)
+	backdrop.color = Color("07151d", 0.97)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(backdrop)
 
@@ -168,6 +168,7 @@ func _build_top_bar() -> void:
 	top.offset_right = -10
 	top.offset_bottom = 68
 	root.add_child(top)
+	GameUIStyle.apply_panel(top, "top")
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -177,19 +178,21 @@ func _build_top_bar() -> void:
 	title.text = "🌍  WORLD MAP  •  EUROPE NETWORK"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 22)
+	GameUIStyle.heading(title, 22)
 	row.add_child(title)
 
 	var origin := Label.new()
 	origin.text = "DEV HOME: %s" % DestinationCatalog.DEVELOPMENT_HOME_NAME
 	origin.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	origin.add_theme_font_size_override("font_size", 14)
+	GameUIStyle.muted(origin)
 	row.add_child(origin)
 
 	var close_button := Button.new()
 	close_button.text = "✕  AIRPORT"
 	close_button.custom_minimum_size = Vector2(140, 42)
 	close_button.pressed.connect(_on_close_pressed)
+	GameUIStyle.apply_button(close_button, "secondary", true)
 	row.add_child(close_button)
 
 
@@ -201,6 +204,7 @@ func _build_aircraft_sidebar() -> void:
 	panel.offset_right = 270
 	panel.offset_bottom = -10
 	root.add_child(panel)
+	GameUIStyle.apply_panel(panel, "raised")
 
 	var wrapper := VBoxContainer.new()
 	wrapper.add_theme_constant_override("separation", 8)
@@ -209,7 +213,7 @@ func _build_aircraft_sidebar() -> void:
 	var heading := Label.new()
 	heading.text = "SELECT AIRCRAFT"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 16)
+	GameUIStyle.heading(heading, 16)
 	wrapper.add_child(heading)
 
 	aircraft_list_container = VBoxContainer.new()
@@ -222,6 +226,7 @@ func _build_aircraft_sidebar() -> void:
 	assignment_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	assignment_status.custom_minimum_size = Vector2(0, 70)
 	assignment_status.add_theme_font_size_override("font_size", 13)
+	GameUIStyle.muted(assignment_status)
 	wrapper.add_child(assignment_status)
 
 
@@ -233,6 +238,7 @@ func _build_map_area() -> void:
 	panel.offset_right = -350
 	panel.offset_bottom = -10
 	root.add_child(panel)
+	GameUIStyle.apply_panel(panel, "dark")
 
 	map_canvas = WorldMapCanvas.new()
 	map_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -254,7 +260,7 @@ func _build_map_area() -> void:
 			String(destination["country_code"])
 		]
 		button.custom_minimum_size = Vector2(118, 46)
-		button.add_theme_font_size_override("font_size", 12)
+		GameUIStyle.apply_button(button, "nav", true)
 		button.pressed.connect(
 			_on_destination_pressed.bind(destination_id)
 		)
@@ -277,6 +283,7 @@ func _build_details_sidebar() -> void:
 	panel.offset_right = -10
 	panel.offset_bottom = -10
 	root.add_child(panel)
+	GameUIStyle.apply_panel(panel, "raised")
 
 	var wrapper := VBoxContainer.new()
 	wrapper.add_theme_constant_override("separation", 10)
@@ -285,18 +292,22 @@ func _build_details_sidebar() -> void:
 	var heading := Label.new()
 	heading.text = "FLIGHT DETAILS"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 16)
+	GameUIStyle.heading(heading, 16)
 	wrapper.add_child(heading)
 
 	details_title = Label.new()
 	details_title.text = "Select a destination"
-	details_title.add_theme_font_size_override("font_size", 22)
+	GameUIStyle.heading(details_title, 22)
 	wrapper.add_child(details_title)
 
 	details_body = Label.new()
 	details_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	details_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	details_body.add_theme_font_size_override("font_size", 15)
+	details_body.add_theme_font_size_override("font_size", 14)
+	details_body.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_TEXT
+	)
 	wrapper.add_child(details_body)
 
 	assign_button = Button.new()
@@ -304,6 +315,7 @@ func _build_details_sidebar() -> void:
 	assign_button.custom_minimum_size = Vector2(0, 58)
 	assign_button.add_theme_font_size_override("font_size", 16)
 	assign_button.pressed.connect(_on_assign_pressed)
+	GameUIStyle.apply_button(assign_button, "primary")
 	wrapper.add_child(assign_button)
 
 
@@ -329,7 +341,7 @@ func _refresh_aircraft_buttons() -> void:
 	while aircraft_buttons.size() < aircraft.size():
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0, 68)
-		button.add_theme_font_size_override("font_size", 13)
+		GameUIStyle.apply_button(button, "secondary", true)
 		var index := aircraft_buttons.size()
 		button.pressed.connect(_on_aircraft_pressed.bind(index))
 		aircraft_list_container.add_child(button)
@@ -372,6 +384,11 @@ func _refresh_aircraft_buttons() -> void:
 			state_text,
 			destination_text
 		]
+		GameUIStyle.apply_button(
+			button,
+			"selected" if index == selected_aircraft_index else "secondary",
+			true
+		)
 		button.disabled = index == selected_aircraft_index
 
 
@@ -395,6 +412,7 @@ func _refresh_destination_buttons() -> void:
 		button.disabled = player_level < required_level
 
 		if button.disabled:
+			GameUIStyle.apply_button(button, "secondary", true)
 			button.text = "%s\n🔒 LV %d" % [
 				String(destination["city"]).to_upper(),
 				required_level
@@ -409,6 +427,19 @@ func _refresh_destination_buttons() -> void:
 			else:
 				contract_suffix = " • ★ CONTRACT"
 
+		var button_kind := "nav"
+		if destination_id == selected_destination_id:
+			button_kind = "selected"
+		elif destination_id == contract_destination_id:
+			button_kind = "gold"
+		elif String(condition.get("id", "normal")) in [
+			"surge",
+			"seasonal",
+			"contract"
+		]:
+			button_kind = "event"
+
+		GameUIStyle.apply_button(button, button_kind, true)
 		button.text = "%s\n%s • %s%s" % [
 			String(destination["city"]).to_upper(),
 			String(destination["country_code"]),
@@ -715,6 +746,7 @@ func _on_aircraft_pressed(index: int) -> void:
 
 func _on_destination_pressed(destination_id: String) -> void:
 	selected_destination_id = destination_id
+	_refresh_destination_buttons()
 	_refresh_details()
 
 

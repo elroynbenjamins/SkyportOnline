@@ -55,6 +55,22 @@ func _run() -> void:
 		_fail("50 hours should display two Pico P8 Mastery stars.")
 		return
 
+	if screen.selected_aircraft_image.texture == null:
+		_fail("Fleet should load the selected aircraft pixel sprite.")
+		return
+	if not screen.seats_chip.text.contains("8"):
+		_fail("Fleet Seats chip should show Pico P8 capacity.")
+		return
+	if not screen.range_chip.text.contains("320"):
+		_fail("Fleet Range chip should show Pico P8 range.")
+		return
+	if not screen.speed_chip.text.contains("280"):
+		_fail("Fleet Speed chip should show Pico P8 cruise speed.")
+		return
+	if not screen.size_chip.text.contains("S"):
+		_fail("Fleet Size chip should show Pico P8 size class.")
+		return
+
 	if not screen.details_body.text.contains("Current route demand: Feeder • 65%"):
 		_fail("Fleet should show the assigned route demand tier and load.")
 		return
@@ -99,8 +115,8 @@ func _run() -> void:
 		return
 
 	print(
-		"Fleet screen passed: owned aircraft, V1 catalog, locks, "
-		+ "live Mastery, and adjusted passenger demand."
+		"Fleet screen passed: pixel aircraft preview, stat chips, "
+		+ "owned fleet, V1 catalog, locks, Mastery and route demand."
 	)
 	quit(0)
 

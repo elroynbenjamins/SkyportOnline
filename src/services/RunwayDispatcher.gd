@@ -649,6 +649,14 @@ func _known_runway_uids() -> Array[int]:
 	_cleanup_pending_departures()
 	var seen: Dictionary = {}
 
+	if airport_grid != null:
+		for runway in airport_grid.get_runway_buildings():
+			var runway_uid := int(
+				runway.get("uid", -1)
+			)
+			if runway_uid >= 0:
+				seen[runway_uid] = true
+
 	for key_variant in active_by_runway.keys():
 		seen[int(key_variant)] = true
 	for key_variant in queues_by_runway.keys():

@@ -643,6 +643,9 @@ func _dispatch_service(
 		truck.set_service_pose_rotation(
 			docking_rotation
 		)
+		truck.set_service_connection_target(
+			aircraft.global_position
+		)
 		truck.start_service(route, duration)
 	else:
 		var vehicle := GroundServiceVehiclePrototype.new()
@@ -674,6 +677,9 @@ func _dispatch_service(
 		)
 		vehicle.set_service_pose_rotation(
 			docking_rotation
+		)
+		vehicle.set_service_connection_target(
+			aircraft.global_position
 		)
 		vehicle.start_service(
 			route,

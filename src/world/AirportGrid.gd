@@ -144,12 +144,12 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 		var center := tile_to_world(Vector2(origin.x, origin.y))
 		draw_circle(center, 4.0, Color("f0c94c"))
 
-	elif id == "basic_fuel" or id == "rapid_regional_fuel":
+	elif id.contains("fuel"):
 		var center := _footprint_center_world(origin, footprint)
 		draw_circle(center + Vector2(-10, 0), 8.0, Color("f4e4b0"))
 		draw_circle(center + Vector2(10, 0), 8.0, Color("f4e4b0"))
 
-	elif id == "small_stand":
+	elif id.contains("stand"):
 		var center := _footprint_center_world(origin, footprint)
 		draw_circle(center, 10.0, Color("dce5e7"), false, 3.0)
 

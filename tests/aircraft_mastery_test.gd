@@ -8,17 +8,17 @@ func _init() -> void:
 func _run() -> void:
 	_cleanup_profile()
 
-	var aerolet := AircraftCatalog.get_profile("aerolet_100")
-	var london := DestinationCatalog.get_destination("london")
-	var plan := FlightRules.create_flight_plan(aerolet, london)
+	var pico := AircraftCatalog.get_profile("pico_p8")
+	var brussels := DestinationCatalog.get_destination("brussels")
+	var plan := FlightRules.create_flight_plan(pico, brussels)
 
 	if plan.is_empty():
 		_fail("Mastery test flight plan should be created.")
 		return
 
 	var expected_hours := (
-		float(london.get("distance_km", 0.0))
-		/ float(aerolet.get("cruise_speed_kph", 1.0))
+		float(brussels.get("distance_km", 0.0))
+		/ float(pico.get("cruise_speed_kph", 1.0))
 	)
 	if absf(
 		float(plan.get("flight_hours", 0.0)) - expected_hours
@@ -75,11 +75,11 @@ func _run() -> void:
 		return
 
 	profile = ProfileStore.add_aircraft_mastery_hours(
-		"aerolet_100",
+		"pico_p8",
 		9.5
 	)
 	profile = ProfileStore.add_aircraft_mastery_hours(
-		"aerolet_100",
+		"pico_p8",
 		1.0
 	)
 	if profile.is_empty():
@@ -90,7 +90,7 @@ func _run() -> void:
 		"aircraft_mastery_hours",
 		{}
 	)
-	if absf(float(stored.get("aerolet_100", 0.0)) - 10.5) > 0.001:
+	if absf(float(stored.get("pico_p8", 0.0)) - 10.5) > 0.001:
 		_fail("Mastery hours should accumulate by aircraft type.")
 		return
 
@@ -100,13 +100,13 @@ func _run() -> void:
 		{}
 	)
 	if absf(
-		float(reloaded_mastery.get("aerolet_100", 0.0)) - 10.5
+		float(reloaded_mastery.get("pico_p8", 0.0)) - 10.5
 	) > 0.001:
 		_fail("Mastery hours should survive profile reload.")
 		return
 
 	if AircraftMastery.stars_for_hours(
-		float(reloaded_mastery.get("aerolet_100", 0.0))
+		float(reloaded_mastery.get("pico_p8", 0.0))
 	) != 1:
 		_fail("Persisted mastery should resolve to the correct star count.")
 		return

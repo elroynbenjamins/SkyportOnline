@@ -3,6 +3,9 @@ extends CanvasLayer
 
 var root: Control
 var title_label: Label
+var coin_tile_label: Label
+var xp_tile_label: Label
+var mastery_tile_label: Label
 var body_label: Label
 var queue: Array[Dictionary] = []
 
@@ -36,9 +39,9 @@ func _build_ui() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.offset_left = -260
-	panel.offset_top = -190
-	panel.offset_right = 260
-	panel.offset_bottom = 190
+	panel.offset_top = -215
+	panel.offset_right = 280
+	panel.offset_bottom = 215
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel)
 	GameUIStyle.apply_panel(panel, "gold")
@@ -55,6 +58,26 @@ func _build_ui() -> void:
 		GameUIStyle.COLOR_GOLD
 	)
 	wrapper.add_child(title_label)
+
+	var reward_row := HBoxContainer.new()
+	reward_row.add_theme_constant_override("separation", 8)
+	wrapper.add_child(reward_row)
+
+	coin_tile_label = _make_reward_tile(
+		reward_row,
+		"COINS",
+		GameUIStyle.COLOR_GOLD
+	)
+	xp_tile_label = _make_reward_tile(
+		reward_row,
+		"XP",
+		GameUIStyle.COLOR_ACCENT
+	)
+	mastery_tile_label = _make_reward_tile(
+		reward_row,
+		"MASTERY",
+		Color("d8b9ff")
+	)
 
 	body_label = Label.new()
 	body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -90,11 +113,14 @@ func _show_next() -> void:
 		String(reward.get("city", "FLIGHT")).to_upper()
 	]
 
-	var text := "🪙 +%d    XP +%d\n" % [
-		int(reward.get("coins", 0)),
-		int(reward.get("xp", 0))
-	]
-	text += "Country resource chance: %.1f%% each\n" % (
+	coin_tile_label.text = "COINS\n+%d" % int(
+		reward.get("coins", 0)
+	)
+	xp_tile_label.text = "XP\n+%d" % int(
+		reward.get("xp", 0)
+	)
+
+	var text := "Regional resource chance: %.1f%% each\n" % (
 		float(reward.get("resource_chance", 0.0)) * 100.0
 	)
 
@@ -102,12 +128,26 @@ func _show_next() -> void:
 		var mastery_stars := int(
 			reward.get("mastery_stars_after", 0)
 		)
-		text += "Mastery: %s • %.1f flight hours\n" % [
-			AircraftMastery.format_stars(mastery_stars),
-			float(reward.get("mastery_hours_after", 0.0))
-		]
+		mastery_tile_label.text = "MASTERY\n%s" % (
+			AircraftMastery.format_stars(mastery_stars)
+		)
+		text += "%.1f total flight hours" % float(
+			reward.get("mastery_hours_after", 0.0)
+		)
 		if bool(reward.get("mastery_star_up", false)):
-			text += "★ NEW MASTERY STAR UNLOCKED!\n"
+			text += "  •  ★ NEW STAR!"
+			mastery_tile_label.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_GOLD
+			)
+		else:
+			mastery_tile_label.add_theme_color_override(
+				"font_color",
+				Color("d8b9ff")
+			)
+		text += "\n"
+	else:
+		mastery_tile_label.text = "MASTERY\n—"
 
 	text += "\n"
 
@@ -152,6 +192,27 @@ func _show_next() -> void:
 
 	body_label.text = text
 	root.visible = true
+
+
+func _make_reward_tile(
+	parent: HBoxContainer,
+	title: String,
+	color: Color
+) -> Label:
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.custom_minimum_size = Vector2(0, 68)
+	GameUIStyle.apply_panel(card, "dark")
+	parent.add_child(card)
+
+	var label := Label.new()
+	label.text = title + "\n—"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 15)
+	label.add_theme_color_override("font_color", color)
+	card.add_child(label)
+	return label
 
 
 func _on_close_pressed() -> void:

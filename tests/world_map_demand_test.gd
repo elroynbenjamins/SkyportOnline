@@ -15,13 +15,28 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
+	var normal_time := _find_condition_time("brussels", "normal")
+	if normal_time < 0:
+		_fail("Test should find a Normal Brussels demand slot.")
+		return
+	screen.set_demand_time_override(normal_time)
+
 	var planes: Array[AircraftPrototype] = [plane]
 	screen.open_map(
 		planes,
 		4,
 		{"pico_p8": 10.0},
 		3,
-		40
+		40,
+		{
+			"brussels": {
+				"flights_completed": 2,
+				"passengers_boarded": 11,
+				"coins_earned": 840,
+				"xp_earned": 64,
+				"resources_earned": 3
+			}
+		}
 	)
 
 	if not screen.root.visible:
@@ -44,6 +59,12 @@ func _run() -> void:
 
 	if not screen.details_body.text.contains("Airport stock: 3 / 40"):
 		_fail("World Map should show live passenger stock.")
+		return
+	if not screen.details_body.text.contains("Condition: Normal"):
+		_fail("Fixed Normal test slot should render on World Map.")
+		return
+	if not screen.details_body.text.contains("2 flights • 5.5 avg pax"):
+		_fail("World Map should render per-route performance history.")
 		return
 
 	if not screen.assign_button.text.contains("WAIT FOR 5 PAX"):
@@ -70,3 +91,18 @@ func _run() -> void:
 func _fail(message: String) -> void:
 	push_error(message)
 	quit(1)
+
+
+func _find_condition_time(
+	destination_id: String,
+	condition_id: String
+) -> int:
+	for slot in range(DynamicDemandRules.CONDITION_ORDER.size()):
+		var timestamp := slot * DynamicDemandRules.SLOT_SECONDS
+		var condition := DynamicDemandRules.condition_for(
+			destination_id,
+			timestamp
+		)
+		if String(condition.get("id", "")) == condition_id:
+			return timestamp
+	return -1

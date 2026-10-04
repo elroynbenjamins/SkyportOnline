@@ -524,6 +524,7 @@ func _open_resource_choice(item: Dictionary) -> void:
 			var resource_id := String(resource.get("id", ""))
 			if resource_id.is_empty():
 				continue
+			var selected_resource_id := resource_id
 			var button := Button.new()
 			button.text = String(
 				resource.get("name", resource_id)
@@ -537,7 +538,7 @@ func _open_resource_choice(item: Dictionary) -> void:
 					_close_resource_choice()
 					shop_resource_choice_requested.emit(
 						item_id,
-						resource_id
+						selected_resource_id
 					)
 			)
 			resource_choice_list.add_child(button)

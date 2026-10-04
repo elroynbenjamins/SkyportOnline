@@ -278,6 +278,116 @@ func get_active_count() -> int:
 	return active_by_runway.size()
 
 
+func select_best_runway_option(
+	options: Array[Dictionary],
+	operation: String
+) -> Dictionary:
+	var best: Dictionary = {}
+	var best_score := INF
+	var best_distance := INF
+	var best_runway_uid := 2147483647
+
+	for option in options:
+		var runway_uid := int(
+			option.get("runway_uid", -1)
+		)
+		if runway_uid < 0:
+			continue
+
+		var taxi_distance := maxf(
+			float(
+				option.get(
+					"taxi_distance",
+					0.0
+				)
+			),
+			0.0
+		)
+		var score := get_runway_assignment_score(
+			runway_uid,
+			operation,
+			taxi_distance
+		)
+
+		if (
+			score < best_score - 0.001
+			or (
+				absf(score - best_score) <= 0.001
+				and taxi_distance < best_distance - 0.01
+			)
+			or (
+				absf(score - best_score) <= 0.001
+				and absf(
+					taxi_distance - best_distance
+				) <= 0.01
+				and runway_uid < best_runway_uid
+			)
+		):
+			best = option.duplicate(true)
+			best["assignment_score"] = score
+			best_score = score
+			best_distance = taxi_distance
+			best_runway_uid = runway_uid
+
+	return best
+
+
+func get_runway_assignment_score(
+	runway_uid: int,
+	operation: String,
+	taxi_distance: float = 0.0
+) -> float:
+	if runway_uid < 0:
+		return 1000000.0
+
+	var active_penalty := (
+		120.0
+		if active_by_runway.has(runway_uid)
+		else 0.0
+	)
+
+	var waiting_arrivals := 0
+	var waiting_departures := 0
+	if queues_by_runway.has(runway_uid):
+		var queue: Array = queues_by_runway[runway_uid]
+		for request_variant in queue:
+			var request: Dictionary = request_variant
+			match String(
+				request.get("operation", "")
+			):
+				"arrival":
+					waiting_arrivals += 1
+				"departure":
+					waiting_departures += 1
+
+	var taxiing_departures := 0
+	for pending_variant in departure_taxi_pending.values():
+		var pending: Dictionary = pending_variant
+		if int(
+			pending.get("runway_uid", -1)
+		) == runway_uid:
+			taxiing_departures += 1
+
+	var spacing := _separation_remaining_for_operation(
+		runway_uid,
+		operation
+	)
+	var score := active_penalty
+	score += float(waiting_arrivals) * 36.0
+	score += float(waiting_departures) * 22.0
+	score += float(taxiing_departures) * 8.0
+	score += spacing * 8.0
+	score += maxf(taxi_distance, 0.0) / 160.0
+
+	if (
+		operation == "departure"
+		and waiting_arrivals > 0
+	):
+		score += 24.0
+
+	return score
+
+
 func get_runway_visual_state(
 	runway_uid: int
 ) -> Dictionary:

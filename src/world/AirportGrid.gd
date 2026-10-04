@@ -593,6 +593,140 @@ func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
 
 
+func get_first_departure_route() -> PackedVector2Array:
+	var connected_uids: Array = airside_status.get("connected_uids", [])
+	if connected_uids.is_empty():
+		return PackedVector2Array()
+
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty() or not String(definition["id"]).contains("stand"):
+			continue
+		if not connected_uids.has(int(building["uid"])):
+			continue
+
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var stand_cells := _cells_for(building["origin"], footprint)
+		var start_taxiway := _first_adjacent_reachable_taxiway(stand_cells)
+		if start_taxiway.x < 0:
+			continue
+
+		var taxi_path := _taxiway_path_to_runway(start_taxiway)
+		if taxi_path.is_empty():
+			continue
+
+		var runway_entry := _adjacent_runway_cell(taxi_path[taxi_path.size() - 1])
+		if runway_entry.x < 0:
+			continue
+
+		var runway_exit := _farthest_cell_on_same_runway(runway_entry)
+		var result := PackedVector2Array()
+		result.append(_footprint_center_world(building["origin"], footprint))
+		for taxi_cell in taxi_path:
+			result.append(tile_to_world(Vector2(taxi_cell.x, taxi_cell.y)))
+		result.append(tile_to_world(Vector2(runway_entry.x, runway_entry.y)))
+		if runway_exit != runway_entry:
+			result.append(tile_to_world(Vector2(runway_exit.x, runway_exit.y)))
+		return result
+
+	return PackedVector2Array()
+
+
+func _first_adjacent_reachable_taxiway(cells: Array[Vector2i]) -> Vector2i:
+	var reachable_keys: Array = airside_status.get("reachable_taxiway_cells", [])
+	var reachable: Dictionary = {}
+	for key in reachable_keys:
+		reachable[String(key)] = true
+
+	for cell in cells:
+		for neighbor in _orthogonal_neighbors(cell):
+			if reachable.has(_cell_key(neighbor)):
+				return neighbor
+	return Vector2i(-1, -1)
+
+
+func _taxiway_path_to_runway(start: Vector2i) -> Array[Vector2i]:
+	var reachable_keys: Array = airside_status.get("reachable_taxiway_cells", [])
+	var reachable: Dictionary = {}
+	for key in reachable_keys:
+		reachable[String(key)] = true
+
+	if not reachable.has(_cell_key(start)):
+		return []
+
+	var queue: Array[Vector2i] = [start]
+	var parent: Dictionary = {_cell_key(start): Vector2i(-999, -999)}
+	var cursor := 0
+	var goal := Vector2i(-1, -1)
+
+	while cursor < queue.size():
+		var current := queue[cursor]
+		cursor += 1
+
+		if _adjacent_runway_cell(current).x >= 0:
+			goal = current
+			break
+
+		for neighbor in _orthogonal_neighbors(current):
+			var key := _cell_key(neighbor)
+			if reachable.has(key) and not parent.has(key):
+				parent[key] = current
+				queue.append(neighbor)
+
+	if goal.x < 0:
+		return []
+
+	var reversed: Array[Vector2i] = []
+	var cursor_cell := goal
+	while cursor_cell != Vector2i(-999, -999):
+		reversed.append(cursor_cell)
+		var key := _cell_key(cursor_cell)
+		if not parent.has(key):
+			break
+		cursor_cell = parent[key]
+
+	reversed.reverse()
+	return reversed
+
+
+func _adjacent_runway_cell(taxiway: Vector2i) -> Vector2i:
+	for neighbor in _orthogonal_neighbors(taxiway):
+		for building in placed_buildings:
+			var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+			if definition.is_empty() or not _is_runway_definition(definition):
+				continue
+			var footprint := _footprint_for(definition, int(building["rotation"]))
+			for runway_cell in _cells_for(building["origin"], footprint):
+				if runway_cell == neighbor:
+					return runway_cell
+	return Vector2i(-1, -1)
+
+
+func _farthest_cell_on_same_runway(entry: Vector2i) -> Vector2i:
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty() or not _is_runway_definition(definition):
+			continue
+
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var cells := _cells_for(building["origin"], footprint)
+		if not cells.has(entry):
+			continue
+
+		var farthest := entry
+		var best_distance := -1
+		for cell in cells:
+			var distance := absi(cell.x - entry.x) + absi(cell.y - entry.y)
+			if distance > best_distance:
+				best_distance = distance
+				farthest = cell
+		return farthest
+
+	return entry
+
+
+
+
 func _needs_airside_connection(definition: Dictionary) -> bool:
 	var id := String(definition.get("id", ""))
 	return id.contains("stand") or id.contains("hangar")

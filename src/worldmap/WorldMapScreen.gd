@@ -343,10 +343,6 @@ func _refresh_details() -> void:
 		profile,
 		preview_plan
 	)
-	var resource_breakdown := ResourceDropRules.modifier_breakdown(
-		profile,
-		preview_plan
-	)
 	var country_resources := CountryResourceCatalog.resources_for_country(
 		String(destination.get("country_code", ""))
 	)
@@ -388,14 +384,8 @@ func _refresh_details() -> void:
 		+ "REGIONAL RESOURCES\n"
 		+ "%s\n"
 		% _resource_names(country_resources)
-		+ "Chance: %.1f%% each\n"
+		+ "Chance: %.1f%% each • rolled independently\n\n"
 		% (resource_chance * 100.0)
-		+ "Plane %+.0f%% • Time %+.0f%% • Size %+.0f%%\n\n"
-		% [
-			float(resource_breakdown.get("aircraft_modifier", 0.0)) * 100.0,
-			float(resource_breakdown.get("duration_modifier", 0.0)) * 100.0,
-			float(resource_breakdown.get("size_modifier", 0.0)) * 100.0
-		]
 		+ "Current route: %s\n"
 		% current_route
 		+ "Aircraft state: %s"

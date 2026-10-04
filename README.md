@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 8 — Country resources + completed-flight economy
+## Current milestone: Pass 8B — Guest airport creation + country resource economy
 
 Skyport Online now has a complete local airport loop, a first World Map, aircraft-specific route timers, and the first destination economy.
 
@@ -17,9 +17,12 @@ Skyport Online now has a complete local airport loop, a first World Map, aircraf
 - Shared runway arrival / departure queues.
 - Physical takeoff, landing, taxi-out, and taxi-in lifecycle.
 - Aircraft-specific range, speed, and flight timers.
-- Three country resources per configured destination country.
-- Independent resource rolls on successful flight returns.
+- Guest-first airport creation with persistent airport name, code, and home country.
+- Interactive curated world-map country selector.
+- Three country resources per launch country.
+- Fixed 40% independent resource rolls on successful flight returns.
 - Completed-flight coin, XP, and regional-resource rewards.
+- Persistent guest-profile country-resource inventory.
 
 ## Aircraft lifecycle
 
@@ -46,94 +49,53 @@ Current tested prototype example for Amsterdam → London:
 
 These aircraft names and balance values are prototype data. The final V1 plane catalog can replace them without rewriting the flight or reward systems.
 
+## Guest airport creation
+
+First launch now opens the airport-establishment flow before normal gameplay.
+
+The player starts as a **guest** and chooses:
+
+- Airport name.
+- Three-character airport code.
+- Home country from an interactive schematic world map.
+
+The local profile stores a separate guest ID and airport ID. This is intentional: when online account linking is added, the authenticated account can attach to the same airport rather than replacing its progress.
+
+The current repository can validate the airport name format locally, but **global name uniqueness requires the future server/backend** and is not faked by the offline client.
+
 ## Country resources
 
-Each configured country currently exposes exactly **3 regional resources**.
+The curated launch roster currently contains **23 countries** across Europe, North America, South America, Africa, the Middle East, Asia, and Oceania.
 
-Examples:
+Every selectable country exposes exactly **3 regional resources**. Examples:
 
 - Netherlands — Flowers, Dairy, Horticulture.
-- Belgium — Chocolate, Chemicals, Precision Parts.
-- United Kingdom — Aerospace Parts, Financial Documents, Specialty Goods.
+- Belgium — Chocolate, Specialty Chemicals, Precision Parts.
 - Germany — Machinery, Automotive Parts, Industrial Tools.
-- France — Luxury Goods, Gourmet Food, Cosmetics.
-- Denmark — Pharma Goods, Design Goods, Renewable Parts.
+- United Kingdom — Aerospace Parts, Financial Documents, Specialty Goods.
+- Brazil — Coffee, Biofuel, Regional Aircraft Parts.
+- Japan — Precision Electronics, Robotics Parts, Optical Instruments.
+- Australia — Iron Ore, Wool, Lithium Components.
 
-The first World Map shows the destination's three resources before a flight is assigned.
-
-The larger country catalog can be expanded later when the final V1 country list is locked.
+The airport-creation screen shows all three resources before the home country is confirmed. The flight World Map also shows the three resources belonging to a destination country.
 
 ## Resource drop chance
 
-The base chance remains:
+The resource rule is deliberately simple and predictable:
 
 **40% per resource, rolled independently.**
 
-A successful return therefore rolls all three destination resources separately. A flight can return with:
+There are no aircraft-speed, flight-time, or aircraft-size modifiers to this chance.
 
-**0, 1, 2, or all 3 resources.**
+Every successful qualifying return rolls the destination country's three resources separately. Therefore one flight can return with **0, 1, 2, or all 3** materials.
 
-The 40% base chance is modified by three factors.
+For three independent 40% rolls:
 
-### 1. Aircraft-specific modifier
-
-Aircraft profiles support:
-
-**−20% to +20% relative resource chance**
-
-This is separate from speed and capacity and gives individual aircraft another strategic identity.
-
-Current prototype examples:
-
-- Aerolet 100 — 0%.
-- Aerolet 120 — −20%.
-- Regional 200 — +20%.
-
-### 2. Travel-time modifier
-
-Longer flight timers improve the chance while very short flights reduce it:
-
-| Flight timer | Relative modifier |
-| --- | ---: |
-| Under 5 min | −10% |
-| 5–10 min | −5% |
-| 10–20 min | 0% |
-| 20–40 min | +5% |
-| 40+ min | +10% |
-
-Because the timer is aircraft-specific, a slower aircraft can naturally receive a better resource chance on the same destination than a very fast aircraft.
-
-### 3. Aircraft-size modifier
-
-Larger aircraft receive a modest additional resource benefit:
-
-| Size | Relative modifier |
-| --- | ---: |
-| S | 0% |
-| M | +5% |
-| L | +10% |
-| XL | +15% |
-
-L and XL remain future-ready and do not need to be part of the V1 aircraft implementation.
-
-### Formula
-
-The modifiers are multiplicative:
-
-**Final chance = 40% × aircraft factor × travel-time factor × size factor**
-
-The final chance is currently clamped between **20% and 70%** so stacking bonuses never produces guaranteed country resources.
-
-Current automated balance examples:
-
-| Aircraft / route | Resource chance per item |
-| --- | ---: |
-| Aerolet 100 → London | 40.0% |
-| Aerolet 120 → London | 30.4% |
-| Regional 200 → London | 47.9% |
-| Regional 200 → Copenhagen | 50.4% |
-
-This means longer travel, larger aircraft, and aircraft designed around resource hauling all become meaningful without making short flights useless.
+- No resources — **21.6%**.
+- Exactly one — **43.2%**.
+- Exactly two — **28.8%**.
+- All three — **6.4%**.
+- Expected return — **1.2 resources per completed flight**.
 
 ## Flight-return rewards
 
@@ -183,8 +145,8 @@ The player can:
 - View range compatibility.
 - View coin and XP rewards.
 - View all three regional resources.
-- View the adjusted resource chance for that exact aircraft / route combination.
-- See the aircraft, flight-time, and size modifier components.
+- View the fixed 40% chance for each of the three country resources.
+- See that the three resource rolls are independent.
 - Assign or change a route while the aircraft is still available on the ground.
 - Watch the remaining timer while the aircraft is en route.
 
@@ -206,24 +168,22 @@ GitHub Actions currently validates:
 - Country code propagation through flight plans.
 - Exactly three configured resources per country.
 - Independent resource rolls.
-- Aircraft −20% / +20% resource modifiers.
-- Short vs longer flight-time modifiers.
-- S vs M size effects.
-- Completed-flight reward construction.
-
-Current CI balance check:
-
-**Baseline 40.0% • Fast aircraft 30.4% • Regional aircraft 47.9% • Longer regional flight 50.4%**
+- Fixed 40% chance for every country resource.
+- 0 / 1 / 2 / 3 independent-drop outcomes and probability math.
+- Curated country catalog integrity and exactly three resources per country.
+- Airport name / airport-code validation.
+- Completed-flight reward construction and country-resource persistence.
 
 ## Next pass
 
-**Pass 9 — Resource inventory + construction / upgrade sinks**
+**Pass 9 — Resource inventory + social airport destinations**
 
 Recommended next work:
 
-- Add a proper regional-resource inventory screen.
-- Start using country resources for airport building upgrades.
-- Keep distinct physical building families while allowing internal production / storage upgrades.
-- Add resource requirements to passenger-generation buildings first.
-- Begin tying the passenger bottleneck and country economy together.
-- Later add friend / Alliance destinations as alternative ways to obtain country resources.
+- Add a dedicated regional-resource inventory screen.
+- Start using country resources for airport building production/storage upgrades.
+- Add player, friend, and Alliance airports as destination choices.
+- Award Gold / XP to the receiving player when another player services a visit.
+- Keep NPC destinations as a fallback so resource progression never depends completely on friends.
+- Add server-backed globally unique airport-name reservation and guest-account linking.
+- Expand the destination network beyond the current Europe prototype while recalculating route distance from the selected home country.

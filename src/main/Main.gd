@@ -3,6 +3,7 @@ extends Node2D
 @onready var airport_grid = $AirportGrid
 @onready var camera_controller = $Camera
 @onready var hud = $HUD
+@onready var airport_setup = $AirportSetup
 
 var player_level: int = 4
 var player_xp: int = 0
@@ -20,6 +21,8 @@ var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
 var world_map: WorldMapScreen
 var return_summary: FlightReturnSummary
+var current_profile: Dictionary = {}
+var gameplay_started := false
 
 
 func _ready() -> void:
@@ -33,11 +36,56 @@ func _ready() -> void:
 	hud.confirm_building_requested.connect(_on_confirm_building_requested)
 	hud.cancel_building_requested.connect(_on_cancel_building_requested)
 	hud.navigation_requested.connect(_on_navigation_requested)
+	airport_setup.airport_created.connect(_on_airport_created)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
 	hud.set_player_data(player_level, coins, gems)
 	hud.set_airside_status(airport_grid.get_airside_status())
 	airport_grid.select_parcel("north")
+
+	if ProfileStore.has_airport():
+		current_profile = ProfileStore.load_profile()
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+		airport_setup.close()
+		_start_gameplay()
+	else:
+		hud.set_interface_visible(false)
+		camera_controller.set_process_unhandled_input(false)
+		airport_setup.open()
+
+
+func _on_airport_created(profile: Dictionary) -> void:
+	current_profile = profile.duplicate(true)
+	resource_inventory = current_profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
+	_start_gameplay()
+
+
+func _start_gameplay() -> void:
+	if gameplay_started:
+		return
+	gameplay_started = true
+
+	hud.set_interface_visible(true)
+	camera_controller.set_process_unhandled_input(true)
+
+	var country := CountryCatalog.get_country(
+		String(current_profile.get("country_id", ""))
+	)
+	var country_name := String(
+		country.get("name", current_profile.get("country_id", ""))
+	)
+	hud.set_airport_identity(
+		String(current_profile.get("airport_name", "Skyport")),
+		String(current_profile.get("airport_code", "APT")),
+		country_name,
+		String(current_profile.get("account_type", "guest"))
+	)
 
 	_setup_ground_services()
 	_setup_runway_dispatcher()
@@ -349,14 +397,22 @@ func _apply_completed_flight_reward(
 	player_xp += int(reward.get("xp", 0))
 
 	var resources_won: Array = reward.get("resources_won", [])
-	for resource in resources_won:
-		var resource_id := String(resource.get("id", ""))
-		if resource_id.is_empty():
-			continue
-		var amount := int(resource.get("amount", 1))
-		resource_inventory[resource_id] = (
-			int(resource_inventory.get(resource_id, 0)) + amount
-		)
+	var updated_profile := ProfileStore.add_resource_drops(resources_won)
+	if not updated_profile.is_empty():
+		current_profile = updated_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+	else:
+		for resource in resources_won:
+			var resource_id := String(resource.get("id", ""))
+			if resource_id.is_empty():
+				continue
+			var amount := int(resource.get("amount", 1))
+			resource_inventory[resource_id] = (
+				int(resource_inventory.get(resource_id, 0)) + amount
+			)
 
 	hud.set_player_data(player_level, coins, gems)
 	return_summary.show_reward(

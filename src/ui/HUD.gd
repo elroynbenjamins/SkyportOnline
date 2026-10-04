@@ -7,6 +7,8 @@ signal confirm_building_requested
 signal cancel_building_requested
 signal navigation_requested(tab: String)
 
+var interface_root: Control
+var title_label: Label
 var level_label: Label
 var coins_label: Label
 var gems_label: Label
@@ -39,7 +41,8 @@ func _ready() -> void:
 
 
 func _build_interface() -> void:
-	var root := Control.new()
+	interface_root = Control.new()
+	var root := interface_root
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
@@ -62,11 +65,11 @@ func _build_interface() -> void:
 	level_label.add_theme_font_size_override("font_size", 20)
 	top_row.add_child(level_label)
 
-	var title := Label.new()
-	title.text = "✈ SKYPORT ONLINE"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 21)
-	top_row.add_child(title)
+	title_label = Label.new()
+	title_label.text = "✈ SKYPORT ONLINE"
+	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_label.add_theme_font_size_override("font_size", 21)
+	top_row.add_child(title_label)
 
 	coins_label = Label.new()
 	coins_label.custom_minimum_size = Vector2(130, 0)
@@ -276,6 +279,33 @@ func _build_bottom_navigation(root: Control) -> void:
 		else:
 			button.pressed.connect(_on_navigation_pressed.bind(tab))
 		nav_row.add_child(button)
+
+
+func set_interface_visible(value: bool) -> void:
+	if interface_root != null:
+		interface_root.visible = value
+
+
+func set_airport_identity(
+	airport_name: String,
+	airport_code: String,
+	country_name: String,
+	account_type: String
+) -> void:
+	if title_label == null:
+		return
+
+	title_label.text = "✈ %s  •  %s  •  %s" % [
+		airport_name.to_upper(),
+		airport_code.to_upper(),
+		country_name
+	]
+	if account_type == "guest":
+		title_label.tooltip_text = (
+			"Guest airport • secure or link later without losing progress."
+		)
+	else:
+		title_label.tooltip_text = "Linked airport account"
 
 
 func set_build_catalog(definitions: Array[Dictionary]) -> void:

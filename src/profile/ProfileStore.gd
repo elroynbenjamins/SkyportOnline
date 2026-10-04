@@ -1,0 +1,168 @@
+class_name ProfileStore
+extends RefCounted
+
+const SAVE_PATH := "user://skyport_profile.cfg"
+const PROFILE_VERSION := 1
+
+
+static func has_airport() -> bool:
+	return not load_profile().is_empty()
+
+
+static func load_profile() -> Dictionary:
+	var config := ConfigFile.new()
+	if config.load(SAVE_PATH) != OK:
+		return {}
+
+	var airport_name := String(config.get_value("profile", "airport_name", ""))
+	var country_id := String(config.get_value("profile", "country_id", ""))
+	if airport_name.is_empty() or country_id.is_empty():
+		return {}
+
+	var inventory := {}
+	var stored_inventory = config.get_value("profile", "resource_inventory", {})
+	if stored_inventory is Dictionary:
+		inventory = stored_inventory.duplicate(true)
+
+	return {
+		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
+		"account_type": String(config.get_value("profile", "account_type", "guest")),
+		"guest_id": String(config.get_value("profile", "guest_id", "")),
+		"linked_provider": String(config.get_value("profile", "linked_provider", "")),
+		"linked_account_id": String(config.get_value("profile", "linked_account_id", "")),
+		"airport_id": String(config.get_value("profile", "airport_id", "")),
+		"airport_name": airport_name,
+		"airport_code": String(config.get_value("profile", "airport_code", "APT")),
+		"country_id": country_id,
+		"created_at_unix": int(config.get_value("profile", "created_at_unix", 0)),
+		"resource_inventory": inventory
+	}
+
+
+static func create_guest_airport(
+	airport_name: String,
+	airport_code: String,
+	country_id: String
+) -> Dictionary:
+	if has_airport():
+		return load_profile()
+	if not bool(validate_airport_name(airport_name).get("valid", false)):
+		return {}
+	if not bool(validate_airport_code(airport_code).get("valid", false)):
+		return {}
+	if CountryCatalog.get_country(country_id).is_empty():
+		return {}
+
+	var profile := {
+		"version": PROFILE_VERSION,
+		"account_type": "guest",
+		"guest_id": _make_token("guest"),
+		"linked_provider": "",
+		"linked_account_id": "",
+		"airport_id": _make_token("airport"),
+		"airport_name": airport_name.strip_edges(),
+		"airport_code": airport_code.strip_edges().to_upper(),
+		"country_id": country_id,
+		"created_at_unix": int(Time.get_unix_time_from_system()),
+		"resource_inventory": {}
+	}
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func add_resource_drops(drops: Array) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+	if drops.is_empty():
+		return profile
+
+	var inventory: Dictionary = profile.get("resource_inventory", {}).duplicate(true)
+	for drop in drops:
+		var resource_id := String(drop.get("id", ""))
+		if resource_id.is_empty():
+			continue
+		var amount := maxi(int(drop.get("amount", 1)), 0)
+		inventory[resource_id] = int(inventory.get(resource_id, 0)) + amount
+
+	profile["resource_inventory"] = inventory
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func attach_linked_account(
+	provider: String,
+	external_account_id: String
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+	if provider.strip_edges().is_empty() or external_account_id.strip_edges().is_empty():
+		return {}
+
+	profile["account_type"] = "linked"
+	profile["linked_provider"] = provider.strip_edges()
+	profile["linked_account_id"] = external_account_id.strip_edges()
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func validate_airport_name(value: String) -> Dictionary:
+	var cleaned := value.strip_edges()
+	if cleaned.length() < 3:
+		return {"valid": false, "message": "Airport name needs at least 3 characters."}
+	if cleaned.length() > 24:
+		return {"valid": false, "message": "Airport name can be at most 24 characters."}
+	if cleaned.contains("\n") or cleaned.contains("\r") or cleaned.contains("\t"):
+		return {"valid": false, "message": "Airport name contains unsupported characters."}
+	if cleaned.begins_with("-") or cleaned.ends_with("-"):
+		return {"valid": false, "message": "Airport name cannot start or end with a dash."}
+	return {"valid": true, "message": "Airport name ready."}
+
+
+static func validate_airport_code(value: String) -> Dictionary:
+	var cleaned := value.strip_edges().to_upper()
+	if cleaned.length() != 3:
+		return {"valid": false, "message": "Airport code must contain exactly 3 letters or numbers."}
+
+	var matcher := RegEx.new()
+	matcher.compile("^[A-Z0-9]{3}$")
+	if matcher.search(cleaned) == null:
+		return {"valid": false, "message": "Airport code can only use A-Z and 0-9."}
+	return {"valid": true, "message": "Airport code ready."}
+
+
+static func suggest_airport_code(airport_name: String) -> String:
+	var matcher := RegEx.new()
+	matcher.compile("[A-Za-z0-9]")
+	var code := ""
+	var offset := 0
+	while code.length() < 3:
+		var result := matcher.search(airport_name, offset)
+		if result == null:
+			break
+		code += result.get_string().to_upper()
+		offset = result.get_end()
+	while code.length() < 3:
+		code += "X"
+	return code.left(3)
+
+
+static func _save_profile(profile: Dictionary) -> bool:
+	var config := ConfigFile.new()
+	for key in profile.keys():
+		config.set_value("profile", String(key), profile[key])
+	return config.save(SAVE_PATH) == OK
+
+
+static func _make_token(prefix: String) -> String:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return "%s-%d-%d" % [
+		prefix,
+		int(Time.get_unix_time_from_system()),
+		rng.randi()
+	]

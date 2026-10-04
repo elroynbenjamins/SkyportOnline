@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="96" viewBox="0 0 128 96" shape-rendering="crispEdges">
+<polygon points="13,55 58,28 116,45 70,73" fill="#162025" opacity=".55"/>
+<polygon points="14,48 57,23 115,40 71,66" fill="#5b6468"/>
+<polygon points="22,47 58,28 106,42 70,61" fill="#4b5559"/>
+<path d="M31 48 L48 39 L64 42 L80 51 L98 44" fill="none" stroke="#e3bf36" stroke-width="4"/>
+</svg>

@@ -25,6 +25,9 @@ var status_detail_title: Label
 var status_detail_body: Label
 var active_status_chip := ""
 var status_details: Dictionary = {}
+var current_operation_status_text := "Preparing airport..."
+var current_operation_status_tone := "normal"
+var operations_analytics: Dictionary = {}
 
 var parcel_panel: PanelContainer
 var parcel_title: Label
@@ -722,17 +725,103 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	place_button.disabled = false
 
 
-func set_operation_status(text: String, tone: String = "normal") -> void:
+func set_operation_status(
+	text: String,
+	tone: String = "normal"
+) -> void:
+	current_operation_status_text = text
+	current_operation_status_tone = tone
+	_refresh_operations_status()
+
+
+func set_operations_analytics(
+	snapshot: Dictionary
+) -> void:
+	operations_analytics = snapshot.duplicate(true)
+	_refresh_operations_status()
+
+
+func _refresh_operations_status() -> void:
 	if operation_status_label != null:
-		operation_status_label.text = "GROUND OPS\n" + text
+		operation_status_label.text = (
+			"GROUND OPS\n"
+			+ current_operation_status_text
+		)
+
+	var body := current_operation_status_text
+	var analysis_value = operations_analytics.get(
+		"analysis",
+		{}
+	)
+	if analysis_value is Dictionary:
+		var analysis: Dictionary = analysis_value
+		var recommendation_value = analysis.get(
+			"recommendation",
+			{}
+		)
+		if recommendation_value is Dictionary:
+			var recommendation: Dictionary = recommendation_value
+			if not recommendation.is_empty():
+				body += "\n\nBOTTLENECK • %s\n%s" % [
+					String(
+						recommendation.get(
+							"title",
+							"Operations healthy"
+						)
+					),
+					String(
+						recommendation.get(
+							"detail",
+							""
+						)
+					)
+				]
+
+		var ranked_value = analysis.get("ranked", [])
+		if ranked_value is Array:
+			var ranked: Array = ranked_value
+			var limit := mini(ranked.size(), 3)
+			if limit > 0:
+				body += "\n\nTOP PRESSURE"
+				for index in range(limit):
+					var item: Dictionary = ranked[index]
+					body += "\n%d. %s • %s" % [
+						index + 1,
+						String(item.get("name", "System")),
+						String(item.get("detail", ""))
+					]
+
+	var chip_tone := current_operation_status_tone
+	if chip_tone == "normal":
+		var analysis_value = operations_analytics.get(
+			"analysis",
+			{}
+		)
+		if analysis_value is Dictionary:
+			var analysis: Dictionary = analysis_value
+			var recommendation_value = analysis.get(
+				"recommendation",
+				{}
+			)
+			if recommendation_value is Dictionary:
+				var recommendation: Dictionary = recommendation_value
+				if String(
+					recommendation.get(
+						"tone",
+						"normal"
+					)
+				) == "warning":
+					chip_tone = "warning"
 
 	_set_status_chip(
 		"operations",
 		operation_status_chip,
 		"GROUND OPS",
-		_compact_status(text),
-		text,
-		tone
+		_compact_status(
+			current_operation_status_text
+		),
+		body,
+		chip_tone
 	)
 
 

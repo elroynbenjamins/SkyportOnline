@@ -112,6 +112,9 @@ func _setup_ground_services() -> void:
 	ground_services.configure(airport_grid)
 	ground_services.status_changed.connect(_on_ground_service_status)
 	ground_services.queue_changed.connect(_on_ground_service_queue_changed)
+	ground_services.passenger_boarding_requested.connect(
+		_on_passenger_boarding_requested
+	)
 	add_child(ground_services)
 
 
@@ -240,7 +243,17 @@ func _spawn_aircraft_demos() -> void:
 	)
 
 
-func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
+func _on_aircraft_serviced(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	runway_dispatcher.request_departure(aircraft, label)
+
+
+func _on_passenger_boarding_requested(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
 	_attempt_boarding_and_departure(aircraft, label)
 
 
@@ -263,7 +276,10 @@ func _on_ground_service_status(text: String, tone: String) -> void:
 func _on_ground_service_queue_changed(waiting: int, active: int) -> void:
 	if waiting > 0:
 		hud.set_operation_status(
-			"Fuel queue: %d waiting • %d truck active" % [waiting, active],
+			"Ground service queue: %d waiting • %d vehicles active" % [
+				waiting,
+				active
+			],
 			"warning"
 		)
 
@@ -613,8 +629,9 @@ func _on_world_map_flight_assignment_requested(
 		]
 	)
 
-	if previous_state in ["READY_FOR_DESTINATION", "WAITING_PASSENGERS"]:
-		aircraft.mark_service_complete()
+	if previous_state == "READY_FOR_DESTINATION":
+		ground_services.resume_after_destination(aircraft)
+	elif previous_state == "WAITING_PASSENGERS":
 		_attempt_boarding_and_departure(
 			aircraft,
 			String(aircraft.name)
@@ -718,7 +735,7 @@ func _attempt_boarding_and_departure(
 	var required := _passenger_requirement(aircraft)
 	if required <= 0:
 		_remove_passenger_waiter(aircraft)
-		runway_dispatcher.request_departure(aircraft, label)
+		ground_services.approve_passenger_loading(aircraft)
 		return
 
 	processing_passenger_queue = true
@@ -727,16 +744,14 @@ func _attempt_boarding_and_departure(
 
 	if boarded:
 		_remove_passenger_waiter(aircraft)
-		if aircraft.state == "WAITING_PASSENGERS":
-			aircraft.mark_service_complete()
+		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(
-			"%s boarded %d passengers • awaiting runway" % [
+			"%s received %d passengers • boarding started" % [
 				label,
 				required
 			],
 			"success"
 		)
-		runway_dispatcher.request_departure(aircraft, label)
 		return
 
 	aircraft.mark_waiting_passengers()
@@ -781,10 +796,9 @@ func _try_board_waiting_aircraft() -> void:
 			continue
 
 		pending_passenger_departures.remove_at(index)
-		aircraft.mark_service_complete()
-		runway_dispatcher.request_departure(aircraft, label)
+		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(
-			"%s boarded %d passengers • released for departure" % [
+			"%s received %d passengers • boarding started" % [
 				label,
 				required
 			],

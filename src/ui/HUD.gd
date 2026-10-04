@@ -251,13 +251,19 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_header.add_theme_font_size_override("font_size", 15)
 	catalog_wrapper.add_child(catalog_header)
 
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	catalog_wrapper.add_child(scroll)
+
 	var grid := GridContainer.new()
 	grid.name = "BuildingGrid"
 	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 5)
 	grid.add_theme_constant_override("v_separation", 5)
-	catalog_wrapper.add_child(grid)
+	scroll.add_child(grid)
 
 
 func _build_bottom_navigation(root: Control) -> void:
@@ -580,15 +586,47 @@ func _update_catalog_buttons() -> void:
 
 
 func _service_text(definition: Dictionary) -> String:
-	if String(definition.get("service", "")) != "fuel":
+	var services: Dictionary = definition.get("services", {})
+	if not services.is_empty():
+		var names: Array[String] = []
+		for service_type in services.keys():
+			names.append(_service_short_name(String(service_type)))
+		names.sort()
+		var first_data: Dictionary = services[services.keys()[0]]
+		var speed := float(first_data.get("service_speed", 1.0))
+		var vehicles := int(first_data.get("vehicle_capacity", 1))
+		return " • %s x%.2f • %d each" % [
+			"/".join(names),
+			speed,
+			vehicles
+		]
+
+	var service_type := String(definition.get("service", ""))
+	if service_type.is_empty():
 		return ""
+
 	var speed := float(definition.get("service_speed", 1.0))
 	var vehicles := int(definition.get("vehicle_capacity", 1))
-	return " • Fuel x%.1f • %d truck%s" % [
+	return " • %s x%.2f • %d vehicle%s" % [
+		_service_short_name(service_type),
 		speed,
 		vehicles,
 		"" if vehicles == 1 else "s"
 	]
+
+
+func _service_short_name(service_type: String) -> String:
+	match service_type:
+		"passenger":
+			return "Pax"
+		"cargo":
+			return "Bag"
+		"cleaning":
+			return "Clean"
+		"catering":
+			return "Cater"
+		_:
+			return "Fuel"
 
 
 func _size_text(definition: Dictionary) -> String:

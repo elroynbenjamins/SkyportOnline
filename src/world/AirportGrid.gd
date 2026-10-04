@@ -72,6 +72,7 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
 	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
 	_place_building_internal("travel_office", Vector2i(8, 10), 0)
+	_place_building_internal("ground_ops_depot", Vector2i(11, 14), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
 	_place_building_internal("service_road", Vector2i(11, 13), 0)
 	_place_building_internal("service_road", Vector2i(12, 13), 0)
@@ -671,30 +672,56 @@ func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
 
 
-func get_compatible_service_buildings(service_type: String, aircraft_size: String) -> Array[Dictionary]:
+func get_compatible_service_buildings(
+	service_type: String,
+	aircraft_size: String
+) -> Array[Dictionary]:
 	var results: Array[Dictionary] = []
 
 	for building in placed_buildings:
-		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		var definition := BuildingCatalog.get_definition(
+			String(building["definition_id"])
+		)
 		if definition.is_empty():
-			continue
-		if String(definition.get("service", "")) != service_type:
 			continue
 		if not _definition_supports_size(definition, aircraft_size):
 			continue
 
-		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var service_speed := 0.0
+		var vehicle_capacity := 0
+		var legacy_service := String(definition.get("service", ""))
+		if legacy_service == service_type:
+			service_speed = float(definition.get("service_speed", 1.0))
+			vehicle_capacity = int(definition.get("vehicle_capacity", 1))
+		else:
+			var services: Dictionary = definition.get("services", {})
+			if not services.has(service_type):
+				continue
+			var service_data: Dictionary = services[service_type]
+			service_speed = float(service_data.get("service_speed", 1.0))
+			vehicle_capacity = int(service_data.get("vehicle_capacity", 1))
+
+		var footprint := _footprint_for(
+			definition,
+			int(building["rotation"])
+		)
 		results.append({
 			"uid": int(building["uid"]),
 			"definition_id": String(building["definition_id"]),
-			"world_position": _footprint_center_world(building["origin"], footprint),
-			"service_speed": float(definition.get("service_speed", 1.0)),
-			"vehicle_capacity": int(definition.get("vehicle_capacity", 1)),
+			"world_position": _footprint_center_world(
+				building["origin"],
+				footprint
+			),
+			"service_type": service_type,
+			"service_speed": maxf(service_speed, 0.1),
+			"vehicle_capacity": maxi(vehicle_capacity, 1),
 			"sizes": definition.get("sizes", PackedStringArray())
 		})
 
 	results.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return float(a.get("service_speed", 1.0)) > float(b.get("service_speed", 1.0))
+		return float(a.get("service_speed", 1.0)) > float(
+			b.get("service_speed", 1.0)
+		)
 	)
 	return results
 

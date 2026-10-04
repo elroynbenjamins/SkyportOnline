@@ -53,6 +53,39 @@ A faster fuel building modifies only the fuel timer. Future passenger, cargo, cl
 
 The starter airport uses **2× Pico P8** aircraft. L and XL remain future-ready and are intentionally not implemented in the V1 aircraft catalog.
 
+## Ground-service infrastructure
+
+Aircraft turnaround is now constrained by real service fleets rather than invisible timers.
+
+The starter airport includes a compact **Ground Operations Depot** connected to the service-road loop. It provides four independent one-vehicle fleets:
+
+- Passenger handling.
+- Baggage / cargo handling.
+- Cabin cleaning.
+- Catering.
+
+Fuel remains a separate fuel-station fleet.
+
+Each service has its own queue and capacity. Two aircraft can therefore be waiting for the same cleaning van while a baggage tractor or passenger vehicle remains available. Service vehicles physically travel along the existing service-road network to the aircraft stand.
+
+The turnaround order is now:
+
+**Deboard + unload → fuel + clean + cater → wait for passenger stock → board + load → pushback → runway queue**
+
+Passenger stock is consumed **before** passenger boarding begins. If stock is insufficient, the aircraft remains at the stand in a visible waiting state instead of completing a fake boarding timer.
+
+Specialized service buildings unlock later:
+
+| Building | Unlock | Service | Speed | Vehicles |
+| --- | ---: | --- | ---: | ---: |
+| Ground Operations Depot | Lv 1 | Pax / Cargo / Clean / Cater | x1.00 | 1 each |
+| Cleaning Center | Lv 3 | Cleaning | x1.35 | 2 |
+| Passenger Service Hub | Lv 4 | Passenger | x1.25 | 2 |
+| Baggage Depot | Lv 5 | Cargo | x1.35 | 2 |
+| Catering Kitchen | Lv 6 | Catering | x1.30 | 2 |
+
+The dispatcher always prefers the fastest compatible facility with free capacity and a valid service-road route. This makes airport layout and specialized infrastructure real throughput decisions.
+
 ## Passenger bottleneck
 
 Passenger aircraft now consume passengers before departure.
@@ -369,6 +402,8 @@ The validation suite now covers:
 - Daily friend passenger-gift cap/reset logic.
 
 ## Next pass
+
+The next useful pass is **service-facility upgrades and visible turnaround UI**: show per-aircraft service progress directly at the stand, then let regional resources upgrade fleet capacity/speed without visually replacing the building.
 
 **Pass 11 — Fleet screen + Mastery presentation + passenger demand depth**
 

@@ -1,0 +1,149 @@
+class_name GroundServiceVehiclePrototype
+extends Node2D
+
+signal service_started
+signal service_completed
+signal returned_to_station
+
+@export var drive_speed: float = 120.0
+
+var outbound_route := PackedVector2Array()
+var return_route := PackedVector2Array()
+var route_index := 0
+var service_duration := 4.0
+var service_remaining := 0.0
+var service_type := "cargo"
+var phase := "IDLE"
+
+
+func start_service(
+	route: PackedVector2Array,
+	duration: float,
+	kind: String
+) -> void:
+	if route.size() < 2:
+		queue_free()
+		return
+
+	outbound_route = route
+	return_route = route.duplicate()
+	return_route.reverse()
+	route_index = 0
+	service_duration = maxf(duration, 0.25)
+	service_remaining = service_duration
+	service_type = kind
+	position = outbound_route[0]
+	visible = true
+	phase = "OUTBOUND"
+	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	match phase:
+		"OUTBOUND":
+			if _follow_route(outbound_route, delta):
+				phase = "SERVICING"
+				service_started.emit()
+				queue_redraw()
+		"SERVICING":
+			service_remaining -= delta
+			if service_remaining <= 0.0:
+				phase = "RETURNING"
+				route_index = 0
+				service_completed.emit()
+				queue_redraw()
+		"RETURNING":
+			if _follow_route(return_route, delta):
+				phase = "DONE"
+				returned_to_station.emit()
+				queue_free()
+
+
+func _follow_route(points: PackedVector2Array, delta: float) -> bool:
+	if points.size() < 2:
+		return true
+
+	var target_index := mini(route_index + 1, points.size() - 1)
+	var target := points[target_index]
+	var to_target := target - position
+	var distance := to_target.length()
+
+	if distance <= drive_speed * delta:
+		position = target
+		route_index = target_index
+		return route_index >= points.size() - 1
+
+	var direction := to_target.normalized()
+	position += direction * drive_speed * delta
+	rotation = direction.angle()
+	queue_redraw()
+	return false
+
+
+func _draw() -> void:
+	_draw_shadow()
+
+	var body_color := _body_color()
+	draw_rect(
+		Rect2(Vector2(-12, -7), Vector2(24, 14)),
+		body_color
+	)
+	draw_rect(
+		Rect2(Vector2(5, -6), Vector2(10, 12)),
+		Color("e9ecec")
+	)
+
+	match service_type:
+		"passenger":
+			draw_rect(
+				Rect2(Vector2(-8, -5), Vector2(4, 10)),
+				Color("dff4f7")
+			)
+			draw_rect(
+				Rect2(Vector2(-2, -5), Vector2(4, 10)),
+				Color("dff4f7")
+			)
+		"cargo":
+			draw_rect(
+				Rect2(Vector2(-17, -5), Vector2(7, 10)),
+				Color("8a775f")
+			)
+		"cleaning":
+			draw_circle(Vector2(-5, 0), 4.0, Color("d7f5ef"))
+		"catering":
+			draw_rect(
+				Rect2(Vector2(-10, -10), Vector2(12, 4)),
+				Color("f5ead8")
+			)
+
+	draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
+	draw_circle(Vector2(9, -8), 3.0, Color("292f32"))
+	draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
+	draw_circle(Vector2(9, 8), 3.0, Color("292f32"))
+
+	if phase == "SERVICING":
+		draw_circle(Vector2(0, -15), 4.0, Color("ffd166"))
+
+
+func _body_color() -> Color:
+	match service_type:
+		"passenger":
+			return Color("4f93b5")
+		"cargo":
+			return Color("9a7c55")
+		"cleaning":
+			return Color("61a39c")
+		"catering":
+			return Color("c88962")
+		_:
+			return Color("7f8d96")
+
+
+func _draw_shadow() -> void:
+	draw_set_transform(
+		Vector2(2, 4),
+		0.0,
+		Vector2(1.0, 0.45)
+	)
+	draw_circle(Vector2.ZERO, 13.0, Color(0, 0, 0, 0.22))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

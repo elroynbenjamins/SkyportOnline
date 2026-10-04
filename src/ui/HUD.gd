@@ -30,6 +30,8 @@ var place_button: Button
 
 var catalog_buttons: Dictionary = {}
 var catalog_definitions: Array[Dictionary] = []
+var catalog_filter_buttons: Dictionary = {}
+var selected_catalog_category := "ALL"
 
 var current_parcel: Dictionary = {}
 var current_level := 1
@@ -305,10 +307,38 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_panel.add_child(catalog_wrapper)
 
 	var catalog_header := Label.new()
-	catalog_header.text = "AIRPORT BUILDINGS"
+	catalog_header.text = "BUILD TRAY"
 	catalog_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	catalog_header.add_theme_font_size_override("font_size", 15)
+	GameUIStyle.heading(catalog_header, 15)
 	catalog_wrapper.add_child(catalog_header)
+
+	var filters := HBoxContainer.new()
+	filters.add_theme_constant_override("separation", 4)
+	catalog_wrapper.add_child(filters)
+
+	for filter_data in [
+		["ALL", "ALL"],
+		["INFRA", "Infrastructure"],
+		["PAX", "Passenger"],
+		["SERV", "Services"],
+		["OPS", "Operations"],
+		["DECOR", "Decorations"]
+	]:
+		var chip := Button.new()
+		chip.text = String(filter_data[0])
+		chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		chip.custom_minimum_size = Vector2(0, 34)
+		var category := String(filter_data[1])
+		GameUIStyle.apply_button(
+			chip,
+			"selected" if category == selected_catalog_category else "nav",
+			true
+		)
+		chip.pressed.connect(
+			_on_catalog_filter_pressed.bind(category)
+		)
+		filters.add_child(chip)
+		catalog_filter_buttons[category] = chip
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -447,6 +477,34 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 		catalog_buttons[id] = button
 
 	_update_catalog_buttons()
+	_apply_catalog_filter()
+
+
+func _on_catalog_filter_pressed(category: String) -> void:
+	selected_catalog_category = category
+	for key in catalog_filter_buttons.keys():
+		var chip: Button = catalog_filter_buttons[key]
+		GameUIStyle.apply_button(
+			chip,
+			"selected" if String(key) == category else "nav",
+			true
+		)
+	_apply_catalog_filter()
+
+
+func _apply_catalog_filter() -> void:
+	for definition in catalog_definitions:
+		var id := String(definition.get("id", ""))
+		if not catalog_buttons.has(id):
+			continue
+		var button: Button = catalog_buttons[id]
+		var category := String(
+			definition.get("category", "")
+		)
+		button.visible = (
+			selected_catalog_category == "ALL"
+			or category == selected_catalog_category
+		)
 
 
 func _catalog_icon_for(definition: Dictionary) -> Texture2D:

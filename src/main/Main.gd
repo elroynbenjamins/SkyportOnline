@@ -8,6 +8,7 @@ var player_level: int = 4
 var airport_xp: int = 0
 var coins: int = 18420
 var gems: int = 120
+var airport_country_code := "NL"
 
 var selected_building_id := ""
 var selected_building_rotation := 0
@@ -333,7 +334,8 @@ func _refresh_fleet_panel() -> void:
 		owned_entries,
 		route_entries,
 		selected_fleet_uid,
-		resource_inventory
+		resource_inventory,
+		airport_country_code
 	)
 
 

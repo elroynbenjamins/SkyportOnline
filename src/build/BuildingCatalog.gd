@@ -77,11 +77,14 @@ static func all() -> Array[Dictionary]:
 			"color": Color("bac6c8"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Basic passenger handling.",
-			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/terminal_small.svg", "res://assets/pixel/airport_v1/terminal_small_b.svg"]),
-			"world_sprite_size": Vector2(205, 154),
-			"world_sprite_offset": Vector2(0, -50)
+			"description": "Basic passenger handling. Internal levels keep the same terminal appearance.",
+			"icon_path": "res://assets/pixel/airport_v1/terminal_modern.svg",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/pixel/airport_v1/terminal_modern.svg",
+				"res://assets/pixel/airport_v1/terminal_modern_b.svg"
+			]),
+			"world_sprite_size": Vector2(238, 178),
+			"world_sprite_offset": Vector2(0, -57)
 		},
 		{
 			"id": "shuttle_station",

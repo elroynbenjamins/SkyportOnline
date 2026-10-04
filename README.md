@@ -144,6 +144,27 @@ Specialized buildings retain better base performance, so upgrading the starter d
 
 Saved service-building levels are restored from the guest profile and immediately affect future dispatcher assignments.
 
+## Reconciled V1 progression gates
+
+The passenger, Fleet, turnaround, service-upgrade, and aircraft systems now share the same S → M progression data:
+
+- **Small Hangar** — S-only, 3 aircraft-capacity slots.
+- **Medium Stand** — Lv8, 45,000 coins.
+- **Regional Fuel Depot** — Lv8, 60,000 coins.
+- **Regional Hangar** — Lv8, 105,000 coins, S/M, 5 slots.
+- **Regional Runway** — Lv8, 150,000 coins.
+- **Nimbus N40** — Lv8, 185,000 coins.
+
+The first complete M-aircraft project therefore remains **545,000 coins**.
+
+All nine V1 aircraft definitions retain purchase price, hangar-space usage, and operating-cost metadata alongside their live taxi, turnaround, Mastery, range, and resource-drop fields.
+
+Starter aircraft no longer receive a hidden default route. The lifecycle is:
+
+**turnaround → choose destination in WORLD → passenger check/boarding → pushback/runway → flight → return/reward → clear completed route → next turnaround → choose destination again**
+
+Bremen is available at Lv1 and 280 km. Together with Brussels, this gives the Pico P8 two starter countries inside its 320 km range and keeps the first Travel Office resource upgrade reachable through Belgium + Germany.
+
 ## Passenger bottleneck
 
 Passenger aircraft now consume passengers before departure.
@@ -179,7 +200,7 @@ Internal upgrades improve production and storage only. The building keeps the sa
 | Level | Passengers / min | Storage | Coin cost | Regional-resource cost |
 | --- | ---: | ---: | ---: | --- |
 | 1 | 1.5 | 40 | — | — |
-| 2 | 2.2 | 55 | 2,500 | 2 Belgium Chocolate + 1 UK Specialty Goods |
+| 2 | 2.2 | 55 | 2,500 | 2 Belgium Chocolate + 1 Germany Industrial Tools |
 | 3 | 3.2 | 75 | 6,000 | 2 France Cosmetics + 2 Germany Industrial Tools |
 | 4 | 4.5 | 100 | 12,000 | 3 Denmark Design Goods + 2 UK Specialty Goods |
 | 5 | 6.0 | 135 | 22,000 | 3 Germany Machinery + 3 France Luxury Goods + 2 Netherlands Horticulture |
@@ -187,6 +208,20 @@ Internal upgrades improve production and storage only. The building keeps the sa
 The first upgrade deliberately uses resources from early World Map destinations so the system is reachable without late-game routes.
 
 Building upgrade levels are persisted in the guest profile.
+
+## Terminal passenger capacity
+
+The **Small Terminal** is now a passenger-capacity provider as well as a physical airport building. It does not generate passengers itself.
+
+| Level | Passenger capacity | Coin cost | Resource direction |
+| --- | ---: | ---: | --- |
+| 1 | 120 | — | Base |
+| 2 | 250 | 18,000 | Belgium + UK |
+| 3 | 450 | 60,000 | Germany + France + UK |
+| 4 | 750 | 175,000 | Denmark + Germany + Belgium |
+| 5 | 1,200 | 500,000 | UK + France + Netherlands |
+
+Terminal upgrades are internal/statistical, so the building does not need to visually transform. The starter economy begins with **120 terminal capacity + 40 Travel Office storage = 160 total passengers**.
 
 ## Regional-resource inventory
 
@@ -204,9 +239,9 @@ Flight-return drops are persisted to the profile and immediately become availabl
 
 ## Passenger building interaction
 
-Passenger-generation buildings are directly selectable in the airport view.
+Passenger-upgradable buildings are directly selectable in the airport view.
 
-Tapping the Travel Office opens an upgrade panel showing:
+Tapping the Travel Office, Shuttle Station, or Small Terminal opens an upgrade panel showing:
 
 - Current internal level.
 - Current passenger generation rate.
@@ -308,8 +343,9 @@ GitHub Actions currently validates:
 
 Current passenger regression verifies:
 
-**Lv1: 1.5 passengers/min + 40 storage**  
-**Lv2: 2.2 passengers/min + 55 storage**  
+**Starter Terminal + Travel Office: 160 total capacity**  
+**Travel Office Lv2: 2.2 passengers/min and 175 combined capacity**  
+**Small Terminal Lv2 + Travel Office Lv2: 305 combined capacity**  
 **Aircraft boarding deducts passenger stock**  
 **An aircraft cannot board when stock is insufficient**
 
@@ -407,6 +443,9 @@ The passenger economy now has the agreed reward:
 
 The reward respects available passenger storage. If only 10 spaces remain, only 10 passengers are added.
 
+- Maximum 3 rewarded passenger claims per day.
+- Maximum theoretical rewarded-ad contribution: 75 passengers/day before storage limits.
+
 The UI and reward callback are implemented, but an external rewarded-ad provider is **not connected yet**. The ad bridge deliberately does not auto-grant a reward. A future ad SDK must call the completion callback after it confirms a completed rewarded ad.
 
 This prevents the prototype from pretending an ad was watched or allowing a free unlimited +25 button.
@@ -417,9 +456,9 @@ The persistent profile now contains a daily incoming passenger-gift ledger.
 
 Current provisional social balance:
 
-- +10 passengers per received friend / Alliance gift.
-- Maximum 3 incoming gifts per day.
-- Maximum 30 gifted passengers per day before storage limits.
+- +5 passengers per received friend / Alliance gift.
+- Maximum 10 incoming gifts per day.
+- Maximum 50 gifted passengers per day before storage limits.
 
 The actual Friends / Alliance networking layer is not connected yet. These rules and persistence are ready for that later integration.
 
@@ -503,6 +542,9 @@ The validation suite now covers:
 - Rewarded-ad callback safety.
 - Shuttle Station production/storage profile.
 - Daily friend passenger-gift cap/reset logic.
+- Rewarded-ad daily passenger cap persistence.
+- Terminal passenger-capacity progression.
+- Reconciled V1 aircraft prices, starter-route reach, and 545k regional gate.
 
 
 ## Next pass

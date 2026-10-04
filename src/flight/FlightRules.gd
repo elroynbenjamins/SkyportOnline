@@ -74,7 +74,14 @@ static func create_flight_plan(
 		),
 		"duration_seconds": duration_seconds(aircraft_profile, destination),
 		"coin_reward": int(destination.get("coin_reward", 0)),
-		"xp_reward": int(destination.get("xp_reward", 0))
+		"xp_reward": int(destination.get("xp_reward", 0)),
+		"passenger_load_factor": float(
+			destination.get("passenger_load_factor", 1.0)
+		),
+		"passenger_demand_label": String(
+			destination.get("demand_label", "Standard")
+		),
+		"passenger_demand_modifier": 1.0
 	}
 
 

@@ -770,6 +770,9 @@ func set_atc_state(snapshot: Dictionary) -> void:
 		return
 
 	var runway_uid := int(primary.get("runway_uid", -1))
+	var strategy_label := String(
+		primary.get("strategy_label", "AUTO")
+	)
 	var sequence := String(
 		primary.get("sequence_text", "CLEAR")
 	)
@@ -779,9 +782,10 @@ func set_atc_state(snapshot: Dictionary) -> void:
 	var status := String(primary.get("status", "clear"))
 	var waiting := int(primary.get("waiting", 0))
 
-	var detail := "%s • RWY %d\n%s" % [
+	var detail := "%s • RWY %d • %s\n%s" % [
 		control_text,
 		runway_uid,
+		strategy_label,
 		sequence
 	]
 	var tone := "success"

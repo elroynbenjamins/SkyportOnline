@@ -27,6 +27,19 @@ normally remain 21 so all events share the same structure.
 
 The included **Sky Lantern Festival** is a disabled example/template.
 
+The first release-facing event is **Christmas & New Year Airbridge**.
+
+It ships with `enabled = false` until the release date is firm.
+
+Provisional schedule:
+
+**December 18, 2026 00:00 UTC → January 8, 2027 00:00 UTC**
+
+If release timing changes, update `start_unix` before enabling the event.
+Autumn Airbridge remains disabled archive/test content because the game is not
+expected to release during the Autumn event window.
+
+
 ## Fixed event structure
 
 Every event follows the same loop:
@@ -162,9 +175,47 @@ The framework currently understands these metrics:
 - `resources_earned`
 - `flight_coins`
 - `buildings_placed`
+- `destination_flights`
 
 The sample event uses the first four. Future event templates can use any metric
 already emitted to `EventManager.record_metric()`.
+
+
+## First release event
+
+**Christmas & New Year Airbridge** is tuned for a brand-new airport population.
+
+Featured quest-route progression:
+
+| Week | Route | Intended aircraft |
+| --- | --- | --- |
+| 1 | Brussels • 175 km • Lv1 | Pico P8 • Lv1 • 320 km range |
+| 2 | London • 360 km • Lv1 | Swift S14 • Lv2 • 430 km range |
+| 3 | Berlin • 575 km • Lv4 | Comet C22 • Lv4 • 600 km range |
+
+This keeps all three weekly route quests reachable without requiring the Lv6
+Voyager.
+
+The event has:
+
+- 12 quests total, 4 per week.
+- **620 Festive Vouchers** from all personal quests.
+- Up to **300 Festive Vouchers** from Alliance milestones.
+- **920 total completion currency**.
+- 5 personal cosmetics.
+- 1 Alliance-exclusive cosmetic.
+- +25 passengers ×3.
+- +75 passengers ×1.
+- **150 event-shop passengers maximum**.
+
+The complete shop also costs **920 Festive Vouchers exactly**. A player who
+fully clears both the personal and Alliance tracks can therefore buy every
+event-shop item once. Players who only complete the personal track must
+prioritize.
+
+Featured routes deliberately use `featured_route_currency = 0`, so repeat
+flying does not create unlimited event currency. Their purpose is quest
+progression and seasonal identity.
 
 ## Adding a new event
 

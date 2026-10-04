@@ -25,6 +25,7 @@ var processing_passenger_queue := false
 var world_map: WorldMapScreen
 var fleet_screen: FleetScreen
 var aircraft_context_card: AircraftContextCard
+var building_context_card: BuildingContextCard
 var return_summary: FlightReturnSummary
 var resource_inventory_screen: ResourceInventoryScreen
 var passenger_upgrade_panel: PassengerUpgradePanel
@@ -109,6 +110,7 @@ func _start_gameplay() -> void:
 	_setup_world_map()
 	_setup_fleet_screen()
 	_setup_aircraft_context_card()
+	_setup_building_context_card()
 	_setup_return_summary()
 	_setup_passenger_system()
 	_setup_event_system()
@@ -191,6 +193,14 @@ func _setup_aircraft_context_card() -> void:
 		_on_aircraft_context_fleet_requested
 	)
 	add_child(aircraft_context_card)
+
+
+func _setup_building_context_card() -> void:
+	building_context_card = BuildingContextCard.new()
+	building_context_card.primary_action_requested.connect(
+		_on_building_context_primary_action_requested
+	)
+	add_child(building_context_card)
 
 
 func _setup_return_summary() -> void:
@@ -1019,6 +1029,8 @@ func _process_priority_contract_return(
 func _on_navigation_requested(tab: String) -> void:
 	if aircraft_context_card != null:
 		aircraft_context_card.close_card()
+	if building_context_card != null:
+		building_context_card.close_card()
 
 	match tab:
 		"world":
@@ -1400,6 +1412,8 @@ func _on_world_tapped(world_position: Vector2) -> void:
 
 	if aircraft_context_card != null:
 		aircraft_context_card.close_card()
+	if building_context_card != null:
+		building_context_card.close_card()
 	airport_grid.select_world_position(world_position)
 
 
@@ -1435,6 +1449,9 @@ func _show_aircraft_context(
 		or passenger_economy == null
 	):
 		return
+
+	if building_context_card != null:
+		building_context_card.close_card()
 
 	aircraft_context_card.show_aircraft(
 		aircraft,
@@ -1696,22 +1713,46 @@ func _remove_passenger_waiter(aircraft: AircraftPrototype) -> void:
 			pending_passenger_departures.remove_at(index)
 
 
-func _on_building_selected_world(building: Dictionary) -> void:
+func _on_building_selected_world(
+	building: Dictionary
+) -> void:
+	if building.is_empty():
+		return
+
+	if aircraft_context_card != null:
+		aircraft_context_card.close_card()
+	_close_building_management_panels()
+
+	if building_context_card != null:
+		building_context_card.show_building(
+			building,
+			_building_context_summary(building)
+		)
+
+
+func _on_building_context_primary_action_requested(
+	building: Dictionary
+) -> void:
+	if building_context_card != null:
+		building_context_card.close_card()
+	_open_building_management(building)
+
+
+func _open_building_management(
+	building: Dictionary
+) -> void:
 	var definition := BuildingCatalog.get_definition(
 		String(building.get("definition_id", ""))
 	)
 	var building_id := String(
 		building.get("definition_id", "")
 	)
+	if definition.is_empty():
+		return
+
+	_close_building_management_panels()
 
 	if building_id.contains("runway"):
-		if passenger_upgrade_panel != null:
-			passenger_upgrade_panel.close_panel()
-		if service_upgrade_panel != null:
-			service_upgrade_panel.close_panel()
-		if air_traffic_upgrade_panel != null:
-			air_traffic_upgrade_panel.close_panel()
-
 		var strategies: Dictionary = current_profile.get(
 			"runway_strategies",
 			{}
@@ -1750,10 +1791,6 @@ func _on_building_selected_world(building: Dictionary) -> void:
 	if AirTrafficUpgradeCatalog.is_upgradeable(
 		building_id
 	):
-		if passenger_upgrade_panel != null:
-			passenger_upgrade_panel.close_panel()
-		if service_upgrade_panel != null:
-			service_upgrade_panel.close_panel()
 		air_traffic_upgrade_panel.open_building(
 			building,
 			resource_inventory,
@@ -1761,13 +1798,12 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		)
 		return
 
-	if bool(definition.get("passenger_generator", false)):
-		if runway_strategy_panel != null:
-			runway_strategy_panel.close_panel()
-		if service_upgrade_panel != null:
-			service_upgrade_panel.close_panel()
-		if air_traffic_upgrade_panel != null:
-			air_traffic_upgrade_panel.close_panel()
+	if bool(
+		definition.get(
+			"passenger_generator",
+			false
+		)
+	):
 		passenger_upgrade_panel.open_building(
 			building,
 			resource_inventory,
@@ -1775,13 +1811,9 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		)
 		return
 
-	if ServiceUpgradeCatalog.is_upgradeable(building_id):
-		if runway_strategy_panel != null:
-			runway_strategy_panel.close_panel()
-		if passenger_upgrade_panel != null:
-			passenger_upgrade_panel.close_panel()
-		if air_traffic_upgrade_panel != null:
-			air_traffic_upgrade_panel.close_panel()
+	if ServiceUpgradeCatalog.is_upgradeable(
+		building_id
+	):
 		service_upgrade_panel.open_building(
 			building,
 			resource_inventory,
@@ -1789,6 +1821,8 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		)
 		return
 
+
+func _close_building_management_panels() -> void:
 	if passenger_upgrade_panel != null:
 		passenger_upgrade_panel.close_panel()
 	if runway_strategy_panel != null:
@@ -1797,9 +1831,309 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		service_upgrade_panel.close_panel()
 	if air_traffic_upgrade_panel != null:
 		air_traffic_upgrade_panel.close_panel()
-	hud.set_operation_status(
-		String(definition.get("name", "Airport building"))
+
+
+func _building_context_summary(
+	building: Dictionary
+) -> Dictionary:
+	var building_id := String(
+		building.get("definition_id", "")
 	)
+	var definition := BuildingCatalog.get_definition(
+		building_id
+	)
+	if definition.is_empty():
+		return {}
+
+	var level := int(building.get("upgrade_level", 1))
+	var summary := {
+		"role": String(
+			definition.get("category", "Airport")
+		),
+		"status": "Operational",
+		"tone": "success",
+		"description": String(
+			definition.get("description", "")
+		),
+		"stat_one": "LEVEL\n%d" % level,
+		"stat_two": "FOOTPRINT\n%s" % (
+			_context_footprint_text(definition, building)
+		),
+		"primary_label": "",
+		"primary_kind": "primary",
+		"show_details": false
+	}
+
+	if building_id.contains("runway"):
+		return _runway_context_summary(
+			building,
+			definition,
+			summary
+		)
+
+	if AirTrafficUpgradeCatalog.is_upgradeable(
+		building_id
+	):
+		return _atc_context_summary(
+			building,
+			definition,
+			summary
+		)
+
+	if bool(
+		definition.get(
+			"passenger_generator",
+			false
+		)
+	):
+		return _passenger_building_context_summary(
+			building,
+			definition,
+			summary
+		)
+
+	if ServiceUpgradeCatalog.is_upgradeable(
+		building_id
+	):
+		return _service_building_context_summary(
+			building,
+			definition,
+			summary
+		)
+
+	var connected_uids: Array = airport_grid.get_airside_status().get(
+		"connected_uids",
+		[]
+	)
+	if (
+		building_id.contains("stand")
+		or building_id.contains("hangar")
+	):
+		var uid := int(building.get("uid", -1))
+		var connected := connected_uids.has(uid)
+		summary["status"] = (
+			"Connected to taxiway network"
+			if connected
+			else "Needs taxiway connection"
+		)
+		summary["tone"] = "success" if connected else "warning"
+		summary["stat_one"] = "AIRCRAFT\n%s" % (
+			_context_size_text(definition)
+		)
+
+	return summary
+
+
+func _passenger_building_context_summary(
+	building: Dictionary,
+	definition: Dictionary,
+	summary: Dictionary
+) -> Dictionary:
+	var result := summary.duplicate(true)
+	var building_id := String(building.get("definition_id", ""))
+	var level := int(building.get("upgrade_level", 1))
+	var stats := PassengerUpgradeCatalog.passenger_stats(
+		building_id,
+		level
+	)
+	result["role"] = "Passenger generation"
+	result["stat_one"] = "PRODUCTION\n+%.1f/min" % float(
+		stats.get("passengers_per_minute", 0.0)
+	)
+	result["stat_two"] = "STORAGE\n%d" % int(
+		stats.get("storage", 0)
+	)
+	if not PassengerUpgradeCatalog.get_next_level(
+		building_id,
+		level
+	).is_empty():
+		result["primary_label"] = "UPGRADE"
+		result["primary_kind"] = "primary"
+	else:
+		result["status"] = "Maximum upgrade level"
+		result["tone"] = "success"
+	return result
+
+
+func _service_building_context_summary(
+	building: Dictionary,
+	definition: Dictionary,
+	summary: Dictionary
+) -> Dictionary:
+	var result := summary.duplicate(true)
+	var building_id := String(building.get("definition_id", ""))
+	var level := int(building.get("upgrade_level", 1))
+	var service_types := ServiceUpgradeCatalog.service_types(
+		building_id
+	)
+	var max_speed := 0.0
+	var max_capacity := 0
+	for service_type in service_types:
+		var stats := ServiceUpgradeCatalog.effective_service_stats(
+			building_id,
+			service_type,
+			level
+		)
+		max_speed = maxf(
+			max_speed,
+			float(stats.get("service_speed", 0.0))
+		)
+		max_capacity = maxi(
+			max_capacity,
+			int(stats.get("vehicle_capacity", 0))
+		)
+
+	var waiting_by_service := ground_services.get_waiting_by_service()
+	var waiting := 0
+	for service_type in service_types:
+		waiting += int(
+			waiting_by_service.get(
+				service_type,
+				0
+			)
+		)
+
+	result["role"] = "Ground service"
+	result["stat_one"] = "SERVICE SPEED\nx%.2f" % max_speed
+	result["stat_two"] = "VEHICLES\n%d" % max_capacity
+	if waiting > 0:
+		result["status"] = "%d service request%s waiting" % [
+			waiting,
+			"" if waiting == 1 else "s"
+		]
+		result["tone"] = "warning"
+	else:
+		result["status"] = "No queue • service available"
+		result["tone"] = "success"
+
+	if not ServiceUpgradeCatalog.get_next_level(
+		building_id,
+		level
+	).is_empty():
+		result["primary_label"] = "UPGRADE"
+		result["primary_kind"] = "primary"
+	return result
+
+
+func _atc_context_summary(
+	building: Dictionary,
+	definition: Dictionary,
+	summary: Dictionary
+) -> Dictionary:
+	var result := summary.duplicate(true)
+	var building_id := String(building.get("definition_id", ""))
+	var level := int(building.get("upgrade_level", 1))
+	var preview := AirTrafficUpgradeCatalog.separation_preview(
+		building_id,
+		level
+	)
+	var multiplier := float(
+		preview.get("multiplier", 1.0)
+	)
+	result["role"] = "Air traffic control"
+	result["stat_one"] = "SEPARATION\nx%.2f" % multiplier
+	result["stat_two"] = "DEP→DEP\n%.1fs" % float(
+		preview.get("departure_departure", 0.0)
+	)
+	result["status"] = "Runway sequencing optimized"
+	result["tone"] = "success"
+	if not AirTrafficUpgradeCatalog.get_next_level(
+		building_id,
+		level
+	).is_empty():
+		result["primary_label"] = "UPGRADE ATC"
+		result["primary_kind"] = "gold"
+	else:
+		result["status"] = "Maximum ATC level"
+	return result
+
+
+func _runway_context_summary(
+	building: Dictionary,
+	definition: Dictionary,
+	summary: Dictionary
+) -> Dictionary:
+	var result := summary.duplicate(true)
+	var runway_uid := int(building.get("uid", -1))
+	var strategy := runway_dispatcher.get_runway_strategy(
+		runway_uid
+	)
+	var analytics := runway_dispatcher.get_runway_analytics(
+		runway_uid
+	)
+	var utilization := float(
+		analytics.get("utilization_pct", 0.0)
+	)
+	var wait_seconds := float(
+		analytics.get("average_wait_seconds", 0.0)
+	)
+
+	result["role"] = "Runway"
+	result["stat_one"] = "STRATEGY\n%s" % (
+		RunwayStrategyRules.short_label(strategy)
+	)
+	result["stat_two"] = "UTIL / WAIT\n%.0f%% • %.1fs" % [
+		utilization,
+		wait_seconds
+	]
+	result["primary_label"] = "RUNWAY STRATEGY"
+	result["primary_kind"] = "gold"
+
+	var analytics_snapshot := (
+		runway_dispatcher.get_runway_analytics_snapshot()
+	)
+	var recommendation: Dictionary = analytics_snapshot.get(
+		"recommendation",
+		{}
+	)
+	if not recommendation.is_empty():
+		result["status"] = String(
+			recommendation.get(
+				"title",
+				"Runway operational"
+			)
+		)
+		result["tone"] = String(
+			recommendation.get(
+				"tone",
+				"normal"
+			)
+		)
+	else:
+		result["status"] = "Runway operational"
+		result["tone"] = "success"
+	return result
+
+
+func _context_size_text(
+	definition: Dictionary
+) -> String:
+	var sizes: PackedStringArray = definition.get(
+		"sizes",
+		PackedStringArray()
+	)
+	if sizes.is_empty():
+		return "—"
+	return "/".join(sizes)
+
+
+func _context_footprint_text(
+	definition: Dictionary,
+	building: Dictionary
+) -> String:
+	var footprint: Vector2i = definition.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	if int(building.get("rotation", 0)) % 2 == 1:
+		footprint = Vector2i(
+			footprint.y,
+			footprint.x
+		)
+	return "%dx%d" % [
+		footprint.x,
+		footprint.y
+	]
 
 
 func _on_passenger_upgrade_requested(building_uid: int) -> void:
@@ -2142,6 +2476,8 @@ func _on_purchase_expansion_requested() -> void:
 func _on_building_selected(building_id: String) -> void:
 	if aircraft_context_card != null:
 		aircraft_context_card.close_card()
+	if building_context_card != null:
+		building_context_card.close_card()
 
 	var definition := BuildingCatalog.get_definition(building_id)
 	if definition.is_empty():

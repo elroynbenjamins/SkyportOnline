@@ -338,6 +338,18 @@ func _refresh_details() -> void:
 	var range_ok := FlightRules.can_fly(profile, destination)
 	var can_change := plane.can_change_flight_plan()
 	var duration_seconds := FlightRules.duration_seconds(profile, destination)
+	var preview_plan := FlightRules.create_flight_plan(profile, destination)
+	var resource_chance := ResourceDropRules.chance_for_flight(
+		profile,
+		preview_plan
+	)
+	var resource_breakdown := ResourceDropRules.modifier_breakdown(
+		profile,
+		preview_plan
+	)
+	var country_resources := CountryResourceCatalog.resources_for_country(
+		String(destination.get("country_code", ""))
+	)
 
 	details_title.text = "%s, %s" % [
 		String(destination["city"]).to_upper(),
@@ -373,6 +385,17 @@ func _refresh_details() -> void:
 			int(destination.get("coin_reward", 0)),
 			int(destination.get("xp_reward", 0))
 		]
+		+ "REGIONAL RESOURCES\n"
+		+ "%s\n"
+		% _resource_names(country_resources)
+		+ "Chance: %.1f%% each\n"
+		% (resource_chance * 100.0)
+		+ "Plane %+.0f%% • Time %+.0f%% • Size %+.0f%%\n\n"
+		% [
+			float(resource_breakdown.get("aircraft_modifier", 0.0)) * 100.0,
+			float(resource_breakdown.get("duration_modifier", 0.0)) * 100.0,
+			float(resource_breakdown.get("size_modifier", 0.0)) * 100.0
+		]
 		+ "Current route: %s\n"
 		% current_route
 		+ "Aircraft state: %s"
@@ -393,6 +416,16 @@ func _refresh_details() -> void:
 
 	var map_position: Vector2 = destination["map_position"]
 	map_canvas.set_selected_position(map_position)
+
+
+func _resource_names(resources: Array[Dictionary]) -> String:
+	if resources.is_empty():
+		return "No regional resources configured."
+
+	var names: Array[String] = []
+	for resource in resources:
+		names.append(String(resource.get("name", "Resource")))
+	return " • ".join(names)
 
 
 func _on_aircraft_pressed(index: int) -> void:

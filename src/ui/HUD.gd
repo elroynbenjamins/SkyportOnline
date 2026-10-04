@@ -209,7 +209,7 @@ func _build_catalog_panel(root: Control) -> void:
 
 	var grid := GridContainer.new()
 	grid.name = "BuildingGrid"
-	grid.columns = 5
+	grid.columns = 4
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 5)
 	grid.add_theme_constant_override("v_separation", 5)
@@ -252,15 +252,34 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(124, 78)
+		button.custom_minimum_size = Vector2(155, 88)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override("font_size", 13)
+		button.add_theme_font_size_override("font_size", 12)
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.expand_icon = true
+		button.icon_max_width = 42
+		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		button.tooltip_text = String(definition.get("description", ""))
+		var icon := _catalog_icon_for(definition)
+		if icon != null:
+			button.icon = icon
 		var id := String(definition["id"])
 		button.pressed.connect(_on_building_button_pressed.bind(id))
 		grid.add_child(button)
 		catalog_buttons[id] = button
 
 	_update_catalog_buttons()
+
+
+func _catalog_icon_for(definition: Dictionary) -> Texture2D:
+	var path := String(definition.get("icon_path", ""))
+	if path.is_empty():
+		return null
+	var resource := load(path)
+	if resource is Texture2D:
+		return resource as Texture2D
+	return null
 
 
 func _find_building_grid() -> GridContainer:

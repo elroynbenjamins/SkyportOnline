@@ -220,6 +220,203 @@ static func get_event(event_id: String) -> Dictionary:
 	return {}
 
 
+static func active_events(now_unix: int = -1) -> Array[Dictionary]:
+	var current := now_unix
+	if current < 0:
+		current = int(Time.get_unix_time_from_system())
+
+	var result: Array[Dictionary] = []
+	for event in all():
+		if is_active(event, current):
+			result.append(event.duplicate(true))
+	return result
+
+
+static func validate_catalog() -> Dictionary:
+	var errors: Array[String] = []
+	var seen_event_ids := {}
+
+	for event in all():
+		var event_id := String(event.get("id", ""))
+		if event_id.is_empty():
+			errors.append("Event is missing an id.")
+			continue
+		if seen_event_ids.has(event_id):
+			errors.append("Duplicate event id: %s" % event_id)
+		seen_event_ids[event_id] = true
+
+		var quests: Array = event.get("quests", [])
+		var seen_quest_ids := {}
+		var weeks := {}
+		for quest_variant in quests:
+			var quest: Dictionary = quest_variant
+			var quest_id := String(quest.get("id", ""))
+			if quest_id.is_empty():
+				errors.append("%s has a quest without an id." % event_id)
+				continue
+			if seen_quest_ids.has(quest_id):
+				errors.append(
+					"%s has duplicate quest id %s."
+					% [event_id, quest_id]
+				)
+			seen_quest_ids[quest_id] = true
+
+			var week := int(quest.get("week", 0))
+			if week < 1 or week > 3:
+				errors.append(
+					"%s quest %s must use week 1, 2 or 3."
+					% [event_id, quest_id]
+				)
+			else:
+				weeks[week] = int(weeks.get(week, 0)) + 1
+
+			if int(quest.get("target", 0)) <= 0:
+				errors.append(
+					"%s quest %s needs a positive target."
+					% [event_id, quest_id]
+				)
+			if int(quest.get("currency_reward", 0)) < 0:
+				errors.append(
+					"%s quest %s has invalid currency reward."
+					% [event_id, quest_id]
+				)
+
+		for week in range(1, 4):
+			if int(weeks.get(week, 0)) <= 0:
+				errors.append(
+					"%s is missing week %d quests."
+					% [event_id, week]
+				)
+
+		var seen_shop_ids := {}
+		var passenger_total := 0
+		for item_variant in event.get("shop", []):
+			var item: Dictionary = item_variant
+			var item_id := String(item.get("id", ""))
+			if item_id.is_empty():
+				errors.append("%s has a shop item without an id." % event_id)
+				continue
+			if seen_shop_ids.has(item_id):
+				errors.append(
+					"%s has duplicate shop item id %s."
+					% [event_id, item_id]
+				)
+			seen_shop_ids[item_id] = true
+
+			var limit := maxi(int(item.get("purchase_limit", 1)), 1)
+			if String(item.get("type", "")) == "passengers":
+				passenger_total += (
+					maxi(int(item.get("passengers", 0)), 0)
+					* limit
+				)
+
+		if passenger_total > 150:
+			errors.append(
+				"%s exceeds the standard 150 event-passenger cap."
+				% event_id
+			)
+
+		var alliance: Dictionary = event.get("alliance", {})
+		var last_target := -1
+		var seen_milestones := {}
+		for milestone_variant in alliance.get("milestones", []):
+			var milestone: Dictionary = milestone_variant
+			var milestone_id := String(milestone.get("id", ""))
+			if milestone_id.is_empty():
+				errors.append(
+					"%s has an Alliance milestone without an id."
+					% event_id
+				)
+				continue
+			if seen_milestones.has(milestone_id):
+				errors.append(
+					"%s has duplicate Alliance milestone id %s."
+					% [event_id, milestone_id]
+				)
+			seen_milestones[milestone_id] = true
+
+			var target := int(milestone.get("target", 0))
+			if target <= last_target:
+				errors.append(
+					"%s Alliance milestones must increase in target."
+					% event_id
+				)
+			last_target = target
+
+	var enabled_events: Array[Dictionary] = []
+	for event in all():
+		if bool(event.get("enabled", false)):
+			enabled_events.append(event)
+
+	for left_index in range(enabled_events.size()):
+		for right_index in range(left_index + 1, enabled_events.size()):
+			var left: Dictionary = enabled_events[left_index]
+			var right: Dictionary = enabled_events[right_index]
+			if _windows_overlap(left, right):
+				errors.append(
+					"Enabled event windows overlap: %s and %s."
+					% [
+						String(left.get("id", "")),
+						String(right.get("id", ""))
+					]
+				)
+
+	return {
+		"valid": errors.is_empty(),
+		"errors": errors
+	}
+
+
+static func total_personal_currency(event: Dictionary) -> int:
+	var total := 0
+	for quest_variant in event.get("quests", []):
+		var quest: Dictionary = quest_variant
+		total += maxi(int(quest.get("currency_reward", 0)), 0)
+	return total
+
+
+static func total_shop_passengers(event: Dictionary) -> int:
+	var total := 0
+	for item_variant in event.get("shop", []):
+		var item: Dictionary = item_variant
+		if String(item.get("type", "")) != "passengers":
+			continue
+		total += (
+			maxi(int(item.get("passengers", 0)), 0)
+			* maxi(int(item.get("purchase_limit", 1)), 1)
+		)
+	return total
+
+
+static func total_alliance_currency(event: Dictionary) -> int:
+	var total := 0
+	var alliance: Dictionary = event.get("alliance", {})
+	for milestone_variant in alliance.get("milestones", []):
+		var milestone: Dictionary = milestone_variant
+		if String(milestone.get("reward_type", "")) != "currency":
+			continue
+		total += maxi(
+			int(milestone.get("currency_reward", 0)),
+			0
+		)
+	return total
+
+
+static func _windows_overlap(
+	left: Dictionary,
+	right: Dictionary
+) -> bool:
+	var left_start := int(left.get("start_unix", 0))
+	var right_start := int(right.get("start_unix", 0))
+	if left_start <= 0 or right_start <= 0:
+		return true
+
+	var duration := EVENT_DURATION_DAYS * SECONDS_PER_DAY
+	var left_end := left_start + duration
+	var right_end := right_start + duration
+	return left_start < right_end and right_start < left_end
+
+
 static func active_event(now_unix: int = -1) -> Dictionary:
 	var current := now_unix
 	if current < 0:

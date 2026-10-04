@@ -10,6 +10,7 @@ var level_label: Label
 var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
+var operation_status_label: Label
 
 var parcel_panel: PanelContainer
 var parcel_title: Label
@@ -107,6 +108,21 @@ func _build_interface() -> void:
 	airside_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	airside_status_label.add_theme_font_size_override("font_size", 14)
 	airside_panel.add_child(airside_status_label)
+
+	var operation_panel := PanelContainer.new()
+	operation_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	operation_panel.offset_left = 260
+	operation_panel.offset_top = 96
+	operation_panel.offset_right = 460
+	operation_panel.offset_bottom = 160
+	root.add_child(operation_panel)
+
+	operation_status_label = Label.new()
+	operation_status_label.text = "GROUND OPS\nPreparing first aircraft..."
+	operation_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	operation_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	operation_status_label.add_theme_font_size_override("font_size", 13)
+	operation_panel.add_child(operation_status_label)
 
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -433,6 +449,20 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 		build_status.text += "  •  ⚠ " + warning
 	place_button.text = "BUILD  🪙 %s" % _format_number(cost)
 	place_button.disabled = false
+
+
+func set_operation_status(text: String, tone: String = "normal") -> void:
+	if operation_status_label == null:
+		return
+
+	operation_status_label.text = "GROUND OPS\n" + text
+	match tone:
+		"warning":
+			operation_status_label.add_theme_color_override("font_color", Color("ffc266"))
+		"success":
+			operation_status_label.add_theme_color_override("font_color", Color("9fe3b7"))
+		_:
+			operation_status_label.add_theme_color_override("font_color", Color("f2f5f4"))
 
 
 func set_airside_status(status: Dictionary) -> void:

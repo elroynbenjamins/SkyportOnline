@@ -310,6 +310,9 @@ func _is_ground_traffic_state(state: String) -> bool:
 	return state in [
 		"TAXIING_OUT",
 		"TAXIING_IN",
+		"HOLD_SHORT",
+		"CLEARED",
+		"ENTERING_RUNWAY",
 		"LINE_UP",
 		"LANDING_ROLL"
 	]

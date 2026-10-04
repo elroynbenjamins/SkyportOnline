@@ -44,8 +44,8 @@ const CONDITIONS := {
 		"xp_multiplier": 1.15
 	},
 	"contract": {
-		"label": "Priority Contract",
-		"short_label": "CONTRACT",
+		"label": "Corporate Rush",
+		"short_label": "CORPORATE",
 		"demand_modifier": 1.20,
 		"coin_multiplier": 1.25,
 		"xp_multiplier": 1.20

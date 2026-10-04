@@ -54,6 +54,15 @@ static func load_profile() -> Dictionary:
 	if stored_cosmetics is Dictionary:
 		owned_cosmetics = stored_cosmetics.duplicate(true)
 
+	var equipped_cosmetics := {}
+	var stored_equipped = config.get_value(
+		"profile",
+		"equipped_cosmetics",
+		{}
+	)
+	if stored_equipped is Dictionary:
+		equipped_cosmetics = stored_equipped.duplicate(true)
+
 	var priority_contract_progress := {}
 	var stored_contracts = config.get_value(
 		"profile",
@@ -84,6 +93,7 @@ static func load_profile() -> Dictionary:
 		"route_history": route_history,
 		"event_states": event_states,
 		"owned_cosmetics": owned_cosmetics,
+		"equipped_cosmetics": equipped_cosmetics,
 		"priority_contract_progress": priority_contract_progress,
 		"passenger_gift_day": String(
 			config.get_value("profile", "passenger_gift_day", "")
@@ -131,6 +141,7 @@ static func create_guest_airport(
 		"route_history": {},
 		"event_states": {},
 		"owned_cosmetics": {},
+		"equipped_cosmetics": {},
 		"priority_contract_progress": {},
 		"passenger_gift_day": "",
 		"passenger_gifts_received_today": 0
@@ -573,6 +584,57 @@ static func owns_cosmetic(cosmetic_id: String) -> bool:
 
 	var cosmetics: Dictionary = profile.get("owned_cosmetics", {})
 	return bool(cosmetics.get(cosmetic_id, false))
+
+
+static func get_equipped_cosmetics() -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+	return (
+		profile.get("equipped_cosmetics", {}) as Dictionary
+	).duplicate(true)
+
+
+static func equip_cosmetic(
+	slot: String,
+	cosmetic_id: String
+) -> Dictionary:
+	if slot.is_empty():
+		return {}
+
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var equipped: Dictionary = profile.get(
+		"equipped_cosmetics",
+		{}
+	).duplicate(true)
+
+	if cosmetic_id.is_empty():
+		equipped.erase(slot)
+	else:
+		var cosmetic := CosmeticCatalog.get_cosmetic(cosmetic_id)
+		if cosmetic.is_empty():
+			return {}
+		if String(cosmetic.get("slot", "")) != slot:
+			return {}
+
+		var owned: Dictionary = profile.get("owned_cosmetics", {})
+		if not bool(owned.get(cosmetic_id, false)):
+			return {}
+
+		equipped[slot] = cosmetic_id
+
+	profile["equipped_cosmetics"] = equipped
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func get_equipped_cosmetic(slot: String) -> String:
+	var equipped := get_equipped_cosmetics()
+	return String(equipped.get(slot, ""))
 
 
 static func attach_linked_account(

@@ -26,6 +26,12 @@ const AIRSIDE_WARNING := Color("ffb84d")
 const AIRSIDE_CONNECTED := Color("76d39b")
 const HOLD_SHORT_SOLID := Color("f5d76e")
 const HOLD_SHORT_DASH := Color("fff2a8")
+const STOP_BAR_RED := Color("ff4d5a")
+const STOP_BAR_AMBER := Color("ffbf47")
+const STOP_BAR_OFF := Color("6d5b3f")
+const RUNWAY_CLEAR := Color("76d39b")
+const RUNWAY_OCCUPIED := Color("ff5d62")
+const RUNWAY_PRIORITY := Color("ffbf47")
 
 var parcels: Dictionary = {}
 var selected_id := ""
@@ -37,6 +43,7 @@ var next_building_uid := 1
 var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
 var airside_status: Dictionary = {}
+var runway_visual_states: Dictionary = {}
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -112,6 +119,7 @@ func _draw() -> void:
 
 	_draw_buildings()
 	_draw_runway_hold_short_markings()
+	_draw_runway_operational_indicators()
 	_draw_airside_warnings()
 	_draw_build_preview()
 	_draw_selected_outline()
@@ -244,8 +252,38 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 		connections += 1
 
 	if connections == 0:
-		draw_line(center + Vector2(-8, 4), center + Vector2(8, -4), Color("f0c94c"), 3.0)
+		draw_line(
+			center + Vector2(-8, 4),
+			center + Vector2(8, -4),
+			Color("f0c94c"),
+			3.0
+		)
 	draw_circle(center, 3.5, Color("f4d866"))
+
+	if connections >= 3:
+		draw_circle(
+			center,
+			8.0,
+			Color("f4d866"),
+			false,
+			1.5
+		)
+		for direction in directions:
+			var neighbor: Vector2i = origin + direction
+			if not _taxiway_visually_connects_to(neighbor):
+				continue
+			var dir_world := (
+				tile_to_world(
+					Vector2(neighbor.x, neighbor.y)
+				) - center
+			).normalized()
+			if dir_world == Vector2.ZERO:
+				continue
+			draw_circle(
+				center + dir_world * 9.5,
+				1.7,
+				Color("ffe78c")
+			)
 
 
 func _draw_runway_hold_short_markings() -> void:
@@ -283,6 +321,15 @@ func _draw_runway_hold_short_markings() -> void:
 				taxi_cell,
 				runway_cell
 			)
+			var runway_uid := _runway_uid_for_cell(
+				runway_cell
+			)
+			var visual_state := get_runway_visual_state(
+				runway_uid
+			)
+			var stop_color := _stop_bar_color_for_state(
+				visual_state
+			)
 			var normal := Vector2(
 				-direction.y,
 				direction.x
@@ -313,6 +360,122 @@ func _draw_runway_hold_short_markings() -> void:
 					HOLD_SHORT_DASH,
 					2.0
 				)
+
+			for light_index in range(-2, 3):
+				var light_center: Vector2 = (
+					hold
+					+ normal * float(light_index) * 5.0
+					- direction * 6.0
+				)
+				draw_circle(
+					light_center,
+					3.0,
+					Color(0, 0, 0, 0.55)
+				)
+				draw_circle(
+					light_center,
+					1.9,
+					stop_color
+				)
+
+
+func set_runway_visual_state(
+	runway_uid: int,
+	state: Dictionary
+) -> void:
+	if runway_uid < 0:
+		return
+	runway_visual_states[runway_uid] = state.duplicate(true)
+	queue_redraw()
+
+
+func get_runway_visual_state(
+	runway_uid: int
+) -> Dictionary:
+	if not runway_visual_states.has(runway_uid):
+		return {
+			"runway_uid": runway_uid,
+			"status": "clear",
+			"stop_bar": "off",
+			"active_operation": "",
+			"waiting_arrivals": 0,
+			"waiting_departures": 0,
+			"taxiing_departures": 0,
+			"arrival_priority": false
+		}
+	return (
+		runway_visual_states[runway_uid] as Dictionary
+	).duplicate(true)
+
+
+func _stop_bar_color_for_state(
+	state: Dictionary
+) -> Color:
+	match String(state.get("stop_bar", "off")):
+		"red":
+			return STOP_BAR_RED
+		"amber":
+			return STOP_BAR_AMBER
+		_:
+			return STOP_BAR_OFF
+
+
+func _draw_runway_operational_indicators() -> void:
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if definition.is_empty() or not _is_runway_definition(
+			definition
+		):
+			continue
+
+		var runway_uid := int(building.get("uid", -1))
+		var state := get_runway_visual_state(runway_uid)
+		var footprint := _footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+		var center := _footprint_center_world(
+			building["origin"],
+			footprint
+		)
+		var indicator := center + Vector2(0, -34)
+		var color := RUNWAY_CLEAR
+		var status := String(state.get("status", "clear"))
+		if status.begins_with("occupied"):
+			color = RUNWAY_OCCUPIED
+		elif bool(state.get("arrival_priority", false)):
+			color = RUNWAY_PRIORITY
+		elif status in ["departure_wait", "departure_approaching"]:
+			color = STOP_BAR_AMBER
+
+		draw_circle(
+			indicator,
+			8.5,
+			Color(0.03, 0.08, 0.10, 0.85)
+		)
+		draw_circle(
+			indicator,
+			5.0,
+			color
+		)
+		draw_circle(
+			indicator,
+			2.0,
+			Color("f7fff9")
+		)
+
+		if bool(state.get("arrival_priority", false)):
+			draw_arc(
+				indicator,
+				11.0,
+				0.0,
+				TAU,
+				16,
+				RUNWAY_PRIORITY,
+				1.5
+			)
 
 
 func _hold_short_world_position(

@@ -64,14 +64,14 @@ func _build_interface() -> void:
 	wrapper.add_child(columns)
 
 	var owned_panel := _make_column(columns, "OWNED FLEET", 300)
-	owned_list = owned_panel.get_node("List") as VBoxContainer
+	owned_list = owned_panel.get_node("Scroll/List") as VBoxContainer
 
 	var catalog_panel := _make_column(columns, "AIRCRAFT CATALOG", 360)
-	catalog_list = catalog_panel.get_node("List") as VBoxContainer
+	catalog_list = catalog_panel.get_node("Scroll/List") as VBoxContainer
 
 	var planner_panel := _make_column(columns, "ROUTE PLANNER", 0)
 	planner_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var planner_list := planner_panel.get_node("List") as VBoxContainer
+	var planner_list := planner_panel.get_node("Scroll/List") as VBoxContainer
 
 	selected_title = Label.new()
 	selected_title.text = "Select an aircraft"
@@ -110,11 +110,18 @@ func _make_column(parent: HBoxContainer, heading: String, width: float) -> VBoxC
 	label.add_theme_font_size_override("font_size", 16)
 	box.add_child(label)
 
+	var scroll := ScrollContainer.new()
+	scroll.name = "Scroll"
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(scroll)
+
 	var list := VBoxContainer.new()
 	list.name = "List"
-	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_theme_constant_override("separation", 4)
-	box.add_child(list)
+	scroll.add_child(list)
 	return box
 
 
@@ -171,18 +178,19 @@ func configure(
 		var aircraft_id := String(entry.get("id", ""))
 		var can_purchase := bool(entry.get("can_purchase", false))
 		var reason := String(entry.get("purchase_reason", ""))
-		button.text = "%s  [%s]\n%d pax • %d km • 🪙 %s" % [
+		button.text = "%s  [%s]\n%d pax • %d km • 🪙 %s\n%s" % [
 			String(entry.get("name", "Aircraft")),
 			String(entry.get("size_class", "S")),
 			int(entry.get("capacity", 0)),
 			int(entry.get("range_km", 0)),
-			_format_number(int(entry.get("purchase_price", 0)))
+			_format_number(int(entry.get("purchase_price", 0))),
+			String(entry.get("specialty", ""))
 		]
 		if not reason.is_empty():
 			button.text += " • " + reason
 		button.disabled = not can_purchase
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(0, 48)
+		button.custom_minimum_size = Vector2(0, 62)
 		button.tooltip_text = String(entry.get("specialty", ""))
 		button.pressed.connect(
 			func() -> void: aircraft_purchase_requested.emit(aircraft_id)
@@ -220,15 +228,17 @@ func configure(
 		button.custom_minimum_size = Vector2(0, 48)
 
 		if bool(route.get("compatible", false)):
-			button.text = "%s → %s  •  %d km\n%d/%d pax • %d min • 🪙 +%s net • +%d XP" % [
+			button.text = "%s → %s  •  %d km\n%d/%d pax • %d min • +%d XP\nGross 🪙 %s • Cost 🪙 %s • Net +🪙 %s" % [
 				String(route.get("name", "Route")),
 				String(route.get("destination_name", "")),
 				int(route.get("distance_km", 0)),
 				int(route.get("passengers", 0)),
 				int(route.get("capacity", 0)),
 				int(route.get("duration_minutes", 0)),
-				_format_number(int(route.get("net_profit", 0))),
-				int(route.get("xp_reward", 0))
+				int(route.get("xp_reward", 0)),
+				_format_number(int(route.get("gross_revenue", 0))),
+				_format_number(int(route.get("operating_cost", 0))),
+				_format_number(int(route.get("net_profit", 0)))
 			]
 		else:
 			button.text = "%s → %s  •  %d km\n%s" % [

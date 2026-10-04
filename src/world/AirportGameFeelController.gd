@@ -2,6 +2,7 @@ class_name AirportGameFeelController
 extends Node2D
 
 const DISCOVERY_INTERVAL := 0.35
+const INVALID_WORLD_POSITION := Vector2(99999999.0, 99999999.0)
 
 var camera_controller: CameraController
 var airport_grid: AirportGrid
@@ -211,7 +212,7 @@ func _aircraft_at_world_position(
 
 func _on_building_selected(building: Dictionary) -> void:
 	var position_world := _building_world_center(building)
-	if position_world == Vector2.INF:
+	if position_world == INVALID_WORLD_POSITION:
 		return
 
 	_add_pulse(
@@ -224,7 +225,7 @@ func _on_building_selected(building: Dictionary) -> void:
 
 func _on_building_placed(building: Dictionary) -> void:
 	var position_world := _building_world_center(building)
-	if position_world == Vector2.INF:
+	if position_world == INVALID_WORLD_POSITION:
 		return
 
 	_add_pulse(
@@ -237,13 +238,13 @@ func _on_building_placed(building: Dictionary) -> void:
 
 func _building_world_center(building: Dictionary) -> Vector2:
 	if airport_grid == null or building.is_empty():
-		return Vector2.INF
+		return INVALID_WORLD_POSITION
 
 	var definition := BuildingCatalog.get_definition(
 		String(building.get("definition_id", ""))
 	)
 	if definition.is_empty():
-		return Vector2.INF
+		return INVALID_WORLD_POSITION
 
 	var footprint: Vector2i = definition.get(
 		"footprint",

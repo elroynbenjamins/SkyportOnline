@@ -323,6 +323,36 @@ static func all() -> Array[Dictionary]:
 			"world_sprite_offset": Vector2(0, -12)
 		},
 		{
+			"id": "autumn_event_flag",
+			"name": "Autumn Event Flag",
+			"menu_name": "AUTUMN FLAG",
+			"category": "Decorations",
+			"footprint": Vector2i(1, 1),
+			"cost": 0,
+			"level": 1,
+			"color": Color("b45b2a"),
+			"rotatable": false,
+			"sizes": PackedStringArray([]),
+			"description": "Placeable Autumn Airbridge flag cosmetic.",
+			"event_decoration": true,
+			"required_cosmetic_id": "event_autumn_alliance_flag"
+		},
+		{
+			"id": "autumn_leaf_garden",
+			"name": "Autumn Leaf Garden",
+			"menu_name": "LEAF GARDEN",
+			"category": "Decorations",
+			"footprint": Vector2i(2, 1),
+			"cost": 0,
+			"level": 1,
+			"color": Color("8a6333"),
+			"rotatable": true,
+			"sizes": PackedStringArray([]),
+			"description": "Placeable autumn garden unlocked from the seasonal shop.",
+			"event_decoration": true,
+			"required_cosmetic_id": "event_autumn_leaf_garden"
+		},
+		{
 			"id": "rapid_regional_fuel",
 			"name": "Regional Rapid Fuel Station",
 			"menu_name": "RAPID FUEL",
@@ -352,5 +382,18 @@ static func get_definition(building_id: String) -> Dictionary:
 	return {}
 
 
-static func get_menu_definitions() -> Array[Dictionary]:
-	return all()
+static func get_menu_definitions(
+	owned_cosmetics: Dictionary = {}
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for definition in all():
+		if bool(definition.get("event_decoration", false)):
+			var required := String(
+				definition.get("required_cosmetic_id", "")
+			)
+			if required.is_empty() or not bool(
+				owned_cosmetics.get(required, false)
+			):
+				continue
+		result.append(definition.duplicate(true))
+	return result

@@ -1,8 +1,12 @@
 class_name ResourceInventoryScreen
 extends CanvasLayer
 
+signal rewarded_passenger_boost_requested
+
 var root: Control
 var passenger_label: Label
+var passenger_boost_button: Button
+var passenger_support_label: Label
 var resource_list: VBoxContainer
 
 
@@ -16,13 +20,15 @@ func open_inventory(
 	inventory: Dictionary,
 	passengers: int,
 	passenger_capacity: int,
-	passengers_per_minute: float
+	passengers_per_minute: float,
+	rewarded_ad_available: bool = false
 ) -> void:
 	_refresh(
 		inventory,
 		passengers,
 		passenger_capacity,
-		passengers_per_minute
+		passengers_per_minute,
+		rewarded_ad_available
 	)
 	root.visible = true
 
@@ -82,6 +88,29 @@ func _build_ui() -> void:
 	passenger_label.add_theme_color_override("font_color", Color("f1d27a"))
 	column.add_child(passenger_label)
 
+
+	var passenger_actions := HBoxContainer.new()
+	passenger_actions.add_theme_constant_override("separation", 10)
+	column.add_child(passenger_actions)
+
+	passenger_boost_button = Button.new()
+	passenger_boost_button.text = "WATCH AD  •  +25 PASSENGERS"
+	passenger_boost_button.custom_minimum_size = Vector2(300, 44)
+	passenger_boost_button.pressed.connect(
+		_on_rewarded_passenger_boost_pressed
+	)
+	passenger_actions.add_child(passenger_boost_button)
+
+	passenger_support_label = Label.new()
+	passenger_support_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	passenger_support_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	passenger_support_label.add_theme_font_size_override("font_size", 13)
+	passenger_support_label.add_theme_color_override(
+		"font_color",
+		Color("a9c6cf")
+	)
+	passenger_actions.add_child(passenger_support_label)
+
 	var explanation := Label.new()
 	explanation.text = (
 		"Country resources are earned from completed flights and spent on "
@@ -106,12 +135,25 @@ func _refresh(
 	inventory: Dictionary,
 	passengers: int,
 	passenger_capacity: int,
-	passengers_per_minute: float
+	passengers_per_minute: float,
+	rewarded_ad_available: bool
 ) -> void:
 	passenger_label.text = (
 		"👥 Passengers: %d / %d   •   +%.1f per minute"
 		% [passengers, passenger_capacity, passengers_per_minute]
 	)
+
+	passenger_boost_button.disabled = not rewarded_ad_available
+	if rewarded_ad_available:
+		passenger_support_label.text = (
+			"Rewarded boost: +25 passengers after a completed ad.  "
+			+ "Friend gifts later: +10 each, max 3 incoming gifts/day."
+		)
+	else:
+		passenger_support_label.text = (
+			"Rewarded +25 passenger hook is ready; ad provider not "
+			+ "connected yet. Friend gifts later: +10 each, max 3/day."
+		)
 
 	for child in resource_list.get_children():
 		child.queue_free()
@@ -173,3 +215,7 @@ func _refresh(
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.add_theme_font_size_override("font_size", 18)
 		resource_list.add_child(empty)
+
+
+func _on_rewarded_passenger_boost_pressed() -> void:
+	rewarded_passenger_boost_requested.emit()

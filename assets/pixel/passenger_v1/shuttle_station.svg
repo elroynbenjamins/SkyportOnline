@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="192" viewBox="0 0 256 192" shape-rendering="crispEdges">
+<g stroke="#273c48" stroke-width="4" stroke-linejoin="miter">
+<polygon fill="#899da3" points="23,126 111,82 231,126 140,177"/>
+<polygon fill="#dce4e2" points="69,91 132,60 193,86 128,120"/>
+<polygon fill="#b8c6c8" points="69,91 128,120 128,145 69,117"/>
+<polygon fill="#9fb1b6" points="128,120 193,86 193,112 128,145"/>
+<polygon fill="#f3f5f0" points="78,82 132,56 184,78 128,106"/>
+<rect fill="#6ab9d7" x="79" y="101" width="20" height="12"/><rect fill="#6ab9d7" x="103" y="112" width="19" height="12"/>
+<rect fill="#6ab9d7" x="141" y="108" width="20" height="12"/><rect fill="#6ab9d7" x="165" y="96" width="18" height="12"/>
+<g><polygon fill="#f4f6f4" points="45,131 80,114 110,127 75,145"/><polygon fill="#2b7ea6" points="45,131 75,145 75,154 45,141"/><polygon fill="#245c78" points="75,145 110,127 110,136 75,154"/><rect fill="#7ed0ea" x="55" y="132" width="10" height="7"/></g>
+<g><polygon fill="#f4f6f4" points="133,145 168,128 199,141 163,159"/><polygon fill="#2b7ea6" points="133,145 163,159 163,168 133,155"/><polygon fill="#245c78" points="163,159 199,141 199,150 163,168"/><rect fill="#7ed0ea" x="144" y="145" width="10" height="7"/></g>
+<circle fill="#4c8e48" cx="47" cy="112" r="12"/><circle fill="#4c8e48" cx="211" cy="117" r="13"/>
+</g></svg>

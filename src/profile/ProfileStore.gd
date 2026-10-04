@@ -196,7 +196,7 @@ static func add_economy_stats(delta: Dictionary) -> Dictionary:
 
 	for key in delta.keys():
 		var amount := int(delta[key])
-		if amount == 0:
+		if amount <= 0:
 			continue
 		stats[key] = int(stats.get(key, 0)) + amount
 

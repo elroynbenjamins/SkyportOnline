@@ -27,6 +27,19 @@ normally remain 21 so all events share the same structure.
 
 The included **Sky Lantern Festival** is a disabled example/template.
 
+The first release-facing event currently prepared is **Christmas & New Year
+Airbridge**. It also ships disabled until the release date is firm.
+
+Its provisional schedule is:
+
+**December 18, 2026 00:00 UTC → January 8, 2027 00:00 UTC**
+
+If the game release moves, adjust `start_unix` before setting
+`enabled = true`. This avoids launching a partially expired event.
+
+**Autumn Airbridge is retained as test/archive content and is disabled.**
+
+
 ## Fixed event structure
 
 Every event follows the same loop:
@@ -162,9 +175,44 @@ The framework currently understands these metrics:
 - `resources_earned`
 - `flight_coins`
 - `buildings_placed`
+- `destination_flights`
 
 The sample event uses the first four. Future event templates can use any metric
 already emitted to `EventManager.record_metric()`.
+
+## First release event
+
+**Christmas & New Year Airbridge** is intentionally built for a fresh launch
+population.
+
+Featured quest-route progression:
+
+| Week | Featured route | Expected aircraft progression |
+| --- | --- | --- |
+| 1 | Brussels • 175 km • Lv1 | Pico P8 • Lv1 • 320 km range |
+| 2 | London • 360 km • Lv1 | Swift S14 • Lv2 • 430 km range |
+| 3 | Berlin • 575 km • Lv4 | Comet C22 • Lv4 • 600 km range |
+
+This avoids requiring the Lv6 Voyager during the launch event.
+
+The event has **12 quests / 4 per week** and awards **620 Festive Vouchers**
+from personal quests plus up to **300 Festive Vouchers** from Alliance
+milestones.
+
+Featured routes have:
+
+`featured_route_currency = 0`
+
+so there is no repeatable/unlimited event-currency farm. Event currency comes
+from quest and Alliance milestone claims.
+
+The shop retains the standard event limits:
+
+- 4 personal cosmetics.
+- +25 passengers × 3.
+- +75 passengers × 1.
+- **150 event-shop passengers maximum.**
+- 1 Alliance-exclusive cosmetic.
 
 ## Adding a new event
 

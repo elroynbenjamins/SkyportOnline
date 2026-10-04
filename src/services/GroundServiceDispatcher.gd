@@ -22,6 +22,16 @@ var station_active: Dictionary = {}
 var stand_approach_active: Dictionary = {}
 var turnaround_jobs: Dictionary = {}
 var active_jobs := 0
+var service_analytics: Dictionary = {}
+
+const ANALYTICS_SERVICE_TYPES: Array[String] = [
+	"fuel",
+	"passenger",
+	"cargo",
+	"cleaning",
+	"catering",
+	"pushback"
+]
 
 
 func configure(grid: AirportGrid) -> void:
@@ -69,6 +79,7 @@ func request_fuel(
 		return
 
 	var profile := _profile_for_aircraft(aircraft)
+	_increment_service_analytics("fuel", "requests", 1.0)
 	pending_requests.append({
 		"legacy_fuel_only": true,
 		"job_id": -1,
@@ -138,6 +149,68 @@ func get_waiting_by_service() -> Dictionary:
 	return result
 
 
+func get_service_analytics_snapshot() -> Dictionary:
+	var result: Dictionary = {}
+	var waiting := get_waiting_by_service()
+
+	for service_type in ANALYTICS_SERVICE_TYPES:
+		_ensure_service_analytics(service_type)
+		var raw: Dictionary = service_analytics[service_type]
+		var capacity := _service_capacity(service_type)
+		var current_active := _active_for_service(service_type)
+		var current_waiting := int(
+			waiting.get(service_type, 0)
+		)
+		var capacity_seconds := maxf(
+			float(raw.get("capacity_seconds", 0.0)),
+			0.0
+		)
+		var active_seconds := maxf(
+			float(raw.get("active_vehicle_seconds", 0.0)),
+			0.0
+		)
+		var utilization := 0.0
+		if capacity_seconds > 0.001:
+			utilization = clampf(
+				active_seconds / capacity_seconds * 100.0,
+				0.0,
+				100.0
+			)
+
+		var requests := maxi(
+			int(raw.get("requests", 0)),
+			0
+		)
+		var average_wait := 0.0
+		if requests > 0:
+			average_wait = (
+				float(raw.get("queued_seconds", 0.0))
+				/ float(requests)
+			)
+
+		var stats := raw.duplicate(true)
+		stats["service_type"] = service_type
+		stats["capacity"] = capacity
+		stats["current_active"] = current_active
+		stats["current_waiting"] = current_waiting
+		stats["utilization_pct"] = utilization
+		stats["average_wait_seconds"] = average_wait
+		result[service_type] = stats
+
+	return result
+
+
+func get_service_analytics(
+	service_type: String
+) -> Dictionary:
+	return (
+		get_service_analytics_snapshot().get(
+			service_type,
+			{}
+		) as Dictionary
+	).duplicate(true)
+
+
 func get_turnaround_snapshot(
 	aircraft: AircraftPrototype
 ) -> Dictionary:
@@ -163,6 +236,8 @@ func get_turnaround_snapshot(
 
 
 func _process(delta: float) -> void:
+	_tick_service_analytics(delta)
+
 	if turnaround_jobs.is_empty():
 		return
 
@@ -448,6 +523,11 @@ func _enqueue_service_request(
 	service_type: String,
 	base_duration: float
 ) -> void:
+	_increment_service_analytics(
+		service_type,
+		"requests",
+		1.0
+	)
 	pending_requests.append({
 		"legacy_fuel_only": false,
 		"job_id": job_id,
@@ -764,6 +844,11 @@ func _on_service_completed(
 		return
 
 	if legacy_fuel_only:
+		_increment_service_analytics(
+			"fuel",
+			"completed",
+			1.0
+		)
 		aircraft.mark_service_complete()
 		aircraft_serviced.emit(aircraft, label)
 		status_changed.emit(
@@ -783,6 +868,15 @@ func _on_service_completed(
 	)
 	if service_status.has(service_key):
 		var entry: Dictionary = service_status[service_key]
+		var completed_service_type := String(
+			entry.get("service_type", "")
+		)
+		if not completed_service_type.is_empty():
+			_increment_service_analytics(
+				completed_service_type,
+				"completed",
+				1.0
+			)
 		entry["state"] = "done"
 		entry["remaining"] = 0.0
 		service_status[service_key] = entry
@@ -997,6 +1091,120 @@ func _remove_job(job_id: int) -> void:
 			pending_requests.remove_at(index)
 
 	_emit_queue_status()
+
+
+func _ensure_service_analytics(
+	service_type: String
+) -> void:
+	if (
+		service_type.is_empty()
+		or service_analytics.has(service_type)
+	):
+		return
+	service_analytics[service_type] = {
+		"tracked_seconds": 0.0,
+		"queued_seconds": 0.0,
+		"active_vehicle_seconds": 0.0,
+		"capacity_seconds": 0.0,
+		"requests": 0,
+		"completed": 0,
+		"peak_waiting": 0
+	}
+
+
+func _increment_service_analytics(
+	service_type: String,
+	key: String,
+	amount: float
+) -> void:
+	if service_type.is_empty():
+		return
+	_ensure_service_analytics(service_type)
+	var data: Dictionary = service_analytics[service_type]
+	if key in ["requests", "completed", "peak_waiting"]:
+		data[key] = int(data.get(key, 0)) + int(round(amount))
+	else:
+		data[key] = float(
+			data.get(key, 0.0)
+		) + amount
+	service_analytics[service_type] = data
+
+
+func _tick_service_analytics(delta: float) -> void:
+	if delta <= 0.0:
+		return
+
+	var waiting := get_waiting_by_service()
+	for service_type in ANALYTICS_SERVICE_TYPES:
+		_ensure_service_analytics(service_type)
+		var data: Dictionary = service_analytics[service_type]
+		var waiting_count := int(
+			waiting.get(service_type, 0)
+		)
+		var active_count := _active_for_service(
+			service_type
+		)
+		var capacity := _service_capacity(
+			service_type
+		)
+
+		data["tracked_seconds"] = float(
+			data.get("tracked_seconds", 0.0)
+		) + delta
+		data["queued_seconds"] = float(
+			data.get("queued_seconds", 0.0)
+		) + float(waiting_count) * delta
+		data["active_vehicle_seconds"] = float(
+			data.get("active_vehicle_seconds", 0.0)
+		) + float(active_count) * delta
+		data["capacity_seconds"] = float(
+			data.get("capacity_seconds", 0.0)
+		) + float(capacity) * delta
+		data["peak_waiting"] = maxi(
+			int(data.get("peak_waiting", 0)),
+			waiting_count
+		)
+		service_analytics[service_type] = data
+
+
+func _active_for_service(
+	service_type: String
+) -> int:
+	var total := 0
+	for key_variant in station_active.keys():
+		var key := String(key_variant)
+		if not key.ends_with(":" + service_type):
+			continue
+		total += int(
+			station_active.get(key_variant, 0)
+		)
+	return total
+
+
+func _service_capacity(
+	service_type: String
+) -> int:
+	if airport_grid == null:
+		return 0
+
+	var by_uid: Dictionary = {}
+	for size_class in ["S", "M"]:
+		for station in airport_grid.get_compatible_service_buildings(
+			service_type,
+			size_class
+		):
+			var uid := int(station.get("uid", -1))
+			if uid < 0:
+				continue
+			by_uid[uid] = maxi(
+				int(by_uid.get(uid, 0)),
+				int(station.get("vehicle_capacity", 1))
+			)
+
+	var total := 0
+	for capacity_variant in by_uid.values():
+		total += int(capacity_variant)
+	return total
 
 
 func _station_service_key(

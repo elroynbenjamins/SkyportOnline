@@ -174,6 +174,10 @@ func _run() -> void:
 	plane_a.runway_cleared.emit()
 	plane_b.runway_cleared.emit()
 
+	var arrival_dispatcher := RunwayDispatcher.new()
+	root.add_child(arrival_dispatcher)
+	arrival_dispatcher.configure(grid)
+
 	var arrival_options := grid.get_arrival_route_options("S")
 	if arrival_options.size() != 4:
 		_fail("Two stands × two runways should expose four S arrival options.")
@@ -196,12 +200,12 @@ func _run() -> void:
 		int(occupied_option.get("stand_uid", -1)),
 		runway_a
 	)
-	dispatcher.request_arrival(arrival_a, "ARR-A")
-	if dispatcher.get_active_count() != 1:
+	arrival_dispatcher.request_arrival(arrival_a, "ARR-A")
+	if arrival_dispatcher.get_active_count() != 1:
 		_fail("First inbound aircraft should occupy its selected runway.")
 		return
 
-	var arrival_choice := dispatcher.select_best_runway_option(
+	var arrival_choice := arrival_dispatcher.select_best_runway_option(
 		arrival_options,
 		"arrival"
 	)

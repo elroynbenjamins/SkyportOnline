@@ -11,6 +11,7 @@ var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
 var operation_status_label: Label
+var flight_status_label: Label
 
 var parcel_panel: PanelContainer
 var parcel_title: Label
@@ -56,9 +57,9 @@ func _build_interface() -> void:
 	top_panel.add_child(top_row)
 
 	level_label = Label.new()
-	level_label.custom_minimum_size = Vector2(90, 0)
+	level_label.custom_minimum_size = Vector2(180, 0)
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level_label.add_theme_font_size_override("font_size", 20)
+	level_label.add_theme_font_size_override("font_size", 16)
 	top_row.add_child(level_label)
 
 	var title := Label.new()
@@ -123,6 +124,21 @@ func _build_interface() -> void:
 	operation_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operation_status_label.add_theme_font_size_override("font_size", 13)
 	operation_panel.add_child(operation_status_label)
+
+	var flight_panel := PanelContainer.new()
+	flight_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	flight_panel.offset_left = 470
+	flight_panel.offset_top = 82
+	flight_panel.offset_right = 1018
+	flight_panel.offset_bottom = 146
+	root.add_child(flight_panel)
+
+	flight_status_label = Label.new()
+	flight_status_label.text = "FLIGHTS\nPreparing route data..."
+	flight_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	flight_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	flight_status_label.add_theme_font_size_override("font_size", 13)
+	flight_panel.add_child(flight_status_label)
 
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -320,11 +336,24 @@ func _find_building_grid() -> GridContainer:
 	return root.find_child("BuildingGrid", true, false) as GridContainer
 
 
-func set_player_data(level: int, coins: int, gems: int) -> void:
+func set_player_data(
+	level: int,
+	coins: int,
+	gems: int,
+	xp: int = 0,
+	xp_to_next: int = 0
+) -> void:
 	current_level = level
 	current_coins = coins
 	current_gems = gems
-	level_label.text = "LV %d" % level
+	if xp_to_next > 0:
+		level_label.text = "LV %d • %s/%s XP" % [
+			level,
+			_format_number(xp),
+			_format_number(xp_to_next)
+		]
+	else:
+		level_label.text = "LV %d • MAX" % level
 	coins_label.text = "🪙 %s" % _format_number(coins)
 	gems_label.text = "◆ %s" % _format_number(gems)
 	_update_catalog_buttons()
@@ -462,6 +491,20 @@ func set_operation_status(text: String, tone: String = "normal") -> void:
 			operation_status_label.add_theme_color_override("font_color", Color("9fe3b7"))
 		_:
 			operation_status_label.add_theme_color_override("font_color", Color("f2f5f4"))
+
+
+func set_flight_status(text: String, tone: String = "normal") -> void:
+	if flight_status_label == null:
+		return
+
+	flight_status_label.text = "FLIGHTS\n" + text
+	match tone:
+		"warning":
+			flight_status_label.add_theme_color_override("font_color", Color("ffc266"))
+		"success":
+			flight_status_label.add_theme_color_override("font_color", Color("9fe3b7"))
+		_:
+			flight_status_label.add_theme_color_override("font_color", Color("f2f5f4"))
 
 
 func set_airside_status(status: Dictionary) -> void:

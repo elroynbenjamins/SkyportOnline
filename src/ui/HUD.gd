@@ -793,13 +793,13 @@ func _refresh_operations_status() -> void:
 
 	var chip_tone := current_operation_status_tone
 	if chip_tone == "normal":
-		var analysis_value = operations_analytics.get(
+		var tone_analysis_value = operations_analytics.get(
 			"analysis",
 			{}
 		)
-		if analysis_value is Dictionary:
-			var analysis: Dictionary = analysis_value
-			var recommendation_value = analysis.get(
+		if tone_analysis_value is Dictionary:
+			var tone_analysis: Dictionary = tone_analysis_value
+			var recommendation_value = tone_analysis.get(
 				"recommendation",
 				{}
 			)

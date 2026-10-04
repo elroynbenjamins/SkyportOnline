@@ -40,7 +40,7 @@ func refresh_building_stats() -> void:
 	capacity = 0
 	production_per_minute = 0.0
 
-	for building in airport_grid.get_passenger_generator_buildings():
+	for building in airport_grid.get_passenger_economy_buildings():
 		var building_id := String(building.get("definition_id", ""))
 		var level := int(building.get("upgrade_level", 1))
 		var stats := PassengerUpgradeCatalog.passenger_stats(

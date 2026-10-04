@@ -242,9 +242,7 @@ func _build_bottom_navigation(root: Control) -> void:
 
 func set_build_catalog(definitions: Array[Dictionary]) -> void:
 	catalog_definitions = definitions
-	var grid := get_node("Control/PanelContainer3/VBoxContainer/BuildingGrid") as GridContainer
-	if grid == null:
-		grid = _find_building_grid()
+	var grid := _find_building_grid()
 	if grid == null:
 		return
 

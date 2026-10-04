@@ -86,6 +86,31 @@ Specialized service buildings unlock later:
 
 The dispatcher always prefers the fastest compatible facility with free capacity and a valid service-road route. This makes airport layout and specialized infrastructure real throughput decisions.
 
+## Reconciled V1 infrastructure wall
+
+The passenger/service work now coexists with the agreed S → M airport progression:
+
+- **Small Hangar** — S-only, 3 aircraft-capacity slots.
+- **Medium Stand** — Lv8, 45,000 coins.
+- **Regional Fuel Depot** — Lv8, 60,000 coins.
+- **Regional Hangar** — Lv8, 105,000 coins, S/M, 5 slots.
+- **Regional Runway** — Lv8, 150,000 coins.
+- **Nimbus N40** — Lv8, 185,000 coins.
+
+The first complete M-aircraft project therefore remains **545,000 coins**.
+
+The nine V1 aircraft definitions also retain purchase price, one-slot S/M hangar usage, and operating-cost metadata for the upcoming Fleet screen.
+
+## Reconciled route lifecycle
+
+Starter aircraft no longer receive a hidden automatic Brussels route.
+
+The live flow is:
+
+**Turnaround → choose destination in WORLD → passenger check/boarding → pushback/runway → flight → return/reward → clear completed route → next turnaround → choose the next destination**
+
+Bremen is available at Lv1 and 280 km, giving the Pico P8 a second reachable starter country. This makes the first Travel Office upgrade earnable through **Belgium + Germany** without requiring an out-of-range UK flight.
+
 ## Passenger bottleneck
 
 Passenger aircraft now consume passengers before departure.
@@ -100,10 +125,7 @@ If the airport does not have enough passengers for that aircraft's seat requirem
 
 Passenger generation continues in the background. As soon as enough passengers are available, the waiting aircraft automatically boards them and enters the runway queue.
 
-The current prototype aircraft use their passenger capacity as the boarding requirement:
-
-- Aerolet 100 — 18 passengers.
-- Aerolet 120 — 24 passengers.
+The V1 aircraft use their seat capacity as the base boarding requirement before Mastery reductions. The starter fleet is **2× Pico P8**, so each fresh starter departure begins from an 8-passenger requirement.
 
 This makes passenger production a real operational bottleneck rather than a cosmetic counter.
 
@@ -124,7 +146,7 @@ Internal upgrades improve production and storage only. The building keeps the sa
 | Level | Passengers / min | Storage | Coin cost | Regional-resource cost |
 | --- | ---: | ---: | ---: | --- |
 | 1 | 1.5 | 40 | — | — |
-| 2 | 2.2 | 55 | 2,500 | 2 Belgium Chocolate + 1 UK Specialty Goods |
+| 2 | 2.2 | 55 | 2,500 | 2 Belgium Chocolate + 1 Germany Industrial Tools |
 | 3 | 3.2 | 75 | 6,000 | 2 France Cosmetics + 2 Germany Industrial Tools |
 | 4 | 4.5 | 100 | 12,000 | 3 Denmark Design Goods + 2 UK Specialty Goods |
 | 5 | 6.0 | 135 | 22,000 | 3 Germany Machinery + 3 France Luxury Goods + 2 Netherlands Horticulture |
@@ -182,14 +204,7 @@ Adjusted by:
 
 The current result is clamped between 20% and 70%.
 
-Current tested examples:
-
-| Aircraft / route | Resource chance per item |
-| --- | ---: |
-| Aerolet 100 → London | 40.0% |
-| Aerolet 120 → London | 30.4% |
-| Regional 200 → London | 47.9% |
-| Regional 200 → Copenhagen | 50.4% |
+The approved V1 aircraft now carry their own resource-drop identities; see **Resource-drop reconciliation** below for the current modifiers.
 
 Rewards are granted only after the aircraft physically lands, taxis back, and reaches its stand.
 
@@ -305,6 +320,8 @@ The passenger economy now has the agreed reward:
 
 The reward respects available passenger storage. If only 10 spaces remain, only 10 passengers are added.
 
+The current rules allow **+25 passengers per completed rewarded ad**, with a maximum **3 rewarded passenger claims per day** and normal passenger-storage limits.
+
 The UI and reward callback are implemented, but an external rewarded-ad provider is **not connected yet**. The ad bridge deliberately does not auto-grant a reward. A future ad SDK must call the completion callback after it confirms a completed rewarded ad.
 
 This prevents the prototype from pretending an ad was watched or allowing a free unlimited +25 button.
@@ -315,9 +332,9 @@ The persistent profile now contains a daily incoming passenger-gift ledger.
 
 Current provisional social balance:
 
-- +10 passengers per received friend / Alliance gift.
-- Maximum 3 incoming gifts per day.
-- Maximum 30 gifted passengers per day before storage limits.
+- +5 passengers per received friend / Alliance gift.
+- Maximum 10 incoming gifts per day.
+- Maximum 50 gifted passengers per day before storage limits.
 
 The actual Friends / Alliance networking layer is not connected yet. These rules and persistence are ready for that later integration.
 
@@ -400,6 +417,7 @@ The validation suite now covers:
 - Rewarded-ad callback safety.
 - Shuttle Station production/storage profile.
 - Daily friend passenger-gift cap/reset logic.
+- Reconciled V1 aircraft prices, starter-route reach, and 545k regional gate.
 
 ## Next pass
 

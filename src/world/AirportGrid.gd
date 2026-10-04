@@ -15,10 +15,15 @@ const PARCEL_ROWS := 3
 
 const OWNED_A := Color("5e965f")
 const OWNED_B := Color("579059")
+const OWNED_C := Color("639c63")
 const LOCKED_A := Color("384c45")
 const LOCKED_B := Color("334640")
-const GRID_LINE := Color("8fbc86", 0.32)
-const LOCKED_GRID_LINE := Color("84958d", 0.22)
+const LOCKED_C := Color("3c5048")
+const GRID_LINE := Color("8fbc86", 0.26)
+const LOCKED_GRID_LINE := Color("84958d", 0.18)
+const OWNED_BOUNDARY := Color("a8cf95", 0.62)
+const LOCKED_BOUNDARY := Color("73847d", 0.48)
+const LANDSIDE_ROAD_LINE := Color("e5dfd4", 0.82)
 const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
@@ -137,14 +142,108 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 		for x in range(start_x, start_x + PARCEL_SIZE):
 			var center := tile_to_world(Vector2(x, y))
 			var points := _tile_points(center)
-			var checker := (x + y) % 2 == 0
-			var fill := OWNED_A if checker else OWNED_B
+			var variant := posmod(x * 3 + y * 5, 3)
+			var fill := OWNED_A
 			var line := GRID_LINE
+			if variant == 1:
+				fill = OWNED_B
+			elif variant == 2:
+				fill = OWNED_C
+
 			if not owned:
-				fill = LOCKED_A if checker else LOCKED_B
+				fill = LOCKED_A
+				if variant == 1:
+					fill = LOCKED_B
+				elif variant == 2:
+					fill = LOCKED_C
 				line = LOCKED_GRID_LINE
+
 			draw_colored_polygon(points, fill)
-			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
+			draw_polyline(
+				PackedVector2Array([
+					points[0],
+					points[1],
+					points[2],
+					points[3],
+					points[0]
+				]),
+				line,
+				1.0
+			)
+
+			if owned and not occupied_cells.has(
+				_cell_key(Vector2i(x, y))
+			):
+				_draw_empty_grass_detail(
+					Vector2i(x, y),
+					center
+				)
+
+	_draw_parcel_boundary(parcel)
+
+
+func _draw_empty_grass_detail(
+	tile: Vector2i,
+	center: Vector2
+) -> void:
+	var detail_variant := posmod(
+		tile.x * 11 + tile.y * 7,
+		9
+	)
+	if detail_variant not in [1, 5, 7]:
+		return
+
+	var tint := Color("9fc978", 0.58)
+	var offset := Vector2(
+		float(posmod(tile.x * 5 + tile.y, 9) - 4),
+		float(posmod(tile.y * 3 + tile.x, 5) - 2)
+	)
+	draw_line(
+		center + offset + Vector2(-2, 2),
+		center + offset + Vector2(0, -2),
+		tint,
+		1.2
+	)
+	draw_line(
+		center + offset + Vector2(1, 2),
+		center + offset + Vector2(3, -1),
+		tint,
+		1.2
+	)
+
+	if detail_variant == 7:
+		draw_circle(
+			center + offset + Vector2(5, 1),
+			1.5,
+			Color("e2cf73", 0.66)
+		)
+
+
+func _draw_parcel_boundary(parcel: Dictionary) -> void:
+	var start_x: int = int(parcel["px"]) * PARCEL_SIZE
+	var start_y: int = int(parcel["py"]) * PARCEL_SIZE
+	var end_x := start_x + PARCEL_SIZE - 1
+	var end_y := start_y + PARCEL_SIZE - 1
+
+	var points := PackedVector2Array([
+		tile_to_world(Vector2(start_x, start_y))
+			+ Vector2(0, -TILE_HEIGHT * 0.5),
+		tile_to_world(Vector2(end_x, start_y))
+			+ Vector2(TILE_WIDTH * 0.5, 0),
+		tile_to_world(Vector2(end_x, end_y))
+			+ Vector2(0, TILE_HEIGHT * 0.5),
+		tile_to_world(Vector2(start_x, end_y))
+			+ Vector2(-TILE_WIDTH * 0.5, 0),
+		tile_to_world(Vector2(start_x, start_y))
+			+ Vector2(0, -TILE_HEIGHT * 0.5)
+	])
+
+	var owned := bool(parcel.get("owned", false))
+	draw_polyline(
+		points,
+		OWNED_BOUNDARY if owned else LOCKED_BOUNDARY,
+		2.2 if owned else 1.8
+	)
 
 
 func _draw_buildings() -> void:
@@ -162,14 +261,28 @@ func _draw_buildings() -> void:
 		if _definition_has_world_sprite(definition):
 			color.a = 0.72
 
-		for y in range(footprint.y):
-			for x in range(footprint.x):
-				_draw_tile_overlay(origin + Vector2i(x, y), color, Color("eef2f1", 0.30), 1.0)
+		var preserve_ground := bool(
+			definition.get("preserve_ground", false)
+		)
+		if not preserve_ground:
+			for y in range(footprint.y):
+				for x in range(footprint.x):
+					_draw_tile_overlay(
+						origin + Vector2i(x, y),
+						color,
+						Color("eef2f1", 0.30),
+						1.0
+					)
 
 		if not _definition_has_world_sprite(definition):
 			_draw_building_detail(building, definition, footprint)
 		else:
-			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
+			_draw_building_sprite(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"])
+			)
 
 
 func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:
@@ -192,6 +305,9 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 
 	elif id == "taxiway":
 		_draw_taxiway_detail(origin)
+
+	elif id == "access_road":
+		_draw_access_road_detail(origin)
 
 	elif id.contains("fuel"):
 		var center := _footprint_center_world(origin, footprint)
@@ -637,6 +753,89 @@ func _draw_building_sprite(
 	var center := _footprint_center_world(origin, footprint)
 	var rect := Rect2(center - draw_size * 0.5 + offset, draw_size)
 	draw_texture_rect(texture, rect, false, modulate)
+
+
+func _draw_access_road_detail(origin: Vector2i) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var directions: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
+	var connections := 0
+
+	for direction in directions:
+		var neighbor := origin + direction
+		if not _access_road_visually_connects_to(neighbor):
+			continue
+
+		var edge := tile_to_world(
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.48
+		)
+		draw_dashed_line(
+			center,
+			edge,
+			LANDSIDE_ROAD_LINE,
+			1.5,
+			5.5
+		)
+		connections += 1
+
+	if connections == 0:
+		draw_dashed_line(
+			center + Vector2(-10, 5),
+			center + Vector2(10, -5),
+			LANDSIDE_ROAD_LINE,
+			1.5,
+			5.5
+		)
+
+
+func _access_road_visually_connects_to(
+	cell: Vector2i
+) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+
+	var building := _building_by_uid(
+		int(occupied_cells[key])
+	)
+	if building.is_empty():
+		return false
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return false
+
+	var id := String(definition.get("id", ""))
+	return (
+		id == "access_road"
+		or id == "parking_lot"
+		or id == "terminal_forecourt"
+		or String(definition.get("category", "")) == "Passenger"
+	)
+
+
+func get_access_road_connection_count(
+	origin: Vector2i
+) -> int:
+	var result := 0
+	for direction in [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]:
+		if _access_road_visually_connects_to(
+			origin + direction
+		):
+			result += 1
+	return result
 
 
 func _draw_taxiway_detail(origin: Vector2i) -> void:
@@ -1312,6 +1511,8 @@ func _refresh_building_labels() -> void:
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty() or String(definition["id"]) == "taxiway":
+			continue
+		if bool(definition.get("suppress_world_label", false)):
 			continue
 
 		var footprint := _footprint_for(definition, int(building["rotation"]))

@@ -18,6 +18,7 @@ var route_entries: Array[Dictionary] = []
 var resource_inventory: Dictionary = {}
 var selected_fleet_uid := -1
 var selected_route_id := ""
+var origin_country_code := "NL"
 
 
 func _ready() -> void:
@@ -156,8 +157,10 @@ func configure(
 	new_fleet_entries: Array[Dictionary],
 	new_route_entries: Array[Dictionary],
 	active_fleet_uid: int,
-	new_resource_inventory: Dictionary
+	new_resource_inventory: Dictionary,
+	new_origin_country_code: String = "NL"
 ) -> void:
+	origin_country_code = new_origin_country_code.to_upper()
 	fleet_entries.clear()
 	for entry in new_fleet_entries:
 		fleet_entries.append(entry.duplicate(true))
@@ -174,7 +177,12 @@ func configure(
 	if selected_route_id.is_empty() or not _has_route(selected_route_id):
 		selected_route_id = _first_route_id()
 
-	map_canvas.configure(route_entries)
+	map_canvas.configure(route_entries, origin_country_code)
+	var origin := CountryCatalog.get_country(origin_country_code)
+	if not origin.is_empty():
+		view_label.text = "EUROPE VIEW • HOME: %s" % String(
+			origin.get("name", origin_country_code)
+		).to_upper()
 	_refresh_destination_details()
 
 

@@ -51,6 +51,12 @@ func _run() -> void:
 	if AircraftMastery.passenger_requirement(18, 400.0) != 16:
 		_fail("Star 4 should reduce an 18-seat requirement to 16.")
 		return
+	if AircraftMastery.passenger_requirement(8, 10.0) != 7:
+		_fail("Star 1 should visibly reduce the 8-seat Pico P8 to 7.")
+		return
+	if AircraftMastery.passenger_requirement(8, 400.0) != 6:
+		_fail("Star 4 should visibly reduce the Pico P8 to 6.")
+		return
 
 	if AircraftMastery.apply_xp_bonus(100, 50.0) != 105:
 		_fail("Star 2 should grant +5% XP.")

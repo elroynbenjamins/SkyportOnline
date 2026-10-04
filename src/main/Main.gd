@@ -32,6 +32,7 @@ var passenger_upgrade_panel: PassengerUpgradePanel
 var service_upgrade_panel: ServiceUpgradePanel
 var air_traffic_upgrade_panel: AirTrafficUpgradePanel
 var runway_strategy_panel: RunwayStrategyPanel
+var airport_lighting: AirportLightingOverlay
 var passenger_economy: PassengerEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var event_manager: EventManager
@@ -104,6 +105,7 @@ func _start_gameplay() -> void:
 		String(current_profile.get("account_type", "guest"))
 	)
 
+	_setup_airport_lighting()
 	_setup_ground_services()
 	_setup_runway_dispatcher()
 	_setup_taxi_traffic()
@@ -122,6 +124,15 @@ func _start_gameplay() -> void:
 	_setup_runway_strategy_panel()
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
+
+
+func _setup_airport_lighting() -> void:
+	if airport_lighting != null:
+		return
+
+	airport_lighting = AirportLightingOverlay.new()
+	add_child(airport_lighting)
+	airport_lighting.configure(airport_grid)
 
 
 func _setup_ground_services() -> void:

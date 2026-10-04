@@ -88,7 +88,6 @@ func _run() -> void:
 		return
 
 	first.runway_cleared.emit()
-	await process_frame
 
 	var initial_spacing := dispatcher.get_separation_remaining(
 		runway_uid

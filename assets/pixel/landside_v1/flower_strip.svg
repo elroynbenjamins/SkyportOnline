@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="192" viewBox="0 0 256 192" shape-rendering="crispEdges"><g><g stroke="#263a46" stroke-width="4" stroke-linejoin="miter">
+<polygon fill="#738b67" points="36,119 88,93 149,117 95,146"/>
+<polygon fill="#5c7d55" points="51,117 89,98 134,116 95,137"/>
+<circle fill="#d96e7b" cx="73" cy="113" r="5"/><circle fill="#f0c853" cx="91" cy="108" r="5"/>
+<circle fill="#8bc16a" cx="108" cy="115" r="5"/><circle fill="#d689d7" cx="121" cy="121" r="5"/>
+<circle fill="#ed965f" cx="91" cy="125" r="5"/><circle fill="#e8e2a8" cx="76" cy="128" r="4"/>
+<circle fill="#4e8e49" cx="60" cy="103" r="9"/><circle fill="#4e8e49" cx="129" cy="105" r="9"/>
+</g></g></svg>

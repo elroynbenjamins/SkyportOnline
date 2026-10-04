@@ -29,6 +29,8 @@ var passenger_upgrade_panel: PassengerUpgradePanel
 var service_upgrade_panel: ServiceUpgradePanel
 var passenger_economy: PassengerEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
+var event_manager: EventManager
+var event_screen: EventScreen
 var current_profile: Dictionary = {}
 var gameplay_started := false
 
@@ -102,6 +104,7 @@ func _start_gameplay() -> void:
 	_setup_fleet_screen()
 	_setup_return_summary()
 	_setup_passenger_system()
+	_setup_event_system()
 	_setup_rewarded_passenger_ad_bridge()
 	_setup_resource_inventory()
 	_setup_passenger_upgrade_panel()
@@ -165,6 +168,27 @@ func _setup_passenger_system() -> void:
 		airport_grid,
 		float(current_profile.get("passenger_balance", 20))
 	)
+
+
+func _setup_event_system() -> void:
+	event_screen = EventScreen.new()
+	event_screen.quest_claim_requested.connect(
+		_on_event_quest_claim_requested
+	)
+	event_screen.shop_purchase_requested.connect(
+		_on_event_shop_purchase_requested
+	)
+	event_screen.alliance_claim_requested.connect(
+		_on_event_alliance_claim_requested
+	)
+	add_child(event_screen)
+
+	event_manager = EventManager.new()
+	event_manager.changed.connect(_on_event_changed)
+	event_manager.message.connect(_on_event_message)
+	add_child(event_manager)
+	event_manager.configure(passenger_economy)
+	_on_event_changed(event_manager.get_snapshot())
 
 
 func _setup_rewarded_passenger_ad_bridge() -> void:
@@ -583,6 +607,17 @@ func _apply_completed_flight_reward(
 			{}
 		).duplicate(true)
 
+	if event_manager != null:
+		event_manager.record_metric("flights_completed", 1)
+		event_manager.record_metric(
+			"flight_coins",
+			int(reward.get("coins", 0))
+		)
+		event_manager.record_metric(
+			"resources_earned",
+			resources_won.size()
+		)
+
 	var route_profile := ProfileStore.record_route_completion(
 		String(plan.get("destination_id", "")),
 		aircraft.get_boarded_passengers(),
@@ -752,6 +787,11 @@ func _on_navigation_requested(tab: String) -> void:
 					{}
 				)
 			)
+		"event":
+			if event_manager != null and event_manager.has_active_event():
+				event_screen.open_event(event_manager.get_snapshot())
+			else:
+				hud.set_operation_status("No event is active right now.")
 		"alliance":
 			hud.set_operation_status("Alliance unlocks later.")
 		"more":
@@ -763,6 +803,35 @@ func _on_navigation_requested(tab: String) -> void:
 				rewarded_passenger_ad_bridge.provider_connected,
 				current_profile.get("economy_stats", {})
 			)
+
+
+func _on_event_changed(snapshot: Dictionary) -> void:
+	var active := bool(snapshot.get("active", false))
+	hud.set_event_available(
+		active,
+		String(snapshot.get("name", "Event"))
+	)
+	if event_screen != null and event_screen.is_open():
+		event_screen.refresh(snapshot)
+
+
+func _on_event_message(text: String, tone: String) -> void:
+	hud.set_operation_status(text, tone)
+
+
+func _on_event_quest_claim_requested(quest_id: String) -> void:
+	if event_manager != null:
+		event_manager.claim_quest(quest_id)
+
+
+func _on_event_shop_purchase_requested(item_id: String) -> void:
+	if event_manager != null:
+		event_manager.purchase_shop_item(item_id)
+
+
+func _on_event_alliance_claim_requested(milestone_id: String) -> void:
+	if event_manager != null:
+		event_manager.claim_alliance_milestone(milestone_id)
 
 
 func _create_current_flight_plan(
@@ -1066,6 +1135,8 @@ func _refresh_waiting_passenger_cards() -> void:
 func _record_boarded_passengers(amount: int) -> void:
 	if amount <= 0:
 		return
+	if event_manager != null:
+		event_manager.record_metric("passengers_boarded", amount)
 	var updated := ProfileStore.add_economy_stats({
 		"passengers_boarded": amount
 	})
@@ -1358,6 +1429,8 @@ func _on_confirm_building_requested() -> void:
 		return
 
 	coins -= cost
+	if event_manager != null:
+		event_manager.record_metric("buildings_placed", 1)
 	hud.set_player_data(player_level, coins, gems)
 	hud.show_build_preview(definition, {}, player_level, coins)
 

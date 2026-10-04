@@ -35,6 +35,7 @@ var current_level := 1
 var current_coins := 0
 var current_gems := 0
 var active_building_id := ""
+var event_nav_button: Button
 
 
 func _ready() -> void:
@@ -279,7 +280,7 @@ func _build_bottom_navigation(root: Control) -> void:
 	nav_row.add_theme_constant_override("separation", 4)
 	bottom_nav.add_child(nav_row)
 
-	for item in ["🔨\nBUILD", "✈\nFLEET", "🌍\nWORLD", "👥\nALLIANCE", "☰\nMORE"]:
+	for item in ["🔨\nBUILD", "✈\nFLEET", "🌍\nWORLD", "🎉\nEVENT", "👥\nALLIANCE", "☰\nMORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -292,7 +293,25 @@ func _build_bottom_navigation(root: Control) -> void:
 			button.disabled = true
 		else:
 			button.pressed.connect(_on_navigation_pressed.bind(tab))
+
+		if tab == "event":
+			event_nav_button = button
+			button.visible = false
+
 		nav_row.add_child(button)
+
+
+func set_event_available(
+	value: bool,
+	event_name: String = ""
+) -> void:
+	if event_nav_button == null:
+		return
+	event_nav_button.visible = value
+	if value:
+		event_nav_button.tooltip_text = event_name
+	else:
+		event_nav_button.tooltip_text = ""
 
 
 func set_interface_visible(value: bool) -> void:

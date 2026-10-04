@@ -54,6 +54,15 @@ static func load_profile() -> Dictionary:
 	if stored_cosmetics is Dictionary:
 		owned_cosmetics = stored_cosmetics.duplicate(true)
 
+	var priority_contract_progress := {}
+	var stored_contracts = config.get_value(
+		"profile",
+		"priority_contract_progress",
+		{}
+	)
+	if stored_contracts is Dictionary:
+		priority_contract_progress = stored_contracts.duplicate(true)
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -75,6 +84,7 @@ static func load_profile() -> Dictionary:
 		"route_history": route_history,
 		"event_states": event_states,
 		"owned_cosmetics": owned_cosmetics,
+		"priority_contract_progress": priority_contract_progress,
 		"passenger_gift_day": String(
 			config.get_value("profile", "passenger_gift_day", "")
 		),
@@ -121,6 +131,7 @@ static func create_guest_airport(
 		"route_history": {},
 		"event_states": {},
 		"owned_cosmetics": {},
+		"priority_contract_progress": {},
 		"passenger_gift_day": "",
 		"passenger_gifts_received_today": 0
 	}
@@ -279,6 +290,125 @@ static func record_route_completion(
 	if not _save_profile(profile):
 		return {}
 	return profile
+
+
+
+
+static func get_priority_contract_state(
+	contract_id: String
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty() or contract_id.is_empty():
+		return {}
+
+	var progress_map: Dictionary = profile.get(
+		"priority_contract_progress",
+		{}
+	)
+	return (
+		progress_map.get(contract_id, {}) as Dictionary
+	).duplicate(true)
+
+
+static func record_priority_contract_return(
+	flight_plan: Dictionary,
+	now_unix: int = -1
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var contract_id := String(
+		flight_plan.get("priority_contract_id", "")
+	)
+	if contract_id.is_empty():
+		return {
+			"profile": profile,
+			"eligible": false,
+			"completed_now": false
+		}
+
+	if not RouteContractRules.is_flight_eligible(
+		flight_plan,
+		now_unix
+	):
+		return {
+			"profile": profile,
+			"eligible": false,
+			"expired": true,
+			"completed_now": false
+		}
+
+	var target := maxi(
+		int(
+			flight_plan.get(
+				"priority_contract_target_flights",
+				RouteContractRules.TARGET_FLIGHTS
+			)
+		),
+		1
+	)
+	var progress_map: Dictionary = profile.get(
+		"priority_contract_progress",
+		{}
+	).duplicate(true)
+	var state: Dictionary = progress_map.get(
+		contract_id,
+		{}
+	).duplicate(true)
+
+	var progress := clampi(
+		int(state.get("progress", 0)),
+		0,
+		target
+	)
+	var already_completed := bool(
+		state.get("completed", progress >= target)
+	)
+	if already_completed:
+		return {
+			"profile": profile,
+			"eligible": true,
+			"progress": progress,
+			"target": target,
+			"completed": true,
+			"completed_now": false
+		}
+
+	progress = mini(progress + 1, target)
+	var completed_now := progress >= target
+
+	state["destination_id"] = String(
+		flight_plan.get(
+			"priority_contract_destination_id",
+			flight_plan.get("destination_id", "")
+		)
+	)
+	state["progress"] = progress
+	state["target"] = target
+	state["completed"] = completed_now
+	state["ends_at_unix"] = int(
+		flight_plan.get("priority_contract_ends_at_unix", 0)
+	)
+	if completed_now:
+		var timestamp := now_unix
+		if timestamp < 0:
+			timestamp = int(Time.get_unix_time_from_system())
+		state["completed_at_unix"] = timestamp
+
+	progress_map[contract_id] = state
+	profile["priority_contract_progress"] = progress_map
+	if not _save_profile(profile):
+		return {}
+
+	return {
+		"profile": profile,
+		"eligible": true,
+		"progress": progress,
+		"target": target,
+		"completed": completed_now,
+		"completed_now": completed_now
+	}
 
 
 static func add_aircraft_mastery_hours(

@@ -235,55 +235,128 @@ func _refresh_quests(snapshot: Dictionary) -> void:
 
 	for quest_variant in snapshot.get("quests", []):
 		var quest: Dictionary = quest_variant
-		var button := Button.new()
 		var quest_id := String(quest.get("id", ""))
 		var unlocked := bool(quest.get("unlocked", false))
 		var complete := bool(quest.get("complete", false))
 		var claimed := bool(quest.get("claimed", false))
 		var week := int(quest.get("week", 1))
 		var progress := int(quest.get("progress", 0))
-		var target := int(quest.get("target", 0))
+		var target := maxi(int(quest.get("target", 0)), 1)
 		var reward := int(quest.get("currency_reward", 0))
 		var alliance_points := int(
 			quest.get("alliance_points", 0)
 		)
 
-		var state_text := "CLAIM"
-		if claimed:
-			state_text = "CLAIMED"
-		elif not unlocked:
-			state_text = "LOCKED • WEEK %d" % week
-		elif not complete:
-			state_text = "%d / %d" % [progress, target]
+		var card := PanelContainer.new()
+		GameUIStyle.apply_panel(
+			card,
+			"gold" if complete and not claimed else "dark"
+		)
+		quest_list.add_child(card)
 
-		button.text = (
-			"W%d • %s\n"
-			+ "%s  •  +%d 🎟  •  +%d Alliance"
-		) % [
+		var wrapper := VBoxContainer.new()
+		wrapper.add_theme_constant_override("separation", 6)
+		card.add_child(wrapper)
+
+		var header := HBoxContainer.new()
+		header.add_theme_constant_override("separation", 8)
+		wrapper.add_child(header)
+
+		var title := Label.new()
+		title.text = "W%d • %s" % [
 			week,
-			String(quest.get("title", "Event Quest")),
-			state_text,
+			String(quest.get("title", "Event Quest"))
+		]
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title.add_theme_font_size_override("font_size", 14)
+		title.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_TEXT
+		)
+		header.add_child(title)
+
+		var reward_chip := Label.new()
+		reward_chip.text = "+%d 🎟  •  +%d Alliance" % [
 			reward,
 			alliance_points
 		]
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(0, 62)
-		button.disabled = (
+		reward_chip.add_theme_font_size_override("font_size", 12)
+		reward_chip.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_GOLD
+		)
+		header.add_child(reward_chip)
+
+		var progress_bar := ProgressBar.new()
+		progress_bar.min_value = 0.0
+		progress_bar.max_value = float(target)
+		progress_bar.value = float(mini(progress, target))
+		progress_bar.show_percentage = false
+		progress_bar.custom_minimum_size = Vector2(0, 16)
+		GameUIStyle.apply_progress(progress_bar, complete)
+		wrapper.add_child(progress_bar)
+
+		var footer := HBoxContainer.new()
+		footer.add_theme_constant_override("separation", 8)
+		wrapper.add_child(footer)
+
+		var progress_label := Label.new()
+		progress_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		progress_label.add_theme_font_size_override("font_size", 12)
+		if claimed:
+			progress_label.text = "✓ CLAIMED"
+			progress_label.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_SUCCESS
+			)
+		elif not unlocked:
+			progress_label.text = "🔒 Unlocks in Week %d" % week
+			progress_label.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_MUTED
+			)
+		elif complete:
+			progress_label.text = "%d / %d • READY" % [
+				target,
+				target
+			]
+			progress_label.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_GOLD
+			)
+		else:
+			progress_label.text = "%d / %d" % [
+				progress,
+				target
+			]
+			progress_label.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_MUTED
+			)
+		footer.add_child(progress_label)
+
+		var claim_button := Button.new()
+		claim_button.custom_minimum_size = Vector2(96, 34)
+		claim_button.text = (
+			"CLAIM"
+			if complete and not claimed and unlocked
+			else "✓" if claimed else "LOCKED" if not unlocked else "IN PROGRESS"
+		)
+		claim_button.disabled = (
 			claimed
 			or not unlocked
 			or not complete
 		)
-		var quest_kind := "secondary"
-		if complete and not claimed and unlocked:
-			quest_kind = "gold"
-		elif claimed:
-			quest_kind = "selected"
-		GameUIStyle.apply_button(button, quest_kind, true)
-		button.pressed.connect(
+		GameUIStyle.apply_button(
+			claim_button,
+			"gold" if complete and not claimed and unlocked else "secondary",
+			true
+		)
+		claim_button.pressed.connect(
 			func() -> void:
 				quest_claim_requested.emit(quest_id)
 		)
-		quest_list.add_child(button)
+		footer.add_child(claim_button)
 
 
 func _refresh_shop(snapshot: Dictionary) -> void:

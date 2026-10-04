@@ -593,7 +593,10 @@ func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
 
 
-func get_first_service_building(service_type: String, aircraft_size: String) -> Dictionary:
+func get_best_service_building(service_type: String, aircraft_size: String) -> Dictionary:
+	var best: Dictionary = {}
+	var best_speed := -1.0
+
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty():
@@ -603,17 +606,22 @@ func get_first_service_building(service_type: String, aircraft_size: String) -> 
 		if not _definition_supports_size(definition, aircraft_size):
 			continue
 
+		var speed := float(definition.get("service_speed", 1.0))
+		if speed <= best_speed:
+			continue
+
 		var footprint := _footprint_for(definition, int(building["rotation"]))
-		return {
+		best = {
 			"uid": int(building["uid"]),
 			"definition_id": String(building["definition_id"]),
 			"world_position": _footprint_center_world(building["origin"], footprint),
-			"service_speed": float(definition.get("service_speed", 1.0)),
+			"service_speed": speed,
 			"vehicle_capacity": int(definition.get("vehicle_capacity", 1)),
 			"sizes": definition.get("sizes", PackedStringArray())
 		}
+		best_speed = speed
 
-	return {}
+	return best
 
 
 func _definition_supports_size(definition: Dictionary, aircraft_size: String) -> bool:

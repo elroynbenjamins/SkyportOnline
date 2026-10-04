@@ -27,6 +27,10 @@ var aircraft_type_id := ""
 var aircraft_display_name := "Aircraft"
 var aircraft_profile: Dictionary = {}
 var flight_plan: Dictionary = {}
+var event_featured := false
+var event_theme := ""
+var event_marker_text := ""
+var event_livery_enabled := false
 var stand_uid := -1
 var runway_uid := -1
 
@@ -84,6 +88,19 @@ func assign_flight_plan(plan: Dictionary) -> void:
 	flight_plan = plan.duplicate(true)
 	if state == "READY_FOR_DESTINATION" and not flight_plan.is_empty():
 		_set_state("READY_FOR_DEPARTURE")
+
+
+func set_event_visual(
+	featured: bool,
+	theme: String = "",
+	marker_text: String = "",
+	livery_enabled: bool = false
+) -> void:
+	event_featured = featured
+	event_theme = theme
+	event_marker_text = marker_text
+	event_livery_enabled = livery_enabled
+	queue_redraw()
 
 
 func has_flight_plan() -> bool:
@@ -446,6 +463,21 @@ func begin_arrival_after_clearance() -> void:
 
 func _process(delta: float) -> void:
 	_sync_turnaround_status_transform()
+	if event_livery_enabled and event_theme == "autumn":
+		draw_rect(
+			Rect2(Vector2(-3, -5), Vector2(6, 10)),
+			Color("e5a23b")
+		)
+		draw_line(
+			Vector2(-10, -14),
+			Vector2(1, -4),
+			Color("a94b2b"),
+			3.0
+		)
+
+	if event_featured and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
+		_draw_event_badge()
+
 	match state:
 		"CLEARED":
 			delay_remaining -= delta
@@ -934,7 +966,10 @@ func _draw() -> void:
 		Vector2(-18, 5),
 		Vector2(12, 5)
 	])
-	draw_colored_polygon(fuselage, Color("f4f7f7"))
+	var fuselage_color := Color("f4f7f7")
+	if event_livery_enabled and event_theme == "autumn":
+		fuselage_color = Color("f4e6d0")
+	draw_colored_polygon(fuselage, fuselage_color)
 
 	var wing := PackedVector2Array([
 		Vector2(4, -4),
@@ -958,7 +993,10 @@ func _draw() -> void:
 		Vector2(-20, 11),
 		Vector2(-14, 4)
 	])
-	draw_colored_polygon(tail, Color("5d90b8"))
+	var tail_color := Color("5d90b8")
+	if event_livery_enabled and event_theme == "autumn":
+		tail_color = Color("c35f2d")
+	draw_colored_polygon(tail, tail_color)
 
 	draw_rect(Rect2(Vector2(2, -4), Vector2(7, 8)), Color("4a7898"))
 	draw_circle(Vector2(14, 0), 2.2, Color("c8e9f1"))
@@ -986,6 +1024,36 @@ func _draw() -> void:
 			draw_circle(Vector2(-2, -26), 6.0, Color("78b7e8"))
 		"HOLDING_FOR_ARRIVAL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
+
+
+func _draw_event_badge() -> void:
+	var center := Vector2(-2, -39)
+	var fill := Color("e6a83f")
+	if event_theme == "autumn":
+		fill = Color("d66d30")
+
+	draw_circle(center, 9.0, Color(0, 0, 0, 0.35))
+	draw_circle(center, 7.0, fill)
+	draw_circle(center, 7.0, Color("ffe3a1"), false, 2.0)
+
+	var diamond := PackedVector2Array([
+		center + Vector2(0, -4),
+		center + Vector2(4, 0),
+		center + Vector2(0, 4),
+		center + Vector2(-4, 0)
+	])
+	draw_colored_polygon(diamond, Color("fff0bd"))
+
+	if not event_marker_text.is_empty():
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(-20, -50),
+			event_marker_text,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			36.0,
+			10,
+			Color("fff0bd")
+		)
 
 
 func _draw_shadow() -> void:

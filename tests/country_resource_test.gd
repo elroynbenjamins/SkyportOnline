@@ -60,8 +60,12 @@ func _run() -> void:
 	if String(plan.get("country_code", "")) != "GB":
 		_fail("Flight plans should preserve destination country code.")
 		return
-	if absf(ResourceDropRules.chance_for_flight(aircraft_profile, plan) - 0.40) > 0.0001:
-		_fail("Each destination resource should use a fixed 40% chance.")
+	var adjusted_chance := ResourceDropRules.chance_for_flight(
+		aircraft_profile,
+		plan
+	)
+	if adjusted_chance >= 0.40:
+		_fail("Fast Swift S14 short flight should be below the 40% base.")
 		return
 
 	var rng := RandomNumberGenerator.new()
@@ -73,8 +77,13 @@ func _run() -> void:
 			ResourceDropRules.roll_resources(aircraft_profile, plan, rng)
 		)
 	var average := float(total_drops) / float(trials)
-	if absf(average - 1.2) > 0.05:
-		_fail("Seeded drop simulation should stay close to 1.2 resources per flight, got %.3f." % average)
+	var expected_average := 3.0 * adjusted_chance
+	if absf(average - expected_average) > 0.05:
+		_fail(
+			"Seeded drop simulation should match adjusted chance; "
+			+ "expected %.3f, got %.3f."
+			% [expected_average, average]
+		)
 		return
 
 	if not bool(ProfileStore.validate_airport_name("Skyhaven International").get("valid", false)):
@@ -87,7 +96,7 @@ func _run() -> void:
 		_fail("Airport code suggestion should use the first three valid characters.")
 		return
 
-	print("Guest airport country selection and fixed independent 40% resource-drop tests passed.")
+	print("Guest airport selection and independent base-40% adjusted resource-drop tests passed.")
 	quit(0)
 
 

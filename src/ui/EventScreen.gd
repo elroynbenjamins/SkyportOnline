@@ -4,6 +4,7 @@ extends CanvasLayer
 signal close_requested
 signal quest_claim_requested(quest_id: String)
 signal shop_purchase_requested(item_id: String)
+signal shop_resource_choice_requested(item_id: String, resource_id: String)
 signal alliance_claim_requested(milestone_id: String)
 
 var root: Control
@@ -15,6 +16,10 @@ var quest_list: VBoxContainer
 var shop_list: VBoxContainer
 var alliance_list: VBoxContainer
 var empty_label: Label
+var resource_choice_overlay: Control
+var resource_choice_list: VBoxContainer
+var resource_choice_title: Label
+var pending_resource_item_id := ""
 
 
 func _ready() -> void:
@@ -82,14 +87,28 @@ func refresh(snapshot: Dictionary) -> void:
 	if featured_names.is_empty():
 		featured_routes_label.text = ""
 	else:
-		featured_routes_label.text = (
-			"FEATURED ROUTES  •  %s  •  +%d %s per completed return"
-			% [
-				" • ".join(featured_names),
-				int(snapshot.get("featured_route_currency", 0)),
-				String(snapshot.get("currency_name", "Event Currency"))
-			]
+		var route_currency := int(
+			snapshot.get("featured_route_currency", 0)
 		)
+		if route_currency > 0:
+			featured_routes_label.text = (
+				"FEATURED ROUTES  •  %s  •  +%d %s per completed return"
+				% [
+					" • ".join(featured_names),
+					route_currency,
+					String(
+						snapshot.get(
+							"currency_name",
+							"Event Currency"
+						)
+					)
+				]
+			)
+		else:
+			featured_routes_label.text = (
+				"FEATURED WINTER QUEST ROUTES  •  %s"
+				% " • ".join(featured_names)
+			)
 
 	_refresh_quests(snapshot)
 	_refresh_shop(snapshot)
@@ -196,6 +215,8 @@ func _build_ui() -> void:
 	shop_list = _build_column(columns, "EVENT SHOP")
 	alliance_list = _build_column(columns, "ALLIANCE EVENT")
 
+	_build_resource_choice_overlay()
+
 
 func _build_column(
 	parent: HBoxContainer,
@@ -299,10 +320,17 @@ func _refresh_shop(snapshot: Dictionary) -> void:
 		var can_afford := bool(item.get("can_afford", false))
 		var owned := bool(item.get("owned", false))
 		var reward_text := "COSMETIC"
-		if item_type == "passengers":
-			reward_text = "+%d PASSENGERS" % int(
-				item.get("passengers", 0)
-			)
+		match item_type:
+			"passengers":
+				reward_text = "+%d PASSENGERS" % int(
+					item.get("passengers", 0)
+				)
+			"coins":
+				reward_text = "+%d COINS" % int(
+					item.get("coins", 0)
+				)
+			"resource_choice":
+				reward_text = "CHOOSE 1 COUNTRY RESOURCE"
 
 		var limit_text := "%d LEFT" % remaining
 		if sold_out or owned:
@@ -323,7 +351,10 @@ func _refresh_shop(snapshot: Dictionary) -> void:
 		GameUIStyle.apply_button(button, shop_kind, true)
 		button.pressed.connect(
 			func() -> void:
-				shop_purchase_requested.emit(item_id)
+				if item_type == "resource_choice":
+					_open_resource_choice(item)
+				else:
+					shop_purchase_requested.emit(item_id)
 		)
 		shop_list.add_child(button)
 
@@ -391,6 +422,134 @@ func _refresh_alliance(snapshot: Dictionary) -> void:
 				alliance_claim_requested.emit(milestone_id)
 		)
 		alliance_list.add_child(button)
+
+
+func _build_resource_choice_overlay() -> void:
+	resource_choice_overlay = ColorRect.new()
+	resource_choice_overlay.set_anchors_and_offsets_preset(
+		Control.PRESET_FULL_RECT
+	)
+	resource_choice_overlay.color = Color("061017", 0.96)
+	resource_choice_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	resource_choice_overlay.z_index = 120
+	resource_choice_overlay.visible = false
+	root.add_child(resource_choice_overlay)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 130
+	panel.offset_top = 70
+	panel.offset_right = -130
+	panel.offset_bottom = -70
+	resource_choice_overlay.add_child(panel)
+	GameUIStyle.apply_panel(panel, "event")
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	margin.add_child(column)
+
+	var header := HBoxContainer.new()
+	column.add_child(header)
+
+	resource_choice_title = Label.new()
+	resource_choice_title.text = "WINTER SUPPLY CRATE"
+	resource_choice_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameUIStyle.heading(resource_choice_title, 20)
+	header.add_child(resource_choice_title)
+
+	var close_button := Button.new()
+	close_button.text = "✕  CANCEL"
+	close_button.custom_minimum_size = Vector2(120, 40)
+	GameUIStyle.apply_button(close_button, "secondary", true)
+	close_button.pressed.connect(_close_resource_choice)
+	header.add_child(close_button)
+
+	var hint := Label.new()
+	hint.text = (
+		"Choose one country resource. "
+		+ "The event voucher cost is spent only after you choose."
+	)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	GameUIStyle.muted(hint)
+	column.add_child(hint)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column.add_child(scroll)
+
+	resource_choice_list = VBoxContainer.new()
+	resource_choice_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resource_choice_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(resource_choice_list)
+
+
+func _open_resource_choice(item: Dictionary) -> void:
+	if resource_choice_overlay == null:
+		return
+
+	pending_resource_item_id = String(item.get("id", ""))
+	resource_choice_title.text = String(
+		item.get("name", "Winter Supply Crate")
+	).to_upper()
+	_clear(resource_choice_list)
+
+	var allowed_codes: Array = item.get(
+		"resource_country_codes",
+		[]
+	)
+	for code_variant in allowed_codes:
+		var country_code := String(code_variant)
+		var country := CountryCatalog.get_country(country_code)
+		if country.is_empty():
+			continue
+
+		var country_label := Label.new()
+		country_label.text = String(
+			country.get("name", country_code)
+		).to_upper()
+		GameUIStyle.heading(country_label, 14)
+		resource_choice_list.add_child(country_label)
+
+		for resource in CountryResourceCatalog.resources_for_country(
+			country_code
+		):
+			var resource_id := String(resource.get("id", ""))
+			if resource_id.is_empty():
+				continue
+			var selected_resource_id := resource_id
+			var button := Button.new()
+			button.text = String(
+				resource.get("name", resource_id)
+			)
+			button.custom_minimum_size = Vector2(0, 44)
+			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			GameUIStyle.apply_button(button, "secondary", true)
+			button.pressed.connect(
+				func() -> void:
+					var item_id := pending_resource_item_id
+					_close_resource_choice()
+					shop_resource_choice_requested.emit(
+						item_id,
+						selected_resource_id
+					)
+			)
+			resource_choice_list.add_child(button)
+
+	resource_choice_overlay.visible = true
+
+
+func _close_resource_choice() -> void:
+	pending_resource_item_id = ""
+	if resource_choice_overlay != null:
+		resource_choice_overlay.visible = false
 
 
 func _clear(container: Container) -> void:

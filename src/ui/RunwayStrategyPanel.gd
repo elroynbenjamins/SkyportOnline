@@ -10,6 +10,8 @@ var root: Control
 var title_label: Label
 var strategy_label: Label
 var note_label: Label
+var analytics_label: Label
+var recommendation_label: Label
 var auto_button: Button
 var arrival_button: Button
 var departure_button: Button
@@ -17,6 +19,8 @@ var departure_button: Button
 var current_runway_uid := -1
 var current_strategy := RunwayStrategyRules.AUTO
 var specialization_available := false
+var current_analytics: Dictionary = {}
+var current_recommendation: Dictionary = {}
 
 
 func _ready() -> void:
@@ -28,7 +32,9 @@ func _ready() -> void:
 func open_runway(
 	runway: Dictionary,
 	strategy: String,
-	runway_count: int
+	runway_count: int,
+	analytics: Dictionary = {},
+	recommendation: Dictionary = {}
 ) -> void:
 	current_runway_uid = int(
 		runway.get("uid", -1)
@@ -37,6 +43,8 @@ func open_runway(
 		strategy
 	)
 	specialization_available = runway_count >= 2
+	current_analytics = analytics.duplicate(true)
+	current_recommendation = recommendation.duplicate(true)
 
 	var definition := BuildingCatalog.get_definition(
 		String(
@@ -57,6 +65,7 @@ func open_runway(
 	]
 
 	_refresh_controls()
+	_refresh_analytics()
 	root.visible = true
 
 
@@ -97,6 +106,113 @@ func _refresh_controls() -> void:
 		)
 
 
+func _refresh_analytics() -> void:
+	if analytics_label == null or recommendation_label == null:
+		return
+
+	if current_analytics.is_empty():
+		analytics_label.text = (
+			"SESSION ANALYTICS\nCollecting runway data..."
+		)
+	else:
+		analytics_label.text = (
+			"SESSION ANALYTICS\n"
+			+ "Utilization %s • Avg wait %s\n"
+			+ "Separation delay %s • %d movements\n"
+			+ "Role overrides %d • Diversions in %d"
+		) % [
+			RunwayAnalyticsRules.format_percent(
+				float(
+					current_analytics.get(
+						"utilization_pct",
+						0.0
+					)
+				)
+			),
+			RunwayAnalyticsRules.format_seconds(
+				float(
+					current_analytics.get(
+						"average_wait_seconds",
+						0.0
+					)
+				)
+			),
+			RunwayAnalyticsRules.format_percent(
+				float(
+					current_analytics.get(
+						"separation_delay_pct",
+						0.0
+					)
+				)
+			),
+			int(
+				current_analytics.get(
+					"movements",
+					0
+				)
+			),
+			int(
+				current_analytics.get(
+					"strategy_overrides",
+					0
+				)
+			),
+			int(
+				current_analytics.get(
+					"diversions_in",
+					0
+				)
+			)
+		]
+
+	if current_recommendation.is_empty():
+		recommendation_label.text = (
+			"CAPACITY ADVICE\nKeep monitoring current traffic."
+		)
+		recommendation_label.add_theme_color_override(
+			"font_color",
+			Color("9fb9c2")
+		)
+		return
+
+	recommendation_label.text = "CAPACITY ADVICE • %s\n%s" % [
+		String(
+			current_recommendation.get(
+				"title",
+				"Keep monitoring"
+			)
+		),
+		String(
+			current_recommendation.get(
+				"detail",
+				""
+			)
+		)
+	]
+
+	match String(
+		current_recommendation.get(
+			"tone",
+			"normal"
+		)
+	):
+		"warning":
+			recommendation_label.add_theme_color_override(
+				"font_color",
+				Color("ffc266")
+			)
+		"success":
+			recommendation_label.add_theme_color_override(
+				"font_color",
+				Color("9fe3b7")
+			)
+		_:
+			recommendation_label.add_theme_color_override(
+				"font_color",
+				Color("9fb9c2")
+			)
+
+
 func _request_strategy(strategy: String) -> void:
 	if (
 		current_runway_uid < 0
@@ -109,6 +225,7 @@ func _request_strategy(strategy: String) -> void:
 	)
 	current_strategy = normalized
 	_refresh_controls()
+	_refresh_analytics()
 	strategy_requested.emit(
 		current_runway_uid,
 		normalized
@@ -128,9 +245,9 @@ func _build_ui() -> void:
 		Control.PRESET_CENTER_RIGHT
 	)
 	panel.offset_left = -430
-	panel.offset_top = -195
+	panel.offset_top = -265
 	panel.offset_right = -35
-	panel.offset_bottom = 195
+	panel.offset_bottom = 265
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel)
 
@@ -257,6 +374,30 @@ func _build_ui() -> void:
 		Color("a9c6cf")
 	)
 	column.add_child(note_label)
+
+	analytics_label = Label.new()
+	analytics_label.autowrap_mode = (
+		TextServer.AUTOWRAP_WORD_SMART
+	)
+	analytics_label.add_theme_font_size_override(
+		"font_size",
+		13
+	)
+	analytics_label.add_theme_color_override(
+		"font_color",
+		Color("d7e8ec")
+	)
+	column.add_child(analytics_label)
+
+	recommendation_label = Label.new()
+	recommendation_label.autowrap_mode = (
+		TextServer.AUTOWRAP_WORD_SMART
+	)
+	recommendation_label.add_theme_font_size_override(
+		"font_size",
+		13
+	)
+	column.add_child(recommendation_label)
 
 	var priority_note := Label.new()
 	priority_note.text = (

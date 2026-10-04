@@ -50,7 +50,7 @@ func _build_interface() -> void:
 
 	var background := ColorRect.new()
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.color = Color("071923")
+	background.color = GameUIStyle.COLOR_BG
 	background.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay_root.add_child(background)
 
@@ -76,20 +76,26 @@ func _build_interface() -> void:
 
 	var heading := Label.new()
 	heading.text = "ESTABLISH YOUR AIRPORT"
-	heading.add_theme_font_size_override("font_size", 28)
-	heading.add_theme_color_override("font_color", Color("f1d27a"))
+	GameUIStyle.heading(heading, 28)
+	heading.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
 	heading_box.add_child(heading)
 
 	var subtitle := Label.new()
-	subtitle.text = "Start as a guest. Secure or link this same airport later without resetting progress."
+	subtitle.text = "Create locally now • link this same airport later without losing progress."
 	subtitle.add_theme_font_size_override("font_size", 15)
-	subtitle.add_theme_color_override("font_color", Color("a9c6cf"))
+	GameUIStyle.muted(subtitle)
 	heading_box.add_child(subtitle)
 
 	var guest_badge := Label.new()
 	guest_badge.text = " GUEST ACCOUNT "
 	guest_badge.add_theme_font_size_override("font_size", 15)
-	guest_badge.add_theme_color_override("font_color", Color("7bd7ea"))
+	guest_badge.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
 	header.add_child(guest_badge)
 
 	var body := HBoxContainer.new()
@@ -99,10 +105,7 @@ func _build_interface() -> void:
 
 	var identity_panel := PanelContainer.new()
 	identity_panel.custom_minimum_size = Vector2(350, 0)
-	identity_panel.add_theme_stylebox_override(
-		"panel",
-		_panel_style(Color("102d3a"), Color("356073"))
-	)
+	GameUIStyle.apply_panel(identity_panel, "raised")
 	body.add_child(identity_panel)
 
 	var identity_margin := MarginContainer.new()
@@ -118,7 +121,7 @@ func _build_interface() -> void:
 
 	var identity_title := Label.new()
 	identity_title.text = "AIRPORT IDENTITY"
-	identity_title.add_theme_font_size_override("font_size", 20)
+	GameUIStyle.heading(identity_title, 20)
 	identity.add_child(identity_title)
 
 	var name_label := Label.new()
@@ -129,6 +132,7 @@ func _build_interface() -> void:
 	airport_name_input.placeholder_text = "Skyhaven International"
 	airport_name_input.max_length = 24
 	airport_name_input.add_theme_font_size_override("font_size", 18)
+	GameUIStyle.apply_input(airport_name_input)
 	airport_name_input.text_changed.connect(_on_name_changed)
 	identity.add_child(airport_name_input)
 
@@ -147,6 +151,7 @@ func _build_interface() -> void:
 	airport_code_input.placeholder_text = "SKY"
 	airport_code_input.max_length = 3
 	airport_code_input.add_theme_font_size_override("font_size", 18)
+	GameUIStyle.apply_input(airport_code_input)
 	airport_code_input.text_changed.connect(_on_code_changed)
 	identity.add_child(airport_code_input)
 
@@ -154,7 +159,7 @@ func _build_interface() -> void:
 	code_help.text = "Three letters/numbers. Suggested automatically from the airport name."
 	code_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	code_help.add_theme_font_size_override("font_size", 13)
-	code_help.add_theme_color_override("font_color", Color("9fb7c0"))
+	GameUIStyle.muted(code_help)
 	identity.add_child(code_help)
 
 	var separator := HSeparator.new()
@@ -166,10 +171,10 @@ func _build_interface() -> void:
 	identity.add_child(account_title)
 
 	var account_text := Label.new()
-	account_text.text = "A local guest ID and separate airport ID are created now. A future login can attach to this airport instead of replacing it."
+	account_text.text = "Your airport starts locally and can be secured to an account later."
 	account_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	account_text.add_theme_font_size_override("font_size", 13)
-	account_text.add_theme_color_override("font_color", Color("b8cbd1"))
+	GameUIStyle.muted(account_text)
 	identity.add_child(account_text)
 
 	create_status = Label.new()
@@ -181,10 +186,7 @@ func _build_interface() -> void:
 
 	var map_panel := PanelContainer.new()
 	map_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	map_panel.add_theme_stylebox_override(
-		"panel",
-		_panel_style(Color("0d2633"), Color("356073"))
-	)
+	GameUIStyle.apply_panel(map_panel, "dark")
 	body.add_child(map_panel)
 
 	var map_margin := MarginContainer.new()
@@ -208,18 +210,18 @@ func _build_interface() -> void:
 
 	country_title = Label.new()
 	country_title.text = "Netherlands"
-	country_title.add_theme_font_size_override("font_size", 22)
+	GameUIStyle.heading(country_title, 22)
 	country_text.add_child(country_title)
 
 	country_region = Label.new()
 	country_region.text = "Europe"
 	country_region.add_theme_font_size_override("font_size", 13)
-	country_region.add_theme_color_override("font_color", Color("a7c4cd"))
+	GameUIStyle.muted(country_region)
 	country_text.add_child(country_region)
 
 	country_picker = OptionButton.new()
 	country_picker.custom_minimum_size = Vector2(260, 44)
-	country_picker.add_theme_font_size_override("font_size", 14)
+	GameUIStyle.apply_button(country_picker, "secondary", true)
 	for country in countries:
 		country_picker.add_item("%s  %s" % [
 			String(country.get("id", "")),
@@ -259,10 +261,7 @@ func _build_interface() -> void:
 	for _index in range(3):
 		var resource_panel := PanelContainer.new()
 		resource_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		resource_panel.add_theme_stylebox_override(
-			"panel",
-			_panel_style(Color("153644"), Color("41687a"), 1)
-		)
+		GameUIStyle.apply_panel(resource_panel, "raised")
 		resources_row.add_child(resource_panel)
 
 		var resource_label := Label.new()
@@ -278,7 +277,7 @@ func _build_interface() -> void:
 	probability_note.text = "At the 40% base chance: 21.6% none • 43.2% one • 28.8% two • 6.4% all three. Actual chance varies by aircraft, duration, and size."
 	probability_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	probability_note.add_theme_font_size_override("font_size", 12)
-	probability_note.add_theme_color_override("font_color", Color("9fb7c0"))
+	GameUIStyle.muted(probability_note)
 	map_column.add_child(probability_note)
 
 	var footer := HBoxContainer.new()
@@ -286,11 +285,11 @@ func _build_interface() -> void:
 	column.add_child(footer)
 
 	var social_note := Label.new()
-	social_note.text = "Fly to friends or alliance airports in countries you need. They gain servicing value while you roll that country's materials."
+	social_note.text = "Your home country matters: routes, friends and Alliance airports help you collect materials from around the world."
 	social_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	social_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	social_note.add_theme_font_size_override("font_size", 13)
-	social_note.add_theme_color_override("font_color", Color("b9cbd1"))
+	GameUIStyle.muted(social_note)
 	footer.add_child(social_note)
 
 	confirm_button = Button.new()
@@ -299,6 +298,7 @@ func _build_interface() -> void:
 	confirm_button.add_theme_font_size_override("font_size", 17)
 	confirm_button.disabled = true
 	confirm_button.pressed.connect(_on_create_pressed)
+	GameUIStyle.apply_button(confirm_button, "gold")
 	footer.add_child(confirm_button)
 
 

@@ -596,7 +596,9 @@ func _on_navigation_requested(tab: String) -> void:
 				current_profile.get(
 					"aircraft_mastery_hours",
 					{}
-				)
+				),
+				passenger_economy.get_passengers(),
+				passenger_economy.get_capacity()
 			)
 		"fleet":
 			fleet_screen.open_fleet(
@@ -722,6 +724,8 @@ func _on_passenger_economy_changed(
 	per_minute: float
 ) -> void:
 	hud.set_passenger_data(passengers, capacity, per_minute)
+	if world_map != null:
+		world_map.set_passenger_stock(passengers, capacity)
 	var updated := ProfileStore.save_passenger_balance(passengers)
 	if not updated.is_empty():
 		current_profile = updated

@@ -542,6 +542,10 @@ func get_snapshot() -> Dictionary:
 		"owned_cosmetics",
 		{}
 	)
+	var resource_inventory: Dictionary = profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
 
 	var quests: Array[Dictionary] = []
 	for quest_variant in event_definition.get("quests", []):
@@ -626,6 +630,7 @@ func get_snapshot() -> Dictionary:
 		),
 		"quests": quests,
 		"shop": shop,
+		"resource_inventory": resource_inventory,
 		"alliance_enabled": bool(alliance.get("enabled", false)),
 		"alliance_personal": int(
 			state.get("alliance_personal", 0)

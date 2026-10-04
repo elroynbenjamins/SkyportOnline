@@ -54,7 +54,7 @@ func _setup_runway_dispatcher() -> void:
 
 
 func _spawn_aircraft_demos() -> void:
-	var routes := airport_grid.get_departure_routes("S")
+	var routes: Array[Dictionary] = airport_grid.get_departure_routes("S")
 	if routes.is_empty():
 		hud.set_operation_status("No connected S-class stand/runway.", "warning")
 		return
@@ -130,12 +130,12 @@ func _on_demo_aircraft_state_changed(state: String, label: String) -> void:
 
 func _on_world_tapped(world_position: Vector2) -> void:
 	if not selected_building_id.is_empty():
-		var status := airport_grid.set_build_preview(
+		var status: Dictionary = airport_grid.set_build_preview(
 			selected_building_id,
 			world_position,
 			selected_building_rotation
 		)
-		var definition := BuildingCatalog.get_definition(selected_building_id)
+		var definition: Dictionary = BuildingCatalog.get_definition(selected_building_id)
 		hud.show_build_preview(definition, status, player_level, coins)
 		return
 
@@ -206,7 +206,7 @@ func _on_confirm_building_requested() -> void:
 
 	var required_level := int(definition["level"])
 	var cost := int(definition["cost"])
-	var status := airport_grid.get_build_preview_status()
+	var status: Dictionary = airport_grid.get_build_preview_status()
 
 	if player_level < required_level or coins < cost:
 		hud.show_build_preview(definition, status, player_level, coins)
@@ -216,7 +216,7 @@ func _on_confirm_building_requested() -> void:
 		hud.show_build_preview(definition, status, player_level, coins)
 		return
 
-	var placed := airport_grid.confirm_build_preview()
+	var placed: Dictionary = airport_grid.confirm_build_preview()
 	if placed.is_empty():
 		return
 

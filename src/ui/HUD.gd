@@ -95,9 +95,9 @@ func _build_interface() -> void:
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	build_hint.offset_left = 18
-	build_hint.offset_top = -514
+	build_hint.offset_top = -610
 	build_hint.offset_right = 520
-	build_hint.offset_bottom = -478
+	build_hint.offset_bottom = -574
 	build_hint.text = "BUILD MODE  •  Tap a building, then tap owned land"
 	build_hint.add_theme_font_size_override("font_size", 14)
 	root.add_child(build_hint)
@@ -111,9 +111,9 @@ func _build_context_panel(root: Control) -> void:
 	parcel_panel = PanelContainer.new()
 	parcel_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	parcel_panel.offset_left = 12
-	parcel_panel.offset_top = -472
+	parcel_panel.offset_top = -568
 	parcel_panel.offset_right = -12
-	parcel_panel.offset_bottom = -366
+	parcel_panel.offset_bottom = -462
 	root.add_child(parcel_panel)
 
 	var parcel_row := HBoxContainer.new()
@@ -144,9 +144,9 @@ func _build_context_panel(root: Control) -> void:
 	build_action_panel = PanelContainer.new()
 	build_action_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	build_action_panel.offset_left = 12
-	build_action_panel.offset_top = -472
+	build_action_panel.offset_top = -568
 	build_action_panel.offset_right = -12
-	build_action_panel.offset_bottom = -366
+	build_action_panel.offset_bottom = -462
 	build_action_panel.visible = false
 	root.add_child(build_action_panel)
 
@@ -192,7 +192,7 @@ func _build_catalog_panel(root: Control) -> void:
 	var catalog_panel := PanelContainer.new()
 	catalog_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	catalog_panel.offset_left = 8
-	catalog_panel.offset_top = -354
+	catalog_panel.offset_top = -450
 	catalog_panel.offset_right = -8
 	catalog_panel.offset_bottom = -116
 	root.add_child(catalog_panel)
@@ -209,7 +209,7 @@ func _build_catalog_panel(root: Control) -> void:
 
 	var grid := GridContainer.new()
 	grid.name = "BuildingGrid"
-	grid.columns = 4
+	grid.columns = 5
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 5)
 	grid.add_theme_constant_override("v_separation", 5)
@@ -252,7 +252,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(155, 88)
+		button.custom_minimum_size = Vector2(124, 78)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 13)
 		var id := String(definition["id"])
@@ -332,11 +332,13 @@ func enter_building_mode(definition: Dictionary) -> void:
 	parcel_panel.visible = false
 	build_action_panel.visible = true
 	build_title.text = String(definition["name"]).to_upper()
-	build_status.text = "%s  •  Footprint %dx%d  •  Sizing: %s" % [
+	var footprint: Vector2i = definition["footprint"]
+	build_status.text = "%s  •  %dx%d  •  %s%s" % [
 		String(definition["description"]),
-		int(definition["footprint"].x),
-		int(definition["footprint"].y),
-		_size_text(definition)
+		footprint.x,
+		footprint.y,
+		_size_text(definition),
+		_service_text(definition)
 	]
 	rotate_button.visible = bool(definition.get("rotatable", false))
 	place_button.text = "TAP LAND"
@@ -383,10 +385,11 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 		return
 
 	var footprint: Vector2i = status.get("footprint", definition["footprint"])
-	build_status.text = "Valid %dx%d placement • %s • Cost 🪙 %s" % [
+	build_status.text = "Valid %dx%d • %s%s • Cost 🪙 %s" % [
 		footprint.x,
 		footprint.y,
 		_size_text(definition),
+		_service_text(definition),
 		_format_number(cost)
 	]
 	place_button.text = "BUILD  🪙 %s" % _format_number(cost)
@@ -419,6 +422,18 @@ func _update_catalog_buttons() -> void:
 				_size_text(definition)
 			]
 			button.disabled = false
+
+
+func _service_text(definition: Dictionary) -> String:
+	if String(definition.get("service", "")) != "fuel":
+		return ""
+	var speed := float(definition.get("service_speed", 1.0))
+	var vehicles := int(definition.get("vehicle_capacity", 1))
+	return " • Fuel x%.1f • %d truck%s" % [
+		speed,
+		vehicles,
+		"" if vehicles == 1 else "s"
+	]
 
 
 func _size_text(definition: Dictionary) -> String:

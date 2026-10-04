@@ -173,25 +173,7 @@ func _process(delta: float) -> void:
 			continue
 
 		_tick_service_status(job_id, delta)
-		if not turnaround_jobs.has(job_id):
-			continue
-
-		job = turnaround_jobs[job_id]
-		if String(job.get("stage", "")) != "PUSHBACK_PREP":
-			_refresh_aircraft_status(job_id)
-			continue
-
-		var remaining := maxf(
-			float(job.get("pushback_remaining", 0.0)) - delta,
-			0.0
-		)
-		job["pushback_remaining"] = remaining
-		turnaround_jobs[job_id] = job
-		aircraft.set_turnaround_status(
-			"Pushback checks\n%.0fs" % remaining
-		)
-		if remaining <= 0.0:
-			_complete_turnaround(job_id)
+		_refresh_aircraft_status(job_id)
 
 
 func _begin_unloading(job_id: int) -> void:
@@ -381,40 +363,17 @@ func _wait_for_destination(job_id: int) -> void:
 
 
 func _begin_pushback(job_id: int) -> void:
-	if not turnaround_jobs.has(job_id):
-		return
-
-	var job: Dictionary = turnaround_jobs[job_id]
-	var aircraft := job.get("aircraft") as AircraftPrototype
-	if aircraft == null or not is_instance_valid(aircraft):
-		_remove_job(job_id)
-		return
-
-	var profile: Dictionary = job.get("profile", {})
-	var duration := maxf(
-		float(profile.get("pushback_seconds", 0.0)),
-		0.0
+	_begin_vehicle_stage(
+		job_id,
+		"PUSHBACK_PREP",
+		[
+			{
+				"key": "pushback",
+				"service": "pushback",
+				"timer_key": "pushback_seconds"
+			}
+		]
 	)
-	job["stage"] = "PUSHBACK_PREP"
-	job["stage_pending"] = {}
-	job["service_status"] = {}
-	job["pushback_remaining"] = duration
-	turnaround_jobs[job_id] = job
-	aircraft.begin_ground_service("PUSHBACK_PREP")
-	aircraft.set_turnaround_status(
-		"Pushback checks\n%.0fs" % duration
-	)
-
-	status_changed.emit(
-		"%s pushback checks • %.0fs" % [
-			String(job.get("label", "Aircraft")),
-			duration
-		],
-		"normal"
-	)
-
-	if duration <= 0.0:
-		_complete_turnaround(job_id)
 
 
 func _complete_turnaround(job_id: int) -> void:
@@ -462,6 +421,8 @@ func _advance_stage(job_id: int) -> void:
 				_wait_for_destination(job_id)
 		"LOADING":
 			_begin_pushback(job_id)
+		"PUSHBACK_PREP":
+			_complete_turnaround(job_id)
 
 
 func _enqueue_service_request(
@@ -681,6 +642,11 @@ func _dispatch_service(
 		vehicle.set_service_connection_target(
 			aircraft.global_position
 		)
+		if service_type == "pushback":
+			vehicle.configure_tow(
+				aircraft,
+				aircraft.get_pushback_target_position()
+			)
 		vehicle.start_service(
 			route,
 			duration,
@@ -870,8 +836,7 @@ func _refresh_aircraft_status(job_id: int) -> void:
 	var stage := String(job.get("stage", ""))
 	if stage in [
 		"WAITING_PASSENGERS",
-		"WAITING_DESTINATION",
-		"PUSHBACK_PREP"
+		"WAITING_DESTINATION"
 	]:
 		return
 
@@ -918,6 +883,8 @@ func _stage_short_name(stage: String) -> String:
 			return "Turnaround • service"
 		"LOADING":
 			return "Turnaround • load"
+		"PUSHBACK_PREP":
+			return "Turnaround • pushback"
 		_:
 			return "Turnaround"
 
@@ -935,6 +902,8 @@ func _service_short_name(
 			return "Clean"
 		"catering":
 			return "Cater"
+		"pushback":
+			return "Tow"
 		_:
 			return "Fuel"
 
@@ -996,6 +965,8 @@ func _service_display_name(service_type: String) -> String:
 			return "cleaning van"
 		"catering":
 			return "catering truck"
+		"pushback":
+			return "tow tug"
 		_:
 			return "fuel truck"
 
@@ -1010,6 +981,8 @@ func _service_action_text(service_type: String) -> String:
 			return "cleaning cabin"
 		"catering":
 			return "restocking catering"
+		"pushback":
+			return "pushing aircraft back"
 		_:
 			return "fueling"
 

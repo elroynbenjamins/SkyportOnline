@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="192" viewBox="0 0 256 192" shape-rendering="crispEdges">
+<g stroke="#293e49" stroke-width="4" stroke-linejoin="miter">
+<polygon fill="#879ba0" points="18,128 109,82 235,127 142,180"/>
+<polygon fill="#b9c9c9" points="48,105 128,66 204,99 124,141"/>
+<polygon fill="#91a6aa" points="48,105 124,141 124,158 48,123"/>
+<polygon fill="#7f969c" points="124,141 204,99 204,117 124,158"/>
+<path fill="#5f8593" d="M65 107c6-35 35-58 66-58s59 21 66 50l-15 8c-5-26-26-43-51-43s-47 19-51 50z"/>
+<path fill="#6cb1cb" d="M80 103c6-24 27-39 51-39 23 0 44 15 51 37l-11 6c-6-17-22-28-40-28-19 0-35 12-40 30z"/>
+<circle fill="#edf2ee" cx="131" cy="91" r="17"/><circle fill="#314e5a" cx="131" cy="91" r="4"/>
+<line x1="131" y1="91" x2="131" y2="79" stroke="#314e5a" stroke-width="3"/><line x1="131" y1="91" x2="142" y2="96" stroke="#314e5a" stroke-width="3"/>
+<rect fill="#67b7d6" x="70" y="117" width="24" height="12"/><rect fill="#67b7d6" x="101" y="130" width="22" height="12"/>
+<rect fill="#67b7d6" x="145" y="127" width="23" height="12"/><rect fill="#67b7d6" x="176" y="111" width="19" height="12"/>
+<circle fill="#4b8e47" cx="39" cy="139" r="13"/><circle fill="#4b8e47" cx="216" cy="140" r="13"/>
+</g></svg>

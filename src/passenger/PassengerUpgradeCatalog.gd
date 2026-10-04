@@ -4,6 +4,124 @@ extends RefCounted
 
 static func get_levels(building_id: String) -> Array[Dictionary]:
 	match building_id:
+		"bus_stop":
+			return [
+				{
+					"level": 1,
+					"passengers_per_minute": 0.8,
+					"storage": 20,
+					"coin_cost": 0,
+					"resource_cost": {}
+				},
+				{
+					"level": 2,
+					"passengers_per_minute": 1.1,
+					"storage": 28,
+					"coin_cost": 1200,
+					"resource_cost": {"be_chocolate": 1}
+				},
+				{
+					"level": 3,
+					"passengers_per_minute": 1.5,
+					"storage": 38,
+					"coin_cost": 3000,
+					"resource_cost": {
+						"de_industrial_tools": 1,
+						"gb_specialty_goods": 1
+					}
+				}
+			]
+		"small_hotel":
+			return [
+				{
+					"level": 1,
+					"passengers_per_minute": 1.4,
+					"storage": 45,
+					"coin_cost": 0,
+					"resource_cost": {}
+				},
+				{
+					"level": 2,
+					"passengers_per_minute": 1.9,
+					"storage": 60,
+					"coin_cost": 5000,
+					"resource_cost": {
+						"fr_gourmet_food": 1,
+						"be_chocolate": 1
+					}
+				},
+				{
+					"level": 3,
+					"passengers_per_minute": 2.5,
+					"storage": 80,
+					"coin_cost": 12000,
+					"resource_cost": {
+						"fr_cosmetics": 2,
+						"gb_specialty_goods": 1
+					}
+				}
+			]
+		"residential_district":
+			return [
+				{
+					"level": 1,
+					"passengers_per_minute": 0.9,
+					"storage": 90,
+					"coin_cost": 0,
+					"resource_cost": {}
+				},
+				{
+					"level": 2,
+					"passengers_per_minute": 1.25,
+					"storage": 120,
+					"coin_cost": 14000,
+					"resource_cost": {
+						"nl_horticulture": 2,
+						"dk_design_goods": 1
+					}
+				},
+				{
+					"level": 3,
+					"passengers_per_minute": 1.7,
+					"storage": 155,
+					"coin_cost": 30000,
+					"resource_cost": {
+						"de_machinery": 2,
+						"be_precision_parts": 2
+					}
+				}
+			]
+		"train_station":
+			return [
+				{
+					"level": 1,
+					"passengers_per_minute": 3.2,
+					"storage": 120,
+					"coin_cost": 0,
+					"resource_cost": {}
+				},
+				{
+					"level": 2,
+					"passengers_per_minute": 4.2,
+					"storage": 160,
+					"coin_cost": 30000,
+					"resource_cost": {
+						"de_automotive_parts": 2,
+						"dk_renewable_parts": 2
+					}
+				},
+				{
+					"level": 3,
+					"passengers_per_minute": 5.4,
+					"storage": 215,
+					"coin_cost": 65000,
+					"resource_cost": {
+						"gb_aerospace_parts": 3,
+						"de_machinery": 3,
+						"fr_luxury_goods": 2
+					}
+				}
+			]
 		"travel_office":
 			return [
 				{

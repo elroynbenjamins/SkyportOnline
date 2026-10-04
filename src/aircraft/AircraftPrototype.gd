@@ -65,6 +65,19 @@ func get_flight_plan() -> Dictionary:
 	return flight_plan.duplicate(true)
 
 
+func record_boarded_passengers(amount: int) -> void:
+	if flight_plan.is_empty():
+		return
+	flight_plan["passengers_boarded"] = maxi(amount, 0)
+
+
+func get_boarded_passengers() -> int:
+	return maxi(
+		int(flight_plan.get("passengers_boarded", 0)),
+		0
+	)
+
+
 func get_aircraft_profile() -> Dictionary:
 	return aircraft_profile.duplicate(true)
 

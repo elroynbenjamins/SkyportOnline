@@ -130,14 +130,29 @@ func _run() -> void:
 	plane_a.runway_cleared.emit()
 	await process_frame
 
+	if runway_dispatcher.get_active_count() != 0:
+		_fail("Runway should remain idle during departure separation.")
+		return
+	if runway_dispatcher.get_waiting_count() != 1:
+		_fail("Second departure should remain queued during separation.")
+		return
+	if runway_dispatcher.get_separation_remaining(
+		int(starter_routes[0]["runway_uid"])
+	) <= 0.0:
+		_fail("Departure-to-departure movement should enforce separation.")
+		return
+
+	runway_dispatcher._process(
+		RunwayPacingRules.DEPARTURE_TO_DEPARTURE + 0.1
+	)
 	if runway_dispatcher.get_active_count() != 1:
-		_fail("Second aircraft should receive runway clearance after the first clears.")
+		_fail("Second aircraft should receive clearance after separation.")
 		return
 	if runway_dispatcher.get_waiting_count() != 0:
-		_fail("Departure queue should empty after granting the second clearance.")
+		_fail("Departure queue should empty after paced clearance.")
 		return
 	if plane_b.state != "CLEARED":
-		_fail("Second aircraft should enter CLEARED state after runway release.")
+		_fail("Second aircraft should enter CLEARED after paced release.")
 		return
 
 
@@ -192,11 +207,21 @@ func _run() -> void:
 	arrival_a.runway_cleared.emit()
 	await process_frame
 
+	if arrival_runway.get_waiting_count() != 1:
+		_fail("Second arrival should remain queued during landing separation.")
+		return
+	if arrival_b.state == "APPROACH":
+		_fail("Second arrival should not receive instant back-to-back clearance.")
+		return
+
+	arrival_runway._process(
+		RunwayPacingRules.ARRIVAL_TO_ARRIVAL + 0.1
+	)
 	if arrival_runway.get_waiting_count() != 0:
-		_fail("Second arrival should receive clearance after runway release.")
+		_fail("Second arrival should clear after landing separation.")
 		return
 	if arrival_b.state != "APPROACH":
-		_fail("Second arrival should enter APPROACH after clearance.")
+		_fail("Second arrival should enter APPROACH after paced clearance.")
 		return
 
 

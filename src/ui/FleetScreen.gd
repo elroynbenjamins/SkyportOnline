@@ -343,14 +343,38 @@ func _refresh_selected_details() -> void:
 		mastery_bar.value = clampf(hours, current_floor, next_hours)
 
 	var base_passengers := int(profile.get("passengers", 0))
+	var plan := plane.get_flight_plan()
+	var demand_preview := PassengerDemandRules.preview_from_plan(
+		profile,
+		plan,
+		hours
+	)
+	var route_passengers := base_passengers
 	var mastery_passengers := AircraftMastery.passenger_requirement(
 		base_passengers,
 		hours
 	)
+	var demand_label := "No route"
+	var load_factor := 1.0
+	if not demand_preview.is_empty():
+		route_passengers = int(
+			demand_preview.get("route_requirement", base_passengers)
+		)
+		mastery_passengers = int(
+			demand_preview.get(
+				"mastery_requirement",
+				route_passengers
+			)
+		)
+		demand_label = String(
+			demand_preview.get("demand_label", "Standard")
+		)
+		load_factor = float(
+			demand_preview.get("adjusted_load_factor", 1.0)
+		)
 	var resource_modifier := float(
 		profile.get("resource_drop_modifier", 0.0)
 	)
-	var plan := plane.get_flight_plan()
 
 	var route_detail := "No route assigned"
 	if not plan.is_empty():
@@ -385,8 +409,12 @@ func _refresh_selected_details() -> void:
 			String(profile.get("size", "?")),
 			String(profile.get("catalog_role", "Aircraft"))
 		]
-		+ "Seats: %d  →  %d with Mastery\n"
-		% [base_passengers, mastery_passengers]
+		+ "Seats: %d\n"
+		% base_passengers
+		+ "Current route demand: %s • %.0f%%\n"
+		% [demand_label, load_factor * 100.0]
+		+ "Passengers: %d → %d with Mastery\n"
+		% [route_passengers, mastery_passengers]
 		+ "Cruise: %d km/h\n"
 		% int(profile.get("cruise_speed_kph", 0))
 		+ "Range: %d km\n"

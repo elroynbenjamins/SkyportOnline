@@ -25,6 +25,8 @@ var mastery_hours_by_type: Dictionary = {}
 var passenger_stock := 0
 var passenger_capacity := 0
 var route_history: Dictionary = {}
+var contract_airport_key := ""
+var priority_contract_progress: Dictionary = {}
 var demand_now_override := -1
 var refresh_accumulator := 0.0
 
@@ -54,7 +56,9 @@ func open_map(
 	mastery_hours: Dictionary = {},
 	current_passengers: int = 0,
 	current_passenger_capacity: int = 0,
-	history: Dictionary = {}
+	history: Dictionary = {},
+	airport_key: String = "",
+	contract_progress: Dictionary = {}
 ) -> void:
 	aircraft = aircraft_nodes
 	player_level = current_player_level
@@ -62,6 +66,8 @@ func open_map(
 	passenger_stock = maxi(current_passengers, 0)
 	passenger_capacity = maxi(current_passenger_capacity, 0)
 	route_history = history.duplicate(true)
+	contract_airport_key = airport_key
+	priority_contract_progress = contract_progress.duplicate(true)
 	selected_aircraft_index = clampi(
 		selected_aircraft_index,
 		0,
@@ -111,6 +117,23 @@ func set_route_history(history: Dictionary) -> void:
 	route_history = history.duplicate(true)
 	if root != null and root.visible:
 		_refresh_details()
+
+
+func set_priority_contract_progress(
+	progress: Dictionary
+) -> void:
+	priority_contract_progress = progress.duplicate(true)
+	if root != null and root.visible:
+		_refresh_destination_buttons()
+		_refresh_details()
+
+
+func _active_priority_contract() -> Dictionary:
+	return RouteContractRules.active_contract(
+		player_level,
+		contract_airport_key,
+		demand_now_override
+	)
 
 
 func set_assignment_status(text: String) -> void:
@@ -353,6 +376,15 @@ func _refresh_aircraft_buttons() -> void:
 
 
 func _refresh_destination_buttons() -> void:
+	var active_contract := _active_priority_contract()
+	var contract_destination_id := String(
+		active_contract.get("destination_id", "")
+	)
+	var contract_state := RouteContractRules.progress_for(
+		active_contract,
+		priority_contract_progress
+	)
+
 	for destination in DestinationCatalog.all():
 		var destination_id := String(destination["id"])
 		if not destination_buttons.has(destination_id):
@@ -370,10 +402,18 @@ func _refresh_destination_buttons() -> void:
 			continue
 
 		var condition := _demand_condition(destination_id)
-		button.text = "%s\n%s • %s" % [
+		var contract_suffix := ""
+		if destination_id == contract_destination_id:
+			if bool(contract_state.get("completed", false)):
+				contract_suffix = " • ✓ CONTRACT"
+			else:
+				contract_suffix = " • ★ CONTRACT"
+
+		button.text = "%s\n%s • %s%s" % [
 			String(destination["city"]).to_upper(),
 			String(destination["country_code"]),
-			String(condition.get("short_label", "NORMAL"))
+			String(condition.get("short_label", "NORMAL")),
+			contract_suffix
 		]
 
 
@@ -476,6 +516,46 @@ func _refresh_details() -> void:
 			String(current_plan.get("country", ""))
 		]
 
+	var active_contract := _active_priority_contract()
+	var contract_state := RouteContractRules.progress_for(
+		active_contract,
+		priority_contract_progress
+	)
+	var contract_text := "No Priority Contract on this route."
+	if (
+		not active_contract.is_empty()
+		and String(active_contract.get("destination_id", ""))
+			== String(destination.get("id", ""))
+	):
+		var progress := int(contract_state.get("progress", 0))
+		var target := int(
+			contract_state.get(
+				"target",
+				active_contract.get("target_flights", 3)
+			)
+		)
+		if bool(contract_state.get("completed", false)):
+			contract_text = (
+				"✓ COMPLETED • %d/%d returns"
+				% [progress, target]
+			)
+		else:
+			contract_text = (
+				"%d/%d successful returns • %s left\n"
+				+ "Bonus: 🪙 %d • XP %d • %s"
+			) % [
+				progress,
+				target,
+				DynamicDemandRules.format_remaining(
+					int(active_contract.get("remaining_seconds", 0))
+				),
+				int(active_contract.get("bonus_coins", 0)),
+				int(active_contract.get("bonus_xp", 0)),
+				RouteContractRules.format_resource_bundle(
+					active_contract.get("bonus_resources", []) as Array
+				)
+			]
+
 	var history_entry: Dictionary = route_history.get(
 		String(destination.get("id", "")),
 		{}
@@ -570,6 +650,9 @@ func _refresh_details() -> void:
 		% _resource_names(country_resources)
 		+ "Chance: %.1f%% each • rolled independently\n\n"
 		% (resource_chance * 100.0)
+		+ "PRIORITY CONTRACT\n"
+		+ "%s\n\n"
+		% contract_text
 		+ "ROUTE HISTORY\n"
 		+ "%s\n\n"
 		% history_text

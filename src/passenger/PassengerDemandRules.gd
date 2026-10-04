@@ -74,9 +74,14 @@ static func required_from_plan(
 	if flight_plan.is_empty():
 		return maxi(int(aircraft_profile.get("passengers", 0)), 0)
 
-	var destination := DestinationCatalog.get_destination(
-		String(flight_plan.get("destination_id", ""))
-	)
+	var destination := {
+		"passenger_load_factor": float(
+			flight_plan.get("passenger_load_factor", 1.0)
+		),
+		"demand_label": String(
+			flight_plan.get("passenger_demand_label", "Standard")
+		)
+	}
 	var modifier := float(
 		flight_plan.get("passenger_demand_modifier", 1.0)
 	)
@@ -118,3 +123,29 @@ static func preview(
 		"mastery_requirement": final_requirement,
 		"demand_modifier": demand_modifier
 	}
+
+
+static func preview_from_plan(
+	aircraft_profile: Dictionary,
+	flight_plan: Dictionary,
+	mastery_hours: float
+) -> Dictionary:
+	if flight_plan.is_empty():
+		return {}
+
+	var destination := {
+		"passenger_load_factor": float(
+			flight_plan.get("passenger_load_factor", 1.0)
+		),
+		"demand_label": String(
+			flight_plan.get("passenger_demand_label", "Standard")
+		)
+	}
+	return preview(
+		aircraft_profile,
+		destination,
+		mastery_hours,
+		float(
+			flight_plan.get("passenger_demand_modifier", 1.0)
+		)
+	)

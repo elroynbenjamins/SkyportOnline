@@ -24,6 +24,11 @@ static func load_profile() -> Dictionary:
 	if stored_inventory is Dictionary:
 		inventory = stored_inventory.duplicate(true)
 
+	var building_upgrades := {}
+	var stored_upgrades = config.get_value("profile", "building_upgrades", {})
+	if stored_upgrades is Dictionary:
+		building_upgrades = stored_upgrades.duplicate(true)
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -35,7 +40,11 @@ static func load_profile() -> Dictionary:
 		"airport_code": String(config.get_value("profile", "airport_code", "APT")),
 		"country_id": country_id,
 		"created_at_unix": int(config.get_value("profile", "created_at_unix", 0)),
-		"resource_inventory": inventory
+		"resource_inventory": inventory,
+		"passenger_balance": int(
+			config.get_value("profile", "passenger_balance", 20)
+		),
+		"building_upgrades": building_upgrades
 	}
 
 
@@ -64,7 +73,9 @@ static func create_guest_airport(
 		"airport_code": airport_code.strip_edges().to_upper(),
 		"country_id": country_id,
 		"created_at_unix": int(Time.get_unix_time_from_system()),
-		"resource_inventory": {}
+		"resource_inventory": {},
+		"passenger_balance": 20,
+		"building_upgrades": {}
 	}
 	if not _save_profile(profile):
 		return {}
@@ -87,6 +98,57 @@ static func add_resource_drops(drops: Array) -> Dictionary:
 		inventory[resource_id] = int(inventory.get(resource_id, 0)) + amount
 
 	profile["resource_inventory"] = inventory
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+
+
+static func save_passenger_balance(value: int) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	profile["passenger_balance"] = maxi(value, 0)
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func apply_building_upgrade(
+	building_key: String,
+	next_level: int,
+	resource_cost: Dictionary
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty() or building_key.is_empty():
+		return {}
+
+	var inventory: Dictionary = profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
+
+	for resource_id in resource_cost.keys():
+		var needed := maxi(int(resource_cost[resource_id]), 0)
+		if int(inventory.get(resource_id, 0)) < needed:
+			return {}
+
+	for resource_id in resource_cost.keys():
+		var needed := maxi(int(resource_cost[resource_id]), 0)
+		inventory[resource_id] = (
+			int(inventory.get(resource_id, 0)) - needed
+		)
+
+	var upgrades: Dictionary = profile.get(
+		"building_upgrades",
+		{}
+	).duplicate(true)
+	upgrades[building_key] = maxi(next_level, 1)
+
+	profile["resource_inventory"] = inventory
+	profile["building_upgrades"] = upgrades
 	if not _save_profile(profile):
 		return {}
 	return profile

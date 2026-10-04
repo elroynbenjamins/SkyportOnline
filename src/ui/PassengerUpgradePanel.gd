@@ -34,10 +34,15 @@ func open_building(
 		level
 	]
 
-	stats_label.text = "Current: +%.1f passengers/min • Storage %d" % [
-		float(current.get("passengers_per_minute", 0.0)),
-		int(current.get("storage", 0))
-	]
+	var current_rate := float(current.get("passengers_per_minute", 0.0))
+	var current_storage := int(current.get("storage", 0))
+	if current_rate <= 0.0:
+		stats_label.text = "Current passenger capacity: %d" % current_storage
+	else:
+		stats_label.text = "Current: +%.1f passengers/min • Storage %d" % [
+			current_rate,
+			current_storage
+		]
 
 	if next.is_empty():
 		cost_label.text = "Maximum upgrade level reached."
@@ -46,10 +51,15 @@ func open_building(
 		root.visible = true
 		return
 
-	stats_label.text += "\nNext: +%.1f passengers/min • Storage %d" % [
-		float(next.get("passengers_per_minute", 0.0)),
-		int(next.get("storage", 0))
-	]
+	var next_rate := float(next.get("passengers_per_minute", 0.0))
+	var next_storage := int(next.get("storage", 0))
+	if current_rate <= 0.0 and next_rate <= 0.0:
+		stats_label.text += "\nNext passenger capacity: %d" % next_storage
+	else:
+		stats_label.text += "\nNext: +%.1f passengers/min • Storage %d" % [
+			next_rate,
+			next_storage
+		]
 
 	var coin_cost := int(next.get("coin_cost", 0))
 	var resource_cost: Dictionary = next.get(

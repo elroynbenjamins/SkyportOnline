@@ -29,6 +29,7 @@ var placed_buildings: Array[Dictionary] = []
 var occupied_cells: Dictionary = {}
 var next_building_uid := 1
 var building_labels: Array[Label] = []
+var building_textures: Dictionary = {}
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -112,7 +113,10 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 
 
 func _draw_buildings() -> void:
-	for building in placed_buildings:
+	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
+	buildings_to_draw.sort_custom(Callable(self, "_sort_buildings_by_depth"))
+
+	for building in buildings_to_draw:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty():
 			continue
@@ -120,12 +124,23 @@ func _draw_buildings() -> void:
 		var footprint := _footprint_for(definition, int(building["rotation"]))
 		var origin: Vector2i = building["origin"]
 		var color: Color = definition["color"]
+		if not String(definition.get("world_sprite_path", "")).is_empty():
+			color.a = 0.72
 
 		for y in range(footprint.y):
 			for x in range(footprint.x):
 				_draw_tile_overlay(origin + Vector2i(x, y), color, Color("eef2f1", 0.30), 1.0)
 
-		_draw_building_detail(building, definition, footprint)
+		if String(definition.get("world_sprite_path", "")).is_empty():
+			_draw_building_detail(building, definition, footprint)
+		else:
+			_draw_building_sprite(definition, origin, footprint)
+
+
+func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:
+	var a_origin: Vector2i = a["origin"]
+	var b_origin: Vector2i = b["origin"]
+	return a_origin.x + a_origin.y < b_origin.x + b_origin.y
 
 
 func _draw_building_detail(building: Dictionary, definition: Dictionary, footprint: Vector2i) -> void:
@@ -154,6 +169,38 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 		draw_circle(center, 10.0, Color("dce5e7"), false, 3.0)
 
 
+func _draw_building_sprite(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	modulate: Color = Color.WHITE
+) -> void:
+	var sprite_path := String(definition.get("world_sprite_path", ""))
+	if sprite_path.is_empty():
+		return
+
+	var texture := _get_building_texture(sprite_path)
+	if texture == null:
+		return
+
+	var draw_size: Vector2 = definition.get("world_sprite_size", Vector2(160, 120))
+	var offset: Vector2 = definition.get("world_sprite_offset", Vector2.ZERO)
+	var center := _footprint_center_world(origin, footprint)
+	var rect := Rect2(center - draw_size * 0.5 + offset, draw_size)
+	draw_texture_rect(texture, rect, false, modulate)
+
+
+func _get_building_texture(path: String) -> Texture2D:
+	if building_textures.has(path):
+		return building_textures[path] as Texture2D
+
+	var resource := load(path)
+	if resource is Texture2D:
+		building_textures[path] = resource
+		return resource as Texture2D
+	return null
+
+
 func _draw_build_preview() -> void:
 	if preview_building_id.is_empty() or preview_origin.x < 0 or preview_origin.y < 0:
 		return
@@ -169,6 +216,10 @@ func _draw_build_preview() -> void:
 	for y in range(footprint.y):
 		for x in range(footprint.x):
 			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
+
+	if not String(definition.get("world_sprite_path", "")).is_empty():
+		var ghost := Color(0.72, 1.0, 0.78, 0.72) if valid else Color(1.0, 0.65, 0.65, 0.72)
+		_draw_building_sprite(definition, preview_origin, footprint, ghost)
 
 
 func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:

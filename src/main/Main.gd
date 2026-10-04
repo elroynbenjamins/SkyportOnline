@@ -10,6 +10,7 @@ var gems: int = 120
 
 var selected_building_id := ""
 var selected_building_rotation := 0
+var aircraft_demo: AircraftPrototype
 
 
 func _ready() -> void:
@@ -27,6 +28,18 @@ func _ready() -> void:
 	hud.set_player_data(player_level, coins, gems)
 	hud.set_airside_status(airport_grid.get_airside_status())
 	airport_grid.select_parcel("north")
+	_spawn_aircraft_demo()
+
+
+func _spawn_aircraft_demo() -> void:
+	var route := airport_grid.get_first_departure_route()
+	if route.size() < 2:
+		return
+
+	aircraft_demo = AircraftPrototype.new()
+	aircraft_demo.z_index = 80
+	add_child(aircraft_demo)
+	aircraft_demo.set_route(route)
 
 
 func _on_world_tapped(world_position: Vector2) -> void:

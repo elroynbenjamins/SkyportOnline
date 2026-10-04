@@ -55,7 +55,7 @@ func _run() -> void:
 		return
 
 	var london := DestinationCatalog.get_destination("london")
-	var aircraft_profile := AircraftCatalog.get_profile("aerolet_100")
+	var aircraft_profile := AircraftCatalog.get_profile("swift_s14")
 	var plan := FlightRules.create_flight_plan(aircraft_profile, london)
 	if String(plan.get("country_code", "")) != "GB":
 		_fail("Flight plans should preserve destination country code.")

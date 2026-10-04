@@ -52,10 +52,12 @@ func _run() -> void:
 		return
 
 	var now_unix := 1791072000
-	var event := EventCatalog.active_event(now_unix)
+	var event := EventCatalog.get_event("autumn_airbridge_2026")
 	if event.is_empty():
-		_fail("Autumn event should be active for visual regression time.")
+		_fail("Autumn archive event should exist for visual regression.")
 		return
+	event["enabled"] = true
+	event["start_unix"] = 1790812800
 
 	var manager := EventManager.new()
 	root.add_child(manager)
@@ -69,11 +71,11 @@ func _run() -> void:
 	economy.configure(grid, 20.0)
 
 	manager.set_now_override(now_unix)
-	manager.configure(economy)
+	manager.configure(economy, event)
 	var snapshot := manager.get_snapshot()
 
 	if String(snapshot.get("theme", "")) != "autumn":
-		_fail("Live Autumn event snapshot should expose autumn theme.")
+		_fail("Autumn visual override should expose autumn theme.")
 		return
 
 	grid.set_event_visual_state(snapshot, cosmetics)

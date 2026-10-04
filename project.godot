@@ -1,0 +1,28 @@
+; Skyport Online
+; Godot 4 mobile-first project
+
+config_version=5
+
+[application]
+
+config/name="Skyport Online"
+run/main_scene="res://src/main/Main.tscn"
+config/features=PackedStringArray("4.3", "Mobile")
+
+[display]
+
+[display/window]
+size/viewport_width=720
+size/viewport_height=1280
+size/window_width_override=360
+size/window_height_override=640
+stretch/mode="canvas_items"
+handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.055, 0.094, 0.122, 1)

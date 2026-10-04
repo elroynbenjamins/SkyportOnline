@@ -13,6 +13,8 @@ var selected_building_rotation := 0
 var aircraft_demos: Array[AircraftPrototype] = []
 var ground_services: GroundServiceDispatcher
 var runway_dispatcher: RunwayDispatcher
+var stand_occupancy: Dictionary = {}
+var pending_arrivals: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -70,14 +72,27 @@ func _spawn_aircraft_demos() -> void:
 		var aircraft := AircraftPrototype.new()
 		aircraft.name = label
 		aircraft.z_index = 80 + index
-		aircraft.state_changed.connect(_on_demo_aircraft_state_changed.bind(label))
+		aircraft.state_changed.connect(
+			_on_demo_aircraft_state_changed.bind(aircraft, label)
+		)
+		aircraft.departed.connect(_on_demo_aircraft_departed.bind(aircraft, label))
+		aircraft.arrival_requested.connect(
+			_on_demo_arrival_requested.bind(aircraft, label)
+		)
+		aircraft.arrival_completed.connect(
+			_on_demo_arrival_completed.bind(aircraft, label)
+		)
 		add_child(aircraft)
+
+		var stand_uid := int(route_info.get("stand_uid", -1))
+		var runway_uid := int(route_info.get("runway_uid", -1))
 		aircraft.set_departure_route(
 			route,
 			"S",
-			int(route_info.get("stand_uid", -1)),
-			int(route_info.get("runway_uid", -1))
+			stand_uid,
+			runway_uid
 		)
+		stand_occupancy[stand_uid] = aircraft
 		aircraft_demos.append(aircraft)
 		ground_services.request_fuel(aircraft, label)
 
@@ -114,18 +129,149 @@ func _on_ground_service_queue_changed(waiting: int, active: int) -> void:
 		)
 
 
-func _on_demo_aircraft_state_changed(state: String, label: String) -> void:
+func _on_demo_aircraft_state_changed(
+	state: String,
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
 	match state:
-		"TAXIING":
+		"TAXIING_OUT":
+			_release_stand(aircraft)
 			hud.set_operation_status("%s taxiing to runway" % label)
-		"HOLDING":
-			hud.set_operation_status("%s cleared runway" % label, "success")
+		"LINE_UP":
+			hud.set_operation_status("%s lined up for departure" % label)
+		"TAKEOFF_ROLL":
+			hud.set_operation_status("%s accelerating for takeoff" % label)
+		"CLIMBING":
+			hud.set_operation_status("%s airborne • climbing" % label, "success")
+		"EN_ROUTE":
+			hud.set_operation_status("%s en route" % label, "success")
+		"HOLDING_FOR_ARRIVAL":
+			hud.set_operation_status("%s inbound • awaiting stand/runway" % label)
+		"APPROACH":
+			hud.set_operation_status("%s on approach" % label)
+		"LANDING_ROLL":
+			hud.set_operation_status("%s landing" % label)
+		"TAXIING_IN":
+			hud.set_operation_status("%s taxiing to stand" % label)
+		"PARKED":
+			hud.set_operation_status("%s parked at stand" % label, "success")
 		"READY_FOR_DEPARTURE":
-			hud.set_operation_status("%s ready • waiting for runway" % label, "warning")
+			hud.set_operation_status(
+				"%s ready • waiting for runway" % label,
+				"warning"
+			)
 		"CLEARED":
 			hud.set_operation_status("%s cleared for departure" % label, "success")
 		"WAITING_FUEL":
 			hud.set_operation_status("%s parked • fuel required" % label)
+
+
+func _on_demo_aircraft_departed(
+	_aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	hud.set_operation_status("%s departed airport" % label, "success")
+
+
+func _on_demo_arrival_requested(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	if not _assign_arrival_if_possible(aircraft, label):
+		pending_arrivals.append({
+			"aircraft": aircraft,
+			"label": label
+		})
+		hud.set_operation_status(
+			"%s holding • no free compatible stand" % label,
+			"warning"
+		)
+
+
+func _assign_arrival_if_possible(
+	aircraft: AircraftPrototype,
+	label: String
+) -> bool:
+	var arrivals: Array[Dictionary] = airport_grid.get_arrival_routes(
+		aircraft.aircraft_size
+	)
+
+	for route_info in arrivals:
+		var stand_uid := int(route_info.get("stand_uid", -1))
+		if stand_uid < 0 or stand_occupancy.has(stand_uid):
+			continue
+
+		var route: PackedVector2Array = route_info.get(
+			"route",
+			PackedVector2Array()
+		)
+		if route.size() < 4:
+			continue
+
+		var runway_uid := int(route_info.get("runway_uid", -1))
+		stand_occupancy[stand_uid] = aircraft
+		aircraft.set_arrival_route(route, stand_uid, runway_uid)
+		runway_dispatcher.request_arrival(aircraft, label)
+		return true
+
+	return false
+
+
+func _release_stand(aircraft: AircraftPrototype) -> void:
+	var stand_uid := aircraft.stand_uid
+	if stand_uid < 0:
+		return
+
+	if stand_occupancy.get(stand_uid) == aircraft:
+		stand_occupancy.erase(stand_uid)
+	_try_assign_pending_arrivals()
+
+
+func _try_assign_pending_arrivals() -> void:
+	var index := 0
+	while index < pending_arrivals.size():
+		var request: Dictionary = pending_arrivals[index]
+		var aircraft := request.get("aircraft") as AircraftPrototype
+		var label := String(request.get("label", "Aircraft"))
+
+		if aircraft == null or not is_instance_valid(aircraft):
+			pending_arrivals.remove_at(index)
+			continue
+
+		if _assign_arrival_if_possible(aircraft, label):
+			pending_arrivals.remove_at(index)
+			continue
+
+		index += 1
+
+
+func _on_demo_arrival_completed(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	var route_info: Dictionary = airport_grid.get_departure_route_for_stand(
+		aircraft.stand_uid,
+		aircraft.aircraft_size
+	)
+	if route_info.is_empty():
+		hud.set_operation_status(
+			"%s parked but has no departure route" % label,
+			"warning"
+		)
+		return
+
+	var route: PackedVector2Array = route_info.get(
+		"route",
+		PackedVector2Array()
+	)
+	aircraft.set_departure_route(
+		route,
+		aircraft.aircraft_size,
+		int(route_info.get("stand_uid", -1)),
+		int(route_info.get("runway_uid", -1))
+	)
+	ground_services.request_fuel(aircraft, label)
 
 
 func _on_world_tapped(world_position: Vector2) -> void:

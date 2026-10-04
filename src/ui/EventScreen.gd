@@ -10,6 +10,7 @@ var root: Control
 var title_label: Label
 var timing_label: Label
 var currency_label: Label
+var featured_routes_label: Label
 var quest_list: VBoxContainer
 var shop_list: VBoxContainer
 var alliance_list: VBoxContainer
@@ -46,6 +47,7 @@ func refresh(snapshot: Dictionary) -> void:
 		title_label.text = "EVENTS"
 		timing_label.text = "No event is active."
 		currency_label.text = ""
+		featured_routes_label.text = ""
 		_clear(quest_list)
 		_clear(shop_list)
 		_clear(alliance_list)
@@ -62,6 +64,32 @@ func refresh(snapshot: Dictionary) -> void:
 		int(snapshot.get("currency", 0)),
 		String(snapshot.get("currency_name", "Event Currency"))
 	]
+
+	var featured_ids: Array = snapshot.get(
+		"featured_destinations",
+		[]
+	)
+	var featured_names: Array[String] = []
+	for destination_id in featured_ids:
+		var destination := DestinationCatalog.get_destination(
+			String(destination_id)
+		)
+		if not destination.is_empty():
+			featured_names.append(
+				String(destination.get("city", destination_id))
+			)
+
+	if featured_names.is_empty():
+		featured_routes_label.text = ""
+	else:
+		featured_routes_label.text = (
+			"FEATURED ROUTES  •  %s  •  +%d %s per completed return"
+			% [
+				" • ".join(featured_names),
+				int(snapshot.get("featured_route_currency", 0)),
+				String(snapshot.get("currency_name", "Event Currency"))
+			]
+		)
 
 	_refresh_quests(snapshot)
 	_refresh_shop(snapshot)
@@ -123,6 +151,16 @@ func _build_ui() -> void:
 		Color("f1d27a")
 	)
 	header.add_child(currency_label)
+
+
+	featured_routes_label = Label.new()
+	featured_routes_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	featured_routes_label.add_theme_font_size_override("font_size", 13)
+	featured_routes_label.add_theme_color_override(
+		"font_color",
+		Color("9fe3b7")
+	)
+	column.add_child(featured_routes_label)
 
 	var close_button := Button.new()
 	close_button.text = "✕  AIRPORT"

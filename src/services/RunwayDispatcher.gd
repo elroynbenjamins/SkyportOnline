@@ -392,7 +392,8 @@ func select_best_runway_option(
 		var score := get_runway_assignment_score(
 			runway_uid,
 			operation,
-			taxi_distance
+			taxi_distance,
+			options.size()
 		)
 
 		if (
@@ -421,7 +422,8 @@ func select_best_runway_option(
 func get_runway_assignment_score(
 	runway_uid: int,
 	operation: String,
-	taxi_distance: float = 0.0
+	taxi_distance: float = 0.0,
+	compatible_option_count: int = 0
 ) -> float:
 	if runway_uid < 0:
 		return 1000000.0
@@ -466,19 +468,17 @@ func get_runway_assignment_score(
 		runway_uid,
 		operation
 	)
-	var runway_count := 1
-	if airport_grid != null:
-		runway_count = maxi(
-			airport_grid.get_runway_buildings().size(),
-			1
-		)
+	var option_count := compatible_option_count
+	if option_count <= 0 and airport_grid != null:
+		option_count = airport_grid.get_runway_buildings().size()
+	option_count = maxi(option_count, 1)
 	var strategy := get_runway_strategy(runway_uid)
 
 	var score := active_penalty
 	score += RunwayStrategyRules.score_adjustment(
 		strategy,
 		operation,
-		runway_count
+		option_count
 	)
 	score += float(waiting_arrivals) * 36.0
 	score += float(waiting_departures) * 22.0

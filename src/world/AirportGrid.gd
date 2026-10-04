@@ -46,6 +46,7 @@ var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
 var event_visual_snapshot: Dictionary = {}
 var event_owned_cosmetics: Dictionary = {}
+var weather_overlay: AirportWeatherOverlay
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -59,7 +60,35 @@ func _ready() -> void:
 	_recalculate_airside_network()
 	_create_parcel_labels()
 	_refresh_building_labels()
+	_setup_weather_ambience()
 	queue_redraw()
+
+
+func _setup_weather_ambience() -> void:
+	if weather_overlay != null:
+		return
+
+	weather_overlay = AirportWeatherOverlay.new()
+	add_child(weather_overlay)
+	weather_overlay.configure(self)
+
+
+func get_weather_snapshot() -> Dictionary:
+	if weather_overlay == null:
+		return {}
+	return weather_overlay.get_snapshot()
+
+
+func set_weather_override(condition: String) -> void:
+	if weather_overlay == null:
+		return
+	weather_overlay.set_condition_override(condition)
+
+
+func clear_weather_override() -> void:
+	if weather_overlay == null:
+		return
+	weather_overlay.clear_condition_override()
 
 
 func _initialize_parcels() -> void:
@@ -243,6 +272,21 @@ func set_event_visual_state(
 ) -> void:
 	event_visual_snapshot = snapshot.duplicate(true)
 	event_owned_cosmetics = owned_cosmetics.duplicate(true)
+
+	if weather_overlay != null:
+		var active := bool(
+			event_visual_snapshot.get("active", false)
+		)
+		var theme := String(
+			event_visual_snapshot.get("theme", "")
+		)
+		if active and theme == "winter":
+			weather_overlay.set_event_condition(
+				WeatherVisualRules.SNOW
+			)
+		else:
+			weather_overlay.clear_event_condition()
+
 	queue_redraw()
 
 

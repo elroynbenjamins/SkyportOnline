@@ -13,6 +13,7 @@ const SERVICE_LANE_OFFSETS := {
 }
 
 const STAND_STAGGER_SECONDS := 0.45
+const STATION_STAGGER_SECONDS := 0.30
 const MAX_STAGGER_SECONDS := 1.80
 
 
@@ -26,6 +27,14 @@ static func stagger_delay(active_approaches: int) -> float:
 	return minf(
 		maxi(active_approaches, 0)
 		* STAND_STAGGER_SECONDS,
+		MAX_STAGGER_SECONDS
+	)
+
+
+static func station_stagger_delay(active_dispatches: int) -> float:
+	return minf(
+		maxi(active_dispatches, 0)
+		* STATION_STAGGER_SECONDS,
 		MAX_STAGGER_SECONDS
 	)
 

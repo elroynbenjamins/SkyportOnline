@@ -26,8 +26,10 @@ func _run() -> void:
 	root.add_child(economy)
 	economy.configure(grid, 20.0)
 
-	if economy.get_capacity() != 40:
-		_fail("Travel Office Lv1 should provide 40 passenger storage.")
+	if economy.get_capacity() != 160:
+		_fail(
+			"Starter terminal + Travel Office should provide 160 passenger capacity."
+		)
 		return
 	if absf(economy.get_production_per_minute() - 1.5) > 0.001:
 		_fail("Travel Office Lv1 should produce 1.5 passengers/min.")
@@ -56,11 +58,38 @@ func _run() -> void:
 		return
 	economy.refresh_building_stats()
 
-	if economy.get_capacity() != 55:
-		_fail("Travel Office Lv2 should provide 55 passenger storage.")
+	if economy.get_capacity() != 175:
+		_fail(
+			"Travel Office Lv2 plus starter terminal should provide 175 capacity."
+		)
 		return
 	if absf(economy.get_production_per_minute() - 2.2) > 0.001:
 		_fail("Travel Office Lv2 should produce 2.2 passengers/min.")
+		return
+
+	var economy_buildings := grid.get_passenger_economy_buildings()
+	var terminal: Dictionary = {}
+	for candidate in economy_buildings:
+		if String(candidate.get("definition_id", "")) == "small_terminal":
+			terminal = candidate
+			break
+	if terminal.is_empty():
+		_fail("Starter airport should include a passenger-capacity terminal.")
+		return
+	if not grid.set_building_upgrade_level(
+		int(terminal.get("uid", -1)),
+		2
+	):
+		_fail("Small Terminal should accept a non-visual capacity upgrade.")
+		return
+	economy.refresh_building_stats()
+	if economy.get_capacity() != 305:
+		_fail(
+			"Terminal Lv2 (250) + Travel Office Lv2 (55) should total 305."
+		)
+		return
+	if absf(economy.get_production_per_minute() - 2.2) > 0.001:
+		_fail("Terminal upgrade must not alter passenger production rate.")
 		return
 
 	var profile := ProfileStore.create_guest_airport(
@@ -138,8 +167,8 @@ func _run() -> void:
 
 	_cleanup_profile()
 	print(
-		"Passenger economy passed: production/storage upgrades, "
-		+ "boarding consumption, and resource costs persisted."
+		"Passenger economy passed: terminal capacity, passive production, "
+		+ "boarding consumption, and resource upgrades persisted."
 	)
 	quit(0)
 

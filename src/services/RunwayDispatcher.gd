@@ -12,6 +12,7 @@ signal atc_state_changed(snapshot: Dictionary)
 var active_by_runway: Dictionary = {}
 var queues_by_runway: Dictionary = {}
 var departure_taxi_pending: Dictionary = {}
+var planned_departures: Dictionary = {}
 var last_operation_by_runway: Dictionary = {}
 var separation_elapsed_by_runway: Dictionary = {}
 var atc_emit_accumulator := 0.0
@@ -89,6 +90,8 @@ func request_departure(
 			"warning"
 		)
 		return
+
+	release_departure_assignment(aircraft)
 
 	if aircraft.state == "HOLD_SHORT":
 		_on_departure_hold_short(
@@ -278,6 +281,42 @@ func get_active_count() -> int:
 	return active_by_runway.size()
 
 
+func reserve_departure_assignment(
+	aircraft: AircraftPrototype,
+	runway_uid: int
+) -> void:
+	if (
+		aircraft == null
+		or not is_instance_valid(aircraft)
+		or runway_uid < 0
+	):
+		return
+	planned_departures[aircraft.get_instance_id()] = {
+		"aircraft": aircraft,
+		"runway_uid": runway_uid
+	}
+	_emit_runway_visual_state(runway_uid)
+	_emit_atc_state()
+
+
+func release_departure_assignment(
+	aircraft: AircraftPrototype
+) -> void:
+	if aircraft == null:
+		return
+	var aircraft_id := aircraft.get_instance_id()
+	if not planned_departures.has(aircraft_id):
+		return
+	var planned: Dictionary = planned_departures[aircraft_id]
+	var runway_uid := int(
+		planned.get("runway_uid", -1)
+	)
+	planned_departures.erase(aircraft_id)
+	if runway_uid >= 0:
+		_emit_runway_visual_state(runway_uid)
+	_emit_atc_state()
+
+
 func select_best_runway_option(
 	options: Array[Dictionary],
 	operation: String
@@ -360,6 +399,14 @@ func get_runway_assignment_score(
 				"departure":
 					waiting_departures += 1
 
+	var planned_count := 0
+	for planned_variant in planned_departures.values():
+		var planned: Dictionary = planned_variant
+		if int(
+			planned.get("runway_uid", -1)
+		) == runway_uid:
+			planned_count += 1
+
 	var taxiing_departures := 0
 	for pending_variant in departure_taxi_pending.values():
 		var pending: Dictionary = pending_variant
@@ -375,6 +422,7 @@ func get_runway_assignment_score(
 	var score := active_penalty
 	score += float(waiting_arrivals) * 36.0
 	score += float(waiting_departures) * 22.0
+	score += float(planned_count) * 12.0
 	score += float(taxiing_departures) * 8.0
 	score += spacing * 8.0
 	score += maxf(taxi_distance, 0.0) / 160.0
@@ -634,6 +682,17 @@ func _remove_invalid_requests(
 			queue.remove_at(index)
 
 
+func _cleanup_planned_departures() -> void:
+	for key_variant in planned_departures.keys():
+		var key := int(key_variant)
+		var planned: Dictionary = planned_departures[key]
+		var aircraft := planned.get(
+			"aircraft"
+		) as AircraftPrototype
+		if aircraft == null or not is_instance_valid(aircraft):
+			planned_departures.erase(key)
+
+
 func _cleanup_pending_departures() -> void:
 	for key_variant in departure_taxi_pending.keys():
 		var key := int(key_variant)
@@ -647,6 +706,7 @@ func _cleanup_pending_departures() -> void:
 
 func _known_runway_uids() -> Array[int]:
 	_cleanup_pending_departures()
+	_cleanup_planned_departures()
 	var seen: Dictionary = {}
 
 	if airport_grid != null:
@@ -667,6 +727,13 @@ func _known_runway_uids() -> Array[int]:
 		var pending: Dictionary = pending_variant
 		var runway_uid := int(
 			pending.get("runway_uid", -1)
+		)
+		if runway_uid >= 0:
+			seen[runway_uid] = true
+	for planned_variant in planned_departures.values():
+		var planned: Dictionary = planned_variant
+		var runway_uid := int(
+			planned.get("runway_uid", -1)
 		)
 		if runway_uid >= 0:
 			seen[runway_uid] = true
@@ -699,6 +766,14 @@ func _build_runway_visual_state(
 					waiting_arrivals += 1
 				"departure":
 					waiting_departures += 1
+
+	var planned_departures_count := 0
+	for planned_variant in planned_departures.values():
+		var planned: Dictionary = planned_variant
+		if int(
+			planned.get("runway_uid", -1)
+		) == runway_uid:
+			planned_departures_count += 1
 
 	var taxiing_departures := 0
 	for pending_variant in departure_taxi_pending.values():
@@ -746,6 +821,7 @@ func _build_runway_visual_state(
 		"active_operation": active_operation,
 		"waiting_arrivals": waiting_arrivals,
 		"waiting_departures": waiting_departures,
+		"planned_departures": planned_departures_count,
 		"taxiing_departures": taxiing_departures,
 		"arrival_priority": waiting_arrivals > 0,
 		"separation_remaining": spacing_remaining,

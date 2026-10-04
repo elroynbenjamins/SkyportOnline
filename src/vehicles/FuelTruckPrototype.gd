@@ -18,6 +18,7 @@ var service_pose_rotation := 0.0
 var has_service_pose_rotation := false
 var service_connection_target := Vector2.ZERO
 var has_service_connection_target := false
+var vehicle_sprite_atlas: Texture2D
 
 
 func set_launch_delay(seconds: float) -> void:
@@ -47,6 +48,7 @@ func start_service(route: PackedVector2Array, duration: float) -> void:
 	route_index = 0
 	service_duration = maxf(duration, 0.4)
 	service_remaining = service_duration
+	_load_vehicle_sprite()
 	position = outbound_route[0]
 	visible = true
 	phase = "WAITING_LAUNCH" if launch_delay_remaining > 0.0 else "OUTBOUND"
@@ -108,17 +110,69 @@ func _follow_route(points: PackedVector2Array, delta: float) -> bool:
 func _draw() -> void:
 	_draw_shadow()
 
-	draw_rect(Rect2(Vector2(-13, -7), Vector2(24, 14)), Color("e5a83f"))
-	draw_rect(Rect2(Vector2(7, -6), Vector2(11, 12)), Color("e9ecec"))
-	draw_rect(Rect2(Vector2(10, -4), Vector2(5, 5)), Color("5f8798"))
-	draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(10, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
-	draw_circle(Vector2(10, 8), 3.0, Color("292f32"))
+	var sprite_drawn := _draw_directional_sprite()
+	if not sprite_drawn:
+		draw_rect(
+			Rect2(Vector2(-13, -7), Vector2(24, 14)),
+			Color("e5a83f")
+		)
+		draw_rect(
+			Rect2(Vector2(7, -6), Vector2(11, 12)),
+			Color("e9ecec")
+		)
+		draw_rect(
+			Rect2(Vector2(10, -4), Vector2(5, 5)),
+			Color("5f8798")
+		)
+		draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(10, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
+		draw_circle(Vector2(10, 8), 3.0, Color("292f32"))
 
 	if phase == "SERVICING":
 		draw_circle(Vector2(-1, -14), 4.0, Color("ffd166"))
 		_draw_fuel_hose()
+
+
+func _load_vehicle_sprite() -> void:
+	vehicle_sprite_atlas = null
+	var path := GroundVehicleVisuals.atlas_path("fuel")
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return
+
+	var texture = load(path)
+	if texture is Texture2D:
+		vehicle_sprite_atlas = texture
+
+
+func _draw_directional_sprite() -> bool:
+	if vehicle_sprite_atlas == null:
+		return false
+
+	var display_size := GroundVehicleVisuals.display_size(
+		"fuel"
+	)
+	var source_region := GroundVehicleVisuals.source_region(
+		"fuel",
+		rotation
+	)
+
+	draw_set_transform(
+		Vector2.ZERO,
+		-rotation,
+		Vector2.ONE
+	)
+	draw_texture_rect_region(
+		vehicle_sprite_atlas,
+		Rect2(-display_size * 0.5, display_size),
+		source_region
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+	return true
 
 
 func _draw_fuel_hose() -> void:

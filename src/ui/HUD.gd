@@ -314,6 +314,15 @@ func set_event_available(
 		event_nav_button.tooltip_text = ""
 
 
+func set_event_attention(claimable: bool) -> void:
+	if event_nav_button == null:
+		return
+	if claimable:
+		event_nav_button.text = "🎉 •\nEVENT"
+	else:
+		event_nav_button.text = "🎉\nEVENT"
+
+
 func set_interface_visible(value: bool) -> void:
 	if interface_root != null:
 		interface_root.visible = value

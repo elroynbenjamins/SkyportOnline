@@ -1362,68 +1362,264 @@ func _definition_supports_size(definition: Dictionary, aircraft_size: String) ->
 	return sizes.has(aircraft_size)
 
 
-func get_departure_routes(aircraft_size: String = "S") -> Array[Dictionary]:
+func get_departure_routes(
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
 	var routes: Array[Dictionary] = []
-	var connected_uids: Array = airside_status.get("connected_uids", [])
+	var connected_uids: Array = airside_status.get(
+		"connected_uids",
+		[]
+	)
 	if connected_uids.is_empty():
 		return routes
 
 	for building in placed_buildings:
-		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
-		if definition.is_empty() or not String(definition["id"]).contains("stand"):
+		var definition := BuildingCatalog.get_definition(
+			String(building["definition_id"])
+		)
+		if (
+			definition.is_empty()
+			or not String(
+				definition["id"]
+			).contains("stand")
+		):
 			continue
-		if not _definition_supports_size(definition, aircraft_size):
+		if not _definition_supports_size(
+			definition,
+			aircraft_size
+		):
 			continue
 
 		var stand_uid := int(building["uid"])
 		if not connected_uids.has(stand_uid):
 			continue
 
-		var footprint := _footprint_for(definition, int(building["rotation"]))
-		var stand_cells := _cells_for(building["origin"], footprint)
-		var start_taxiway := _first_adjacent_reachable_taxiway(stand_cells)
-		if start_taxiway.x < 0:
-			continue
-
-		var taxi_path := _taxiway_path_to_runway(start_taxiway, aircraft_size)
-		if taxi_path.is_empty():
-			continue
-
-		var runway_entry := _adjacent_runway_cell(taxi_path[taxi_path.size() - 1], aircraft_size)
-		if runway_entry.x < 0:
-			continue
-
-		var runway_exit := _farthest_cell_on_same_runway(runway_entry, aircraft_size)
-		var runway_uid := _runway_uid_for_cell(runway_entry, aircraft_size)
-		var points := PackedVector2Array()
-		var stand_position := _footprint_center_world(building["origin"], footprint)
-		var last_taxi_cell: Vector2i = taxi_path[taxi_path.size() - 1]
-		var hold_short_position := _hold_short_world_position(
-			last_taxi_cell,
-			runway_entry
+		var options := get_departure_route_options_for_stand(
+			stand_uid,
+			aircraft_size
 		)
-		points.append(stand_position)
-		for taxi_cell in taxi_path:
-			points.append(tile_to_world(Vector2(taxi_cell.x, taxi_cell.y)))
-		points.append(hold_short_position)
-		points.append(tile_to_world(Vector2(runway_entry.x, runway_entry.y)))
-		if runway_exit != runway_entry:
-			points.append(tile_to_world(Vector2(runway_exit.x, runway_exit.y)))
-
-		routes.append({
-			"stand_uid": stand_uid,
-			"stand_definition_id": String(building["definition_id"]),
-			"stand_world_position": stand_position,
-			"runway_uid": runway_uid,
-			"hold_short_position": hold_short_position,
-			"route": points
-		})
+		if not options.is_empty():
+			routes.append(
+				options[0].duplicate(true)
+			)
 
 	return routes
 
 
-func get_first_departure_route(aircraft_size: String = "S") -> PackedVector2Array:
-	var routes: Array[Dictionary] = get_departure_routes(aircraft_size)
+func get_departure_route_options(
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var connected_uids: Array = airside_status.get(
+		"connected_uids",
+		[]
+	)
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not String(
+				definition.get("id", "")
+			).contains("stand")
+		):
+			continue
+		if not _definition_supports_size(
+			definition,
+			aircraft_size
+		):
+			continue
+
+		var stand_uid := int(
+			building.get("uid", -1)
+		)
+		if not connected_uids.has(stand_uid):
+			continue
+
+		for option in get_departure_route_options_for_stand(
+			stand_uid,
+			aircraft_size
+		):
+			result.append(option)
+
+	return result
+
+
+func get_departure_route_options_for_stand(
+	stand_uid: int,
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var stand := _building_by_uid(stand_uid)
+	if stand.is_empty():
+		return result
+
+	var definition := BuildingCatalog.get_definition(
+		String(stand.get("definition_id", ""))
+	)
+	if (
+		definition.is_empty()
+		or not String(
+			definition.get("id", "")
+		).contains("stand")
+		or not _definition_supports_size(
+			definition,
+			aircraft_size
+		)
+	):
+		return result
+
+	var connected_uids: Array = airside_status.get(
+		"connected_uids",
+		[]
+	)
+	if not connected_uids.has(stand_uid):
+		return result
+
+	var footprint := _footprint_for(
+		definition,
+		int(stand.get("rotation", 0))
+	)
+	var stand_cells := _cells_for(
+		stand["origin"],
+		footprint
+	)
+	var start_taxiway := _first_adjacent_reachable_taxiway(
+		stand_cells
+	)
+	if start_taxiway.x < 0:
+		return result
+
+	var stand_position := _footprint_center_world(
+		stand["origin"],
+		footprint
+	)
+
+	for runway in placed_buildings:
+		var runway_definition := BuildingCatalog.get_definition(
+			String(runway.get("definition_id", ""))
+		)
+		if (
+			runway_definition.is_empty()
+			or not _is_runway_definition(
+				runway_definition
+			)
+			or not _definition_supports_size(
+				runway_definition,
+				aircraft_size
+			)
+		):
+			continue
+
+		var runway_uid := int(
+			runway.get("uid", -1)
+		)
+		var taxi_path := _taxiway_path_to_specific_runway(
+			start_taxiway,
+			runway_uid,
+			aircraft_size
+		)
+		if taxi_path.is_empty():
+			continue
+
+		var last_taxi_cell: Vector2i = taxi_path[
+			taxi_path.size() - 1
+		]
+		var runway_entry := _adjacent_runway_cell_for_uid(
+			last_taxi_cell,
+			runway_uid,
+			aircraft_size
+		)
+		if runway_entry.x < 0:
+			continue
+
+		var runway_exit := _farthest_cell_on_runway_uid(
+			runway_entry,
+			runway_uid,
+			aircraft_size
+		)
+		var hold_short_position := _hold_short_world_position(
+			last_taxi_cell,
+			runway_entry
+		)
+
+		var points := PackedVector2Array()
+		points.append(stand_position)
+		var taxi_distance := 0.0
+		var previous_point := stand_position
+		for taxi_cell in taxi_path:
+			var taxi_point := tile_to_world(
+				Vector2(taxi_cell.x, taxi_cell.y)
+			)
+			points.append(taxi_point)
+			taxi_distance += previous_point.distance_to(
+				taxi_point
+			)
+			previous_point = taxi_point
+
+		points.append(hold_short_position)
+		taxi_distance += previous_point.distance_to(
+			hold_short_position
+		)
+		points.append(
+			tile_to_world(
+				Vector2(
+					runway_entry.x,
+					runway_entry.y
+				)
+			)
+		)
+		if runway_exit != runway_entry:
+			points.append(
+				tile_to_world(
+					Vector2(
+						runway_exit.x,
+						runway_exit.y
+					)
+				)
+			)
+
+		result.append({
+			"stand_uid": stand_uid,
+			"stand_definition_id": String(
+				stand.get("definition_id", "")
+			),
+			"stand_world_position": stand_position,
+			"runway_uid": runway_uid,
+			"runway_definition_id": String(
+				runway.get("definition_id", "")
+			),
+			"hold_short_position": hold_short_position,
+			"taxi_distance": taxi_distance,
+			"route": points
+		})
+
+	result.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			var a_distance := float(
+				a.get("taxi_distance", 0.0)
+			)
+			var b_distance := float(
+				b.get("taxi_distance", 0.0)
+			)
+			if absf(a_distance - b_distance) > 0.01:
+				return a_distance < b_distance
+			return int(
+				a.get("runway_uid", -1)
+			) < int(
+				b.get("runway_uid", -1)
+			)
+	)
+	return result
+
+
+func get_first_departure_route(
+	aircraft_size: String = "S"
+) -> PackedVector2Array:
+	var routes: Array[Dictionary] = get_departure_routes(
+		aircraft_size
+	)
 	if routes.is_empty():
 		return PackedVector2Array()
 	return routes[0]["route"] as PackedVector2Array
@@ -1433,47 +1629,115 @@ func get_departure_route_for_stand(
 	stand_uid: int,
 	aircraft_size: String = "S"
 ) -> Dictionary:
-	var routes: Array[Dictionary] = get_departure_routes(aircraft_size)
-	for route_info in routes:
-		if int(route_info.get("stand_uid", -1)) == stand_uid:
-			return route_info.duplicate(true)
-	return {}
+	var options := get_departure_route_options_for_stand(
+		stand_uid,
+		aircraft_size
+	)
+	if options.is_empty():
+		return {}
+	return options[0].duplicate(true)
 
 
-func get_arrival_routes(aircraft_size: String = "S") -> Array[Dictionary]:
+func get_arrival_routes(
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
 	var arrivals: Array[Dictionary] = []
-	var departures: Array[Dictionary] = get_departure_routes(aircraft_size)
-
+	var departures: Array[Dictionary] = get_departure_routes(
+		aircraft_size
+	)
 	for departure in departures:
-		var departure_points: PackedVector2Array = departure.get(
-			"route",
-			PackedVector2Array()
+		var arrival := _arrival_route_from_departure(
+			departure
 		)
-		if departure_points.size() < 4:
-			continue
-
-		var arrival_points := PackedVector2Array()
-		for index in range(departure_points.size() - 1, -1, -1):
-			arrival_points.append(departure_points[index])
-
-		arrivals.append({
-			"stand_uid": int(departure.get("stand_uid", -1)),
-			"stand_definition_id": String(
-				departure.get("stand_definition_id", "")
-			),
-			"stand_world_position": departure.get(
-				"stand_world_position",
-				Vector2.ZERO
-			),
-			"runway_uid": int(departure.get("runway_uid", -1)),
-			"hold_short_position": departure.get(
-				"hold_short_position",
-				Vector2.ZERO
-			),
-			"route": arrival_points
-		})
-
+		if not arrival.is_empty():
+			arrivals.append(arrival)
 	return arrivals
+
+
+func get_arrival_route_options(
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
+	var arrivals: Array[Dictionary] = []
+	for departure in get_departure_route_options(
+		aircraft_size
+	):
+		var arrival := _arrival_route_from_departure(
+			departure
+		)
+		if not arrival.is_empty():
+			arrivals.append(arrival)
+	return arrivals
+
+
+func get_arrival_route_options_for_stand(
+	stand_uid: int,
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
+	var arrivals: Array[Dictionary] = []
+	for departure in get_departure_route_options_for_stand(
+		stand_uid,
+		aircraft_size
+	):
+		var arrival := _arrival_route_from_departure(
+			departure
+		)
+		if not arrival.is_empty():
+			arrivals.append(arrival)
+	return arrivals
+
+
+func _arrival_route_from_departure(
+	departure: Dictionary
+) -> Dictionary:
+	var departure_points: PackedVector2Array = departure.get(
+		"route",
+		PackedVector2Array()
+	)
+	if departure_points.size() < 4:
+		return {}
+
+	var arrival_points := PackedVector2Array()
+	for index in range(
+		departure_points.size() - 1,
+		-1,
+		-1
+	):
+		arrival_points.append(
+			departure_points[index]
+		)
+
+	return {
+		"stand_uid": int(
+			departure.get("stand_uid", -1)
+		),
+		"stand_definition_id": String(
+			departure.get(
+				"stand_definition_id",
+				""
+			)
+		),
+		"stand_world_position": departure.get(
+			"stand_world_position",
+			Vector2.ZERO
+		),
+		"runway_uid": int(
+			departure.get("runway_uid", -1)
+		),
+		"runway_definition_id": String(
+			departure.get(
+				"runway_definition_id",
+				""
+			)
+		),
+		"hold_short_position": departure.get(
+			"hold_short_position",
+			Vector2.ZERO
+		),
+		"taxi_distance": float(
+			departure.get("taxi_distance", 0.0)
+		),
+		"route": arrival_points
+	}
 
 
 func _first_adjacent_reachable_taxiway(cells: Array[Vector2i]) -> Vector2i:
@@ -1487,6 +1751,65 @@ func _first_adjacent_reachable_taxiway(cells: Array[Vector2i]) -> Vector2i:
 			if reachable.has(_cell_key(neighbor)):
 				return neighbor
 	return Vector2i(-1, -1)
+
+
+func _taxiway_path_to_specific_runway(
+	start: Vector2i,
+	runway_uid: int,
+	aircraft_size: String = ""
+) -> Array[Vector2i]:
+	var reachable_keys: Array = airside_status.get(
+		"reachable_taxiway_cells",
+		[]
+	)
+	var reachable: Dictionary = {}
+	for key in reachable_keys:
+		reachable[String(key)] = true
+
+	if not reachable.has(_cell_key(start)):
+		return []
+
+	var queue: Array[Vector2i] = [start]
+	var parent: Dictionary = {}
+	parent[_cell_key(start)] = Vector2i(-999, -999)
+	var cursor := 0
+	var goal := Vector2i(-1, -1)
+
+	while cursor < queue.size():
+		var current := queue[cursor]
+		cursor += 1
+
+		if _adjacent_runway_cell_for_uid(
+			current,
+			runway_uid,
+			aircraft_size
+		).x >= 0:
+			goal = current
+			break
+
+		for neighbor in _orthogonal_neighbors(current):
+			var key := _cell_key(neighbor)
+			if (
+				reachable.has(key)
+				and not parent.has(key)
+			):
+				parent[key] = current
+				queue.append(neighbor)
+
+	if goal.x < 0:
+		return []
+
+	var reversed: Array[Vector2i] = []
+	var cursor_cell := goal
+	while cursor_cell != Vector2i(-999, -999):
+		reversed.append(cursor_cell)
+		var key := _cell_key(cursor_cell)
+		if not parent.has(key):
+			break
+		cursor_cell = parent[key]
+
+	reversed.reverse()
+	return reversed
 
 
 func _taxiway_path_to_runway(start: Vector2i, aircraft_size: String = "") -> Array[Vector2i]:
@@ -1534,6 +1857,46 @@ func _taxiway_path_to_runway(start: Vector2i, aircraft_size: String = "") -> Arr
 	return reversed
 
 
+func _adjacent_runway_cell_for_uid(
+	taxiway: Vector2i,
+	runway_uid: int,
+	aircraft_size: String = ""
+) -> Vector2i:
+	var runway := _building_by_uid(runway_uid)
+	if runway.is_empty():
+		return Vector2i(-1, -1)
+
+	var definition := BuildingCatalog.get_definition(
+		String(runway.get("definition_id", ""))
+	)
+	if (
+		definition.is_empty()
+		or not _is_runway_definition(definition)
+	):
+		return Vector2i(-1, -1)
+	if (
+		not aircraft_size.is_empty()
+		and not _definition_supports_size(
+			definition,
+			aircraft_size
+		)
+	):
+		return Vector2i(-1, -1)
+
+	var footprint := _footprint_for(
+		definition,
+		int(runway.get("rotation", 0))
+	)
+	var runway_cells := _cells_for(
+		runway["origin"],
+		footprint
+	)
+	for neighbor in _orthogonal_neighbors(taxiway):
+		if runway_cells.has(neighbor):
+			return neighbor
+	return Vector2i(-1, -1)
+
+
 func _adjacent_runway_cell(taxiway: Vector2i, aircraft_size: String = "") -> Vector2i:
 	for neighbor in _orthogonal_neighbors(taxiway):
 		for building in placed_buildings:
@@ -1560,6 +1923,56 @@ func _runway_uid_for_cell(cell: Vector2i, aircraft_size: String = "") -> int:
 		if _cells_for(building["origin"], footprint).has(cell):
 			return int(building["uid"])
 	return -1
+
+
+func _farthest_cell_on_runway_uid(
+	entry: Vector2i,
+	runway_uid: int,
+	aircraft_size: String = ""
+) -> Vector2i:
+	var runway := _building_by_uid(runway_uid)
+	if runway.is_empty():
+		return entry
+
+	var definition := BuildingCatalog.get_definition(
+		String(runway.get("definition_id", ""))
+	)
+	if (
+		definition.is_empty()
+		or not _is_runway_definition(definition)
+	):
+		return entry
+	if (
+		not aircraft_size.is_empty()
+		and not _definition_supports_size(
+			definition,
+			aircraft_size
+		)
+	):
+		return entry
+
+	var footprint := _footprint_for(
+		definition,
+		int(runway.get("rotation", 0))
+	)
+	var cells := _cells_for(
+		runway["origin"],
+		footprint
+	)
+	if not cells.has(entry):
+		return entry
+
+	var farthest := entry
+	var best_distance := -1
+	for cell in cells:
+		var distance := (
+			absi(cell.x - entry.x)
+			+ absi(cell.y - entry.y)
+		)
+		if distance > best_distance:
+			best_distance = distance
+			farthest = cell
+	return farthest
 
 
 func _farthest_cell_on_same_runway(entry: Vector2i, aircraft_size: String = "") -> Vector2i:

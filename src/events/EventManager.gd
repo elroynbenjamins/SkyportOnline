@@ -524,6 +524,18 @@ func get_snapshot() -> Dictionary:
 		"theme": String(
 			event_definition.get("theme", "")
 		),
+		"pico_livery_cosmetic_id": String(
+			event_definition.get(
+				"pico_livery_cosmetic_id",
+				""
+			)
+		),
+		"featured_marker_text": String(
+			event_definition.get(
+				"featured_marker_text",
+				""
+			)
+		),
 		"currency_name": String(
 			event_definition.get("currency_name", "Event Currency")
 		),

@@ -20,6 +20,9 @@ var airport_grid: AirportGrid
 var separation_multiplier := 1.0
 var active_atc_building: Dictionary = {}
 var runway_strategy_by_uid: Dictionary = {}
+var runway_analytics: Dictionary = {}
+var analytics_assignment_count := 0
+var analytics_strategy_override_count := 0
 
 
 func configure(
@@ -102,7 +105,9 @@ func get_separation_multiplier() -> float:
 
 func _process(delta: float) -> void:
 	var runway_uids := _known_runway_uids()
+	_sync_runway_analytics(runway_uids)
 	for runway_uid in runway_uids:
+		_tick_runway_analytics(runway_uid, delta)
 		if active_by_runway.has(runway_uid):
 			continue
 		if last_operation_by_runway.has(runway_uid):
@@ -223,6 +228,12 @@ func _request_operation(
 		"operation": operation
 	}
 
+	_increment_runway_analytics(
+		runway_uid,
+		"requests",
+		1.0
+	)
+
 	if (
 		not active_by_runway.has(runway_uid)
 		and _separation_remaining_for_operation(
@@ -326,6 +337,59 @@ func get_taxiing_to_hold_count() -> int:
 
 func get_active_count() -> int:
 	return active_by_runway.size()
+
+
+func record_assignment_decision(
+	options: Array[Dictionary],
+	selected: Dictionary,
+	operation: String
+) -> void:
+	if selected.is_empty():
+		return
+
+	analytics_assignment_count += 1
+	var selected_uid := int(
+		selected.get("runway_uid", -1)
+	)
+	if selected_uid >= 0:
+		_increment_runway_analytics(
+			selected_uid,
+			"assignments",
+			1.0
+		)
+
+	if options.size() < 2:
+		return
+
+	var preferred_runways: Array[int] = []
+	for option in options:
+		var runway_uid := int(
+			option.get("runway_uid", -1)
+		)
+		if runway_uid < 0:
+			continue
+		if get_runway_strategy(runway_uid) == operation:
+			preferred_runways.append(runway_uid)
+
+	if (
+		preferred_runways.is_empty()
+		or preferred_runways.has(selected_uid)
+	):
+		return
+
+	analytics_strategy_override_count += 1
+	if selected_uid >= 0:
+		_increment_runway_analytics(
+			selected_uid,
+			"diversions_in",
+			1.0
+		)
+	for runway_uid in preferred_runways:
+		_increment_runway_analytics(
+			runway_uid,
+			"strategy_overrides",
+			1.0
+		)
 
 
 func reserve_departure_assignment(
@@ -496,6 +560,185 @@ func get_runway_assignment_score(
 	return score
 
 
+func get_runway_analytics(
+	runway_uid: int
+) -> Dictionary:
+	_ensure_runway_analytics(runway_uid)
+	var raw: Dictionary = runway_analytics.get(
+		runway_uid,
+		{}
+	)
+	var tracked := maxf(
+		float(raw.get("tracked_seconds", 0.0)),
+		0.0
+	)
+	var active := maxf(
+		float(raw.get("active_seconds", 0.0)),
+		0.0
+	)
+	var queue_wait := maxf(
+		float(raw.get("queue_wait_seconds", 0.0)),
+		0.0
+	)
+	var separation_wait := maxf(
+		float(raw.get("separation_wait_seconds", 0.0)),
+		0.0
+	)
+	var requests := maxi(
+		int(raw.get("requests", 0)),
+		0
+	)
+
+	var utilization_pct := 0.0
+	if tracked > 0.001:
+		utilization_pct = clampf(
+			active / tracked * 100.0,
+			0.0,
+			100.0
+		)
+
+	var average_wait := 0.0
+	if requests > 0:
+		average_wait = queue_wait / float(requests)
+
+	var separation_delay_pct := 0.0
+	if queue_wait > 0.001:
+		separation_delay_pct = clampf(
+			separation_wait / queue_wait * 100.0,
+			0.0,
+			100.0
+		)
+
+	var result := raw.duplicate(true)
+	result["runway_uid"] = runway_uid
+	result["strategy"] = get_runway_strategy(runway_uid)
+	result["strategy_label"] = RunwayStrategyRules.short_label(
+		get_runway_strategy(runway_uid)
+	)
+	result["utilization_pct"] = utilization_pct
+	result["average_wait_seconds"] = average_wait
+	result["separation_delay_pct"] = separation_delay_pct
+	return result
+
+
+func get_runway_analytics_snapshot() -> Dictionary:
+	var runway_uids := _known_runway_uids()
+	_sync_runway_analytics(runway_uids)
+
+	var runway_stats: Array[Dictionary] = []
+	var total_tracked := 0.0
+	var total_active := 0.0
+	var total_queue_wait := 0.0
+	var total_separation_wait := 0.0
+	var total_requests := 0
+	var total_movements := 0
+	var max_utilization := 0.0
+	var min_utilization := 100.0
+
+	for runway_uid in runway_uids:
+		var stats := get_runway_analytics(runway_uid)
+		runway_stats.append(stats)
+		total_tracked += float(
+			stats.get("tracked_seconds", 0.0)
+		)
+		total_active += float(
+			stats.get("active_seconds", 0.0)
+		)
+		total_queue_wait += float(
+			stats.get("queue_wait_seconds", 0.0)
+		)
+		total_separation_wait += float(
+			stats.get("separation_wait_seconds", 0.0)
+		)
+		total_requests += int(
+			stats.get("requests", 0)
+		)
+		total_movements += int(
+			stats.get("movements", 0)
+		)
+		var utilization := float(
+			stats.get("utilization_pct", 0.0)
+		)
+		max_utilization = maxf(
+			max_utilization,
+			utilization
+		)
+		min_utilization = minf(
+			min_utilization,
+			utilization
+		)
+
+	var runway_count := runway_stats.size()
+	if runway_count <= 0:
+		min_utilization = 0.0
+
+	var average_utilization := 0.0
+	if total_tracked > 0.001:
+		average_utilization = clampf(
+			total_active / total_tracked * 100.0,
+			0.0,
+			100.0
+		)
+
+	var average_wait := 0.0
+	if total_requests > 0:
+		average_wait = (
+			total_queue_wait / float(total_requests)
+		)
+
+	var separation_delay_pct := 0.0
+	if total_queue_wait > 0.001:
+		separation_delay_pct = clampf(
+			total_separation_wait
+			/ total_queue_wait
+			* 100.0,
+			0.0,
+			100.0
+		)
+
+	var override_pct := 0.0
+	if analytics_assignment_count > 0:
+		override_pct = clampf(
+			float(analytics_strategy_override_count)
+			/ float(analytics_assignment_count)
+			* 100.0,
+			0.0,
+			100.0
+		)
+
+	var tracked_session := 0.0
+	for stats in runway_stats:
+		tracked_session = maxf(
+			tracked_session,
+			float(
+				stats.get(
+					"tracked_seconds",
+					0.0
+				)
+			)
+		)
+
+	var summary := {
+		"runway_count": runway_count,
+		"tracked_seconds": tracked_session,
+		"average_utilization_pct": average_utilization,
+		"max_utilization_pct": max_utilization,
+		"min_utilization_pct": min_utilization,
+		"average_wait_seconds": average_wait,
+		"separation_delay_pct": separation_delay_pct,
+		"movements": total_movements,
+		"assignment_decisions": analytics_assignment_count,
+		"strategy_overrides": analytics_strategy_override_count,
+		"strategy_override_pct": override_pct,
+		"separation_multiplier": separation_multiplier,
+		"runways": runway_stats
+	}
+	summary["recommendation"] = (
+		RunwayAnalyticsRules.recommendation(summary)
+	)
+	return summary
+
+
 func get_runway_visual_state(
 	runway_uid: int
 ) -> Dictionary:
@@ -553,7 +796,8 @@ func get_atc_snapshot() -> Dictionary:
 				-1
 			)
 		),
-		"runway_strategy_count": runway_strategy_by_uid.size()
+		"runway_strategy_count": runway_strategy_by_uid.size(),
+		"analytics": get_runway_analytics_snapshot()
 	}
 
 
@@ -623,10 +867,28 @@ func _on_aircraft_cleared_runway(
 ) -> void:
 	if active_by_runway.has(runway_uid):
 		var completed: Dictionary = active_by_runway[runway_uid]
-		last_operation_by_runway[runway_uid] = String(
+		var completed_operation := String(
 			completed.get("operation", "")
 		)
+		last_operation_by_runway[runway_uid] = completed_operation
 		separation_elapsed_by_runway[runway_uid] = 0.0
+		_increment_runway_analytics(
+			runway_uid,
+			"movements",
+			1.0
+		)
+		if completed_operation == "arrival":
+			_increment_runway_analytics(
+				runway_uid,
+				"arrivals",
+				1.0
+			)
+		elif completed_operation == "departure":
+			_increment_runway_analytics(
+				runway_uid,
+				"departures",
+				1.0
+			)
 
 	active_by_runway.erase(runway_uid)
 	_grant_next(runway_uid)
@@ -741,6 +1003,101 @@ func _remove_invalid_requests(
 		) as AircraftPrototype
 		if aircraft == null or not is_instance_valid(aircraft):
 			queue.remove_at(index)
+
+
+func _sync_runway_analytics(
+	runway_uids: Array[int]
+) -> void:
+	for runway_uid in runway_uids:
+		_ensure_runway_analytics(runway_uid)
+
+
+func _ensure_runway_analytics(runway_uid: int) -> void:
+	if runway_uid < 0 or runway_analytics.has(runway_uid):
+		return
+	runway_analytics[runway_uid] = {
+		"tracked_seconds": 0.0,
+		"active_seconds": 0.0,
+		"queue_wait_seconds": 0.0,
+		"separation_wait_seconds": 0.0,
+		"requests": 0,
+		"movements": 0,
+		"arrivals": 0,
+		"departures": 0,
+		"assignments": 0,
+		"strategy_overrides": 0,
+		"diversions_in": 0
+	}
+
+
+func _increment_runway_analytics(
+	runway_uid: int,
+	key: String,
+	amount: float
+) -> void:
+	if runway_uid < 0:
+		return
+	_ensure_runway_analytics(runway_uid)
+	var data: Dictionary = runway_analytics[runway_uid]
+	if key in [
+		"requests",
+		"movements",
+		"arrivals",
+		"departures",
+		"assignments",
+		"strategy_overrides",
+		"diversions_in"
+	]:
+		data[key] = int(
+			data.get(key, 0)
+		) + int(round(amount))
+	else:
+		data[key] = float(
+			data.get(key, 0.0)
+		) + amount
+	runway_analytics[runway_uid] = data
+
+
+func _tick_runway_analytics(
+	runway_uid: int,
+	delta: float
+) -> void:
+	if runway_uid < 0 or delta <= 0.0:
+		return
+	_ensure_runway_analytics(runway_uid)
+
+	var data: Dictionary = runway_analytics[runway_uid]
+	data["tracked_seconds"] = float(
+		data.get("tracked_seconds", 0.0)
+	) + delta
+
+	if active_by_runway.has(runway_uid):
+		data["active_seconds"] = float(
+			data.get("active_seconds", 0.0)
+		) + delta
+
+	var queue_size := 0
+	if queues_by_runway.has(runway_uid):
+		var queue: Array = queues_by_runway[runway_uid]
+		queue_size = queue.size()
+
+	if queue_size > 0:
+		data["queue_wait_seconds"] = float(
+			data.get("queue_wait_seconds", 0.0)
+		) + float(queue_size) * delta
+
+		if (
+			not active_by_runway.has(runway_uid)
+			and get_separation_remaining(runway_uid) > 0.001
+		):
+			data["separation_wait_seconds"] = float(
+				data.get(
+					"separation_wait_seconds",
+					0.0
+				)
+			) + float(queue_size) * delta
+
+	runway_analytics[runway_uid] = data
 
 
 func _cleanup_planned_departures() -> void:

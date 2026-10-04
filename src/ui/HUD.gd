@@ -8,6 +8,8 @@ signal cancel_building_requested
 signal fleet_aircraft_selected(fleet_uid: int)
 signal fleet_aircraft_purchase_requested(aircraft_id: String)
 signal fleet_route_requested(fleet_uid: int, route_id: String)
+signal world_aircraft_selected(fleet_uid: int)
+signal world_route_requested(fleet_uid: int, route_id: String)
 
 var level_label: Label
 var coins_label: Label
@@ -36,6 +38,7 @@ var current_coins := 0
 var current_gems := 0
 var active_building_id := ""
 var fleet_panel: FleetPanel
+var world_map_panel: WorldMapPanel
 
 
 func _ready() -> void:
@@ -158,6 +161,7 @@ func _build_interface() -> void:
 	_build_catalog_panel(root)
 	_build_bottom_navigation(root)
 	_build_fleet_panel(root)
+	_build_world_map_panel(root)
 
 
 func _build_context_panel(root: Control) -> void:
@@ -292,6 +296,8 @@ func _build_bottom_navigation(root: Control) -> void:
 			button.disabled = true
 		elif item.begins_with("✈"):
 			button.pressed.connect(_on_fleet_nav_pressed)
+		elif item.begins_with("🌍"):
+			button.pressed.connect(_on_world_nav_pressed)
 		else:
 			button.disabled = true
 			button.tooltip_text = "Coming in a later pass."
@@ -318,11 +324,28 @@ func _build_fleet_panel(root: Control) -> void:
 	root.add_child(fleet_panel)
 
 
+func _build_world_map_panel(root: Control) -> void:
+	world_map_panel = WorldMapPanel.new()
+	world_map_panel.visible = false
+	world_map_panel.z_index = 55
+	world_map_panel.close_requested.connect(close_world)
+	world_map_panel.aircraft_selected.connect(
+		func(fleet_uid: int) -> void:
+			world_aircraft_selected.emit(fleet_uid)
+	)
+	world_map_panel.route_requested.connect(
+		func(fleet_uid: int, route_id: String) -> void:
+			world_route_requested.emit(fleet_uid, route_id)
+	)
+	root.add_child(world_map_panel)
+
+
 func open_fleet() -> void:
 	if fleet_panel == null:
 		return
 	if not active_building_id.is_empty():
 		cancel_building_requested.emit()
+	close_world()
 	fleet_panel.visible = true
 
 
@@ -331,8 +354,30 @@ func close_fleet() -> void:
 		fleet_panel.visible = false
 
 
+func open_world() -> void:
+	if world_map_panel == null:
+		return
+	if not active_building_id.is_empty():
+		cancel_building_requested.emit()
+	close_fleet()
+	world_map_panel.visible = true
+
+
+func close_world() -> void:
+	if world_map_panel != null:
+		world_map_panel.visible = false
+
+
 func is_fleet_open() -> bool:
 	return fleet_panel != null and fleet_panel.visible
+
+
+func is_world_open() -> bool:
+	return world_map_panel != null and world_map_panel.visible
+
+
+func is_management_overlay_open() -> bool:
+	return is_fleet_open() or is_world_open()
 
 
 func set_fleet_data(
@@ -353,8 +398,28 @@ func set_fleet_data(
 	)
 
 
+func set_world_data(
+	fleet_entries: Array[Dictionary],
+	route_entries: Array[Dictionary],
+	selected_fleet_uid: int,
+	resource_inventory: Dictionary
+) -> void:
+	if world_map_panel == null:
+		return
+	world_map_panel.configure(
+		fleet_entries,
+		route_entries,
+		selected_fleet_uid,
+		resource_inventory
+	)
+
+
 func _on_fleet_nav_pressed() -> void:
 	open_fleet()
+
+
+func _on_world_nav_pressed() -> void:
+	open_world()
 
 
 func set_build_catalog(definitions: Array[Dictionary]) -> void:

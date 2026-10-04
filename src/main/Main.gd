@@ -127,6 +127,9 @@ func _setup_ground_services() -> void:
 	ground_services.passenger_boarding_requested.connect(
 		_on_passenger_boarding_requested
 	)
+	ground_services.departure_route_requested.connect(
+		_on_departure_route_requested
+	)
 	add_child(ground_services)
 
 
@@ -325,6 +328,61 @@ func _spawn_aircraft_demos() -> void:
 	)
 
 
+func _on_departure_route_requested(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	var options := airport_grid.get_departure_route_options_for_stand(
+		aircraft.stand_uid,
+		aircraft.aircraft_size
+	)
+	var selected := runway_dispatcher.select_best_runway_option(
+		options,
+		"departure"
+	)
+	if selected.is_empty():
+		runway_dispatcher.release_departure_assignment(
+			aircraft
+		)
+		hud.set_operation_status(
+			"%s has no connected compatible runway" % label,
+			"warning"
+		)
+		return
+
+	var route: PackedVector2Array = selected.get(
+		"route",
+		PackedVector2Array()
+	)
+	if route.size() < 4:
+		return
+
+	var runway_uid := int(
+		selected.get("runway_uid", -1)
+	)
+	aircraft.set_departure_route(
+		route,
+		aircraft.aircraft_size,
+		int(selected.get("stand_uid", aircraft.stand_uid)),
+		runway_uid
+	)
+	runway_dispatcher.reserve_departure_assignment(
+		aircraft,
+		runway_uid
+	)
+
+	if options.size() > 1:
+		hud.set_operation_status(
+			"%s assigned runway %d • balancing traffic" % [
+				label,
+				runway_uid
+			]
+		)
+
+
 func _on_aircraft_serviced(
 	aircraft: AircraftPrototype,
 	label: String
@@ -519,13 +577,17 @@ func _assign_arrival_if_possible(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> bool:
-	var arrivals: Array[Dictionary] = airport_grid.get_arrival_routes(
+	var candidates: Array[Dictionary] = []
+	for route_info in airport_grid.get_arrival_route_options(
 		aircraft.aircraft_size
-	)
-
-	for route_info in arrivals:
-		var stand_uid := int(route_info.get("stand_uid", -1))
-		if stand_uid < 0 or stand_occupancy.has(stand_uid):
+	):
+		var stand_uid := int(
+			route_info.get("stand_uid", -1)
+		)
+		if (
+			stand_uid < 0
+			or stand_occupancy.has(stand_uid)
+		):
 			continue
 
 		var route: PackedVector2Array = route_info.get(
@@ -534,14 +596,56 @@ func _assign_arrival_if_possible(
 		)
 		if route.size() < 4:
 			continue
+		candidates.append(
+			route_info.duplicate(true)
+		)
 
-		var runway_uid := int(route_info.get("runway_uid", -1))
-		stand_occupancy[stand_uid] = aircraft
-		aircraft.set_arrival_route(route, stand_uid, runway_uid)
-		runway_dispatcher.request_arrival(aircraft, label)
-		return true
+	if candidates.is_empty():
+		return false
 
-	return false
+	var selected := runway_dispatcher.select_best_runway_option(
+		candidates,
+		"arrival"
+	)
+	if selected.is_empty():
+		return false
+
+	var stand_uid := int(
+		selected.get("stand_uid", -1)
+	)
+	var runway_uid := int(
+		selected.get("runway_uid", -1)
+	)
+	var route: PackedVector2Array = selected.get(
+		"route",
+		PackedVector2Array()
+	)
+	if (
+		stand_uid < 0
+		or runway_uid < 0
+		or route.size() < 4
+	):
+		return false
+
+	stand_occupancy[stand_uid] = aircraft
+	aircraft.set_arrival_route(
+		route,
+		stand_uid,
+		runway_uid
+	)
+	runway_dispatcher.request_arrival(
+		aircraft,
+		label
+	)
+
+	if candidates.size() > 1:
+		hud.set_operation_status(
+			"%s inbound • runway %d selected" % [
+				label,
+				runway_uid
+			]
+		)
+	return true
 
 
 func _release_stand(aircraft: AircraftPrototype) -> void:

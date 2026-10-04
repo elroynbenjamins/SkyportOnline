@@ -521,6 +521,9 @@ func get_snapshot() -> Dictionary:
 		"short_name": String(
 			event_definition.get("short_name", "EVENT")
 		),
+		"theme": String(
+			event_definition.get("theme", "")
+		),
 		"currency_name": String(
 			event_definition.get("currency_name", "Event Currency")
 		),

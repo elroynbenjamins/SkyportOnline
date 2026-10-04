@@ -26,6 +26,7 @@ var fleet_screen: FleetScreen
 var return_summary: FlightReturnSummary
 var resource_inventory_screen: ResourceInventoryScreen
 var passenger_upgrade_panel: PassengerUpgradePanel
+var service_upgrade_panel: ServiceUpgradePanel
 var passenger_economy: PassengerEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var current_profile: Dictionary = {}
@@ -104,6 +105,7 @@ func _start_gameplay() -> void:
 	_setup_rewarded_passenger_ad_bridge()
 	_setup_resource_inventory()
 	_setup_passenger_upgrade_panel()
+	_setup_service_upgrade_panel()
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
 
@@ -187,6 +189,14 @@ func _setup_passenger_upgrade_panel() -> void:
 		_on_passenger_upgrade_requested
 	)
 	add_child(passenger_upgrade_panel)
+
+
+func _setup_service_upgrade_panel() -> void:
+	service_upgrade_panel = ServiceUpgradePanel.new()
+	service_upgrade_panel.upgrade_requested.connect(
+		_on_service_upgrade_requested
+	)
+	add_child(service_upgrade_panel)
 
 
 func _spawn_aircraft_demos() -> void:
@@ -716,6 +726,7 @@ func _on_passenger_economy_changed(
 	if not updated.is_empty():
 		current_profile = updated
 
+	_refresh_waiting_passenger_cards()
 	if not processing_passenger_queue:
 		_try_board_waiting_aircraft()
 
@@ -780,6 +791,13 @@ func _attempt_boarding_and_departure(
 			"label": label
 		})
 
+	aircraft.set_turnaround_status(
+		"Passengers %d / %d\nWAITING" % [
+			passenger_economy.get_passengers(),
+			required
+		],
+		"warning"
+	)
 	hud.set_operation_status(
 		"%s waiting for passengers • %d / %d available" % [
 			label,
@@ -827,6 +845,21 @@ func _try_board_waiting_aircraft() -> void:
 	processing_passenger_queue = false
 
 
+func _refresh_waiting_passenger_cards() -> void:
+	for request in pending_passenger_departures:
+		var aircraft := request.get("aircraft") as AircraftPrototype
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+		var required := _passenger_requirement(aircraft)
+		aircraft.set_turnaround_status(
+			"Passengers %d / %d\nWAITING" % [
+				passenger_economy.get_passengers(),
+				required
+			],
+			"warning"
+		)
+
+
 func _is_passenger_waiter(aircraft: AircraftPrototype) -> bool:
 	for request in pending_passenger_departures:
 		if request.get("aircraft") == aircraft:
@@ -844,16 +877,36 @@ func _on_building_selected_world(building: Dictionary) -> void:
 	var definition := BuildingCatalog.get_definition(
 		String(building.get("definition_id", ""))
 	)
-	if not bool(definition.get("passenger_generator", false)):
-		hud.set_operation_status(
-			String(definition.get("name", "Airport building"))
+	var building_id := String(
+		building.get("definition_id", "")
+	)
+
+	if bool(definition.get("passenger_generator", false)):
+		if service_upgrade_panel != null:
+			service_upgrade_panel.close_panel()
+		passenger_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
 		)
 		return
 
-	passenger_upgrade_panel.open_building(
-		building,
-		resource_inventory,
-		coins
+	if ServiceUpgradeCatalog.is_upgradeable(building_id):
+		if passenger_upgrade_panel != null:
+			passenger_upgrade_panel.close_panel()
+		service_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
+	if passenger_upgrade_panel != null:
+		passenger_upgrade_panel.close_panel()
+	if service_upgrade_panel != null:
+		service_upgrade_panel.close_panel()
+	hud.set_operation_status(
+		String(definition.get("name", "Airport building"))
 	)
 
 
@@ -925,6 +978,87 @@ func _on_passenger_upgrade_requested(building_uid: int) -> void:
 					"name",
 					"Passenger building"
 				)
+			),
+			int(next.get("level", current_level + 1))
+		],
+		"success"
+	)
+
+
+func _on_service_upgrade_requested(
+	building_uid: int
+) -> void:
+	var building := airport_grid.get_building(building_uid)
+	if building.is_empty():
+		return
+
+	var building_id := String(
+		building.get("definition_id", "")
+	)
+	var current_level := int(
+		building.get("upgrade_level", 1)
+	)
+	var next := ServiceUpgradeCatalog.get_next_level(
+		building_id,
+		current_level
+	)
+	if next.is_empty():
+		return
+
+	var coin_cost := int(next.get("coin_cost", 0))
+	if coins < coin_cost:
+		service_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
+	var resource_cost: Dictionary = next.get(
+		"resource_cost",
+		{}
+	).duplicate(true)
+	var building_key := airport_grid.get_building_key(
+		building
+	)
+	var updated_profile := ProfileStore.apply_building_upgrade(
+		building_key,
+		int(next.get("level", current_level + 1)),
+		resource_cost
+	)
+	if updated_profile.is_empty():
+		service_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
+	coins -= coin_cost
+	current_profile = updated_profile
+	resource_inventory = current_profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
+
+	airport_grid.set_building_upgrade_level(
+		building_uid,
+		int(next.get("level", current_level + 1))
+	)
+	hud.set_player_data(player_level, coins, gems)
+
+	var refreshed := airport_grid.get_building(building_uid)
+	service_upgrade_panel.open_building(
+		refreshed,
+		resource_inventory,
+		coins
+	)
+	hud.set_operation_status(
+		"%s upgraded to Lv %d" % [
+			String(
+				BuildingCatalog.get_definition(
+					building_id
+				).get("name", "Service building")
 			),
 			int(next.get("level", current_level + 1))
 		],

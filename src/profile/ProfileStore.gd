@@ -39,6 +39,11 @@ static func load_profile() -> Dictionary:
 	if stored_economy is Dictionary:
 		economy_stats = stored_economy.duplicate(true)
 
+	var route_history := {}
+	var stored_routes = config.get_value("profile", "route_history", {})
+	if stored_routes is Dictionary:
+		route_history = stored_routes.duplicate(true)
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -57,6 +62,7 @@ static func load_profile() -> Dictionary:
 		"building_upgrades": building_upgrades,
 		"aircraft_mastery_hours": aircraft_mastery,
 		"economy_stats": economy_stats,
+		"route_history": route_history,
 		"passenger_gift_day": String(
 			config.get_value("profile", "passenger_gift_day", "")
 		),
@@ -100,6 +106,7 @@ static func create_guest_airport(
 		"building_upgrades": {},
 		"aircraft_mastery_hours": {},
 		"economy_stats": {},
+		"route_history": {},
 		"passenger_gift_day": "",
 		"passenger_gifts_received_today": 0
 	}
@@ -201,6 +208,60 @@ static func add_economy_stats(delta: Dictionary) -> Dictionary:
 		stats[key] = int(stats.get(key, 0)) + amount
 
 	profile["economy_stats"] = stats
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+
+
+static func record_route_completion(
+	destination_id: String,
+	passengers_boarded: int,
+	coins_earned: int,
+	xp_earned: int,
+	resources_earned: int,
+	condition_id: String = "normal"
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty() or destination_id.is_empty():
+		return {}
+
+	var history: Dictionary = profile.get(
+		"route_history",
+		{}
+	).duplicate(true)
+	var entry: Dictionary = history.get(
+		destination_id,
+		{}
+	).duplicate(true)
+
+	entry["flights_completed"] = int(
+		entry.get("flights_completed", 0)
+	) + 1
+	entry["passengers_boarded"] = int(
+		entry.get("passengers_boarded", 0)
+	) + maxi(passengers_boarded, 0)
+	entry["coins_earned"] = int(
+		entry.get("coins_earned", 0)
+	) + maxi(coins_earned, 0)
+	entry["xp_earned"] = int(
+		entry.get("xp_earned", 0)
+	) + maxi(xp_earned, 0)
+	entry["resources_earned"] = int(
+		entry.get("resources_earned", 0)
+	) + maxi(resources_earned, 0)
+
+	var condition_counts: Dictionary = entry.get(
+		"condition_counts",
+		{}
+	).duplicate(true)
+	var key := condition_id if not condition_id.is_empty() else "normal"
+	condition_counts[key] = int(condition_counts.get(key, 0)) + 1
+	entry["condition_counts"] = condition_counts
+
+	history[destination_id] = entry
+	profile["route_history"] = history
 	if not _save_profile(profile):
 		return {}
 	return profile

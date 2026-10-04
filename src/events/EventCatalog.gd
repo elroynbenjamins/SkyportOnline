@@ -181,6 +181,8 @@ static func all() -> Array[Dictionary]:
 					"name": "+25 Passengers",
 					"type": "passengers",
 					"passengers": 25,
+					"purpose_tag": "AIRPORT FLOW",
+					"value_hint": "Small boarding-buffer top-up.",
 					"price": 25,
 					"purchase_limit": 3
 				},
@@ -189,6 +191,8 @@ static func all() -> Array[Dictionary]:
 					"name": "+75 Passengers",
 					"type": "passengers",
 					"passengers": 75,
+					"purpose_tag": "AIRPORT FLOW",
+					"value_hint": "Largest one-time event passenger refill.",
 					"price": 60,
 					"purchase_limit": 1
 				}
@@ -363,6 +367,8 @@ static func all() -> Array[Dictionary]:
 					"name": "Winter Lights Airport Border",
 					"type": "cosmetic",
 					"cosmetic_id": "event_winter_airport_border",
+					"purpose_tag": "PERMANENT",
+					"value_hint": "Permanent seasonal airport style.",
 					"price": 145,
 					"purchase_limit": 1
 				},
@@ -371,6 +377,8 @@ static func all() -> Array[Dictionary]:
 					"name": "Snowy Terminal Skin",
 					"type": "cosmetic",
 					"cosmetic_id": "event_winter_terminal_skin",
+					"purpose_tag": "PERMANENT",
+					"value_hint": "Permanent snowy terminal appearance.",
 					"price": 180,
 					"purchase_limit": 1
 				},
@@ -379,6 +387,8 @@ static func all() -> Array[Dictionary]:
 					"name": "Candy Cane Pico Livery",
 					"type": "cosmetic",
 					"cosmetic_id": "event_winter_pico_livery",
+					"purpose_tag": "PERMANENT",
+					"value_hint": "Permanent Pico P8 seasonal livery.",
 					"price": 220,
 					"purchase_limit": 1
 				},
@@ -387,6 +397,8 @@ static func all() -> Array[Dictionary]:
 					"name": "New Year Alliance Flag",
 					"type": "cosmetic",
 					"cosmetic_id": "event_winter_alliance_flag",
+					"purpose_tag": "PERMANENT",
+					"value_hint": "Permanent placeable seasonal flag.",
 					"price": 130,
 					"purchase_limit": 1
 				},
@@ -395,6 +407,8 @@ static func all() -> Array[Dictionary]:
 					"name": "Snow Globe Garden",
 					"type": "cosmetic",
 					"cosmetic_id": "event_winter_snow_globe_garden",
+					"purpose_tag": "PERMANENT",
+					"value_hint": "Permanent placeable Winter decoration.",
 					"price": 110,
 					"purchase_limit": 1
 				},
@@ -403,6 +417,8 @@ static func all() -> Array[Dictionary]:
 					"name": "+25 Passengers",
 					"type": "passengers",
 					"passengers": 25,
+					"purpose_tag": "AIRPORT FLOW",
+					"value_hint": "Small boarding-buffer top-up.",
 					"price": 25,
 					"purchase_limit": 3
 				},
@@ -411,6 +427,8 @@ static func all() -> Array[Dictionary]:
 					"name": "+50 Passengers",
 					"type": "passengers",
 					"passengers": 50,
+					"purpose_tag": "AIRPORT FLOW",
+					"value_hint": "Strong passenger refill for busy departures.",
 					"price": 40,
 					"purchase_limit": 2
 				},
@@ -419,6 +437,8 @@ static func all() -> Array[Dictionary]:
 					"name": "+75 Passengers",
 					"type": "passengers",
 					"passengers": 75,
+					"purpose_tag": "AIRPORT FLOW",
+					"value_hint": "Largest one-time event passenger refill.",
 					"price": 60,
 					"purchase_limit": 1
 				},
@@ -427,6 +447,8 @@ static func all() -> Array[Dictionary]:
 					"name": "Winter Coin Pouch",
 					"type": "coins",
 					"coins": 2500,
+					"purpose_tag": "INFRASTRUCTURE",
+					"value_hint": "Useful toward early airport upgrades.",
 					"price": 35,
 					"purchase_limit": 2
 				},
@@ -435,6 +457,8 @@ static func all() -> Array[Dictionary]:
 					"name": "New Year Coin Case",
 					"type": "coins",
 					"coins": 6000,
+					"purpose_tag": "INFRASTRUCTURE",
+					"value_hint": "Larger push toward buildings and services.",
 					"price": 75,
 					"purchase_limit": 1
 				},
@@ -443,6 +467,8 @@ static func all() -> Array[Dictionary]:
 					"name": "Winter Supply Crate",
 					"type": "resource_choice",
 					"resource_amount": 1,
+					"purpose_tag": "UPGRADE TARGET",
+					"value_hint": "Choose one material needed for a specific upgrade.",
 					"resource_country_codes": [
 						"NL",
 						"BE",

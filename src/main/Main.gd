@@ -395,6 +395,12 @@ func _on_departure_route_requested(
 		)
 		return
 
+	runway_dispatcher.record_assignment_decision(
+		options,
+		selected,
+		"departure"
+	)
+
 	var route: PackedVector2Array = selected.get(
 		"route",
 		PackedVector2Array()
@@ -653,6 +659,12 @@ func _assign_arrival_if_possible(
 	)
 	if selected.is_empty():
 		return false
+
+	runway_dispatcher.record_assignment_decision(
+		candidates,
+		selected,
+		"arrival"
+	)
 
 	var stand_uid := int(
 		selected.get("stand_uid", -1)
@@ -1715,10 +1727,23 @@ func _on_building_selected_world(building: Dictionary) -> void:
 				)
 			)
 		)
+		var analytics_snapshot := (
+			runway_dispatcher.get_runway_analytics_snapshot()
+		)
+		var recommendation: Dictionary = (
+			analytics_snapshot.get(
+				"recommendation",
+				{}
+			)
+		)
 		runway_strategy_panel.open_runway(
 			building,
 			strategy,
-			airport_grid.get_runway_buildings().size()
+			airport_grid.get_runway_buildings().size(),
+			runway_dispatcher.get_runway_analytics(
+				int(building.get("uid", -1))
+			),
+			recommendation
 		)
 		return
 
@@ -1962,12 +1987,22 @@ func _on_runway_strategy_requested(
 		strategies
 	)
 
+	var analytics_snapshot := (
+		runway_dispatcher.get_runway_analytics_snapshot()
+	)
 	runway_strategy_panel.open_runway(
 		runway,
 		runway_dispatcher.get_runway_strategy(
 			runway_uid
 		),
-		airport_grid.get_runway_buildings().size()
+		airport_grid.get_runway_buildings().size(),
+		runway_dispatcher.get_runway_analytics(
+			runway_uid
+		),
+		analytics_snapshot.get(
+			"recommendation",
+			{}
+		)
 	)
 	hud.set_operation_status(
 		"Runway %d strategy • %s" % [

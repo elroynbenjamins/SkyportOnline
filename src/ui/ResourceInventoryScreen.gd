@@ -21,14 +21,16 @@ func open_inventory(
 	passengers: int,
 	passenger_capacity: int,
 	passengers_per_minute: float,
-	rewarded_ad_available: bool = false
+	rewarded_ad_available: bool = false,
+	rewarded_ad_status: Dictionary = {}
 ) -> void:
 	_refresh(
 		inventory,
 		passengers,
 		passenger_capacity,
 		passengers_per_minute,
-		rewarded_ad_available
+		rewarded_ad_available,
+		rewarded_ad_status
 	)
 	root.visible = true
 
@@ -136,23 +138,53 @@ func _refresh(
 	passengers: int,
 	passenger_capacity: int,
 	passengers_per_minute: float,
-	rewarded_ad_available: bool
+	rewarded_ad_available: bool,
+	rewarded_ad_status: Dictionary
 ) -> void:
 	passenger_label.text = (
 		"👥 Passengers: %d / %d   •   +%.1f per minute"
 		% [passengers, passenger_capacity, passengers_per_minute]
 	)
 
-	passenger_boost_button.disabled = not rewarded_ad_available
-	if rewarded_ad_available:
+	var ad_claimed := int(rewarded_ad_status.get("claimed", 0))
+	var ad_cap := int(
+		rewarded_ad_status.get(
+			"cap",
+			PassengerSupportRules.DAILY_REWARDED_AD_CAP
+		)
+	)
+	var ad_can_claim := bool(
+		rewarded_ad_status.get("can_claim", ad_claimed < ad_cap)
+	)
+	var passenger_storage_full := passengers >= passenger_capacity
+	passenger_boost_button.disabled = (
+		not rewarded_ad_available
+		or not ad_can_claim
+		or passenger_storage_full
+	)
+
+	if not rewarded_ad_available:
 		passenger_support_label.text = (
-			"Rewarded boost: +25 passengers after a completed ad.  "
-			+ "Friend gifts later: +10 each, max 3 incoming gifts/day."
+			"Rewarded +25 passenger hook is ready; ad provider not "
+			+ "connected yet. Friend gifts: +5 each • max 10 gifts / 50 "
+			+ "passengers per day."
+		)
+	elif not ad_can_claim:
+		passenger_support_label.text = (
+			"Rewarded passenger limit reached: %d / %d today.  "
+			+ "Friend gifts: +5 each • max 10 gifts / 50 passengers/day."
+			% [ad_claimed, ad_cap]
+		)
+	elif passenger_storage_full:
+		passenger_support_label.text = (
+			"Passenger storage is full. Spend passengers before using "
+			+ "a rewarded +25 boost. Friend gifts: +5 each • max 50/day."
 		)
 	else:
 		passenger_support_label.text = (
-			"Rewarded +25 passenger hook is ready; ad provider not "
-			+ "connected yet. Friend gifts later: +10 each, max 3/day."
+			"Rewarded boost: +25 passengers • %d / %d used today.  "
+			+ "Friend gifts: +5 each • max 10 gifts / 50 passengers/day."
+			% [ad_claimed, ad_cap]
 		)
 
 	for child in resource_list.get_children():

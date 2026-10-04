@@ -18,6 +18,11 @@ var service_pose_rotation := 0.0
 var has_service_pose_rotation := false
 var service_connection_target := Vector2.ZERO
 var has_service_connection_target := false
+var tow_aircraft: AircraftPrototype
+var tow_start_aircraft_position := Vector2.ZERO
+var tow_end_aircraft_position := Vector2.ZERO
+var tow_start_vehicle_position := Vector2.ZERO
+var tow_initialized := false
 
 
 func set_service_pose_rotation(value: float) -> void:
@@ -30,6 +35,15 @@ func set_service_connection_target(
 ) -> void:
 	service_connection_target = global_target
 	has_service_connection_target = true
+
+
+func configure_tow(
+	aircraft: AircraftPrototype,
+	target_position: Vector2
+) -> void:
+	tow_aircraft = aircraft
+	tow_end_aircraft_position = target_position
+	tow_initialized = false
 
 
 func start_service(
@@ -61,11 +75,60 @@ func _process(delta: float) -> void:
 				phase = "SERVICING"
 				if has_service_pose_rotation:
 					rotation = service_pose_rotation
+				if tow_aircraft != null and is_instance_valid(
+					tow_aircraft
+				):
+					tow_start_aircraft_position = (
+						tow_aircraft.global_position
+					)
+					tow_start_vehicle_position = global_position
+					tow_initialized = true
+					service_connection_target = (
+						tow_aircraft.global_position
+					)
+					has_service_connection_target = true
 				service_started.emit()
 				queue_redraw()
 		"SERVICING":
-			service_remaining -= delta
+			service_remaining = maxf(
+				service_remaining - delta,
+				0.0
+			)
+			if tow_initialized and tow_aircraft != null and (
+				is_instance_valid(tow_aircraft)
+			):
+				var progress := 1.0 - (
+					service_remaining / maxf(
+						service_duration,
+						0.001
+					)
+				)
+				var aircraft_delta := (
+					tow_end_aircraft_position
+					- tow_start_aircraft_position
+				)
+				tow_aircraft.global_position = (
+					tow_start_aircraft_position
+					+ aircraft_delta * progress
+				)
+				global_position = (
+					tow_start_vehicle_position
+					+ aircraft_delta * progress
+				)
+				service_connection_target = (
+					tow_aircraft.global_position
+				)
+				queue_redraw()
 			if service_remaining <= 0.0:
+				if tow_initialized and tow_aircraft != null and (
+					is_instance_valid(tow_aircraft)
+				):
+					tow_aircraft.global_position = (
+						tow_end_aircraft_position
+					)
+					service_connection_target = (
+						tow_aircraft.global_position
+					)
 				phase = "RETURNING"
 				route_index = 0
 				service_completed.emit()
@@ -132,6 +195,23 @@ func _draw() -> void:
 			draw_rect(
 				Rect2(Vector2(-10, -10), Vector2(12, 4)),
 				Color("f5ead8")
+			)
+		"pushback":
+			draw_rect(
+				Rect2(Vector2(12, -3), Vector2(10, 6)),
+				Color("d9b85f")
+			)
+			draw_line(
+				Vector2(18, -5),
+				Vector2(24, -7),
+				Color("e7cf8a"),
+				2.0
+			)
+			draw_line(
+				Vector2(18, 5),
+				Vector2(24, 7),
+				Color("e7cf8a"),
+				2.0
 			)
 
 	draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
@@ -213,6 +293,18 @@ func _draw_service_attachment() -> void:
 				),
 				Color("f5ead8")
 			)
+		"pushback":
+			draw_line(
+				Vector2(15, 0),
+				connection,
+				Color("d9b85f"),
+				4.0
+			)
+			draw_circle(
+				connection,
+				3.0,
+				Color("f1d98e")
+			)
 
 
 func _body_color() -> Color:
@@ -225,6 +317,8 @@ func _body_color() -> Color:
 			return Color("61a39c")
 		"catering":
 			return Color("c88962")
+		"pushback":
+			return Color("6f8191")
 		_:
 			return Color("7f8d96")
 

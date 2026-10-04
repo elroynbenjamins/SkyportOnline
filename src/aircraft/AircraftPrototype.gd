@@ -37,10 +37,29 @@ var taxi_turn_rate_deg := 145.0
 var arrival_runway_cleared := false
 var turnaround_panel: PanelContainer
 var turnaround_label: Label
+var taxi_traffic_controller: TaxiTrafficController
+var taxi_holding := false
+var taxi_hold_reason := ""
 
 
 func _ready() -> void:
 	_build_turnaround_status()
+
+
+func configure_taxi_traffic(
+	controller: TaxiTrafficController
+) -> void:
+	taxi_traffic_controller = controller
+	if taxi_traffic_controller != null:
+		taxi_traffic_controller.register_aircraft(self)
+
+
+func is_taxi_holding() -> bool:
+	return taxi_holding
+
+
+func get_taxi_hold_reason() -> String:
+	return taxi_hold_reason
 
 
 func configure_aircraft_type(type_id: String) -> void:
@@ -457,6 +476,17 @@ func _process_departure_taxi(delta: float) -> void:
 		route_index + 1,
 		runway_entry_index
 	)
+	if not _request_taxi_segment(
+		departure_route[route_index],
+		departure_route[target_index]
+	):
+		taxi_current_speed = _approach_taxi_speed(
+			taxi_current_speed,
+			0.0,
+			delta
+		)
+		return
+
 	var target_speed := TaxiMotionRules.speed_for_target(
 		departure_route,
 		route_index,
@@ -476,6 +506,7 @@ func _process_departure_taxi(delta: float) -> void:
 		taxi_turn_rate_deg
 	):
 		route_index = target_index
+		_release_taxi_segment()
 		if route_index >= runway_entry_index:
 			taxi_current_speed = 0.0
 			delay_remaining = lineup_delay
@@ -559,6 +590,17 @@ func _process_taxi_in(delta: float) -> void:
 		return
 
 	var target_index := route_index + 1
+	if not _request_taxi_segment(
+		arrival_route[route_index],
+		arrival_route[target_index]
+	):
+		taxi_current_speed = _approach_taxi_speed(
+			taxi_current_speed,
+			0.0,
+			delta
+		)
+		return
+
 	var target_speed := TaxiMotionRules.speed_for_target(
 		arrival_route,
 		route_index,
@@ -587,6 +629,7 @@ func _process_taxi_in(delta: float) -> void:
 		taxi_turn_rate_deg
 	):
 		route_index = target_index
+		_release_taxi_segment()
 
 		if not arrival_runway_cleared and route_index >= 2:
 			arrival_runway_cleared = true
@@ -596,6 +639,56 @@ func _process_taxi_in(delta: float) -> void:
 			taxi_current_speed = 0.0
 			_set_state("PARKED")
 			arrival_completed.emit()
+
+
+func _request_taxi_segment(
+	from_point: Vector2,
+	to_point: Vector2
+) -> bool:
+	if taxi_traffic_controller == null:
+		_set_taxi_hold(false, "")
+		return true
+
+	var result := taxi_traffic_controller.request_segment(
+		self,
+		from_point,
+		to_point
+	)
+	var allowed := bool(result.get("allowed", false))
+	if allowed:
+		_set_taxi_hold(false, "")
+		return true
+
+	_set_taxi_hold(
+		true,
+		String(result.get("reason", "traffic"))
+	)
+	return false
+
+
+func _release_taxi_segment() -> void:
+	if taxi_traffic_controller != null:
+		taxi_traffic_controller.release_segment(self)
+
+
+func _set_taxi_hold(
+	holding: bool,
+	reason: String
+) -> void:
+	if taxi_holding == holding and (
+		not holding or taxi_hold_reason == reason
+	):
+		return
+
+	taxi_holding = holding
+	taxi_hold_reason = reason if holding else ""
+	if holding:
+		set_turnaround_status(
+			"TAXI HOLD\n%s" % reason.capitalize(),
+			"warning"
+		)
+	elif state in ["TAXIING_OUT", "TAXIING_IN"]:
+		clear_turnaround_status()
 
 
 func _move_toward_point(
@@ -718,6 +811,9 @@ func _set_state(new_state: String) -> void:
 	if state == new_state:
 		return
 	state = new_state
+	if new_state not in ["TAXIING_OUT", "TAXIING_IN"]:
+		_release_taxi_segment()
+		_set_taxi_hold(false, "")
 	if new_state in [
 		"TAXIING_OUT",
 		"LINE_UP",

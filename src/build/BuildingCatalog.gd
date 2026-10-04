@@ -77,7 +77,9 @@ static func all() -> Array[Dictionary]:
 			"color": Color("bac6c8"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Basic passenger handling.",
+			"description": "Basic passenger handling and terminal capacity.",
+			"passenger_capacity_provider": true,
+			"passenger_upgradable": true,
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/terminal_small.svg", "res://assets/pixel/airport_v1/terminal_small_b.svg"]),
 			"world_sprite_size": Vector2(205, 154),
@@ -94,8 +96,10 @@ static func all() -> Array[Dictionary]:
 			"color": Color("4f7f9d"),
 			"rotatable": true,
 			"sizes": PackedStringArray([]),
-			"description": "Higher passenger flow with less storage than a Travel Office.",
-			"passenger_generator": true
+			"description": "Continuously brings passengers in at a high rate.",
+			"passenger_generator": true,
+			"passenger_generator_mode": "passive",
+			"passenger_upgradable": true
 		},
 		{
 			"id": "travel_office",
@@ -108,8 +112,10 @@ static func all() -> Array[Dictionary]:
 			"color": Color("4d8f8e"),
 			"rotatable": true,
 			"sizes": PackedStringArray([]),
-			"description": "Slowly attracts passengers and stores them for flights.",
-			"passenger_generator": true
+			"description": "Slowly attracts passengers continuously over time.",
+			"passenger_generator": true,
+			"passenger_generator_mode": "passive",
+			"passenger_upgradable": true
 		},
 		{
 			"id": "ground_ops_depot",

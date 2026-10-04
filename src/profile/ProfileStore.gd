@@ -29,6 +29,15 @@ static func load_profile() -> Dictionary:
 	if stored_upgrades is Dictionary:
 		building_upgrades = stored_upgrades.duplicate(true)
 
+	var runway_strategies := {}
+	var stored_runway_strategies = config.get_value(
+		"profile",
+		"runway_strategies",
+		{}
+	)
+	if stored_runway_strategies is Dictionary:
+		runway_strategies = stored_runway_strategies.duplicate(true)
+
 	var aircraft_mastery := {}
 	var stored_mastery = config.get_value("profile", "aircraft_mastery_hours", {})
 	if stored_mastery is Dictionary:
@@ -79,6 +88,7 @@ static func load_profile() -> Dictionary:
 			config.get_value("profile", "passenger_balance", 20)
 		),
 		"building_upgrades": building_upgrades,
+		"runway_strategies": runway_strategies,
 		"aircraft_mastery_hours": aircraft_mastery,
 		"economy_stats": economy_stats,
 		"route_history": route_history,
@@ -126,6 +136,7 @@ static func create_guest_airport(
 		"resource_inventory": {},
 		"passenger_balance": 20,
 		"building_upgrades": {},
+		"runway_strategies": {},
 		"aircraft_mastery_hours": {},
 		"economy_stats": {},
 		"route_history": {},
@@ -172,6 +183,49 @@ static func save_passenger_balance(value: int) -> Dictionary:
 	if not _save_profile(profile):
 		return {}
 	return profile
+
+
+static func set_runway_strategy(
+	building_key: String,
+	strategy: String
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty() or building_key.is_empty():
+		return {}
+
+	var normalized := RunwayStrategyRules.normalize(strategy)
+	var strategies: Dictionary = profile.get(
+		"runway_strategies",
+		{}
+	).duplicate(true)
+	if normalized == RunwayStrategyRules.AUTO:
+		strategies.erase(building_key)
+	else:
+		strategies[building_key] = normalized
+
+	profile["runway_strategies"] = strategies
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func get_runway_strategies() -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var stored: Dictionary = profile.get(
+		"runway_strategies",
+		{}
+	)
+	var result: Dictionary = {}
+	for building_key in stored.keys():
+		var strategy := RunwayStrategyRules.normalize(
+			String(stored[building_key])
+		)
+		if strategy != RunwayStrategyRules.AUTO:
+			result[String(building_key)] = strategy
+	return result
 
 
 static func apply_building_upgrade(

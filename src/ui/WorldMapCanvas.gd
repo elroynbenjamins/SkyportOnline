@@ -18,6 +18,7 @@ var view_mode := "EUROPE"
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(700, 430)
+	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	resized.connect(_layout_markers)
 	queue_redraw()
@@ -127,7 +128,9 @@ func _draw_geo_polygon(points: Array) -> void:
 		projected.append(_project(lon_lat.x, lon_lat.y))
 	if projected.size() >= 3:
 		draw_colored_polygon(projected, LAND)
-		draw_polyline(projected + PackedVector2Array([projected[0]]), LAND_EDGE, 1.5)
+		var outline := projected.duplicate()
+		outline.append(projected[0])
+		draw_polyline(outline, LAND_EDGE, 1.5)
 
 
 func _project_country(country: Dictionary) -> Vector2:

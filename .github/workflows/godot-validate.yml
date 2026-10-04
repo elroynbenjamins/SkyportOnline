@@ -105,3 +105,6 @@ jobs:
 
       - name: Test runway visual controls
         run: timeout 20s godot --headless --path . --script res://tests/runway_visual_control_test.gd
+
+      - name: Test cosmetic loadouts
+        run: timeout 20s godot --headless --path . --script res://tests/cosmetic_loadout_test.gd

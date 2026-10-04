@@ -90,6 +90,18 @@ func _run() -> void:
 	var runway_dispatcher := RunwayDispatcher.new()
 	root.add_child(runway_dispatcher)
 
+	plane_a.configure_aircraft_type("aerolet_100")
+	plane_b.configure_aircraft_type("aerolet_120")
+	plane_a.assign_flight_plan({
+		"destination_id": "test-a",
+		"city": "Test A",
+		"duration_seconds": 1.0
+	})
+	plane_b.assign_flight_plan({
+		"destination_id": "test-b",
+		"city": "Test B",
+		"duration_seconds": 1.0
+	})
 	plane_a.mark_service_complete()
 	plane_b.mark_service_complete()
 	runway_dispatcher.request_departure(plane_a, "Test A")
@@ -177,12 +189,18 @@ func _run() -> void:
 
 	var lifecycle_plane := AircraftPrototype.new()
 	root.add_child(lifecycle_plane)
+	lifecycle_plane.configure_aircraft_type("aerolet_100")
 	lifecycle_plane.set_departure_route(
 		starter_routes[0]["route"],
 		"S",
 		int(starter_routes[0]["stand_uid"]),
 		int(starter_routes[0]["runway_uid"])
 	)
+	lifecycle_plane.assign_flight_plan({
+		"destination_id": "test-flight",
+		"city": "Test Flight",
+		"duration_seconds": 0.5
+	})
 	lifecycle_plane.mark_service_complete()
 	lifecycle_plane.begin_departure_after_clearance()
 
@@ -203,7 +221,7 @@ func _run() -> void:
 		int(arrival_routes[0]["stand_uid"]),
 		int(arrival_routes[0]["runway_uid"])
 	)
-	lifecycle_plane._process(lifecycle_plane.demo_flight_duration + 0.1)
+	lifecycle_plane._process(0.6)
 	if lifecycle_plane.state != "HOLDING_FOR_ARRIVAL":
 		_fail("Finished demo flight should request an arrival.")
 		return

@@ -944,6 +944,80 @@ func _on_event_changed(snapshot: Dictionary) -> void:
 		event_screen.refresh(snapshot)
 
 
+func _refresh_aircraft_event_visuals(
+	snapshot: Dictionary
+) -> void:
+	for aircraft in aircraft_demos:
+		_apply_event_visual_to_aircraft(
+			aircraft,
+			snapshot
+		)
+
+
+func _apply_event_visual_to_aircraft(
+	aircraft: AircraftPrototype,
+	snapshot: Dictionary
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	if not bool(snapshot.get("active", false)):
+		aircraft.set_event_visual(false, "", "", false)
+		return
+
+	var featured: Array = snapshot.get(
+		"featured_destinations",
+		[]
+	)
+	var plan := aircraft.get_flight_plan()
+	var destination_id := String(
+		plan.get("destination_id", "")
+	)
+	var is_featured := (
+		not destination_id.is_empty()
+		and featured.has(destination_id)
+	)
+
+	var theme := String(snapshot.get("theme", ""))
+	var marker_text := ""
+	match theme:
+		"christmas_new_year":
+			marker_text = "XMAS"
+		"autumn":
+			marker_text = "EVENT"
+		_:
+			marker_text = "EVENT"
+
+	var owned: Dictionary = current_profile.get(
+		"owned_cosmetics",
+		{}
+	)
+	var livery_enabled := false
+	if aircraft.aircraft_type_id == "pico_p8":
+		match theme:
+			"christmas_new_year":
+				livery_enabled = bool(
+					owned.get(
+						"event_xmas_pico_livery",
+						false
+					)
+				)
+			"autumn":
+				livery_enabled = bool(
+					owned.get(
+						"event_autumn_pico_livery",
+						false
+					)
+				)
+
+	aircraft.set_event_visual(
+		is_featured,
+		theme,
+		marker_text if is_featured else "",
+		livery_enabled
+	)
+
+
 func _on_event_message(text: String, tone: String) -> void:
 	hud.set_operation_status(text, tone)
 

@@ -208,6 +208,12 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 	elif id == "autumn_leaf_garden":
 		_draw_autumn_leaf_garden(origin, footprint)
 
+	elif id == "xmas_event_flag":
+		_draw_xmas_event_flag(origin)
+
+	elif id == "xmas_snow_globe_garden":
+		_draw_xmas_snow_globe_garden(origin, footprint)
+
 
 func set_event_visual_state(
 	snapshot: Dictionary,
@@ -221,7 +227,11 @@ func set_event_visual_state(
 func _draw_event_theme_overlay() -> void:
 	if not bool(event_visual_snapshot.get("active", false)):
 		return
-	if String(event_visual_snapshot.get("theme", "")) != "autumn":
+
+	var theme := String(
+		event_visual_snapshot.get("theme", "")
+	)
+	if theme not in ["autumn", "christmas_new_year"]:
 		return
 
 	for building in placed_buildings:
@@ -239,23 +249,44 @@ func _draw_event_theme_overlay() -> void:
 			building.get("origin", Vector2i.ZERO),
 			footprint
 		)
-		_draw_autumn_terminal_bunting(center)
 
-		if bool(
-			event_owned_cosmetics.get(
-				"event_autumn_terminal_skin",
-				false
-			)
-		):
-			_draw_autumn_terminal_skin(center)
+		match theme:
+			"autumn":
+				_draw_autumn_terminal_bunting(center)
+				if bool(
+					event_owned_cosmetics.get(
+						"event_autumn_terminal_skin",
+						false
+					)
+				):
+					_draw_autumn_terminal_skin(center)
+			"christmas_new_year":
+				_draw_xmas_terminal_lights(center)
+				if bool(
+					event_owned_cosmetics.get(
+						"event_xmas_terminal_skin",
+						false
+					)
+				):
+					_draw_xmas_terminal_skin(center)
 
-	if bool(
-		event_owned_cosmetics.get(
-			"event_autumn_airport_border",
-			false
-		)
-	):
-		_draw_autumn_airport_border()
+	match theme:
+		"autumn":
+			if bool(
+				event_owned_cosmetics.get(
+					"event_autumn_airport_border",
+					false
+				)
+			):
+				_draw_autumn_airport_border()
+		"christmas_new_year":
+			if bool(
+				event_owned_cosmetics.get(
+					"event_xmas_airport_border",
+					false
+				)
+			):
+				_draw_xmas_airport_border()
 
 
 func _draw_autumn_terminal_bunting(center: Vector2) -> void:
@@ -390,6 +421,165 @@ func _draw_autumn_leaf_garden(
 		false,
 		2.0
 	)
+
+
+func _draw_xmas_terminal_lights(center: Vector2) -> void:
+	var left := center + Vector2(-60, -72)
+	var right := center + Vector2(60, -72)
+	draw_line(left, right, Color("d8ecf2"), 2.0)
+
+	var colors := [
+		Color("d83f48"),
+		Color("2f9b5f"),
+		Color("f2c94c"),
+		Color("7fc9e8")
+	]
+	for index in range(9):
+		var bulb := center + Vector2(
+			-52 + index * 13,
+			-69 + (index % 2) * 3
+		)
+		draw_circle(
+			bulb,
+			3.2,
+			colors[index % colors.size()]
+		)
+
+
+func _draw_xmas_terminal_skin(center: Vector2) -> void:
+	var canopy := Rect2(
+		center + Vector2(-76, -63),
+		Vector2(152, 16)
+	)
+	draw_rect(canopy, Color("dceef5", 0.92), true)
+	draw_rect(canopy, Color("b72f3c", 0.95), false, 2.0)
+
+	for index in range(7):
+		var snow := center + Vector2(
+			-60 + index * 20,
+			-82 + (index % 2) * 4
+		)
+		draw_circle(snow, 4.0, Color("f8fdff"))
+		draw_line(
+			snow + Vector2(-4, 0),
+			snow + Vector2(4, 0),
+			Color("d8eef7"),
+			1.0
+		)
+
+
+func _draw_xmas_airport_border() -> void:
+	var colors := [
+		Color("c93642", 0.82),
+		Color("2f8f58", 0.82),
+		Color("f2c94c", 0.82)
+	]
+	var color_index := 0
+
+	for parcel_variant in parcels.values():
+		var parcel: Dictionary = parcel_variant
+		if not bool(parcel.get("owned", false)):
+			continue
+
+		var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
+		var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
+		for y in range(sy, sy + PARCEL_SIZE):
+			for x in range(sx, sx + PARCEL_SIZE):
+				if not (
+					x == sx
+					or x == sx + PARCEL_SIZE - 1
+					or y == sy
+					or y == sy + PARCEL_SIZE - 1
+				):
+					continue
+				var p := _tile_points(
+					tile_to_world(Vector2(x, y))
+				)
+				draw_polyline(
+					PackedVector2Array([
+						p[0], p[1], p[2], p[3], p[0]
+					]),
+					colors[color_index % colors.size()],
+					2.0
+				)
+				color_index += 1
+
+
+func _draw_xmas_event_flag(origin: Vector2i) -> void:
+	var center := tile_to_world(
+		Vector2(origin.x, origin.y)
+	)
+	var base := center + Vector2(0, 8)
+	var top := center + Vector2(0, -38)
+	draw_line(base, top, Color("e6edf0"), 3.0)
+	var flag := PackedVector2Array([
+		top,
+		top + Vector2(25, 7),
+		top + Vector2(0, 15)
+	])
+	draw_colored_polygon(flag, Color("b72f3c"))
+	draw_line(
+		top + Vector2(4, 4),
+		top + Vector2(18, 10),
+		Color("f2c94c"),
+		2.0
+	)
+	draw_circle(
+		base + Vector2(0, 3),
+		6.0,
+		Color("8aa5b0")
+	)
+
+
+func _draw_xmas_snow_globe_garden(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> void:
+	var center := _footprint_center_world(origin, footprint)
+
+	draw_circle(
+		center + Vector2(0, -7),
+		18.0,
+		Color("d9f3ff", 0.45)
+	)
+	draw_circle(
+		center + Vector2(0, -7),
+		18.0,
+		Color("eaf9ff"),
+		false,
+		2.0
+	)
+	draw_rect(
+		Rect2(
+			center + Vector2(-13, 10),
+			Vector2(26, 7)
+		),
+		Color("b72f3c"),
+		true
+	)
+
+	var tree_top := center + Vector2(0, -20)
+	for tier in range(3):
+		var y := float(tier) * 8.0
+		var half_width := 6.0 + float(tier) * 4.0
+		var points := PackedVector2Array([
+			tree_top + Vector2(0, y - 6),
+			tree_top + Vector2(-half_width, y + 6),
+			tree_top + Vector2(half_width, y + 6)
+		])
+		draw_colored_polygon(points, Color("2f8f58"))
+	draw_circle(
+		center + Vector2(0, -27),
+		2.8,
+		Color("f2c94c")
+	)
+
+	for index in range(6):
+		var snow := center + Vector2(
+			-10 + (index % 3) * 10,
+			-16 + (index / 3) * 11
+		)
+		draw_circle(snow, 1.8, Color("ffffff"))
 
 
 func _definition_has_world_sprite(definition: Dictionary) -> bool:

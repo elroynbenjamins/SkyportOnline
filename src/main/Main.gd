@@ -131,6 +131,9 @@ func _setup_runway_dispatcher() -> void:
 	runway_dispatcher = RunwayDispatcher.new()
 	runway_dispatcher.status_changed.connect(_on_runway_status)
 	runway_dispatcher.queue_changed.connect(_on_runway_queue_changed)
+	runway_dispatcher.runway_visual_state_changed.connect(
+		_on_runway_visual_state_changed
+	)
 	add_child(runway_dispatcher)
 	ground_services.aircraft_serviced.connect(_on_aircraft_serviced)
 
@@ -314,6 +317,16 @@ func _on_passenger_boarding_requested(
 
 func _on_runway_status(text: String, tone: String) -> void:
 	hud.set_operation_status(text, tone)
+
+
+func _on_runway_visual_state_changed(
+	runway_uid: int,
+	state: Dictionary
+) -> void:
+	airport_grid.set_runway_visual_state(
+		runway_uid,
+		state
+	)
 
 
 func _on_taxi_hold_changed(

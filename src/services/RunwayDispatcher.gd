@@ -3,6 +3,10 @@ extends Node
 
 signal status_changed(text: String, tone: String)
 signal queue_changed(waiting: int, active: int)
+signal runway_visual_state_changed(
+	runway_uid: int,
+	state: Dictionary
+)
 
 var active_by_runway: Dictionary = {}
 var queues_by_runway: Dictionary = {}
@@ -35,8 +39,10 @@ func request_departure(
 
 	departure_taxi_pending[aircraft_id] = {
 		"aircraft": aircraft,
-		"label": label
+		"label": label,
+		"runway_uid": aircraft.runway_uid
 	}
+	_emit_runway_visual_state(aircraft.runway_uid)
 	aircraft.hold_short_reached.connect(
 		_on_departure_hold_short.bind(
 			aircraft,
@@ -125,6 +131,7 @@ func _request_operation(
 	else:
 		queue.append(request)
 	queues_by_runway[runway_uid] = queue
+	_emit_runway_visual_state(runway_uid)
 
 	var action_text := (
 		"runway entry"
@@ -170,6 +177,12 @@ func get_active_count() -> int:
 	return active_by_runway.size()
 
 
+func get_runway_visual_state(
+	runway_uid: int
+) -> Dictionary:
+	return _build_runway_visual_state(runway_uid)
+
+
 func _waiting_count_for_operation(
 	operation: String
 ) -> int:
@@ -203,6 +216,7 @@ func _grant_clearance(
 	)
 
 	active_by_runway[runway_uid] = request
+	_emit_runway_visual_state(runway_uid)
 	aircraft.runway_cleared.connect(
 		_on_aircraft_cleared_runway.bind(
 			runway_uid,
@@ -233,6 +247,7 @@ func _on_aircraft_cleared_runway(
 ) -> void:
 	active_by_runway.erase(runway_uid)
 	_grant_next(runway_uid)
+	_emit_runway_visual_state(runway_uid)
 	_emit_queue_status()
 
 
@@ -244,6 +259,7 @@ func _grant_next(runway_uid: int) -> void:
 	_remove_invalid_requests(queue)
 	if queue.is_empty():
 		queues_by_runway.erase(runway_uid)
+		_emit_runway_visual_state(runway_uid)
 		return
 
 	# Arrivals always take priority over departures already holding short.
@@ -297,6 +313,75 @@ func _cleanup_pending_departures() -> void:
 		) as AircraftPrototype
 		if aircraft == null or not is_instance_valid(aircraft):
 			departure_taxi_pending.erase(key)
+
+
+func _build_runway_visual_state(
+	runway_uid: int
+) -> Dictionary:
+	var active_operation := ""
+	if active_by_runway.has(runway_uid):
+		var active: Dictionary = active_by_runway[runway_uid]
+		active_operation = String(
+			active.get("operation", "")
+		)
+
+	var waiting_arrivals := 0
+	var waiting_departures := 0
+	if queues_by_runway.has(runway_uid):
+		var queue: Array = queues_by_runway[runway_uid]
+		for request_variant in queue:
+			var request: Dictionary = request_variant
+			match String(request.get("operation", "")):
+				"arrival":
+					waiting_arrivals += 1
+				"departure":
+					waiting_departures += 1
+
+	var taxiing_departures := 0
+	for pending_variant in departure_taxi_pending.values():
+		var pending: Dictionary = pending_variant
+		if int(pending.get("runway_uid", -1)) == runway_uid:
+			taxiing_departures += 1
+
+	var status := "clear"
+	var stop_bar := "off"
+	if active_operation == "arrival":
+		status = "occupied_arrival"
+		stop_bar = "red"
+	elif active_operation == "departure":
+		status = "occupied_departure"
+		stop_bar = "red"
+	elif waiting_arrivals > 0:
+		status = "arrival_priority"
+		stop_bar = "amber"
+	elif waiting_departures > 0:
+		status = "departure_wait"
+		stop_bar = "red"
+	elif taxiing_departures > 0:
+		status = "departure_approaching"
+		stop_bar = "amber"
+
+	return {
+		"runway_uid": runway_uid,
+		"status": status,
+		"stop_bar": stop_bar,
+		"active_operation": active_operation,
+		"waiting_arrivals": waiting_arrivals,
+		"waiting_departures": waiting_departures,
+		"taxiing_departures": taxiing_departures,
+		"arrival_priority": waiting_arrivals > 0
+	}
+
+
+func _emit_runway_visual_state(
+	runway_uid: int
+) -> void:
+	if runway_uid < 0:
+		return
+	runway_visual_state_changed.emit(
+		runway_uid,
+		_build_runway_visual_state(runway_uid)
+	)
 
 
 func _emit_queue_status() -> void:

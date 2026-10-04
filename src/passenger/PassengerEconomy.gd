@@ -2,6 +2,7 @@ class_name PassengerEconomy
 extends Node
 
 signal changed(passengers: int, capacity: int, per_minute: float)
+signal passive_passengers_generated(amount: int)
 
 var airport_grid: AirportGrid
 var passengers := 0.0
@@ -27,7 +28,11 @@ func _process(delta: float) -> void:
 		float(capacity)
 	)
 
-	if int(floor(passengers)) != old_whole:
+	var new_whole := int(floor(passengers))
+	if new_whole != old_whole:
+		passive_passengers_generated.emit(
+			maxi(new_whole - old_whole, 0)
+		)
 		_emit_changed()
 
 	persist_accumulator += delta

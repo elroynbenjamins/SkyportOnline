@@ -17,6 +17,15 @@ var airside_status_label: Label
 var operation_status_label: Label
 var atc_status_label: Label
 
+var airside_status_chip: Button
+var operation_status_chip: Button
+var atc_status_chip: Button
+var status_detail_panel: PanelContainer
+var status_detail_title: Label
+var status_detail_body: Label
+var active_status_chip := ""
+var status_details: Dictionary = {}
+
 var parcel_panel: PanelContainer
 var parcel_title: Label
 var parcel_requirements: Label
@@ -133,58 +142,101 @@ func _build_interface() -> void:
 	objective.add_theme_font_size_override("font_size", 15)
 	objective_panel.add_child(objective)
 
-	var airside_panel := PanelContainer.new()
-	airside_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	airside_panel.offset_left = 12
-	airside_panel.offset_top = 82
-	airside_panel.offset_right = 250
-	airside_panel.offset_bottom = 146
-	root.add_child(airside_panel)
-	GameUIStyle.apply_panel(airside_panel, "dark")
+	var status_strip := HBoxContainer.new()
+	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	status_strip.offset_left = 12
+	status_strip.offset_top = 82
+	status_strip.offset_right = 680
+	status_strip.offset_bottom = 128
+	status_strip.add_theme_constant_override("separation", 6)
+	root.add_child(status_strip)
 
-	airside_status_label = Label.new()
-	airside_status_label.text = "AIRFIELD STATUS\nChecking taxiway network..."
-	airside_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	airside_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	airside_status_label.add_theme_font_size_override("font_size", 14)
-	airside_panel.add_child(airside_status_label)
-
-	var operation_panel := PanelContainer.new()
-	operation_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	operation_panel.offset_left = 260
-	operation_panel.offset_top = 82
-	operation_panel.offset_right = 460
-	operation_panel.offset_bottom = 146
-	root.add_child(operation_panel)
-	GameUIStyle.apply_panel(operation_panel, "dark")
-
-	operation_status_label = Label.new()
-	operation_status_label.text = "GROUND OPS\nPreparing first aircraft..."
-	operation_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	operation_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	operation_status_label.add_theme_font_size_override("font_size", 13)
-	operation_panel.add_child(operation_status_label)
-
-	var atc_panel := PanelContainer.new()
-	atc_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	atc_panel.offset_left = 470
-	atc_panel.offset_top = 82
-	atc_panel.offset_right = 850
-	atc_panel.offset_bottom = 146
-	root.add_child(atc_panel)
-	GameUIStyle.apply_panel(atc_panel, "gold")
-
-	atc_status_label = Label.new()
-	atc_status_label.text = "RUNWAY CONTROL\nNo active movements"
-	atc_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	atc_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	atc_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	atc_status_label.add_theme_font_size_override("font_size", 12)
-	atc_status_label.add_theme_color_override(
-		"font_color",
-		Color("9fe3b7")
+	airside_status_chip = Button.new()
+	airside_status_chip.text = "🛬 AIRFIELD\nCHECKING..."
+	airside_status_chip.custom_minimum_size = Vector2(190, 44)
+	GameUIStyle.apply_button(airside_status_chip, "nav", true)
+	airside_status_chip.pressed.connect(
+		_on_status_chip_pressed.bind("airside")
 	)
-	atc_panel.add_child(atc_status_label)
+	status_strip.add_child(airside_status_chip)
+
+	operation_status_chip = Button.new()
+	operation_status_chip.text = "🧰 GROUND OPS\nPREPARING..."
+	operation_status_chip.custom_minimum_size = Vector2(210, 44)
+	GameUIStyle.apply_button(operation_status_chip, "nav", true)
+	operation_status_chip.pressed.connect(
+		_on_status_chip_pressed.bind("operations")
+	)
+	status_strip.add_child(operation_status_chip)
+
+	atc_status_chip = Button.new()
+	atc_status_chip.text = "🗼 ATC\nCLEAR"
+	atc_status_chip.custom_minimum_size = Vector2(230, 44)
+	GameUIStyle.apply_button(atc_status_chip, "nav", true)
+	atc_status_chip.pressed.connect(
+		_on_status_chip_pressed.bind("atc")
+	)
+	status_strip.add_child(atc_status_chip)
+
+	status_detail_panel = PanelContainer.new()
+	status_detail_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	status_detail_panel.offset_left = 12
+	status_detail_panel.offset_top = 134
+	status_detail_panel.offset_right = 680
+	status_detail_panel.offset_bottom = 216
+	status_detail_panel.visible = false
+	root.add_child(status_detail_panel)
+	GameUIStyle.apply_panel(status_detail_panel, "raised")
+
+	var detail_row := HBoxContainer.new()
+	detail_row.add_theme_constant_override("separation", 12)
+	status_detail_panel.add_child(detail_row)
+
+	var detail_text := VBoxContainer.new()
+	detail_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_row.add_child(detail_text)
+
+	status_detail_title = Label.new()
+	status_detail_title.text = "AIRPORT STATUS"
+	GameUIStyle.heading(status_detail_title, 15)
+	detail_text.add_child(status_detail_title)
+
+	status_detail_body = Label.new()
+	status_detail_body.text = "Select a status chip for details."
+	status_detail_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_detail_body.add_theme_font_size_override("font_size", 13)
+	GameUIStyle.muted(status_detail_body)
+	detail_text.add_child(status_detail_body)
+
+	var detail_close := Button.new()
+	detail_close.text = "✕"
+	detail_close.custom_minimum_size = Vector2(44, 44)
+	GameUIStyle.apply_button(detail_close, "secondary", true)
+	detail_close.pressed.connect(_close_status_detail)
+	detail_row.add_child(detail_close)
+
+	# Legacy labels remain as lightweight data sinks for existing setters/tests.
+	airside_status_label = Label.new()
+	operation_status_label = Label.new()
+	atc_status_label = Label.new()
+
+	status_details = {
+		"airside": {
+			"title": "AIRFIELD",
+			"body": "Checking taxiway network...",
+			"tone": "normal"
+		},
+		"operations": {
+			"title": "GROUND OPS",
+			"body": "Preparing first aircraft...",
+			"tone": "normal"
+		},
+		"atc": {
+			"title": "RUNWAY CONTROL",
+			"body": "No active movements",
+			"tone": "success"
+		}
+	}
 
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -671,23 +723,20 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 
 
 func set_operation_status(text: String, tone: String = "normal") -> void:
-	if operation_status_label == null:
-		return
+	if operation_status_label != null:
+		operation_status_label.text = "GROUND OPS\n" + text
 
-	operation_status_label.text = "GROUND OPS\n" + text
-	match tone:
-		"warning":
-			operation_status_label.add_theme_color_override("font_color", Color("ffc266"))
-		"success":
-			operation_status_label.add_theme_color_override("font_color", Color("9fe3b7"))
-		_:
-			operation_status_label.add_theme_color_override("font_color", Color("f2f5f4"))
+	_set_status_chip(
+		"operations",
+		operation_status_chip,
+		"GROUND OPS",
+		_compact_status(text),
+		text,
+		tone
+	)
 
 
 func set_atc_state(snapshot: Dictionary) -> void:
-	if atc_status_label == null:
-		return
-
 	var atc_level := int(
 		snapshot.get("atc_level", 0)
 	)
@@ -707,12 +756,16 @@ func set_atc_state(snapshot: Dictionary) -> void:
 		primary = primary_value
 
 	if primary.is_empty():
-		atc_status_label.text = "RUNWAY CONTROL • %s\nNo active movements" % (
-			control_text
-		)
-		atc_status_label.add_theme_color_override(
-			"font_color",
-			Color("9fe3b7")
+		var empty_text := "%s • No active movements" % control_text
+		if atc_status_label != null:
+			atc_status_label.text = "RUNWAY CONTROL\n" + empty_text
+		_set_status_chip(
+			"atc",
+			atc_status_chip,
+			"RUNWAY CONTROL",
+			"✓ CLEAR",
+			empty_text,
+			"success"
 		)
 		return
 
@@ -724,57 +777,231 @@ func set_atc_state(snapshot: Dictionary) -> void:
 		primary.get("separation_remaining", 0.0)
 	)
 	var status := String(primary.get("status", "clear"))
+	var waiting := int(primary.get("waiting", 0))
 
-	atc_status_label.text = "RUNWAY CONTROL • %s • RWY %d\n%s" % [
+	var detail := "%s • RWY %d\n%s" % [
 		control_text,
 		runway_uid,
 		sequence
 	]
-
+	var tone := "success"
+	var compact := "✓ RWY %d CLEAR" % runway_uid
 	if status.begins_with("occupied"):
-		atc_status_label.add_theme_color_override(
-			"font_color",
-			Color("ff9298")
-		)
-	elif spacing > 0.001 or (
-		int(primary.get("waiting", 0)) > 0
-	):
-		atc_status_label.add_theme_color_override(
-			"font_color",
-			Color("ffc266")
-		)
-	else:
-		atc_status_label.add_theme_color_override(
-			"font_color",
-			Color("9fe3b7")
-		)
+		tone = "danger"
+		compact = "● RWY %d BUSY" % runway_uid
+	elif spacing > 0.001 or waiting > 0:
+		tone = "warning"
+		compact = "⏳ RWY %d • %d WAIT" % [
+			runway_uid,
+			waiting
+		]
+
+	if atc_status_label != null:
+		atc_status_label.text = "RUNWAY CONTROL\n" + detail
+
+	_set_status_chip(
+		"atc",
+		atc_status_chip,
+		"RUNWAY CONTROL",
+		compact,
+		detail,
+		tone
+	)
 
 
 func set_airside_status(status: Dictionary) -> void:
-	if airside_status_label == null:
-		return
-
 	var stands_total := int(status.get("stands_total", 0))
 	var stands_connected := int(status.get("stands_connected", 0))
 	var hangars_total := int(status.get("hangars_total", 0))
 	var hangars_connected := int(status.get("hangars_connected", 0))
 	var runways := int(status.get("runways", 0))
 
-	if stands_connected == stands_total and hangars_connected == hangars_total:
-		airside_status_label.text = "AIRFIELD STATUS  ✓\n%d runway%s • %d/%d stands connected" % [
+	var detail := ""
+	var compact := ""
+	var tone := "success"
+
+	if (
+		stands_connected == stands_total
+		and hangars_connected == hangars_total
+	):
+		detail = "%d runway%s • %d/%d stands connected" % [
 			runways,
 			"" if runways == 1 else "s",
 			stands_connected,
 			stands_total
 		]
-		airside_status_label.add_theme_color_override("font_color", Color("9fe3b7"))
+		compact = "✓ %d/%d STANDS" % [
+			stands_connected,
+			stands_total
+		]
 	else:
-		var disconnected := (stands_total - stands_connected) + (hangars_total - hangars_connected)
-		airside_status_label.text = "AIRFIELD WARNING  ⚠\n%d airside building%s need taxiway" % [
+		var disconnected := (
+			(stands_total - stands_connected)
+			+ (hangars_total - hangars_connected)
+		)
+		detail = "%d airside building%s need taxiway" % [
 			disconnected,
 			"" if disconnected == 1 else "s"
 		]
-		airside_status_label.add_theme_color_override("font_color", Color("ffc266"))
+		compact = "⚠ %d DISCONNECTED" % disconnected
+		tone = "warning"
+
+	if airside_status_label != null:
+		airside_status_label.text = "AIRFIELD\n" + detail
+
+	_set_status_chip(
+		"airside",
+		airside_status_chip,
+		"AIRFIELD",
+		compact,
+		detail,
+		tone
+	)
+
+
+func _set_status_chip(
+	key: String,
+	chip: Button,
+	title: String,
+	compact: String,
+	body: String,
+	tone: String
+) -> void:
+	status_details[key] = {
+		"title": title,
+		"body": body,
+		"tone": tone
+	}
+	if chip != null:
+		chip.text = "%s\n%s" % [
+			_status_icon(key),
+			compact
+		]
+		GameUIStyle.apply_button(
+			chip,
+			_status_button_kind(
+				tone,
+				active_status_chip == key
+			),
+			true
+		)
+
+	if active_status_chip == key:
+		_refresh_status_detail()
+
+
+func _status_icon(key: String) -> String:
+	match key:
+		"airside":
+			return "🛬 AIRFIELD"
+		"operations":
+			return "🧰 GROUND OPS"
+		_:
+			return "🗼 ATC"
+
+
+func _status_button_kind(
+	tone: String,
+	active: bool
+) -> String:
+	if active:
+		return "selected"
+	match tone:
+		"warning":
+			return "gold"
+		"danger":
+			return "danger"
+		_:
+			return "nav"
+
+
+func _compact_status(text: String) -> String:
+	var compact := text.replace("\n", " • ")
+	if compact.length() > 28:
+		compact = compact.substr(0, 25) + "..."
+	return compact.to_upper()
+
+
+func _on_status_chip_pressed(key: String) -> void:
+	if active_status_chip == key and status_detail_panel.visible:
+		_close_status_detail()
+		return
+
+	active_status_chip = key
+	status_detail_panel.visible = true
+	_refresh_all_status_chip_styles()
+	_refresh_status_detail()
+
+
+func _close_status_detail() -> void:
+	active_status_chip = ""
+	if status_detail_panel != null:
+		status_detail_panel.visible = false
+	_refresh_all_status_chip_styles()
+
+
+func _refresh_status_detail() -> void:
+	if active_status_chip.is_empty():
+		return
+	var data: Dictionary = status_details.get(
+		active_status_chip,
+		{}
+	)
+	if data.is_empty():
+		return
+
+	status_detail_title.text = String(
+		data.get("title", "AIRPORT STATUS")
+	)
+	status_detail_body.text = String(
+		data.get("body", "")
+	)
+
+	var tone := String(data.get("tone", "normal"))
+	match tone:
+		"warning":
+			status_detail_title.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_WARNING
+			)
+		"danger":
+			status_detail_title.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_DANGER
+			)
+		"success":
+			status_detail_title.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_SUCCESS
+			)
+		_:
+			status_detail_title.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_TEXT
+			)
+
+
+func _refresh_all_status_chip_styles() -> void:
+	for key in ["airside", "operations", "atc"]:
+		var chip: Button = null
+		match key:
+			"airside":
+				chip = airside_status_chip
+			"operations":
+				chip = operation_status_chip
+			"atc":
+				chip = atc_status_chip
+		if chip == null:
+			continue
+		var data: Dictionary = status_details.get(key, {})
+		GameUIStyle.apply_button(
+			chip,
+			_status_button_kind(
+				String(data.get("tone", "normal")),
+				active_status_chip == key
+			),
+			true
+		)
 
 
 func exit_building_mode() -> void:

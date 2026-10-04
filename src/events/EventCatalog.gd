@@ -169,6 +169,14 @@ static func all() -> Array[Dictionary]:
 					"purchase_limit": 1
 				},
 				{
+					"id": "autumn_leaf_garden",
+					"name": "Autumn Leaf Garden",
+					"type": "cosmetic",
+					"cosmetic_id": "event_autumn_leaf_garden",
+					"price": 120,
+					"purchase_limit": 1
+				},
+				{
 					"id": "autumn_passengers_25",
 					"name": "+25 Passengers",
 					"type": "passengers",

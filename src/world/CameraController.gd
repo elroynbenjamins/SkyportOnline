@@ -23,6 +23,7 @@ var emphasis_origin_position := Vector2.ZERO
 var emphasis_origin_zoom := Vector2.ONE
 var last_emphasis_target := Vector2.ZERO
 var last_emphasis_zoom_multiplier := 1.0
+var last_emphasis_kind := ""
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -122,6 +123,7 @@ func play_emphasis(
 	emphasis_origin_zoom = zoom
 	last_emphasis_target = world_position
 	last_emphasis_zoom_multiplier = zoom_multiplier
+	last_emphasis_kind = kind
 
 	var focus_position := position.lerp(
 		world_position,
@@ -194,7 +196,7 @@ func get_last_emphasis_request() -> Dictionary:
 	return {
 		"target": last_emphasis_target,
 		"zoom_multiplier": last_emphasis_zoom_multiplier,
-		"kind": emphasis_kind
+		"kind": last_emphasis_kind
 	}
 
 

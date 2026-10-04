@@ -11,6 +11,10 @@ var root: Control
 var map_canvas: WorldMapCanvas
 var aircraft_list_container: VBoxContainer
 var details_title: Label
+var route_card_label: Label
+var reward_card_label: Label
+var resource_card_label: Label
+var aircraft_fit_label: Label
 var details_body: Label
 var assignment_status: Label
 var assign_button: Button
@@ -300,6 +304,39 @@ func _build_details_sidebar() -> void:
 	GameUIStyle.heading(details_title, 22)
 	wrapper.add_child(details_title)
 
+	var info_grid := GridContainer.new()
+	info_grid.columns = 2
+	info_grid.add_theme_constant_override("h_separation", 7)
+	info_grid.add_theme_constant_override("v_separation", 7)
+	wrapper.add_child(info_grid)
+
+	route_card_label = _make_detail_card(
+		info_grid,
+		"ROUTE",
+		GameUIStyle.COLOR_ACCENT
+	)
+	reward_card_label = _make_detail_card(
+		info_grid,
+		"REWARD",
+		GameUIStyle.COLOR_GOLD
+	)
+	resource_card_label = _make_detail_card(
+		info_grid,
+		"RESOURCES",
+		GameUIStyle.COLOR_SUCCESS
+	)
+	aircraft_fit_label = _make_detail_card(
+		info_grid,
+		"AIRCRAFT FIT",
+		Color("d8b9ff")
+	)
+
+	var secondary_heading := Label.new()
+	secondary_heading.text = "ROUTE STATUS"
+	secondary_heading.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(secondary_heading)
+	wrapper.add_child(secondary_heading)
+
 	details_body = Label.new()
 	details_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	details_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -317,6 +354,28 @@ func _build_details_sidebar() -> void:
 	assign_button.pressed.connect(_on_assign_pressed)
 	GameUIStyle.apply_button(assign_button, "primary")
 	wrapper.add_child(assign_button)
+
+
+func _make_detail_card(
+	parent: GridContainer,
+	title: String,
+	accent: Color
+) -> Label:
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.custom_minimum_size = Vector2(0, 88)
+	GameUIStyle.apply_panel(card, "dark")
+	parent.add_child(card)
+
+	var label := Label.new()
+	label.text = title + "\n—"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", accent)
+	card.add_child(label)
+	return label
 
 
 func _place_map_control(
@@ -451,6 +510,7 @@ func _refresh_destination_buttons() -> void:
 func _refresh_details() -> void:
 	if aircraft.is_empty():
 		details_title.text = "NO AIRCRAFT"
+		_clear_detail_cards()
 		details_body.text = "No aircraft are available."
 		assign_button.disabled = true
 		return
@@ -464,6 +524,7 @@ func _refresh_details() -> void:
 	)
 	if destination.is_empty():
 		details_title.text = "SELECT DESTINATION"
+		_clear_detail_cards()
 		details_body.text = "Choose a destination on the map."
 		assign_button.disabled = true
 		return
@@ -610,88 +671,71 @@ func _refresh_details() -> void:
 			]
 		)
 
-	details_body.text = (
-		"AIRCRAFT\n"
-		+ "%s • %s class\n"
-		% [
-			plane.aircraft_display_name,
-			String(profile.get("size", "?"))
-		]
-		+ "Cruise: %d km/h\n"
-		% int(profile.get("cruise_speed_kph", 0))
-		+ "Range: %d km\n"
-		% int(profile.get("range_km", 0))
-		+ "Mastery: %s • %.1f h flown\n"
-		% [
-			AircraftMastery.format_stars(mastery_stars),
-			mastery_hours
-		]
-		+ "Passenger demand: %s • %.0f%% load\n"
-		% [demand_label, load_factor * 100.0]
-		+ "Seats %d → route %d → Mastery %d\n"
-		% [base_passengers, route_passengers, required_passengers]
-		+ "Airport stock: %d / %d\n"
-		% [passenger_stock, passenger_capacity]
-		+ "Condition: %s • %s left\n"
-		% [
-			String(condition.get("label", "Normal")),
-			DynamicDemandRules.format_remaining(
-				int(condition.get("remaining_seconds", 0))
-			)
-		]
-		+ "Demand modifier: %+.0f%% • Coins %+.0f%% • XP %+.0f%%\n"
-		% [
-			(float(condition.get("demand_modifier", 1.0)) - 1.0) * 100.0,
-			(float(condition.get("coin_multiplier", 1.0)) - 1.0) * 100.0,
-			(float(condition.get("xp_multiplier", 1.0)) - 1.0) * 100.0
-		]
-		+ "Mastery: XP +%.0f%% • Coins +%.0f%%\n"
-		% [
-			float(mastery_bonuses.get("xp_bonus", 0.0)) * 100.0,
-			float(mastery_bonuses.get("coin_bonus", 0.0)) * 100.0
-		]
-		+ _next_mastery_text(mastery_status)
-		+ "\nGround: ~%.0fs return + taxi\n"
-		% TurnaroundRules.estimated_turnaround_seconds(profile)
-		+ "Fuel %.0fs • Pax %.0f/%.0fs\n"
-		% [
-			float(profile.get("fuel_seconds", 0.0)),
-			float(profile.get("deboard_seconds", 0.0)),
-			float(profile.get("board_seconds", 0.0))
-		]
-		+ "Cargo %.0f/%.0fs • Clean %.0fs • Push %.0fs\n\n"
-		% [
-			float(profile.get("cargo_unload_seconds", 0.0)),
-			float(profile.get("cargo_load_seconds", 0.0)),
-			float(profile.get("clean_seconds", 0.0)),
-			float(profile.get("pushback_seconds", 0.0))
-		]
-		+ "DESTINATION\n"
-		+ "Distance: %d km\n"
-		% int(destination.get("distance_km", 0))
-		+ "Flight timer: %s\n"
-		% FlightRules.format_duration(duration_seconds)
-		+ "Reward: 🪙 %d  •  XP %d\n\n"
-		% [
-			preview_coins,
-			preview_xp
-		]
-		+ "REGIONAL RESOURCES\n"
+	route_card_label.text = (
+		"ROUTE\n"
+		+ "%d km • %s\n"
+		+ "%s • %.0f%% load\n"
+		+ "%d → %d pax"
+	) % [
+		int(destination.get("distance_km", 0)),
+		FlightRules.format_duration(duration_seconds),
+		demand_label,
+		load_factor * 100.0,
+		route_passengers,
+		required_passengers
+	]
+
+	reward_card_label.text = (
+		"REWARD\n"
+		+ "🪙 %d • XP %d\n"
 		+ "%s\n"
-		% _resource_names(country_resources)
-		+ "Chance: %.1f%% each • rolled independently\n\n"
-		% (resource_chance * 100.0)
-		+ "PRIORITY CONTRACT\n"
-		+ "%s\n\n"
-		% contract_text
-		+ "ROUTE HISTORY\n"
-		+ "%s\n\n"
-		% history_text
+		+ "Stock %d/%d"
+	) % [
+		preview_coins,
+		preview_xp,
+		String(condition.get("label", "Normal")),
+		passenger_stock,
+		passenger_capacity
+	]
+
+	resource_card_label.text = (
+		"RESOURCES\n"
+		+ "%s\n"
+		+ "%.1f%% each"
+	) % [
+		_resource_names(country_resources),
+		resource_chance * 100.0
+	]
+
+	aircraft_fit_label.text = (
+		"AIRCRAFT FIT\n"
+		+ "%s • %s\n"
+		+ "%d seats • %d km\n"
+		+ "%s"
+	) % [
+		plane.aircraft_display_name,
+		String(profile.get("size", "?")),
+		base_passengers,
+		int(profile.get("range_km", 0)),
+		AircraftMastery.format_stars(mastery_stars)
+	]
+
+	details_body.text = (
+		"Condition: %s • %s left\n"
+		+ "Priority Contract: %s\n"
+		+ "Route History: %s\n"
 		+ "Current route: %s\n"
-		% current_route
-		+ "Aircraft state: %s"
-		% plane.state.replace("_", " ").capitalize()
-	)
+		+ "Aircraft: %s"
+	) % [
+		String(condition.get("label", "Normal")),
+		DynamicDemandRules.format_remaining(
+			int(condition.get("remaining_seconds", 0))
+		),
+		contract_text.replace("\n", " • "),
+		history_text,
+		current_route,
+		plane.state.replace("_", " ").capitalize()
+	]
 
 	assign_button.disabled = not (level_ok and range_ok and can_change)
 	if not level_ok:
@@ -713,6 +757,17 @@ func _refresh_details() -> void:
 
 	var map_position: Vector2 = destination["map_position"]
 	map_canvas.set_selected_position(map_position)
+
+
+func _clear_detail_cards() -> void:
+	if route_card_label != null:
+		route_card_label.text = "ROUTE\n—"
+	if reward_card_label != null:
+		reward_card_label.text = "REWARD\n—"
+	if resource_card_label != null:
+		resource_card_label.text = "RESOURCES\n—"
+	if aircraft_fit_label != null:
+		aircraft_fit_label.text = "AIRCRAFT FIT\n—"
 
 
 func _next_mastery_text(status: Dictionary) -> String:

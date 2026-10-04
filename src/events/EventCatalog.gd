@@ -417,6 +417,8 @@ static func all() -> Array[Dictionary]:
 					"name": "+25 Passengers",
 					"type": "passengers",
 					"passengers": 25,
+					"purpose_tag": "AIRPORT FLOW",
+					"value_hint": "Small boarding-buffer top-up.",
 					"price": 25,
 					"purchase_limit": 3
 				},
@@ -435,6 +437,8 @@ static func all() -> Array[Dictionary]:
 					"name": "+75 Passengers",
 					"type": "passengers",
 					"passengers": 75,
+					"purpose_tag": "AIRPORT FLOW",
+					"value_hint": "Largest one-time event passenger refill.",
 					"price": 60,
 					"purchase_limit": 1
 				},

@@ -44,6 +44,8 @@ var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
 var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
+var event_visual_snapshot: Dictionary = {}
+var event_owned_cosmetics: Dictionary = {}
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -118,6 +120,7 @@ func _draw() -> void:
 			_draw_parcel_tiles(parcel)
 
 	_draw_buildings()
+	_draw_event_theme_overlay()
 	_draw_runway_hold_short_markings()
 	_draw_runway_operational_indicators()
 	_draw_airside_warnings()
@@ -198,6 +201,195 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 	elif id.contains("stand"):
 		var center := _footprint_center_world(origin, footprint)
 		draw_circle(center, 10.0, Color("dce5e7"), false, 3.0)
+
+	elif id == "autumn_event_flag":
+		_draw_autumn_event_flag(origin)
+
+	elif id == "autumn_leaf_garden":
+		_draw_autumn_leaf_garden(origin, footprint)
+
+
+func set_event_visual_state(
+	snapshot: Dictionary,
+	owned_cosmetics: Dictionary
+) -> void:
+	event_visual_snapshot = snapshot.duplicate(true)
+	event_owned_cosmetics = owned_cosmetics.duplicate(true)
+	queue_redraw()
+
+
+func _draw_event_theme_overlay() -> void:
+	if not bool(event_visual_snapshot.get("active", false)):
+		return
+	if String(event_visual_snapshot.get("theme", "")) != "autumn":
+		return
+
+	for building in placed_buildings:
+		if String(building.get("definition_id", "")) != "small_terminal":
+			continue
+
+		var definition := BuildingCatalog.get_definition("small_terminal")
+		if definition.is_empty():
+			continue
+		var footprint := _footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+		var center := _footprint_center_world(
+			building.get("origin", Vector2i.ZERO),
+			footprint
+		)
+		_draw_autumn_terminal_bunting(center)
+
+		if bool(
+			event_owned_cosmetics.get(
+				"event_autumn_terminal_skin",
+				false
+			)
+		):
+			_draw_autumn_terminal_skin(center)
+
+	if bool(
+		event_owned_cosmetics.get(
+			"event_autumn_airport_border",
+			false
+		)
+	):
+		_draw_autumn_airport_border()
+
+
+func _draw_autumn_terminal_bunting(center: Vector2) -> void:
+	var y := center.y - 72.0
+	draw_line(
+		center + Vector2(-58, -70),
+		center + Vector2(58, -70),
+		Color("f0c36b"),
+		2.0
+	)
+	var colors := [
+		Color("d86f32"),
+		Color("f0b54c"),
+		Color("a84e2b")
+	]
+	for index in range(7):
+		var x := -48.0 + float(index) * 16.0
+		var top := center + Vector2(x, -69)
+		var points := PackedVector2Array([
+			top + Vector2(-5, 0),
+			top + Vector2(5, 0),
+			top + Vector2(0, 9)
+		])
+		draw_colored_polygon(
+			points,
+			colors[index % colors.size()]
+		)
+
+
+func _draw_autumn_terminal_skin(center: Vector2) -> void:
+	var canopy := Rect2(
+		center + Vector2(-74, -62),
+		Vector2(148, 15)
+	)
+	draw_rect(canopy, Color("8f3f28", 0.82), true)
+	draw_rect(canopy, Color("f1bd59", 0.95), false, 2.0)
+
+	for index in range(5):
+		var leaf_center := center + Vector2(
+			-54 + index * 27,
+			-82 + (index % 2) * 4
+		)
+		draw_circle(
+			leaf_center,
+			5.0,
+			Color("de7835")
+		)
+		draw_line(
+			leaf_center,
+			leaf_center + Vector2(4, -6),
+			Color("6f3b24"),
+			1.0
+		)
+
+
+func _draw_autumn_airport_border() -> void:
+	for parcel_variant in parcels.values():
+		var parcel: Dictionary = parcel_variant
+		if not bool(parcel.get("owned", false)):
+			continue
+
+		var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
+		var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
+		for y in range(sy, sy + PARCEL_SIZE):
+			for x in range(sx, sx + PARCEL_SIZE):
+				if not (
+					x == sx
+					or x == sx + PARCEL_SIZE - 1
+					or y == sy
+					or y == sy + PARCEL_SIZE - 1
+				):
+					continue
+				var p := _tile_points(
+					tile_to_world(Vector2(x, y))
+				)
+				draw_polyline(
+					PackedVector2Array([
+						p[0], p[1], p[2], p[3], p[0]
+					]),
+					Color("d97833", 0.70),
+					2.0
+				)
+
+
+func _draw_autumn_event_flag(origin: Vector2i) -> void:
+	var center := tile_to_world(
+		Vector2(origin.x, origin.y)
+	)
+	var base := center + Vector2(0, 8)
+	var top := center + Vector2(0, -38)
+	draw_line(base, top, Color("d9d2bf"), 3.0)
+	var flag := PackedVector2Array([
+		top,
+		top + Vector2(25, 7),
+		top + Vector2(0, 15)
+	])
+	draw_colored_polygon(flag, Color("c95c2a"))
+	draw_circle(
+		base + Vector2(0, 3),
+		6.0,
+		Color("8e6c3c")
+	)
+
+
+func _draw_autumn_leaf_garden(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> void:
+	var center := _footprint_center_world(origin, footprint)
+	var colors := [
+		Color("b8572d"),
+		Color("d97b34"),
+		Color("eba84a"),
+		Color("8b4a2d")
+	]
+	for index in range(10):
+		var angle := float(index) * 0.63
+		var radius := 8.0 + float(index % 4) * 5.0
+		var leaf := center + Vector2(
+			cos(angle) * radius,
+			sin(angle) * radius * 0.45
+		)
+		draw_circle(
+			leaf,
+			3.5,
+			colors[index % colors.size()]
+		)
+	draw_circle(
+		center,
+		14.0,
+		Color("6d5631", 0.55),
+		false,
+		2.0
+	)
 
 
 func _definition_has_world_sprite(definition: Dictionary) -> bool:

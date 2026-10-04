@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 6 — Landscape airport + full local flight lifecycle
+## Current milestone: Pass 7 — V1 aircraft catalog + route economy
 
 The repository now contains a playable airport-building and airport-operations foundation:
 
@@ -20,7 +20,7 @@ The repository now contains a playable airport-building and airport-operations f
 - Service-road routing for ground vehicles.
 - Runway occupancy and arrival/departure queues.
 - Two connected starter stands with two S-class aircraft.
-- Continuous aircraft turnaround and flight demo loop.
+- Continuous aircraft turnaround using real route manifests, passenger loads, profit, and airport XP.
 
 ### Current building catalog
 
@@ -33,11 +33,12 @@ The repository now contains a playable airport-building and airport-operations f
 | Small Terminal | 3×2 | 8,000 | Lv 1 | S |
 | Basic Fuel Station | 2×2 | 7,500 | Lv 2 | S |
 | Small Hangar | 3×3 | 12,000 | Lv 3 | S |
-| Rapid Small Fuel Station | 2×2 | 30,000 | Lv 6 | S |
-| Medium Aircraft Stand | 3×3 | 35,000 | Lv 8 | S/M |
-| Regional Fuel Depot | 3×3 | 45,000 | Lv 8 | S/M |
-| Regional Rapid Fuel Station | 4×3 | 85,000 | Lv 10 | S/M |
-| Regional Runway | 10×3 | 90,000 | Lv 12 | S/M |
+| Rapid Small Fuel Station | 2×2 | 30,000 | Lv 7 | S |
+| Medium Aircraft Stand | 3×3 | 45,000 | Lv 8 | S/M |
+| Regional Fuel Depot | 3×3 | 60,000 | Lv 8 | S/M |
+| Regional Rapid Fuel Station | 4×3 | 130,000 | Lv 13 | S/M |
+| Regional Hangar | 4×3 | 105,000 | Lv 8 | S/M |
+| Regional Runway | 10×3 | 150,000 | Lv 8 | S/M |
 
 Fuel infrastructure stores both service speed and vehicle capacity. Normal and rapid stations therefore differ mechanically by aircraft compatibility, truck count, and turnaround speed.
 
@@ -104,13 +105,41 @@ The starter airport continuously runs two temporary S-class aircraft through the
 
 **Parked → Fuel request → Fuel truck → Ready → Runway queue → Taxi out → Line up → Takeoff roll → Climb → En route → Holding for arrival → Approach → Landing roll → Taxi in → Parked**
 
-After parking, the aircraft re-enters the turnaround flow and requests fuel again.
+After parking, the flight is settled, net profit and Airport XP are credited, a new suitable route is assigned, and the aircraft re-enters the turnaround flow.
 
 Aircraft release their stand when taxiing out. Returning aircraft reserve a free compatible stand before requesting landing clearance. If every compatible stand is occupied, they remain in a holding state until one becomes available.
 
-The en-route segment is still a short local demo timer. The future World Map / route system will replace that temporary timer with real destination travel.
+The en-route segment now uses a compressed version of the calculated route duration. Aircraft range and cruise speed therefore change how long a plane remains away while keeping development/testing sessions short.
 
 Aircraft and fuel-truck visuals are still temporary code-drawn prototypes. The airport buildings already use the first Skyport Online pixel-art asset set.
+
+## V1 aircraft catalog
+
+Pass 7 defines the first nine player aircraft while keeping the size model future-ready for L and XL aircraft:
+
+| Unlock | Aircraft | Size | Capacity | Range |
+| ---: | --- | :---: | ---: | ---: |
+| Lv 1 | Pico P8 | S | 8 | 320 km |
+| Lv 2 | Swift S14 | S | 14 | 430 km |
+| Lv 4 | Comet C22 | S | 22 | 600 km |
+| Lv 6 | Voyager V32 | S | 32 | 900 km |
+| Lv 8 | Nimbus N40 | M | 40 | 1,050 km |
+| Lv 10 | Arrow A52 | M | 52 | 1,300 km |
+| Lv 12 | Atlas A64 | M | 64 | 1,500 km |
+| Lv 15 | Falcon F72 | M | 72 | 1,900 km |
+| Lv 17 | Horizon H88 | M | 88 | 2,350 km |
+
+Each definition stores purchase price, passenger capacity, range, cruise speed, fixed operating cost, distance fuel cost, passenger service cost, turnaround time, and hangar-space usage.
+
+## Flight economy
+
+Prototype routes now store level unlock, distance, passenger demand, ticket yield, completion bonus, maximum aircraft size, Airport XP, and country-resource bridge metadata.
+
+A flight manifest calculates passenger load, gross revenue, fuel cost, fixed operating cost, passenger service cost, net profit, duration, XP, and profit per minute.
+
+This deliberately prevents a bigger-is-always-better fleet. S-only routes preserve small-aircraft value, while oversized M aircraft lose efficiency when demand is too low for their extra capacity and operating cost.
+
+Country-linked routes already retain the planned **40% resource-roll chance** through a resource-pool key; the later World Map/country pass can resolve that key into each country's three unique resources.
 
 ## Automated validation
 
@@ -124,6 +153,7 @@ GitHub Actions currently performs:
 - Departure runway queue tests.
 - Arrival runway queue tests.
 - Full aircraft lifecycle test from takeoff through landing and parking.
+- Aircraft catalog, route compatibility, profitability, and Airport XP tests.
 
 ## Run
 
@@ -133,12 +163,13 @@ GitHub Actions currently performs:
 
 ## Next pass
 
-**Pass 7 — Flight destinations + first World Map bridge**
+**Pass 8 — Fleet catalog + player route selection**
 
 Recommended next work:
 
-- Replace the temporary en-route timer with a small flight-data model.
-- Add the first local destination list and flight duration / reward data.
-- Make an aircraft remain airborne until its assigned route completes.
-- Prepare a dedicated World Map scene without yet building the final global resource economy.
-- Begin first proper pixel aircraft and fuel-truck sprites once their required angles are locked.
+- Add a landscape Fleet/Catalog panel using the nine aircraft definitions.
+- Expose aircraft purchase price, range, capacity, specialty, and infrastructure requirements.
+- Replace automatic best-route assignment with a player-facing destination selector.
+- Show expected passengers, duration, gross revenue, operating cost, and net profit before dispatch.
+- Begin enforcing physical hangar capacity for owned aircraft.
+- Bridge the route selector into the interactive World Map and country-resource system.

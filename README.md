@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 7 — Aircraft-specific flight timers + first World Map
+## Current milestone: Pass 8 — Passenger bottleneck + country resources
 
 Skyport Online now has a complete local airport loop plus the first destination/route layer.
 
@@ -21,6 +21,7 @@ Skyport Online now has a complete local airport loop plus the first destination/
 - Two starter aircraft running through the physical airport lifecycle.
 - Interactive first Europe World Map.
 - Aircraft-specific destination timers, range checks, rewards and level gates.
+- Passenger generation, terminal storage, boarding costs, country-resource drops, and non-visual passenger-building upgrades.
 
 ## Building catalog
 
@@ -30,7 +31,12 @@ Skyport Online now has a complete local airport loop plus the first destination/
 | Small Aircraft Stand | 2×2 | 4,500 | Lv 1 | S |
 | Taxiway | 1×1 | 250 | Lv 1 | S/M/L |
 | Service Road | 1×1 | 150 | Lv 1 | Ground vehicles |
-| Small Terminal | 3×2 | 8,000 | Lv 1 | S |
+| Small Terminal | 3×2 | 8,000 | Lv 1 | Passenger storage |
+| Airport Bus Stop | 1×1 | 3,000 | Lv 1 | +8 / 4 min |
+| Small Airport Hotel | 2×2 | 6,500 | Lv 2 | +18 / 10 min |
+| Taxi Rank | 1×1 | 9,000 | Lv 3 | +1 / 8 min |
+| Residential District | 2×2 | 22,000 | Lv 5 | +1 / 3 min |
+| Railway Connection | 3×2 | 65,000 | Lv 9 | +1 / 2 min |
 | Basic Fuel Station | 2×2 | 7,500 | Lv 2 | S |
 | Small Hangar | 3×3 | 12,000 | Lv 3 | S |
 | Rapid Small Fuel Station | 2×2 | 30,000 | Lv 6 | S |
@@ -38,6 +44,38 @@ Skyport Online now has a complete local airport loop plus the first destination/
 | Regional Fuel Depot | 3×3 | 45,000 | Lv 8 | S/M |
 | Regional Rapid Fuel Station | 4×3 | 85,000 | Lv 10 | S/M |
 | Regional Runway | 10×3 | 90,000 | Lv 12 | S/M |
+
+## Passenger bottleneck
+
+Passengers are now a real operational resource.
+
+- The starter terminal stores **120 passengers**.
+- The starting balance is **54 passengers**.
+- Departures consume the actual aircraft passenger capacity: currently 18 for Aerolet 100, 24 for Aerolet 120, and 58 for Regional 200.
+- If an aircraft cannot board enough passengers, it remains queued until passenger stock becomes available.
+- Passenger buildings generate into their own local storage and must be collected into the terminal.
+- The build catalog is scrollable so passenger infrastructure can expand without crowding the landscape HUD.
+
+The starter airport contains an Airport Bus Stop and Small Airport Hotel. Later buildings add slower passive generation with larger storage.
+
+Two supplemental passenger sources are wired into the economy:
+
+- Rewarded-ad hook: **+25 passengers**, maximum **3 uses per day**.
+- Friend-gift hook: **+5 passengers per friend**, maximum **50 received per day**.
+
+The current UI uses prototype hooks for both systems. The ad reward must later be triggered only after a successful rewarded-ad callback, and friend IDs must later come from the online friends backend.
+
+### Passenger building upgrades
+
+Passenger buildings keep the same world art at every level. Upgrades improve only their mechanics:
+
+- Production speed.
+- Local passenger storage.
+- Terminal capacity for terminal upgrades.
+
+Upgrade recipes consume country-specific resources earned from flights. Tapping a passenger building opens its current storage, next-level benefit, required resources, and Upgrade button.
+
+Each implemented destination country provides **three unique resources**, each rolled independently at **40%** when a flight successfully returns. A trip can therefore award zero, one, two, or all three resources.
 
 ## Aircraft operations
 
@@ -75,7 +113,7 @@ Each aircraft type now has flight data including:
 - Size class.
 - Cruise speed.
 - Range.
-- Passenger capacity placeholder.
+- Passenger capacity used directly by the boarding bottleneck.
 - Timer balancing factor.
 
 Flight duration is calculated from:
@@ -152,6 +190,7 @@ GitHub Actions currently validates:
 - Flight-plan creation.
 - Aircraft-specific flight duration differences.
 - Multi-minute timers replacing the old demo-duration behavior.
+- Passenger generation / collection, terminal capacity, rewarded-ad cap, friend-gift cap, building upgrades, and three-resource country definitions.
 
 ## Run
 
@@ -161,13 +200,14 @@ GitHub Actions currently validates:
 
 ## Next pass
 
-**Pass 8 — World Map resources + flight completion economy**
+**Pass 9 — Flight return rewards + persistence/social integration**
 
 Recommended next work:
 
-- Connect destination countries to the agreed three-resource country system.
-- Apply the independent ~40% drop chance per resource on completed flights.
-- Award coins / XP only when a flight successfully returns.
-- Add a flight-return summary showing rewards and country-resource rolls.
-- Begin replacing the temporary Amsterdam development origin with the player's selected home country.
-- Add favorites / recent destinations once the send-flow is established.
+- Award the previewed coin / XP rewards only after a successful flight return.
+- Add a compact return-summary card for coins, XP, and country-resource rolls.
+- Persist passenger balances, building production timers, upgrade levels, and country-resource inventory.
+- Add true elapsed-time/offline passenger production.
+- Replace the local rewarded-ad hook with the production ad SDK completion callback.
+- Replace prototype friend identities with the real friends/gifting backend.
+- Continue replacing the temporary Amsterdam development origin with the player's selected home country.

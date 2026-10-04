@@ -16,6 +16,7 @@ var aircraft_demos: Array[AircraftPrototype] = []
 var fleet_records: Array[Dictionary] = []
 var next_fleet_uid := 1
 var selected_fleet_uid := -1
+var resource_inventory: Dictionary = {}
 
 var ground_services: GroundServiceDispatcher
 var runway_dispatcher: RunwayDispatcher
@@ -36,6 +37,8 @@ func _ready() -> void:
 	hud.fleet_aircraft_selected.connect(_on_fleet_aircraft_selected)
 	hud.fleet_aircraft_purchase_requested.connect(_on_fleet_aircraft_purchase_requested)
 	hud.fleet_route_requested.connect(_on_fleet_route_requested)
+	hud.world_aircraft_selected.connect(_on_fleet_aircraft_selected)
+	hud.world_route_requested.connect(_on_fleet_route_requested)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
 	_refresh_player_hud()
@@ -326,6 +329,12 @@ func _refresh_fleet_panel() -> void:
 		selected_fleet_uid,
 		capacity
 	)
+	hud.set_world_data(
+		owned_entries,
+		route_entries,
+		selected_fleet_uid,
+		resource_inventory
+	)
 
 
 func _route_entries_for_selected() -> Array[Dictionary]:
@@ -539,15 +548,20 @@ func _settle_completed_flight(
 	var previous_level := player_level
 	player_level = int(progression.get("level", player_level))
 	airport_xp = int(progression.get("xp", airport_xp))
+	var resource_result := _award_country_resources(manifest)
 	_refresh_player_hud()
 
+	var settlement_text := "%s returned from %s • +🪙 %s net • +%d XP" % [
+		label,
+		String(manifest.get("destination_name", "route")),
+		_format_number(profit),
+		xp_reward
+	]
+	if not resource_result.is_empty():
+		settlement_text += " • " + resource_result
+
 	hud.set_flight_status(
-		"%s returned from %s • +🪙 %s net • +%d XP" % [
-			label,
-			String(manifest.get("destination_name", "route")),
-			_format_number(profit),
-			xp_reward
-		],
+		settlement_text,
 		"success"
 	)
 
@@ -558,6 +572,32 @@ func _settle_completed_flight(
 		)
 
 	aircraft.clear_flight_manifest()
+
+
+func _award_country_resources(manifest: Dictionary) -> String:
+	var country_code := String(manifest.get("country_code", ""))
+	if country_code.is_empty():
+		return ""
+
+	var chance := float(manifest.get("resource_drop_chance", 0.40))
+	var drops := CountryCatalog.roll_resource_drops(
+		country_code,
+		chance
+	)
+	if drops.is_empty():
+		return "No country resources this flight"
+
+	var names := PackedStringArray()
+	for drop in drops:
+		var resource_id := String(drop.get("id", ""))
+		if resource_id.is_empty():
+			continue
+		resource_inventory[resource_id] = int(
+			resource_inventory.get(resource_id, 0)
+		) + 1
+		names.append("+1 " + String(drop.get("name", "Resource")))
+
+	return ", ".join(names)
 
 
 func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
@@ -779,7 +819,7 @@ func _refresh_player_hud() -> void:
 
 
 func _on_world_tapped(world_position: Vector2) -> void:
-	if hud.is_fleet_open():
+	if hud.is_management_overlay_open():
 		return
 
 	if not selected_building_id.is_empty():
@@ -803,7 +843,7 @@ func _on_network_status_changed(status: Dictionary) -> void:
 
 
 func _on_parcel_selected(_parcel_id: String, parcel_data: Dictionary) -> void:
-	if selected_building_id.is_empty() and not hud.is_fleet_open():
+	if selected_building_id.is_empty() and not hud.is_management_overlay_open():
 		hud.show_parcel(parcel_data, player_level, coins)
 
 
@@ -835,6 +875,7 @@ func _on_building_selected(building_id: String) -> void:
 		return
 
 	hud.close_fleet()
+	hud.close_world()
 	selected_building_id = building_id
 	selected_building_rotation = 0
 	airport_grid.clear_parcel_selection()

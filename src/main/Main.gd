@@ -28,6 +28,7 @@ var return_summary: FlightReturnSummary
 var resource_inventory_screen: ResourceInventoryScreen
 var passenger_upgrade_panel: PassengerUpgradePanel
 var service_upgrade_panel: ServiceUpgradePanel
+var air_traffic_upgrade_panel: AirTrafficUpgradePanel
 var passenger_economy: PassengerEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var event_manager: EventManager
@@ -112,6 +113,7 @@ func _start_gameplay() -> void:
 	_setup_resource_inventory()
 	_setup_passenger_upgrade_panel()
 	_setup_service_upgrade_panel()
+	_setup_air_traffic_upgrade_panel()
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
 
@@ -139,6 +141,7 @@ func _setup_runway_dispatcher() -> void:
 		_on_atc_state_changed
 	)
 	add_child(runway_dispatcher)
+	runway_dispatcher.configure(airport_grid)
 	hud.set_atc_state(
 		runway_dispatcher.get_atc_snapshot()
 	)
@@ -177,6 +180,8 @@ func _setup_passenger_system() -> void:
 		{}
 	).duplicate(true)
 	airport_grid.apply_saved_building_upgrades(saved_upgrades)
+	if runway_dispatcher != null:
+		runway_dispatcher.refresh_air_traffic_control()
 
 	passenger_economy = PassengerEconomy.new()
 	passenger_economy.changed.connect(_on_passenger_economy_changed)
@@ -244,6 +249,14 @@ func _setup_service_upgrade_panel() -> void:
 		_on_service_upgrade_requested
 	)
 	add_child(service_upgrade_panel)
+
+
+func _setup_air_traffic_upgrade_panel() -> void:
+	air_traffic_upgrade_panel = AirTrafficUpgradePanel.new()
+	air_traffic_upgrade_panel.upgrade_requested.connect(
+		_on_air_traffic_upgrade_requested
+	)
+	add_child(air_traffic_upgrade_panel)
 
 
 func _spawn_aircraft_demos() -> void:
@@ -1374,9 +1387,25 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		building.get("definition_id", "")
 	)
 
+	if AirTrafficUpgradeCatalog.is_upgradeable(
+		building_id
+	):
+		if passenger_upgrade_panel != null:
+			passenger_upgrade_panel.close_panel()
+		if service_upgrade_panel != null:
+			service_upgrade_panel.close_panel()
+		air_traffic_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
 	if bool(definition.get("passenger_generator", false)):
 		if service_upgrade_panel != null:
 			service_upgrade_panel.close_panel()
+		if air_traffic_upgrade_panel != null:
+			air_traffic_upgrade_panel.close_panel()
 		passenger_upgrade_panel.open_building(
 			building,
 			resource_inventory,
@@ -1387,6 +1416,8 @@ func _on_building_selected_world(building: Dictionary) -> void:
 	if ServiceUpgradeCatalog.is_upgradeable(building_id):
 		if passenger_upgrade_panel != null:
 			passenger_upgrade_panel.close_panel()
+		if air_traffic_upgrade_panel != null:
+			air_traffic_upgrade_panel.close_panel()
 		service_upgrade_panel.open_building(
 			building,
 			resource_inventory,
@@ -1398,6 +1429,8 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		passenger_upgrade_panel.close_panel()
 	if service_upgrade_panel != null:
 		service_upgrade_panel.close_panel()
+	if air_traffic_upgrade_panel != null:
+		air_traffic_upgrade_panel.close_panel()
 	hud.set_operation_status(
 		String(definition.get("name", "Airport building"))
 	)
@@ -1559,6 +1592,104 @@ func _on_service_upgrade_requested(
 	)
 
 
+func _on_air_traffic_upgrade_requested(
+	building_uid: int
+) -> void:
+	var building: Dictionary = airport_grid.get_building(
+		building_uid
+	)
+	if building.is_empty():
+		return
+
+	var building_id := String(
+		building.get("definition_id", "")
+	)
+	var current_level := int(
+		building.get("upgrade_level", 1)
+	)
+	var next := AirTrafficUpgradeCatalog.get_next_level(
+		building_id,
+		current_level
+	)
+	if next.is_empty():
+		return
+
+	var coin_cost := int(
+		next.get("coin_cost", 0)
+	)
+	if coins < coin_cost:
+		air_traffic_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
+	var resource_cost: Dictionary = next.get(
+		"resource_cost",
+		{}
+	).duplicate(true)
+	var building_key: String = airport_grid.get_building_key(
+		building
+	)
+	var updated_profile: Dictionary = (
+		ProfileStore.apply_building_upgrade(
+			building_key,
+			int(
+				next.get(
+					"level",
+					current_level + 1
+				)
+			),
+			resource_cost
+		)
+	)
+	if updated_profile.is_empty():
+		air_traffic_upgrade_panel.open_building(
+			building,
+			resource_inventory,
+			coins
+		)
+		return
+
+	coins -= coin_cost
+	current_profile = updated_profile
+	resource_inventory = current_profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
+
+	airport_grid.set_building_upgrade_level(
+		building_uid,
+		int(
+			next.get(
+				"level",
+				current_level + 1
+			)
+		)
+	)
+	runway_dispatcher.refresh_air_traffic_control()
+	hud.set_player_data(player_level, coins, gems)
+
+	var refreshed: Dictionary = airport_grid.get_building(
+		building_uid
+	)
+	air_traffic_upgrade_panel.open_building(
+		refreshed,
+		resource_inventory,
+		coins
+	)
+	hud.set_operation_status(
+		"ATC upgraded to Lv %d • runway separation reduced" % int(
+			next.get(
+				"level",
+				current_level + 1
+			)
+		),
+		"success"
+	)
+
+
 func _on_network_status_changed(status: Dictionary) -> void:
 	hud.set_airside_status(status)
 
@@ -1640,6 +1771,10 @@ func _on_confirm_building_requested() -> void:
 	coins -= cost
 	if event_manager != null:
 		event_manager.record_metric("buildings_placed", 1)
+	if bool(
+		definition.get("air_traffic_control", false)
+	):
+		runway_dispatcher.refresh_air_traffic_control()
 	hud.set_player_data(player_level, coins, gems)
 	hud.show_build_preview(definition, {}, player_level, coins)
 

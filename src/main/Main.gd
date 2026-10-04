@@ -647,6 +647,9 @@ func _apply_completed_flight_reward(
 			"resources_earned",
 			resources_won.size()
 		)
+		event_manager.record_destination_flight(
+			String(plan.get("destination_id", ""))
+		)
 
 	var route_profile := ProfileStore.record_route_completion(
 		String(plan.get("destination_id", "")),

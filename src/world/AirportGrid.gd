@@ -70,6 +70,7 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
 	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
+	_place_building_internal("small_hangar", Vector2i(8, 10), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
 	_place_building_internal("service_road", Vector2i(11, 13), 0)
 	_place_building_internal("service_road", Vector2i(12, 13), 0)
@@ -655,6 +656,71 @@ func _size_text(definition: Dictionary) -> String:
 
 func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
+
+
+func get_hangar_sources() -> Array[Dictionary]:
+	var results: Array[Dictionary] = []
+	var connected_uids: Array = airside_status.get("connected_uids", [])
+
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if definition.is_empty():
+			continue
+		if not String(definition.get("id", "")).contains("hangar"):
+			continue
+
+		results.append({
+			"uid": int(building.get("uid", -1)),
+			"definition_id": String(building.get("definition_id", "")),
+			"capacity": maxi(int(definition.get("hangar_capacity", 0)), 0),
+			"max_aircraft_size": String(
+				definition.get("max_aircraft_size", "S")
+			),
+			"connected": connected_uids.has(int(building.get("uid", -1)))
+		})
+
+	return results
+
+
+func get_aircraft_infrastructure_status(aircraft_size: String) -> Dictionary:
+	var departure_routes := get_departure_routes(aircraft_size)
+	var has_stand_and_runway := not departure_routes.is_empty()
+	var has_hangar := false
+	for source in get_hangar_sources():
+		if not bool(source.get("connected", false)):
+			continue
+		var max_rank := AircraftCatalog.size_rank(
+			String(source.get("max_aircraft_size", "S"))
+		)
+		if max_rank >= AircraftCatalog.size_rank(aircraft_size):
+			has_hangar = true
+			break
+
+	var has_fuel := false
+	if has_stand_and_runway:
+		var stations := get_compatible_service_buildings("fuel", aircraft_size)
+		for route_info in departure_routes:
+			var stand_uid := int(route_info.get("stand_uid", -1))
+			for station in stations:
+				var service_route := get_service_route(
+					int(station.get("uid", -1)),
+					stand_uid
+				)
+				if service_route.size() >= 2:
+					has_fuel = true
+					break
+			if has_fuel:
+				break
+
+	return {
+		"size_class": aircraft_size,
+		"stand_and_runway": has_stand_and_runway,
+		"hangar": has_hangar,
+		"fuel": has_fuel,
+		"ready": has_stand_and_runway and has_hangar and has_fuel
+	}
 
 
 func get_compatible_service_buildings(service_type: String, aircraft_size: String) -> Array[Dictionary]:

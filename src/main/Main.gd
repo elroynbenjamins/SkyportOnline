@@ -82,10 +82,10 @@ func _spawn_aircraft_demos() -> void:
 		var label := "SO-%03d" % (index + 1)
 		var aircraft := AircraftPrototype.new()
 
-		var profile_ids := ["aerolet_100", "aerolet_120"]
-		var default_destinations := ["london", "paris"]
-		var profile_id := profile_ids[index % profile_ids.size()]
-		var destination_id := default_destinations[
+		var profile_ids: Array[String] = ["aerolet_100", "aerolet_120"]
+		var default_destinations: Array[String] = ["london", "paris"]
+		var profile_id: String = profile_ids[index % profile_ids.size()]
+		var destination_id: String = default_destinations[
 			index % default_destinations.size()
 		]
 		aircraft.configure_aircraft_type(profile_id)
@@ -368,7 +368,7 @@ func _on_world_map_flight_assignment_requested(
 
 	if previous_state == "READY_FOR_DESTINATION":
 		aircraft.mark_service_complete()
-		runway_dispatcher.request_departure(aircraft, aircraft.name)
+		runway_dispatcher.request_departure(aircraft, String(aircraft.name))
 
 
 func _on_world_tapped(world_position: Vector2) -> void:

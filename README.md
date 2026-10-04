@@ -22,6 +22,37 @@ Skyport Online now connects the international country economy directly back into
 - Passenger stock now gates aircraft departures.
 - Country resources now have their first real upgrade sink.
 
+## V1 aircraft turnaround timings
+
+The playable V1 aircraft catalog now uses the approved nine S/M aircraft:
+
+**Pico P8 → Swift S14 → Comet C22 → Voyager V32 → Nimbus N40 → Arrow A52 → Atlas A64 → Falcon F72 → Horizon H88**
+
+Ground handling uses four blocks:
+
+1. **Unload** — passenger deboarding and cargo unloading run in parallel.
+2. **Service** — fuel, cleaning and catering run in parallel.
+3. **Load** — passenger boarding and cargo loading run in parallel.
+4. **Pushback prep** — final checks before runway queue.
+
+A faster fuel building modifies only the fuel timer. Future passenger, cargo, cleaning and catering buildings can therefore improve their own service category independently.
+
+| Aircraft | Lv | Size | Pax | Taxi speed | Pax out | Cargo out | Fuel | Clean | Catering | Pax in | Cargo in | Push | Full return |
+| --- | ---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pico P8 | 1 | S | 8 | 122 | 6s | 6s | 12s | 7s | 6s | 10s | 8s | 3s | 31s |
+| Swift S14 | 2 | S | 14 | 132 | 7s | 7s | 11s | 7s | 6s | 11s | 9s | 3s | 32s |
+| Comet C22 | 4 | S | 22 | 118 | 8s | 9s | 15s | 9s | 8s | 13s | 11s | 3s | 40s |
+| Voyager V32 | 6 | S | 32 | 112 | 9s | 11s | 19s | 10s | 9s | 15s | 14s | 4s | 49s |
+| Nimbus N40 | 8 | M | 40 | 100 | 11s | 15s | 24s | 13s | 11s | 18s | 18s | 5s | 62s |
+| Arrow A52 | 10 | M | 52 | 108 | 12s | 17s | 22s | 13s | 11s | 19s | 20s | 5s | 64s |
+| Atlas A64 | 12 | M | 64 | 92 | 14s | 21s | 30s | 16s | 14s | 23s | 27s | 6s | 84s |
+| Falcon F72 | 15 | M | 72 | 102 | 14s | 20s | 28s | 15s | 13s | 22s | 25s | 6s | 79s |
+| Horizon H88 | 17 | M | 88 | 94 | 16s | 24s | 36s | 18s | 16s | 26s | 32s | 7s | 99s |
+
+**Full return** is standard-fuel stand time before taxi. Taxi itself remains physical and route-dependent; every aircraft now applies its own taxi speed, so airport layout affects real turnaround efficiency.
+
+The starter airport uses **2× Pico P8** aircraft. L and XL remain future-ready and are intentionally not implemented in the V1 aircraft catalog.
+
 ## Passenger bottleneck
 
 Passenger aircraft now consume passengers before departure.

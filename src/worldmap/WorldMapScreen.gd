@@ -369,8 +369,23 @@ func _refresh_details() -> void:
 		]
 		+ "Cruise: %d km/h\n"
 		% int(profile.get("cruise_speed_kph", 0))
-		+ "Range: %d km\n\n"
+		+ "Range: %d km\n"
 		% int(profile.get("range_km", 0))
+		+ "Ground: ~%.0fs return + taxi\n"
+		% TurnaroundRules.estimated_turnaround_seconds(profile)
+		+ "Fuel %.0fs • Pax %.0f/%.0fs\n"
+		% [
+			float(profile.get("fuel_seconds", 0.0)),
+			float(profile.get("deboard_seconds", 0.0)),
+			float(profile.get("board_seconds", 0.0))
+		]
+		+ "Cargo %.0f/%.0fs • Clean %.0fs • Push %.0fs\n\n"
+		% [
+			float(profile.get("cargo_unload_seconds", 0.0)),
+			float(profile.get("cargo_load_seconds", 0.0)),
+			float(profile.get("clean_seconds", 0.0)),
+			float(profile.get("pushback_seconds", 0.0))
+		]
 		+ "DESTINATION\n"
 		+ "Distance: %d km\n"
 		% int(destination.get("distance_km", 0))

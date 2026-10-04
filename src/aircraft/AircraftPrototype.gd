@@ -42,6 +42,7 @@ func configure_aircraft_type(type_id: String) -> void:
 	aircraft_profile = profile
 	aircraft_display_name = String(profile.get("name", type_id))
 	aircraft_size = String(profile.get("size", aircraft_size))
+	taxi_speed = maxf(float(profile.get("taxi_speed", taxi_speed)), 1.0)
 
 
 func assign_flight_plan(plan: Dictionary) -> void:
@@ -66,10 +67,35 @@ func get_flight_remaining_seconds() -> float:
 	return maxf(flight_remaining, 0.0)
 
 
+func get_turnaround_seconds(
+	fuel_speed: float = 1.0,
+	is_returning: bool = true
+) -> float:
+	return TurnaroundRules.estimated_turnaround_seconds(
+		aircraft_profile,
+		fuel_speed,
+		is_returning
+	)
+
+
+func begin_ground_service(stage: String) -> void:
+	if stage in [
+		"UNLOADING",
+		"SERVICING",
+		"LOADING",
+		"PUSHBACK_PREP"
+	]:
+		_set_state(stage)
+
+
 func can_change_flight_plan() -> bool:
 	return state in [
 		"PARKED",
 		"WAITING_FUEL",
+		"UNLOADING",
+		"SERVICING",
+		"LOADING",
+		"PUSHBACK_PREP",
 		"READY_FOR_DESTINATION",
 		"READY_FOR_DEPARTURE",
 		"WAITING_PASSENGERS"
@@ -336,6 +362,14 @@ func _draw() -> void:
 	match state:
 		"WAITING_FUEL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
+		"UNLOADING":
+			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
+		"SERVICING":
+			draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
+		"LOADING":
+			draw_circle(Vector2(-2, -26), 6.0, Color("69c9dd"))
+		"PUSHBACK_PREP":
+			draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
 		"READY_FOR_DESTINATION":
 			draw_circle(Vector2(-2, -26), 6.0, Color("f0a6ff"))
 		"WAITING_PASSENGERS":

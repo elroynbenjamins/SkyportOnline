@@ -179,8 +179,8 @@ func _spawn_aircraft_demos() -> void:
 		var label := "SO-%03d" % (index + 1)
 		var aircraft := AircraftPrototype.new()
 
-		var profile_ids: Array[String] = ["aerolet_100", "aerolet_120"]
-		var default_destinations: Array[String] = ["london", "paris"]
+		var profile_ids: Array[String] = ["pico_p8", "pico_p8"]
+		var default_destinations: Array[String] = ["brussels", "brussels"]
 		var profile_id: String = profile_ids[index % profile_ids.size()]
 		var destination_id: String = default_destinations[
 			index % default_destinations.size()
@@ -217,7 +217,7 @@ func _spawn_aircraft_demos() -> void:
 		)
 		stand_occupancy[stand_uid] = aircraft
 		aircraft_demos.append(aircraft)
-		ground_services.request_fuel(aircraft, label)
+		ground_services.request_turnaround(aircraft, label, false)
 
 	hud.set_operation_status(
 		"%d aircraft awaiting turnaround" % aircraft_demos.size()
@@ -279,6 +279,22 @@ func _on_demo_aircraft_state_changed(
 			hud.set_operation_status("%s taxiing to stand" % label)
 		"PARKED":
 			hud.set_operation_status("%s parked at stand" % label, "success")
+		"UNLOADING":
+			hud.set_operation_status(
+				"%s unloading passengers / cargo" % label
+			)
+		"SERVICING":
+			hud.set_operation_status(
+				"%s fuel / cabin / catering service" % label
+			)
+		"LOADING":
+			hud.set_operation_status(
+				"%s loading passengers / cargo" % label
+			)
+		"PUSHBACK_PREP":
+			hud.set_operation_status(
+				"%s completing pushback checks" % label
+			)
 		"READY_FOR_DESTINATION":
 			hud.set_operation_status(
 				"%s fueled • choose destination" % label,
@@ -420,7 +436,7 @@ func _on_demo_arrival_completed(
 		int(route_info.get("stand_uid", -1)),
 		int(route_info.get("runway_uid", -1))
 	)
-	ground_services.request_fuel(aircraft, label)
+	ground_services.request_turnaround(aircraft, label, true)
 
 
 func _apply_completed_flight_reward(

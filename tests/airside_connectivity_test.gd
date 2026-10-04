@@ -90,8 +90,8 @@ func _run() -> void:
 	var runway_dispatcher := RunwayDispatcher.new()
 	root.add_child(runway_dispatcher)
 
-	plane_a.configure_aircraft_type("aerolet_100")
-	plane_b.configure_aircraft_type("aerolet_120")
+	plane_a.configure_aircraft_type("pico_p8")
+	plane_b.configure_aircraft_type("swift_s14")
 	plane_a.assign_flight_plan({
 		"destination_id": "test-a",
 		"city": "Test A",
@@ -189,7 +189,7 @@ func _run() -> void:
 
 	var lifecycle_plane := AircraftPrototype.new()
 	root.add_child(lifecycle_plane)
-	lifecycle_plane.configure_aircraft_type("aerolet_100")
+	lifecycle_plane.configure_aircraft_type("pico_p8")
 	lifecycle_plane.set_departure_route(
 		starter_routes[0]["route"],
 		"S",

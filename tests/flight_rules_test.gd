@@ -6,13 +6,13 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var slow := AircraftCatalog.get_profile("aerolet_100")
-	var fast := AircraftCatalog.get_profile("aerolet_120")
-	var london := DestinationCatalog.get_destination("london")
+	var slow := AircraftCatalog.get_profile("comet_c22")
+	var fast := AircraftCatalog.get_profile("voyager_v32")
+	var london := DestinationCatalog.get_destination("berlin")
 	var paris := DestinationCatalog.get_destination("paris")
 
 	if slow.is_empty() or fast.is_empty():
-		_fail("Prototype aircraft profiles should exist.")
+		_fail("Approved V1 aircraft profiles should exist.")
 		return
 	if london.is_empty() or paris.is_empty():
 		_fail("Starter Europe destinations should exist.")
@@ -53,7 +53,7 @@ func _run() -> void:
 
 	var plane := AircraftPrototype.new()
 	root.add_child(plane)
-	plane.configure_aircraft_type("aerolet_100")
+	plane.configure_aircraft_type("comet_c22")
 	plane.assign_flight_plan(slow_plan)
 
 	if plane.aircraft_display_name != String(slow.get("name", "")):
@@ -64,7 +64,7 @@ func _run() -> void:
 		return
 
 	print(
-		"Flight timer rules passed: slow London %s, fast London %s."
+		"Flight timer rules passed: Comet route %s, Voyager route %s."
 		% [
 			FlightRules.format_duration(slow_london),
 			FlightRules.format_duration(fast_london)

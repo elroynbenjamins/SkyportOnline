@@ -6,9 +6,9 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var aerolet_100 := AircraftCatalog.get_profile("aerolet_100")
-	var aerolet_120 := AircraftCatalog.get_profile("aerolet_120")
-	var regional_200 := AircraftCatalog.get_profile("regional_200")
+	var aerolet_100 := AircraftCatalog.get_profile("swift_s14")
+	var aerolet_120 := AircraftCatalog.get_profile("comet_c22")
+	var regional_200 := AircraftCatalog.get_profile("nimbus_n40")
 	var london := DestinationCatalog.get_destination("london")
 	var copenhagen := DestinationCatalog.get_destination("copenhagen")
 

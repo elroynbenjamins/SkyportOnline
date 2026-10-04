@@ -84,9 +84,22 @@ func _show_next() -> void:
 		int(reward.get("coins", 0)),
 		int(reward.get("xp", 0))
 	]
-	text += "Country resource chance: %.1f%% each\n\n" % (
+	text += "Country resource chance: %.1f%% each\n" % (
 		float(reward.get("resource_chance", 0.0)) * 100.0
 	)
+
+	if reward.has("mastery_hours_after"):
+		var mastery_stars := int(
+			reward.get("mastery_stars_after", 0)
+		)
+		text += "Mastery: %s • %.1f flight hours\n" % [
+			AircraftMastery.format_stars(mastery_stars),
+			float(reward.get("mastery_hours_after", 0.0))
+		]
+		if bool(reward.get("mastery_star_up", false)):
+			text += "★ NEW MASTERY STAR UNLOCKED!\n"
+
+	text += "\n"
 
 	var rolls: Array = reward.get("resource_rolls", [])
 	for result in rolls:

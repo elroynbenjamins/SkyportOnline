@@ -17,6 +17,18 @@ func _ready() -> void:
 	z_index = 500
 	z_as_relative = false
 	set_process(true)
+	call_deferred("_auto_configure")
+
+
+func _auto_configure() -> void:
+	if airport_grid != null:
+		return
+	var parent := get_parent()
+	if parent == null:
+		return
+	var candidate := parent.get_node_or_null("AirportGrid")
+	if candidate is AirportGrid:
+		configure(candidate)
 
 
 func configure(grid: AirportGrid) -> void:

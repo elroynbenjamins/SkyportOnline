@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 11 — Fleet Control + Mastery presentation
+## Current milestone: Pass 12 — Live turnaround UI + service upgrades
 
 Skyport Online now connects the international country economy directly back into airport progression.
 
@@ -86,6 +86,63 @@ Specialized service buildings unlock later:
 | Catering Kitchen | Lv 6 | Catering | x1.30 | 2 |
 
 The dispatcher always prefers the fastest compatible facility with free capacity and a valid service-road route. This makes airport layout and specialized infrastructure real throughput decisions.
+
+## Live turnaround status
+
+Parked aircraft now display a compact status card directly above the aircraft.
+
+The card distinguishes between:
+
+- **WAIT** — the required vehicle is queued because every compatible fleet is busy.
+- **→** — the service vehicle has been assigned and is driving to the stand.
+- **Countdown** — the vehicle is actively servicing the aircraft.
+- **Passenger shortage** — shows the airport's live passenger stock versus that aircraft's Mastery-adjusted requirement.
+- **Pushback** — counts down the final pre-departure checks.
+- **Ready** — the aircraft has completed turnaround and is waiting for runway clearance.
+
+Examples:
+
+**Turnaround • service**  
+**Fuel 8s • Clean WAIT • Cater →**
+
+or:
+
+**Passengers 5 / 8**  
+**WAITING**
+
+The card follows the parked aircraft and is hidden automatically once the aircraft taxis, departs, approaches, or taxis back in.
+
+## Service-building internal upgrades
+
+Ground-service buildings now use the same persistent internal-upgrade system as passenger buildings. Upgrades do **not** change the building art.
+
+Each upgrade can improve:
+
+- Service speed.
+- Vehicle capacity.
+- Or both.
+
+The intended progression is:
+
+- **Lv1:** base building.
+- **Lv2:** primarily a speed improvement.
+- **Lv3:** adds fleet capacity plus a smaller speed improvement.
+- **Lv4:** further throughput improvement.
+
+Upgrade costs combine coins with regional resources. Service buildings can be tapped directly in the airport to open their upgrade panel, which shows current versus next speed/capacity and every required material.
+
+The starter **Ground Operations Depot** begins at x1.00 speed with one passenger, baggage, cleaning, and catering vehicle per service. Its current internal progression is:
+
+| Level | Speed | Capacity per service |
+| --- | ---: | ---: |
+| 1 | x1.00 | 1 |
+| 2 | x1.10 | 1 |
+| 3 | x1.15 | 2 |
+| 4 | x1.25 | 2 |
+
+Specialized buildings retain better base performance, so upgrading the starter depot does not remove the value of later Passenger Service Hubs, Baggage Depots, Cleaning Centers, Catering Kitchens, or faster fuel facilities.
+
+Saved service-building levels are restored from the guest profile and immediately affect future dispatcher assignments.
 
 ## Passenger bottleneck
 
@@ -219,6 +276,14 @@ The local guest profile currently stores:
 The profile structure remains ready for attaching a linked account later without replacing the airport.
 
 ## Automated validation
+
+Additional service regressions now validate:
+
+- Live queued/en-route aircraft status cards.
+- Service-building speed/capacity upgrades.
+- Regional-resource upgrade consumption.
+- Service-building upgrade persistence after profile reload.
+
 
 GitHub Actions currently validates:
 

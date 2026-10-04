@@ -158,18 +158,45 @@ func _draw_buildings() -> void:
 
 		var footprint := _footprint_for(definition, int(building["rotation"]))
 		var origin: Vector2i = building["origin"]
-		var color: Color = definition["color"]
+		var building_id := String(definition.get("id", ""))
+		var base_color: Color = definition["color"]
 		if _definition_has_world_sprite(definition):
-			color.a = 0.72
+			base_color.a = 0.72
 
 		for y in range(footprint.y):
 			for x in range(footprint.x):
-				_draw_tile_overlay(origin + Vector2i(x, y), color, Color("eef2f1", 0.30), 1.0)
+				var checker := (origin.x + x + origin.y + y) % 2 == 0
+				var fill := AirportVisualStyle.tile_fill(
+					building_id,
+					base_color,
+					checker
+				)
+				var outline := AirportVisualStyle.tile_outline(
+					building_id,
+					Color("eef2f1", 0.30)
+				)
+				_draw_tile_overlay(
+					origin + Vector2i(x, y),
+					fill,
+					outline,
+					1.0
+				)
 
 		if not _definition_has_world_sprite(definition):
 			_draw_building_detail(building, definition, footprint)
 		else:
-			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
+			_draw_building_sprite(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"])
+			)
+
+		_draw_airport_surface_overlay(
+			building,
+			definition,
+			footprint
+		)
 
 
 func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:
@@ -446,6 +473,270 @@ func _draw_building_sprite(
 	var center := _footprint_center_world(origin, footprint)
 	var rect := Rect2(center - draw_size * 0.5 + offset, draw_size)
 	draw_texture_rect(texture, rect, false, modulate)
+
+
+func _draw_airport_surface_overlay(
+	building: Dictionary,
+	definition: Dictionary,
+	footprint: Vector2i
+) -> void:
+	var id := String(definition.get("id", ""))
+	var origin: Vector2i = building.get("origin", Vector2i.ZERO)
+
+	if id == "service_road":
+		_draw_service_road_detail(origin)
+	elif id.contains("stand"):
+		_draw_stand_markings(building, footprint)
+	elif id.contains("runway"):
+		_draw_runway_surface_detail(id, origin, footprint)
+	elif id == "taxiway":
+		_draw_taxiway_edge_lights(origin)
+
+
+func _draw_service_road_detail(origin: Vector2i) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var directions: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
+	var connections := 0
+
+	for direction in directions:
+		var neighbor := origin + direction
+		if not _service_road_visually_connects_to(neighbor):
+			continue
+		var edge := tile_to_world(
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.48
+		)
+		draw_dashed_line(
+			center,
+			edge,
+			AirportVisualStyle.SERVICE_ROAD_CENTER,
+			1.4,
+			5.0
+		)
+		connections += 1
+
+	if connections == 0:
+		draw_dashed_line(
+			center + Vector2(-10, 5),
+			center + Vector2(10, -5),
+			AirportVisualStyle.SERVICE_ROAD_CENTER,
+			1.4,
+			5.0
+		)
+
+
+func _service_road_visually_connects_to(cell: Vector2i) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+
+	var building := _building_by_uid(int(occupied_cells[key]))
+	if building.is_empty():
+		return false
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return false
+
+	var services: Dictionary = definition.get("services", {})
+	return (
+		String(definition.get("id", "")) == "service_road"
+		or not String(definition.get("service", "")).is_empty()
+		or not services.is_empty()
+	)
+
+
+func _draw_stand_markings(
+	building: Dictionary,
+	footprint: Vector2i
+) -> void:
+	var origin: Vector2i = building.get("origin", Vector2i.ZERO)
+	var center := _footprint_center_world(origin, footprint)
+	var cells := _cells_for(origin, footprint)
+	var taxi_cell := _first_adjacent_reachable_taxiway(cells)
+
+	var toward_center := Vector2(1.0, -0.5).normalized()
+	var start := center - toward_center * 36.0
+	if taxi_cell.x >= 0:
+		var taxi_world := tile_to_world(
+			Vector2(taxi_cell.x, taxi_cell.y)
+		)
+		toward_center = (center - taxi_world).normalized()
+		if toward_center == Vector2.ZERO:
+			toward_center = Vector2(1.0, -0.5).normalized()
+		start = taxi_world.lerp(center, 0.22)
+
+	var normal := Vector2(-toward_center.y, toward_center.x)
+	var stop_center := center + toward_center * 9.0
+
+	draw_line(
+		start,
+		stop_center,
+		AirportVisualStyle.STAND_GUIDE,
+		2.2
+	)
+	draw_line(
+		stop_center - normal * 10.0,
+		stop_center + normal * 10.0,
+		AirportVisualStyle.STAND_STOP,
+		2.4
+	)
+	draw_line(
+		stop_center - normal * 10.0,
+		stop_center - normal * 10.0 - toward_center * 8.0,
+		AirportVisualStyle.STAND_STOP,
+		1.6
+	)
+	draw_line(
+		stop_center + normal * 10.0,
+		stop_center + normal * 10.0 - toward_center * 8.0,
+		AirportVisualStyle.STAND_STOP,
+		1.6
+	)
+
+	var box_half_width := 22.0 if footprint.x <= 2 else 29.0
+	var box_half_length := 26.0 if footprint.y <= 2 else 34.0
+	var box_center := center - toward_center * 5.0
+	var corners := PackedVector2Array([
+		box_center - normal * box_half_width - toward_center * box_half_length,
+		box_center + normal * box_half_width - toward_center * box_half_length,
+		box_center + normal * box_half_width + toward_center * box_half_length,
+		box_center - normal * box_half_width + toward_center * box_half_length,
+		box_center - normal * box_half_width - toward_center * box_half_length
+	])
+	draw_polyline(corners, AirportVisualStyle.STAND_BOX, 1.2)
+
+
+func _draw_runway_surface_detail(
+	building_id: String,
+	origin: Vector2i,
+	footprint: Vector2i
+) -> void:
+	var start: Vector2
+	var finish: Vector2
+
+	if footprint.x >= footprint.y:
+		start = tile_to_world(
+			Vector2(
+				origin.x,
+				origin.y + float(footprint.y - 1) * 0.5
+			)
+		)
+		finish = tile_to_world(
+			Vector2(
+				origin.x + footprint.x - 1,
+				origin.y + float(footprint.y - 1) * 0.5
+			)
+		)
+	else:
+		start = tile_to_world(
+			Vector2(
+				origin.x + float(footprint.x - 1) * 0.5,
+				origin.y
+			)
+		)
+		finish = tile_to_world(
+			Vector2(
+				origin.x + float(footprint.x - 1) * 0.5,
+				origin.y + footprint.y - 1
+			)
+		)
+
+	var direction := (finish - start).normalized()
+	if direction == Vector2.ZERO:
+		return
+	var normal := Vector2(-direction.y, direction.x)
+
+	var center_start := start + direction * 22.0
+	var center_finish := finish - direction * 22.0
+	draw_dashed_line(
+		center_start,
+		center_finish,
+		AirportVisualStyle.RUNWAY_MARKING,
+		2.0,
+		12.0
+	)
+
+	for threshold_center in [
+		start + direction * 14.0,
+		finish - direction * 14.0
+	]:
+		for offset in [-10.5, -3.5, 3.5, 10.5]:
+			var stripe_center: Vector2 = (
+				threshold_center + normal * float(offset)
+			)
+			draw_line(
+				stripe_center - direction * 5.0,
+				stripe_center + direction * 5.0,
+				AirportVisualStyle.RUNWAY_MARKING,
+				2.2
+			)
+
+	var samples := 8 if (
+		footprint.x >= 9 or footprint.y >= 9
+	) else 6
+	var edge_offset := 18.0
+	for index in range(samples + 1):
+		var t := float(index) / float(samples)
+		var along := start.lerp(finish, t)
+		for side in [-1.0, 1.0]:
+			var light := along + normal * edge_offset * float(side)
+			draw_circle(light, 2.7, Color(0, 0, 0, 0.48))
+			draw_circle(
+				light,
+				1.55,
+				AirportVisualStyle.RUNWAY_LIGHT
+			)
+
+
+func _draw_taxiway_edge_lights(origin: Vector2i) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var directions: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
+	var any_connection := false
+
+	for direction in directions:
+		var neighbor := origin + direction
+		if not _taxiway_visually_connects_to(neighbor):
+			continue
+
+		var edge := tile_to_world(
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.40
+		)
+		var dir_world := (edge - center).normalized()
+		if dir_world == Vector2.ZERO:
+			continue
+		var normal := Vector2(-dir_world.y, dir_world.x)
+		for side in [-1.0, 1.0]:
+			var light := edge + normal * 8.0 * float(side)
+			draw_circle(light, 2.3, Color(0, 0, 0, 0.42))
+			draw_circle(
+				light,
+				1.35,
+				AirportVisualStyle.TAXIWAY_LIGHT
+			)
+		any_connection = true
+
+	if not any_connection:
+		for side in [-1.0, 1.0]:
+			var light := center + Vector2(0, 8.0 * float(side))
+			draw_circle(
+				light,
+				1.35,
+				AirportVisualStyle.TAXIWAY_LIGHT
+			)
 
 
 func _draw_taxiway_detail(origin: Vector2i) -> void:

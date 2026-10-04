@@ -13,10 +13,15 @@ var route_index := 0
 var service_duration := 4.0
 var service_remaining := 0.0
 var phase := "IDLE"
+var launch_delay_remaining := 0.0
 var service_pose_rotation := 0.0
 var has_service_pose_rotation := false
 var service_connection_target := Vector2.ZERO
 var has_service_connection_target := false
+
+
+func set_launch_delay(seconds: float) -> void:
+	launch_delay_remaining = maxf(seconds, 0.0)
 
 
 func set_service_pose_rotation(value: float) -> void:
@@ -44,12 +49,20 @@ func start_service(route: PackedVector2Array, duration: float) -> void:
 	service_remaining = service_duration
 	position = outbound_route[0]
 	visible = true
-	phase = "OUTBOUND"
+	phase = "WAITING_LAUNCH" if launch_delay_remaining > 0.0 else "OUTBOUND"
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
 	match phase:
+		"WAITING_LAUNCH":
+			launch_delay_remaining = maxf(
+				launch_delay_remaining - delta,
+				0.0
+			)
+			if launch_delay_remaining <= 0.0:
+				phase = "OUTBOUND"
+				queue_redraw()
 		"OUTBOUND":
 			if _follow_route(outbound_route, delta):
 				phase = "SERVICING"

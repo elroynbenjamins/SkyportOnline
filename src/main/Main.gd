@@ -597,6 +597,10 @@ func _apply_completed_flight_reward(
 			"resource_inventory",
 			{}
 		).duplicate(true)
+		if world_map != null:
+			world_map.set_route_history(
+				current_profile.get("route_history", {})
+			)
 
 	if fleet_screen != null:
 		fleet_screen.set_mastery_hours(

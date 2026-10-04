@@ -27,6 +27,15 @@ normally remain 21 so all events share the same structure.
 
 The included **Sky Lantern Festival** is a disabled example/template.
 
+The first release-facing event is **Winter Airbridge: Christmas & New Year**.
+
+It is preconfigured but ships disabled until the public release date is firm.
+Its provisional window is **December 18, 2026 through January 8, 2027**.
+
+Autumn Airbridge is retained as disabled archive/test content because the game
+is not expected to release during its event window.
+
+
 ## Fixed event structure
 
 Every event follows the same loop:
@@ -162,9 +171,36 @@ The framework currently understands these metrics:
 - `resources_earned`
 - `flight_coins`
 - `buildings_placed`
+- `destination_flights`
 
 The sample event uses the first four. Future event templates can use any metric
 already emitted to `EventManager.record_metric()`.
+
+## Winter launch-event economy
+
+The Winter launch event keeps the standard 21-day / three-week mission
+structure but uses a larger choice-based shop.
+
+Maximum earnable currency:
+
+**620 personal + 300 Alliance = 920 Festive Vouchers**
+
+Total shop stock:
+
+**1,310 Festive Vouchers**
+
+Utility ceilings:
+
+- 250 purchased passengers.
+- 11,000 purchased coins.
+- 3 selected European country resources.
+
+The resource-choice crate supports Netherlands, Belgium, Germany, United
+Kingdom, France, and Denmark resources. The player selects the specific
+resource before vouchers are spent.
+
+See `docs/WINTER_LAUNCH_EVENT.md` for the complete balance and release
+checklist.
 
 ## Adding a new event
 

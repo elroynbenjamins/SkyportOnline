@@ -42,6 +42,7 @@ var turnaround_label: Label
 var taxi_traffic_controller: TaxiTrafficController
 var taxi_holding := false
 var taxi_hold_reason := ""
+var livery_cosmetic_id := ""
 
 
 func _ready() -> void:
@@ -78,6 +79,26 @@ func configure_aircraft_type(type_id: String) -> void:
 		aircraft_size,
 		profile
 	)
+
+
+func set_livery_cosmetic(cosmetic_id: String) -> void:
+	livery_cosmetic_id = cosmetic_id
+	queue_redraw()
+
+
+func get_livery_cosmetic() -> String:
+	return livery_cosmetic_id
+
+
+func _active_livery_id() -> String:
+	if livery_cosmetic_id.is_empty():
+		return ""
+	if not CosmeticCatalog.is_compatible_with_aircraft(
+		livery_cosmetic_id,
+		aircraft_type_id
+	):
+		return ""
+	return livery_cosmetic_id
 
 
 func assign_flight_plan(plan: Dictionary) -> void:
@@ -958,7 +979,27 @@ func _draw() -> void:
 		Vector2(-20, 11),
 		Vector2(-14, 4)
 	])
-	draw_colored_polygon(tail, Color("5d90b8"))
+	var active_livery := _active_livery_id()
+	var tail_color := Color("5d90b8")
+	if not active_livery.is_empty():
+		tail_color = CosmeticCatalog.visual_color(active_livery)
+	draw_colored_polygon(tail, tail_color)
+
+	if not active_livery.is_empty():
+		var secondary := CosmeticCatalog.secondary_color(
+			active_livery
+		)
+		draw_line(
+			Vector2(-15, 0),
+			Vector2(10, 0),
+			secondary,
+			3.0
+		)
+		draw_circle(
+			Vector2(-17, 0),
+			3.0,
+			CosmeticCatalog.visual_color(active_livery)
+		)
 
 	draw_rect(Rect2(Vector2(2, -4), Vector2(7, 8)), Color("4a7898"))
 	draw_circle(Vector2(14, 0), 2.2, Color("c8e9f1"))

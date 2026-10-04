@@ -148,7 +148,7 @@ static func all() -> Array[Dictionary]:
 			"menu_name": "MEDIUM STAND",
 			"category": "Infrastructure",
 			"footprint": Vector2i(3, 3),
-			"cost": 60000,
+			"cost": 45000,
 			"level": 8,
 			"color": Color("6f7c84"),
 			"rotatable": true,

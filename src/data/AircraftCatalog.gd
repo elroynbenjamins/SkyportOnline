@@ -279,3 +279,17 @@ static func supports_destination(
 	if profile.is_empty():
 		return false
 	return distance_km <= float(profile.get("range_km", 0.0))
+
+
+static func size_rank(size_class: String) -> int:
+	match size_class.to_upper():
+		"S":
+			return 0
+		"M":
+			return 1
+		"L":
+			return 2
+		"XL":
+			return 3
+		_:
+			return 99

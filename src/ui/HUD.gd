@@ -791,6 +791,113 @@ func _refresh_operations_status() -> void:
 						String(item.get("detail", ""))
 					]
 
+	var payoff_value = operations_analytics.get(
+		"payoff",
+		{}
+	)
+	if payoff_value is Dictionary:
+		var payoff: Dictionary = payoff_value
+		var best_value_variant = payoff.get(
+			"best_value",
+			{}
+		)
+		if best_value_variant is Dictionary:
+			var best_value: Dictionary = best_value_variant
+			if not best_value.is_empty():
+				body += "\n\nBEST PAYOFF\n%s" % String(
+					best_value.get(
+						"title",
+						"Upgrade"
+					)
+				)
+				body += "\n~%.1fs saved • %.1fs / 10k coins • 🪙 %d" % [
+					float(
+						best_value.get(
+							"estimated_delay_saved_seconds",
+							0.0
+						)
+					),
+					float(
+						best_value.get(
+							"delay_saved_per_10k",
+							0.0
+						)
+					),
+					int(
+						best_value.get(
+							"coin_cost",
+							0
+						)
+					)
+				]
+				var missing_total := int(
+					best_value.get(
+						"resource_missing_total",
+						0
+					)
+				)
+				if missing_total > 0:
+					body += " • %d resource%s missing" % [
+						missing_total,
+						"" if missing_total == 1 else "s"
+					]
+				elif bool(
+					best_value.get(
+						"affordable_now",
+						false
+					)
+				):
+					body += " • READY NOW"
+
+		var affordable_variant = payoff.get(
+			"best_affordable",
+			{}
+		)
+		if affordable_variant is Dictionary:
+			var affordable: Dictionary = affordable_variant
+			if (
+				not affordable.is_empty()
+				and (
+					not (
+						best_value_variant is Dictionary
+					)
+					or String(
+						affordable.get("id", "")
+					) != String(
+						(best_value_variant as Dictionary).get(
+							"id",
+							""
+						)
+					)
+				)
+			):
+				body += "\n\nBEST BUY NOW\n%s" % String(
+					affordable.get(
+						"title",
+						"Upgrade"
+					)
+				)
+				body += "\n~%.1fs saved • %.1fs / 10k coins • 🪙 %d" % [
+					float(
+						affordable.get(
+							"estimated_delay_saved_seconds",
+							0.0
+						)
+					),
+					float(
+						affordable.get(
+							"delay_saved_per_10k",
+							0.0
+						)
+					),
+					int(
+						affordable.get(
+							"coin_cost",
+							0
+						)
+					)
+				]
+
 	var chip_tone := current_operation_status_tone
 	if chip_tone == "normal":
 		var tone_analysis_value = operations_analytics.get(

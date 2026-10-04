@@ -164,6 +164,7 @@ func _build_ui() -> void:
 	panel_node.offset_bottom = 205
 	panel_node.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel_node)
+	GameUIStyle.apply_panel(panel_node, "raised")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
@@ -181,13 +182,14 @@ func _build_ui() -> void:
 
 	title_label = Label.new()
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_label.add_theme_font_size_override("font_size", 21)
+	GameUIStyle.heading(title_label, 21)
 	header.add_child(title_label)
 
 	var close_button := Button.new()
 	close_button.text = "✕"
 	close_button.custom_minimum_size = Vector2(46, 42)
 	close_button.pressed.connect(close_panel)
+	GameUIStyle.apply_button(close_button, "secondary", true)
 	header.add_child(close_button)
 
 	stats_label = Label.new()
@@ -218,6 +220,7 @@ func _build_ui() -> void:
 	upgrade_button.custom_minimum_size = Vector2(0, 54)
 	upgrade_button.add_theme_font_size_override("font_size", 16)
 	upgrade_button.pressed.connect(_on_upgrade_pressed)
+	GameUIStyle.apply_button(upgrade_button, "primary")
 	column.add_child(upgrade_button)
 
 

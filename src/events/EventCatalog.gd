@@ -237,7 +237,7 @@ static func all() -> Array[Dictionary]:
 			"start_unix": 1797552000,
 			"theme": "winter",
 			"pico_livery_cosmetic_id": "event_winter_pico_livery",
-			"featured_marker_text": "XMAS",
+			"featured_marker_text": "WINTER",
 			"featured_destinations": [
 				"brussels",
 				"london",

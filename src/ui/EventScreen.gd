@@ -82,14 +82,28 @@ func refresh(snapshot: Dictionary) -> void:
 	if featured_names.is_empty():
 		featured_routes_label.text = ""
 	else:
-		featured_routes_label.text = (
-			"FEATURED ROUTES  •  %s  •  +%d %s per completed return"
-			% [
-				" • ".join(featured_names),
-				int(snapshot.get("featured_route_currency", 0)),
-				String(snapshot.get("currency_name", "Event Currency"))
-			]
+		var route_currency := int(
+			snapshot.get("featured_route_currency", 0)
 		)
+		if route_currency > 0:
+			featured_routes_label.text = (
+				"FEATURED ROUTES  •  %s  •  +%d %s per completed return"
+				% [
+					" • ".join(featured_names),
+					route_currency,
+					String(
+						snapshot.get(
+							"currency_name",
+							"Event Currency"
+						)
+					)
+				]
+			)
+		else:
+			featured_routes_label.text = (
+				"FEATURED QUEST ROUTES  •  %s  •  currency from quests"
+				% " • ".join(featured_names)
+			)
 
 	_refresh_quests(snapshot)
 	_refresh_shop(snapshot)

@@ -45,7 +45,8 @@ func request_turnaround(
 		"profile": profile,
 		"is_returning": is_returning,
 		"stage": "",
-		"stage_pending": {}
+		"stage_pending": {},
+		"service_status": {}
 	}
 
 	if is_returning:
@@ -144,9 +145,14 @@ func get_turnaround_snapshot(
 
 	var job: Dictionary = turnaround_jobs[job_id]
 	var pending: Dictionary = job.get("stage_pending", {})
+	var status: Dictionary = job.get("service_status", {})
 	return {
 		"stage": String(job.get("stage", "")),
 		"pending_services": pending.keys(),
+		"service_status": status.duplicate(true),
+		"pushback_remaining": float(
+			job.get("pushback_remaining", 0.0)
+		),
 		"is_returning": bool(job.get("is_returning", false))
 	}
 
@@ -166,7 +172,13 @@ func _process(delta: float) -> void:
 			_remove_job(job_id)
 			continue
 
+		_tick_service_status(job_id, delta)
+		if not turnaround_jobs.has(job_id):
+			continue
+
+		job = turnaround_jobs[job_id]
 		if String(job.get("stage", "")) != "PUSHBACK_PREP":
+			_refresh_aircraft_status(job_id)
 			continue
 
 		var remaining := maxf(
@@ -175,6 +187,9 @@ func _process(delta: float) -> void:
 		)
 		job["pushback_remaining"] = remaining
 		turnaround_jobs[job_id] = job
+		aircraft.set_turnaround_status(
+			"Pushback checks\n%.0fs" % remaining
+		)
 		if remaining <= 0.0:
 			_complete_turnaround(job_id)
 
@@ -257,8 +272,10 @@ func _begin_vehicle_stage(
 
 	var profile: Dictionary = job.get("profile", {})
 	var pending := {}
+	var service_status := {}
 	job["stage"] = stage
 	job["stage_pending"] = pending
+	job["service_status"] = service_status
 	turnaround_jobs[job_id] = job
 	aircraft.begin_ground_service(stage)
 
@@ -277,6 +294,12 @@ func _begin_vehicle_stage(
 			continue
 
 		pending[service_key] = true
+		service_status[service_key] = {
+			"service_type": service_type,
+			"state": "queued",
+			"remaining": base_duration,
+			"duration": base_duration
+		}
 		_enqueue_service_request(
 			job_id,
 			aircraft,
@@ -287,7 +310,9 @@ func _begin_vehicle_stage(
 		)
 
 	job["stage_pending"] = pending
+	job["service_status"] = service_status
 	turnaround_jobs[job_id] = job
+	_refresh_aircraft_status(job_id)
 
 	status_changed.emit(
 		"%s • %s" % [
@@ -315,8 +340,13 @@ func _request_passenger_boarding(job_id: int) -> void:
 
 	job["stage"] = "WAITING_PASSENGERS"
 	job["stage_pending"] = {}
+	job["service_status"] = {}
 	turnaround_jobs[job_id] = job
 	aircraft.mark_waiting_passengers()
+	aircraft.set_turnaround_status(
+		"Waiting for passengers",
+		"warning"
+	)
 	passenger_boarding_requested.emit(
 		aircraft,
 		String(job.get("label", "Aircraft"))
@@ -335,8 +365,13 @@ func _wait_for_destination(job_id: int) -> void:
 
 	job["stage"] = "WAITING_DESTINATION"
 	job["stage_pending"] = {}
+	job["service_status"] = {}
 	turnaround_jobs[job_id] = job
 	aircraft.mark_service_complete()
+	aircraft.set_turnaround_status(
+		"Destination required",
+		"warning"
+	)
 	status_changed.emit(
 		"%s serviced • destination required" % String(
 			job.get("label", "Aircraft")
@@ -362,9 +397,13 @@ func _begin_pushback(job_id: int) -> void:
 	)
 	job["stage"] = "PUSHBACK_PREP"
 	job["stage_pending"] = {}
+	job["service_status"] = {}
 	job["pushback_remaining"] = duration
 	turnaround_jobs[job_id] = job
 	aircraft.begin_ground_service("PUSHBACK_PREP")
+	aircraft.set_turnaround_status(
+		"Pushback checks\n%.0fs" % duration
+	)
 
 	status_changed.emit(
 		"%s pushback checks • %.0fs" % [
@@ -391,6 +430,10 @@ func _complete_turnaround(job_id: int) -> void:
 		return
 
 	aircraft.mark_service_complete()
+	aircraft.set_turnaround_status(
+		"Ready • runway queue",
+		"success"
+	)
 	aircraft_serviced.emit(aircraft, label)
 	status_changed.emit(
 		"%s turnaround complete • awaiting runway" % label,
@@ -549,6 +592,14 @@ func _dispatch_service(
 		request.get("legacy_fuel_only", false)
 	)
 
+	if not legacy_fuel_only and job_id >= 0:
+		_set_service_status(
+			job_id,
+			service_key,
+			"en_route",
+			duration
+		)
+
 	if service_type == "fuel":
 		var truck := FuelTruckPrototype.new()
 		truck.z_index = 90
@@ -557,7 +608,9 @@ func _dispatch_service(
 			_on_service_started.bind(
 				label,
 				service_type,
-				duration
+				duration,
+				job_id,
+				service_key
 			)
 		)
 		truck.service_completed.connect(
@@ -622,8 +675,17 @@ func _dispatch_service(
 func _on_service_started(
 	label: String,
 	service_type: String,
-	duration: float
+	duration: float,
+	job_id: int,
+	service_key: String
 ) -> void:
+	if job_id >= 0:
+		_set_service_status(
+			job_id,
+			service_key,
+			"active",
+			duration
+		)
 	status_changed.emit(
 		"%s %s • %.0fs" % [
 			label,
@@ -658,9 +720,20 @@ func _on_service_completed(
 
 	var job: Dictionary = turnaround_jobs[job_id]
 	var pending: Dictionary = job.get("stage_pending", {})
+	var service_status: Dictionary = job.get(
+		"service_status",
+		{}
+	)
+	if service_status.has(service_key):
+		var entry: Dictionary = service_status[service_key]
+		entry["state"] = "done"
+		entry["remaining"] = 0.0
+		service_status[service_key] = entry
 	pending.erase(service_key)
 	job["stage_pending"] = pending
+	job["service_status"] = service_status
 	turnaround_jobs[job_id] = job
+	_refresh_aircraft_status(job_id)
 
 	if pending.is_empty():
 		_advance_stage(job_id)
@@ -680,6 +753,145 @@ func _on_vehicle_returned(
 	)
 	active_jobs = maxi(active_jobs - 1, 0)
 	_try_dispatch()
+
+
+func _set_service_status(
+	job_id: int,
+	service_key: String,
+	state_value: String,
+	remaining: float
+) -> void:
+	if not turnaround_jobs.has(job_id):
+		return
+
+	var job: Dictionary = turnaround_jobs[job_id]
+	var service_status: Dictionary = job.get(
+		"service_status",
+		{}
+	)
+	if not service_status.has(service_key):
+		return
+
+	var entry: Dictionary = service_status[service_key]
+	entry["state"] = state_value
+	entry["remaining"] = maxf(remaining, 0.0)
+	if state_value == "active":
+		entry["duration"] = maxf(remaining, 0.0)
+	service_status[service_key] = entry
+	job["service_status"] = service_status
+	turnaround_jobs[job_id] = job
+	_refresh_aircraft_status(job_id)
+
+
+func _tick_service_status(
+	job_id: int,
+	delta: float
+) -> void:
+	if not turnaround_jobs.has(job_id):
+		return
+
+	var job: Dictionary = turnaround_jobs[job_id]
+	var service_status: Dictionary = job.get(
+		"service_status",
+		{}
+	)
+	var changed := false
+
+	for service_key in service_status.keys():
+		var entry: Dictionary = service_status[service_key]
+		if String(entry.get("state", "")) != "active":
+			continue
+		entry["remaining"] = maxf(
+			float(entry.get("remaining", 0.0)) - delta,
+			0.0
+		)
+		service_status[service_key] = entry
+		changed = true
+
+	if changed:
+		job["service_status"] = service_status
+		turnaround_jobs[job_id] = job
+
+
+func _refresh_aircraft_status(job_id: int) -> void:
+	if not turnaround_jobs.has(job_id):
+		return
+
+	var job: Dictionary = turnaround_jobs[job_id]
+	var aircraft := job.get("aircraft") as AircraftPrototype
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	var stage := String(job.get("stage", ""))
+	if stage in [
+		"WAITING_PASSENGERS",
+		"WAITING_DESTINATION",
+		"PUSHBACK_PREP"
+	]:
+		return
+
+	var status: Dictionary = job.get("service_status", {})
+	var parts: Array[String] = []
+	for service_key in status.keys():
+		var entry: Dictionary = status[service_key]
+		var state_value := String(entry.get("state", ""))
+		if state_value == "done":
+			continue
+
+		var service_type := String(
+			entry.get("service_type", "")
+		)
+		var label := _service_short_name(
+			service_type,
+			String(service_key)
+		)
+		match state_value:
+			"queued":
+				parts.append("%s WAIT" % label)
+			"en_route":
+				parts.append("%s →" % label)
+			"active":
+				parts.append(
+					"%s %.0fs" % [
+						label,
+						float(entry.get("remaining", 0.0))
+					]
+				)
+
+	var header := _stage_short_name(stage)
+	var text := header
+	if not parts.is_empty():
+		text += "\n" + " • ".join(parts)
+	aircraft.set_turnaround_status(text)
+
+
+func _stage_short_name(stage: String) -> String:
+	match stage:
+		"UNLOADING":
+			return "Turnaround • unload"
+		"SERVICING":
+			return "Turnaround • service"
+		"LOADING":
+			return "Turnaround • load"
+		_:
+			return "Turnaround"
+
+
+func _service_short_name(
+	service_type: String,
+	service_key: String
+) -> String:
+	match service_type:
+		"passenger":
+			return "Pax"
+		"cargo":
+			return "Bag"
+		"cleaning":
+			return "Clean"
+		"catering":
+			return "Cater"
+		_:
+			return "Fuel"
 
 
 func _profile_for_aircraft(

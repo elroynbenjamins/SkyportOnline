@@ -138,13 +138,35 @@ func _run() -> void:
 	departure.runway_cleared.emit()
 	await process_frame
 
+	var spacing_state := dispatcher.get_runway_visual_state(
+		runway_uid
+	)
+	if String(
+		spacing_state.get("status", "")
+	) != "arrival_priority_spacing":
+		_fail("Priority arrival should show an arrival-spacing runway state.")
+		return
+	if float(
+		spacing_state.get("separation_remaining", 0.0)
+	) <= 0.0:
+		_fail("Runway visual state should expose live separation countdown.")
+		return
+	if String(
+		spacing_state.get("stop_bar", "")
+	) != "amber":
+		_fail("Arrival-priority spacing should keep amber stop-bar indication.")
+		return
+
+	dispatcher._process(
+		RunwayPacingRules.DEPARTURE_TO_ARRIVAL + 0.1
+	)
 	var occupied_arrival := dispatcher.get_runway_visual_state(
 		runway_uid
 	)
 	if String(
 		occupied_arrival.get("status", "")
 	) != "occupied_arrival":
-		_fail("Priority arrival should switch runway beacon to occupied arrival.")
+		_fail("Priority arrival should occupy runway after separation.")
 		return
 	if String(
 		occupied_arrival.get("active_operation", "")

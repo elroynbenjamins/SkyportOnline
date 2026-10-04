@@ -70,7 +70,7 @@ func _run() -> void:
 	card.primary_action_requested.connect(
 		_on_primary_action_requested
 	)
-	card.primary_button.pressed.emit()
+	card._on_primary_pressed()
 	if not primary_emitted:
 		_fail("Building card primary action should emit selected building.")
 		return

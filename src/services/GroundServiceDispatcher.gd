@@ -3,6 +3,7 @@ extends Node2D
 
 signal status_changed(text: String, tone: String)
 signal queue_changed(waiting: int, active: int)
+signal aircraft_serviced(aircraft: AircraftPrototype, label: String)
 
 var airport_grid: AirportGrid
 var pending_requests: Array[Dictionary] = []
@@ -51,11 +52,11 @@ func _try_dispatch() -> void:
 				made_progress = true
 				break
 
-			var stations := airport_grid.get_compatible_service_buildings(
+				var stations := airport_grid.get_compatible_service_buildings(
 				String(request.get("service", "fuel")),
 				aircraft.aircraft_size
 			)
-			var station := _first_available_station(stations)
+			var station := _first_available_station(stations, aircraft.stand_uid)
 			if station.is_empty():
 				continue
 
@@ -67,13 +68,21 @@ func _try_dispatch() -> void:
 	_emit_queue_status()
 
 
-func _first_available_station(stations: Array[Dictionary]) -> Dictionary:
+func _first_available_station(stations: Array[Dictionary], stand_uid: int) -> Dictionary:
 	for station in stations:
 		var uid := int(station.get("uid", -1))
 		var capacity := maxi(int(station.get("vehicle_capacity", 1)), 1)
 		var active := int(station_active.get(uid, 0))
-		if active < capacity:
-			return station
+		if active >= capacity:
+			continue
+
+		var route := airport_grid.get_service_route(uid, stand_uid)
+		if route.size() < 2:
+			continue
+
+		var result := station.duplicate(true)
+		result["service_route"] = route
+		return result
 	return {}
 
 
@@ -98,11 +107,8 @@ func _dispatch_fuel(request: Dictionary, station: Dictionary) -> void:
 	truck.service_completed.connect(_on_service_completed.bind(aircraft, label))
 	truck.returned_to_station.connect(_on_truck_returned.bind(uid, label))
 
-	truck.start_service(
-		station.get("world_position", Vector2.ZERO),
-		aircraft.position,
-		service_duration
-	)
+	var route: PackedVector2Array = station.get("service_route", PackedVector2Array())
+	truck.start_service(route, service_duration)
 
 	status_changed.emit(
 		"%s fuel truck dispatched • x%.1f" % [label, service_speed],
@@ -116,8 +122,9 @@ func _on_service_started(label: String) -> void:
 
 func _on_service_completed(aircraft: AircraftPrototype, label: String) -> void:
 	if aircraft != null and is_instance_valid(aircraft):
-		aircraft.begin_departure_after_service()
-	status_changed.emit("%s fueled • preparing taxi" % label, "success")
+		aircraft.mark_service_complete()
+		aircraft_serviced.emit(aircraft, label)
+	status_changed.emit("%s fueled • awaiting runway" % label, "success")
 
 
 func _on_truck_returned(station_uid: int, _label: String) -> void:

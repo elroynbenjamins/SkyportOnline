@@ -10,6 +10,7 @@ signal navigation_requested(tab: String)
 var interface_root: Control
 var title_label: Label
 var level_label: Label
+var passenger_label: Label
 var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
@@ -70,6 +71,13 @@ func _build_interface() -> void:
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_label.add_theme_font_size_override("font_size", 21)
 	top_row.add_child(title_label)
+
+	passenger_label = Label.new()
+	passenger_label.custom_minimum_size = Vector2(175, 0)
+	passenger_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	passenger_label.add_theme_font_size_override("font_size", 17)
+	passenger_label.text = "👥 0 / 0"
+	top_row.add_child(passenger_label)
 
 	coins_label = Label.new()
 	coins_label.custom_minimum_size = Vector2(130, 0)
@@ -370,6 +378,22 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 		show_build_preview(definition, {}, current_level, current_coins)
 	elif not current_parcel.is_empty():
 		show_parcel(current_parcel, current_level, current_coins)
+
+
+
+
+func set_passenger_data(
+	passengers: int,
+	capacity: int,
+	per_minute: float
+) -> void:
+	if passenger_label == null:
+		return
+	passenger_label.text = "👥 %d / %d  +%.1f/m" % [
+		passengers,
+		capacity,
+		per_minute
+	]
 
 
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:

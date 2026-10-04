@@ -26,6 +26,7 @@ var return_summary: FlightReturnSummary
 var resource_inventory_screen: ResourceInventoryScreen
 var passenger_upgrade_panel: PassengerUpgradePanel
 var passenger_economy: PassengerEconomy
+var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var current_profile: Dictionary = {}
 var gameplay_started := false
 
@@ -98,6 +99,7 @@ func _start_gameplay() -> void:
 	_setup_world_map()
 	_setup_return_summary()
 	_setup_passenger_system()
+	_setup_rewarded_passenger_ad_bridge()
 	_setup_resource_inventory()
 	_setup_passenger_upgrade_panel()
 	reward_rng.randomize()
@@ -150,8 +152,22 @@ func _setup_passenger_system() -> void:
 	)
 
 
+func _setup_rewarded_passenger_ad_bridge() -> void:
+	rewarded_passenger_ad_bridge = RewardedPassengerAdBridge.new()
+	rewarded_passenger_ad_bridge.reward_granted.connect(
+		_on_rewarded_passenger_ad_reward_granted
+	)
+	rewarded_passenger_ad_bridge.unavailable.connect(
+		_on_rewarded_passenger_ad_unavailable
+	)
+	add_child(rewarded_passenger_ad_bridge)
+
+
 func _setup_resource_inventory() -> void:
 	resource_inventory_screen = ResourceInventoryScreen.new()
+	resource_inventory_screen.rewarded_passenger_boost_requested.connect(
+		_on_rewarded_passenger_boost_requested
+	)
 	add_child(resource_inventory_screen)
 
 
@@ -553,7 +569,8 @@ func _on_navigation_requested(tab: String) -> void:
 				resource_inventory,
 				passenger_economy.get_passengers(),
 				passenger_economy.get_capacity(),
-				passenger_economy.get_production_per_minute()
+				passenger_economy.get_production_per_minute(),
+				rewarded_passenger_ad_bridge.provider_connected
 			)
 
 
@@ -616,6 +633,41 @@ func _on_world_tapped(world_position: Vector2) -> void:
 		return
 
 	airport_grid.select_world_position(world_position)
+
+
+func _on_rewarded_passenger_boost_requested() -> void:
+	rewarded_passenger_ad_bridge.request_ad()
+
+
+func _on_rewarded_passenger_ad_unavailable() -> void:
+	hud.set_operation_status(
+		"Rewarded passenger boost is ready, but no ad provider is connected.",
+		"warning"
+	)
+
+
+func _on_rewarded_passenger_ad_reward_granted() -> void:
+	var added := PassengerSupportRules.grant_rewarded_ad_passengers(
+		passenger_economy
+	)
+	if added <= 0:
+		hud.set_operation_status(
+			"Passenger storage is already full.",
+			"warning"
+		)
+	else:
+		hud.set_operation_status(
+			"Rewarded ad complete • +%d passengers" % added,
+			"success"
+		)
+
+	resource_inventory_screen.open_inventory(
+		resource_inventory,
+		passenger_economy.get_passengers(),
+		passenger_economy.get_capacity(),
+		passenger_economy.get_production_per_minute(),
+		rewarded_passenger_ad_bridge.provider_connected
+	)
 
 
 func _on_passenger_economy_changed(

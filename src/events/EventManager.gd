@@ -15,6 +15,19 @@ func configure(
 	override_event: Dictionary = {}
 ) -> void:
 	passenger_economy = economy
+
+	if override_event.is_empty():
+		var validation := EventCatalog.validate_catalog()
+		if not bool(validation.get("valid", false)):
+			event_definition = {}
+			state = {}
+			message.emit(
+				"Event catalog invalid • check configuration.",
+				"warning"
+			)
+			changed.emit(get_snapshot())
+			return
+
 	if not override_event.is_empty():
 		event_definition = override_event.duplicate(true)
 	else:
@@ -42,6 +55,17 @@ func set_now_override(value: int) -> void:
 
 
 func refresh_from_catalog() -> void:
+	var validation := EventCatalog.validate_catalog()
+	if not bool(validation.get("valid", false)):
+		event_definition = {}
+		state = {}
+		message.emit(
+			"Event catalog invalid • check configuration.",
+			"warning"
+		)
+		changed.emit(get_snapshot())
+		return
+
 	if now_override >= 0:
 		event_definition = EventCatalog.active_event(now_override)
 	else:

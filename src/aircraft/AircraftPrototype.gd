@@ -33,6 +33,7 @@ var takeoff_velocity := 0.0
 var arrival_runway_cleared := false
 var turnaround_panel: PanelContainer
 var turnaround_label: Label
+var directional_textures: Dictionary = {}
 
 
 func _ready() -> void:
@@ -49,6 +50,8 @@ func configure_aircraft_type(type_id: String) -> void:
 	aircraft_display_name = String(profile.get("name", type_id))
 	aircraft_size = String(profile.get("size", aircraft_size))
 	taxi_speed = maxf(float(profile.get("taxi_speed", taxi_speed)), 1.0)
+	_load_directional_textures()
+	queue_redraw()
 
 
 func assign_flight_plan(plan: Dictionary) -> void:
@@ -534,8 +537,145 @@ func _set_state(new_state: String) -> void:
 	queue_redraw()
 
 
+func _load_directional_textures() -> void:
+	directional_textures.clear()
+	if aircraft_type_id.is_empty():
+		return
+
+	for direction_key in ["ne", "se", "sw", "nw"]:
+		var path := (
+			"res://assets/pixel/aircraft/%s/%s_%s.png"
+			% [aircraft_type_id, aircraft_type_id, direction_key]
+		)
+		if not ResourceLoader.exists(path):
+			continue
+
+		var texture = load(path)
+		if texture is Texture2D:
+			directional_textures[direction_key] = texture
+
+
+func _sprite_direction_key() -> String:
+	var heading := Vector2.RIGHT.rotated(rotation)
+
+	if heading.x >= 0.0:
+		if heading.y < 0.0:
+			return "ne"
+		return "se"
+
+	if heading.y < 0.0:
+		return "nw"
+	return "sw"
+
+
+func _visual_sprite_width() -> float:
+	var passengers := maxi(
+		int(aircraft_profile.get("passengers", 0)),
+		0
+	)
+
+	if aircraft_size == "M":
+		return lerpf(
+			108.0,
+			128.0,
+			clampf((float(passengers) - 40.0) / 48.0, 0.0, 1.0)
+		)
+
+	return lerpf(
+		78.0,
+		96.0,
+		clampf((float(passengers) - 8.0) / 24.0, 0.0, 1.0)
+	)
+
+
+func _draw_directional_sprite() -> bool:
+	if directional_textures.is_empty():
+		return false
+
+	var direction_key := _sprite_direction_key()
+	var texture = directional_textures.get(direction_key)
+	if not (texture is Texture2D):
+		return false
+
+	var texture_size: Vector2 = texture.get_size()
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return false
+
+	var target_width := _visual_sprite_width()
+	var draw_scale := target_width / texture_size.x
+	var draw_size := texture_size * draw_scale
+
+	# AircraftPrototype keeps its real rotation for taxi/service logic.
+	# Counter-rotate the already-directional sprite so the art stays crisp
+	# instead of rotating a pixel sprite continuously.
+	draw_set_transform(
+		Vector2.ZERO,
+		-rotation,
+		Vector2.ONE
+	)
+	draw_texture_rect(
+		texture,
+		Rect2(-draw_size * 0.5, draw_size),
+		false
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+	return true
+
+
+func _sprite_state_color() -> Color:
+	match state:
+		"WAITING_FUEL":
+			return Color("f4c95d")
+		"UNLOADING", "HOLDING_FOR_ARRIVAL":
+			return Color("d6a3ff")
+		"SERVICING":
+			return Color("f4c95d")
+		"LOADING":
+			return Color("69c9dd")
+		"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
+			return Color("76d39b")
+		"READY_FOR_DESTINATION":
+			return Color("f0a6ff")
+		"WAITING_PASSENGERS":
+			return Color("ff9f68")
+		"CLEARED", "LINE_UP":
+			return Color("78b7e8")
+		_:
+			return Color.TRANSPARENT
+
+
+func _draw_sprite_state_marker() -> void:
+	var marker_color := _sprite_state_color()
+	if marker_color.a <= 0.0:
+		return
+
+	draw_set_transform(
+		Vector2.ZERO,
+		-rotation,
+		Vector2.ONE
+	)
+	draw_circle(
+		Vector2(0, -52),
+		5.0,
+		marker_color
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
 func _draw() -> void:
 	_draw_shadow()
+
+	if _draw_directional_sprite():
+		_draw_sprite_state_marker()
+		return
 
 	var fuselage := PackedVector2Array([
 		Vector2(22, 0),

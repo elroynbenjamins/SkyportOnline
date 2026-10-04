@@ -77,11 +77,127 @@ static func all() -> Array[Dictionary]:
 			"color": Color("bac6c8"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Basic passenger handling.",
+			"description": "Basic passenger handling and terminal storage.",
+			"passenger_capacity": 120,
+			"passenger_upgrade_costs": [
+				{"be_composite_panels": 2, "gb_service_parts": 2},
+				{"de_precision_gears": 3, "fr_glass_panels": 3, "gb_terminal_signage": 2},
+				{"dk_modular_fittings": 5, "de_control_relays": 5, "fr_design_fixtures": 4}
+			],
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/terminal_small.svg", "res://assets/pixel/airport_v1/terminal_small_b.svg"]),
 			"world_sprite_size": Vector2(205, 154),
 			"world_sprite_offset": Vector2(0, -50)
+		},
+		{
+			"id": "bus_stop",
+			"name": "Airport Bus Stop",
+			"menu_name": "BUS STOP",
+			"category": "Passenger",
+			"footprint": Vector2i(1, 1),
+			"cost": 3000,
+			"level": 1,
+			"color": Color("4f8c75"),
+			"rotatable": false,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Fast passenger batches for active play.",
+			"passenger_mode": "batch",
+			"passenger_yield": 8,
+			"passenger_cycle_seconds": 240.0,
+			"passenger_storage": 24,
+			"passenger_upgrade_costs": [
+				{"be_logistics_tags": 2, "gb_service_parts": 2},
+				{"de_precision_gears": 3, "fr_design_fixtures": 2, "gb_terminal_signage": 2},
+				{"dk_led_modules": 4, "de_control_relays": 4, "fr_glass_panels": 4}
+			]
+		},
+		{
+			"id": "small_hotel",
+			"name": "Small Airport Hotel",
+			"menu_name": "SMALL HOTEL",
+			"category": "Passenger",
+			"footprint": Vector2i(2, 2),
+			"cost": 6500,
+			"level": 2,
+			"color": Color("b78c68"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Produces larger passenger batches over time.",
+			"passenger_mode": "batch",
+			"passenger_yield": 18,
+			"passenger_cycle_seconds": 600.0,
+			"passenger_storage": 54,
+			"passenger_upgrade_costs": [
+				{"fr_hospitality_linen": 2, "be_glass_fittings": 3},
+				{"fr_hospitality_linen": 5, "gb_aviation_textiles": 4, "de_steel_fasteners": 3},
+				{"dk_modular_fittings": 5, "fr_design_fixtures": 6, "de_control_relays": 4}
+			]
+		},
+		{
+			"id": "taxi_rank",
+			"name": "Taxi Rank",
+			"menu_name": "TAXI RANK",
+			"category": "Passenger",
+			"footprint": Vector2i(1, 1),
+			"cost": 9000,
+			"level": 3,
+			"color": Color("d0aa45"),
+			"rotatable": false,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Slow passive passenger trickle with local storage.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 480.0,
+			"passenger_storage": 10,
+			"passenger_upgrade_costs": [
+				{"gb_service_parts": 2, "be_logistics_tags": 2},
+				{"de_precision_gears": 3, "gb_service_parts": 4, "fr_design_fixtures": 2},
+				{"dk_led_modules": 5, "de_control_relays": 5, "fr_glass_panels": 3}
+			]
+		},
+		{
+			"id": "residential_district",
+			"name": "Residential District",
+			"menu_name": "RESIDENTIAL",
+			"category": "Passenger",
+			"footprint": Vector2i(2, 2),
+			"cost": 22000,
+			"level": 5,
+			"color": Color("879b79"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Steady offline-friendly passenger generation.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 180.0,
+			"passenger_storage": 40,
+			"passenger_upgrade_costs": [
+				{"fr_glass_panels": 3, "be_composite_panels": 3},
+				{"de_steel_fasteners": 4, "dk_timber_panels": 4, "gb_terminal_signage": 3},
+				{"dk_modular_fittings": 6, "de_precision_gears": 5, "fr_design_fixtures": 5}
+			]
+		},
+		{
+			"id": "rail_connection",
+			"name": "Railway Connection",
+			"menu_name": "RAIL LINK",
+			"category": "Passenger",
+			"footprint": Vector2i(3, 2),
+			"cost": 65000,
+			"level": 9,
+			"color": Color("64747f"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "High-capacity passive passenger connection.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 120.0,
+			"passenger_storage": 75,
+			"passenger_upgrade_costs": [
+				{"de_control_relays": 4, "dk_modular_fittings": 4, "be_composite_panels": 3},
+				{"de_precision_gears": 7, "dk_led_modules": 6, "fr_glass_panels": 5},
+				{"dk_modular_fittings": 9, "de_steel_fasteners": 10, "fr_design_fixtures": 7}
+			]
 		},
 		{
 			"id": "small_hangar",

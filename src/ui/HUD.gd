@@ -15,6 +15,8 @@ var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
 var operation_status_label: Label
+var alliance_cosmetic_badge: Label
+var cosmetic_border_rects: Array[ColorRect] = []
 
 var parcel_panel: PanelContainer
 var parcel_title: Label
@@ -48,6 +50,7 @@ func _build_interface() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
+	_build_cosmetic_frame(root)
 
 	var top_panel := PanelContainer.new()
 	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -72,6 +75,14 @@ func _build_interface() -> void:
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_label.add_theme_font_size_override("font_size", 21)
 	top_row.add_child(title_label)
+
+	alliance_cosmetic_badge = Label.new()
+	alliance_cosmetic_badge.visible = false
+	alliance_cosmetic_badge.custom_minimum_size = Vector2(62, 0)
+	alliance_cosmetic_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	alliance_cosmetic_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	alliance_cosmetic_badge.add_theme_font_size_override("font_size", 20)
+	top_row.add_child(alliance_cosmetic_badge)
 
 	passenger_label = Label.new()
 	passenger_label.custom_minimum_size = Vector2(175, 0)
@@ -299,6 +310,85 @@ func _build_bottom_navigation(root: Control) -> void:
 			button.visible = false
 
 		nav_row.add_child(button)
+
+
+func _build_cosmetic_frame(root: Control) -> void:
+	var thickness := 6.0
+	var top := ColorRect.new()
+	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top.offset_bottom = thickness
+	_add_cosmetic_border(root, top)
+
+	var bottom := ColorRect.new()
+	bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom.offset_top = -thickness
+	_add_cosmetic_border(root, bottom)
+
+	var left := ColorRect.new()
+	left.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+	left.offset_right = thickness
+	_add_cosmetic_border(root, left)
+
+	var right := ColorRect.new()
+	right.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	right.offset_left = -thickness
+	_add_cosmetic_border(root, right)
+
+
+func _add_cosmetic_border(root: Control, rect: ColorRect) -> void:
+	rect.visible = false
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.z_index = 95
+	root.add_child(rect)
+	cosmetic_border_rects.append(rect)
+
+
+func set_cosmetic_loadout(loadout: Dictionary) -> void:
+	var border_id := String(
+		loadout.get(CosmeticCatalog.SLOT_AIRPORT_BORDER, "")
+	)
+	var has_border := not border_id.is_empty()
+	var border_color := CosmeticCatalog.visual_color(border_id)
+	border_color.a = 0.95
+	for rect in cosmetic_border_rects:
+		rect.visible = has_border
+		if has_border:
+			rect.color = border_color
+
+	if alliance_cosmetic_badge == null:
+		return
+
+	var flag_id := String(
+		loadout.get(CosmeticCatalog.SLOT_ALLIANCE_FLAG, "")
+	)
+	var emblem_id := String(
+		loadout.get(CosmeticCatalog.SLOT_ALLIANCE_EMBLEM, "")
+	)
+	var symbols := ""
+	var names := PackedStringArray()
+	var badge_color := Color.WHITE
+
+	if not flag_id.is_empty():
+		symbols += "⚑"
+		var flag := CosmeticCatalog.get_cosmetic(flag_id)
+		names.append(String(flag.get("name", "Alliance Flag")))
+		badge_color = CosmeticCatalog.visual_color(flag_id)
+
+	if not emblem_id.is_empty():
+		if not symbols.is_empty():
+			symbols += " "
+		symbols += "◆"
+		var emblem := CosmeticCatalog.get_cosmetic(emblem_id)
+		names.append(String(emblem.get("name", "Alliance Emblem")))
+		badge_color = CosmeticCatalog.visual_color(emblem_id)
+
+	alliance_cosmetic_badge.visible = not symbols.is_empty()
+	alliance_cosmetic_badge.text = symbols
+	alliance_cosmetic_badge.tooltip_text = ", ".join(names)
+	alliance_cosmetic_badge.add_theme_color_override(
+		"font_color",
+		badge_color
+	)
 
 
 func set_event_available(

@@ -17,6 +17,8 @@ static func all() -> Array[Dictionary]:
 			"unlock_level": 1,
 			"coin_reward": 420,
 			"xp_reward": 32,
+			"passenger_load_factor": 0.65,
+			"demand_label": "Feeder",
 			"map_position": Vector2(0.43, 0.59)
 		},
 		{
@@ -28,6 +30,8 @@ static func all() -> Array[Dictionary]:
 			"unlock_level": 1,
 			"coin_reward": 760,
 			"xp_reward": 48,
+			"passenger_load_factor": 0.90,
+			"demand_label": "Busy",
 			"map_position": Vector2(0.28, 0.48)
 		},
 		{
@@ -39,6 +43,8 @@ static func all() -> Array[Dictionary]:
 			"unlock_level": 2,
 			"coin_reward": 790,
 			"xp_reward": 50,
+			"passenger_load_factor": 0.82,
+			"demand_label": "Business",
 			"map_position": Vector2(0.56, 0.59)
 		},
 		{
@@ -50,6 +56,8 @@ static func all() -> Array[Dictionary]:
 			"unlock_level": 2,
 			"coin_reward": 900,
 			"xp_reward": 58,
+			"passenger_load_factor": 0.88,
+			"demand_label": "Popular",
 			"map_position": Vector2(0.39, 0.70)
 		},
 		{
@@ -61,6 +69,8 @@ static func all() -> Array[Dictionary]:
 			"unlock_level": 4,
 			"coin_reward": 1180,
 			"xp_reward": 72,
+			"passenger_load_factor": 0.78,
+			"demand_label": "Steady",
 			"map_position": Vector2(0.68, 0.48)
 		},
 		{
@@ -72,6 +82,8 @@ static func all() -> Array[Dictionary]:
 			"unlock_level": 5,
 			"coin_reward": 1280,
 			"xp_reward": 78,
+			"passenger_load_factor": 0.72,
+			"demand_label": "Moderate",
 			"map_position": Vector2(0.61, 0.30)
 		}
 	]

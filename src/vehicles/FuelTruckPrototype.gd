@@ -15,11 +15,20 @@ var service_remaining := 0.0
 var phase := "IDLE"
 var service_pose_rotation := 0.0
 var has_service_pose_rotation := false
+var service_connection_target := Vector2.ZERO
+var has_service_connection_target := false
 
 
 func set_service_pose_rotation(value: float) -> void:
 	service_pose_rotation = value
 	has_service_pose_rotation = true
+
+
+func set_service_connection_target(
+	global_target: Vector2
+) -> void:
+	service_connection_target = global_target
+	has_service_connection_target = true
 
 
 func start_service(route: PackedVector2Array, duration: float) -> void:
@@ -96,6 +105,36 @@ func _draw() -> void:
 
 	if phase == "SERVICING":
 		draw_circle(Vector2(-1, -14), 4.0, Color("ffd166"))
+		_draw_fuel_hose()
+
+
+func _draw_fuel_hose() -> void:
+	if not has_service_connection_target:
+		return
+
+	var target := to_local(service_connection_target)
+	if target.length() < 1.0:
+		return
+
+	var hose_end := target.normalized() * minf(
+		target.length(),
+		38.0
+	)
+	var mid := hose_end * 0.55 + Vector2(0, 7)
+	draw_polyline(
+		PackedVector2Array([
+			Vector2(-6, 5),
+			mid,
+			hose_end
+		]),
+		Color("2d3438"),
+		3.0
+	)
+	draw_circle(
+		hose_end,
+		2.5,
+		Color("e6b84c")
+	)
 
 
 func _draw_shadow() -> void:

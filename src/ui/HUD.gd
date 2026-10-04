@@ -9,6 +9,7 @@ signal cancel_building_requested
 var level_label: Label
 var coins_label: Label
 var gems_label: Label
+var airside_status_label: Label
 
 var parcel_panel: PanelContainer
 var parcel_title: Label
@@ -91,6 +92,21 @@ func _build_interface() -> void:
 	objective.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	objective.add_theme_font_size_override("font_size", 15)
 	objective_panel.add_child(objective)
+
+	var airside_panel := PanelContainer.new()
+	airside_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	airside_panel.offset_left = 12
+	airside_panel.offset_top = 96
+	airside_panel.offset_right = 250
+	airside_panel.offset_bottom = 160
+	root.add_child(airside_panel)
+
+	airside_status_label = Label.new()
+	airside_status_label.text = "AIRFIELD STATUS\nChecking taxiway network..."
+	airside_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	airside_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	airside_status_label.add_theme_font_size_override("font_size", 14)
+	airside_panel.add_child(airside_status_label)
 
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -411,8 +427,39 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 		_service_text(definition),
 		_format_number(cost)
 	]
+
+	var warning := String(status.get("warning", ""))
+	if not warning.is_empty():
+		build_status.text += "  •  ⚠ " + warning
 	place_button.text = "BUILD  🪙 %s" % _format_number(cost)
 	place_button.disabled = false
+
+
+func set_airside_status(status: Dictionary) -> void:
+	if airside_status_label == null:
+		return
+
+	var stands_total := int(status.get("stands_total", 0))
+	var stands_connected := int(status.get("stands_connected", 0))
+	var hangars_total := int(status.get("hangars_total", 0))
+	var hangars_connected := int(status.get("hangars_connected", 0))
+	var runways := int(status.get("runways", 0))
+
+	if stands_connected == stands_total and hangars_connected == hangars_total:
+		airside_status_label.text = "AIRFIELD STATUS  ✓\n%d runway%s • %d/%d stands connected" % [
+			runways,
+			"" if runways == 1 else "s",
+			stands_connected,
+			stands_total
+		]
+		airside_status_label.add_theme_color_override("font_color", Color("9fe3b7"))
+	else:
+		var disconnected := (stands_total - stands_connected) + (hangars_total - hangars_connected)
+		airside_status_label.text = "AIRFIELD WARNING  ⚠\n%d airside building%s need taxiway" % [
+			disconnected,
+			"" if disconnected == 1 else "s"
+		]
+		airside_status_label.add_theme_color_override("font_color", Color("ffc266"))
 
 
 func exit_building_mode() -> void:

@@ -625,6 +625,8 @@ func _service_short_name(service_type: String) -> String:
 			return "Clean"
 		"catering":
 			return "Cater"
+		"pushback":
+			return "Tow"
 		_:
 			return "Fuel"
 

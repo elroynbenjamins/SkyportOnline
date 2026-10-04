@@ -202,6 +202,28 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 		var center := _footprint_center_world(origin, footprint)
 		draw_circle(center, 10.0, Color("dce5e7"), false, 3.0)
 
+	elif id == "atc_tower":
+		var center := _footprint_center_world(origin, footprint)
+		draw_rect(
+			Rect2(center + Vector2(-8, -32), Vector2(16, 34)),
+			Color("9eb3ba")
+		)
+		draw_rect(
+			Rect2(center + Vector2(-15, -42), Vector2(30, 12)),
+			Color("334951")
+		)
+		draw_line(
+			center + Vector2(0, -42),
+			center + Vector2(0, -55),
+			Color("d5e5e8"),
+			2.0
+		)
+		draw_circle(
+			center + Vector2(0, -57),
+			3.0,
+			Color("f0c95d")
+		)
+
 	elif id == "autumn_event_flag":
 		_draw_autumn_event_flag(origin)
 
@@ -1768,6 +1790,50 @@ func get_building_key(building: Dictionary) -> String:
 		origin.x,
 		origin.y
 	]
+
+
+func get_air_traffic_control_buildings() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if not bool(
+			definition.get("air_traffic_control", false)
+		):
+			continue
+
+		var info := building.duplicate(true)
+		var building_id := String(
+			building.get("definition_id", "")
+		)
+		var level := int(
+			building.get("upgrade_level", 1)
+		)
+		info["separation_multiplier"] = (
+			AirTrafficUpgradeCatalog.separation_multiplier(
+				building_id,
+				level
+			)
+		)
+		result.append(info)
+	return result
+
+
+func get_best_air_traffic_control() -> Dictionary:
+	var best: Dictionary = {}
+	var best_multiplier := 1.0
+	for building in get_air_traffic_control_buildings():
+		var multiplier := float(
+			building.get(
+				"separation_multiplier",
+				1.0
+			)
+		)
+		if best.is_empty() or multiplier < best_multiplier:
+			best = building.duplicate(true)
+			best_multiplier = multiplier
+	return best
 
 
 func get_passenger_generator_buildings() -> Array[Dictionary]:

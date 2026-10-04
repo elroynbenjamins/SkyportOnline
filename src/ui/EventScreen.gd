@@ -104,7 +104,7 @@ func _build_ui() -> void:
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color("071923", 0.98)
+	backdrop.color = Color("07151d", 0.975)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(backdrop)
 
@@ -115,6 +115,7 @@ func _build_ui() -> void:
 	panel.offset_right = -36
 	panel.offset_bottom = -34
 	root.add_child(panel)
+	GameUIStyle.apply_panel(panel, "event")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
@@ -134,13 +135,18 @@ func _build_ui() -> void:
 	title_label = Label.new()
 	title_label.text = "EVENTS"
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_label.add_theme_font_size_override("font_size", 24)
+	GameUIStyle.heading(title_label, 24)
+	title_label.add_theme_color_override(
+		"font_color",
+		Color("ffd08a")
+	)
 	header.add_child(title_label)
 
 	timing_label = Label.new()
 	timing_label.text = "No event is active."
 	timing_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	timing_label.add_theme_font_size_override("font_size", 14)
+	GameUIStyle.muted(timing_label)
 	header.add_child(timing_label)
 
 	currency_label = Label.new()
@@ -148,7 +154,7 @@ func _build_ui() -> void:
 	currency_label.add_theme_font_size_override("font_size", 16)
 	currency_label.add_theme_color_override(
 		"font_color",
-		Color("f1d27a")
+		GameUIStyle.COLOR_GOLD
 	)
 	header.add_child(currency_label)
 
@@ -158,7 +164,7 @@ func _build_ui() -> void:
 	featured_routes_label.add_theme_font_size_override("font_size", 13)
 	featured_routes_label.add_theme_color_override(
 		"font_color",
-		Color("9fe3b7")
+		GameUIStyle.COLOR_SUCCESS
 	)
 	column.add_child(featured_routes_label)
 
@@ -166,6 +172,7 @@ func _build_ui() -> void:
 	close_button.text = "✕  AIRPORT"
 	close_button.custom_minimum_size = Vector2(130, 42)
 	close_button.pressed.connect(close_event)
+	GameUIStyle.apply_button(close_button, "secondary", true)
 	header.add_child(close_button)
 
 	empty_label = Label.new()
@@ -177,6 +184,7 @@ func _build_ui() -> void:
 	empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	empty_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	empty_label.add_theme_font_size_override("font_size", 20)
+	GameUIStyle.muted(empty_label)
 	column.add_child(empty_label)
 
 	var columns := HBoxContainer.new()
@@ -197,6 +205,7 @@ func _build_column(
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(panel)
+	GameUIStyle.apply_panel(panel, "dark")
 
 	var wrapper := VBoxContainer.new()
 	wrapper.add_theme_constant_override("separation", 6)
@@ -205,7 +214,7 @@ func _build_column(
 	var heading := Label.new()
 	heading.text = heading_text
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 16)
+	GameUIStyle.heading(heading, 16)
 	wrapper.add_child(heading)
 
 	var scroll := ScrollContainer.new()
@@ -264,6 +273,12 @@ func _refresh_quests(snapshot: Dictionary) -> void:
 			or not unlocked
 			or not complete
 		)
+		var quest_kind := "secondary"
+		if complete and not claimed and unlocked:
+			quest_kind = "gold"
+		elif claimed:
+			quest_kind = "selected"
+		GameUIStyle.apply_button(button, quest_kind, true)
 		button.pressed.connect(
 			func() -> void:
 				quest_claim_requested.emit(quest_id)
@@ -302,6 +317,10 @@ func _refresh_shop(snapshot: Dictionary) -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.custom_minimum_size = Vector2(0, 62)
 		button.disabled = sold_out or owned or not can_afford
+		var shop_kind := "event" if can_afford and not sold_out and not owned else "secondary"
+		if owned:
+			shop_kind = "selected"
+		GameUIStyle.apply_button(button, shop_kind, true)
 		button.pressed.connect(
 			func() -> void:
 				shop_purchase_requested.emit(item_id)
@@ -331,6 +350,7 @@ func _refresh_alliance(snapshot: Dictionary) -> void:
 	]
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status.add_theme_font_size_override("font_size", 13)
+	GameUIStyle.muted(status)
 	alliance_list.add_child(status)
 
 	for milestone_variant in snapshot.get(
@@ -362,6 +382,10 @@ func _refresh_alliance(snapshot: Dictionary) -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.custom_minimum_size = Vector2(0, 58)
 		button.disabled = claimed or not reached
+		var milestone_kind := "gold" if reached and not claimed else "secondary"
+		if claimed:
+			milestone_kind = "selected"
+		GameUIStyle.apply_button(button, milestone_kind, true)
 		button.pressed.connect(
 			func() -> void:
 				alliance_claim_requested.emit(milestone_id)

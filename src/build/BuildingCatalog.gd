@@ -129,7 +129,11 @@ static func all() -> Array[Dictionary]:
 				"cleaning": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"catering": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"pushback": {"service_speed": 1.0, "vehicle_capacity": 1}
-			}
+			},
+			"icon_path": "res://assets/pixel/services_v1/ground_ops_depot.svg",
+			"world_sprite_path": "res://assets/pixel/services_v1/ground_ops_depot.svg",
+			"world_sprite_size": Vector2(112, 86),
+			"world_sprite_offset": Vector2(0, -22)
 		},
 		{
 			"id": "cleaning_center",
@@ -145,7 +149,14 @@ static func all() -> Array[Dictionary]:
 			"description": "Two faster cabin-cleaning vans.",
 			"service": "cleaning",
 			"service_speed": 1.35,
-			"vehicle_capacity": 2
+			"vehicle_capacity": 2,
+			"icon_path": "res://assets/pixel/services_v1/cleaning_center.svg",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/pixel/services_v1/cleaning_center.svg",
+				"res://assets/pixel/services_v1/cleaning_center_b.svg"
+			]),
+			"world_sprite_size": Vector2(164, 124),
+			"world_sprite_offset": Vector2(0, -31)
 		},
 		{
 			"id": "passenger_service_hub",
@@ -161,7 +172,14 @@ static func all() -> Array[Dictionary]:
 			"description": "Two faster passenger buses / boarding crews.",
 			"service": "passenger",
 			"service_speed": 1.25,
-			"vehicle_capacity": 2
+			"vehicle_capacity": 2,
+			"icon_path": "res://assets/pixel/services_v1/passenger_service_hub.svg",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/pixel/services_v1/passenger_service_hub.svg",
+				"res://assets/pixel/services_v1/passenger_service_hub_b.svg"
+			]),
+			"world_sprite_size": Vector2(166, 126),
+			"world_sprite_offset": Vector2(0, -32)
 		},
 		{
 			"id": "baggage_depot",
@@ -177,7 +195,14 @@ static func all() -> Array[Dictionary]:
 			"description": "Two faster baggage / cargo tractors.",
 			"service": "cargo",
 			"service_speed": 1.35,
-			"vehicle_capacity": 2
+			"vehicle_capacity": 2,
+			"icon_path": "res://assets/pixel/services_v1/baggage_depot.svg",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/pixel/services_v1/baggage_depot.svg",
+				"res://assets/pixel/services_v1/baggage_depot_b.svg"
+			]),
+			"world_sprite_size": Vector2(166, 126),
+			"world_sprite_offset": Vector2(0, -32)
 		},
 		{
 			"id": "catering_kitchen",
@@ -193,7 +218,14 @@ static func all() -> Array[Dictionary]:
 			"description": "Two faster catering trucks for regional operations.",
 			"service": "catering",
 			"service_speed": 1.30,
-			"vehicle_capacity": 2
+			"vehicle_capacity": 2,
+			"icon_path": "res://assets/pixel/services_v1/catering_kitchen.svg",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/pixel/services_v1/catering_kitchen.svg",
+				"res://assets/pixel/services_v1/catering_kitchen_b.svg"
+			]),
+			"world_sprite_size": Vector2(166, 126),
+			"world_sprite_offset": Vector2(0, -32)
 		},
 		{
 			"id": "tow_operations",
@@ -209,7 +241,14 @@ static func all() -> Array[Dictionary]:
 			"description": "Two faster pushback tugs for busy stands.",
 			"service": "pushback",
 			"service_speed": 1.25,
-			"vehicle_capacity": 2
+			"vehicle_capacity": 2,
+			"icon_path": "res://assets/pixel/services_v1/tow_operations.svg",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/pixel/services_v1/tow_operations.svg",
+				"res://assets/pixel/services_v1/tow_operations_b.svg"
+			]),
+			"world_sprite_size": Vector2(166, 126),
+			"world_sprite_offset": Vector2(0, -32)
 		},
 		{
 			"id": "atc_tower",
@@ -223,7 +262,14 @@ static func all() -> Array[Dictionary]:
 			"rotatable": true,
 			"sizes": PackedStringArray([]),
 			"description": "Reduces required separation between runway movements.",
-			"air_traffic_control": true
+			"air_traffic_control": true,
+			"icon_path": "res://assets/pixel/services_v1/atc_tower.svg",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/pixel/services_v1/atc_tower.svg",
+				"res://assets/pixel/services_v1/atc_tower_b.svg"
+			]),
+			"world_sprite_size": Vector2(168, 148),
+			"world_sprite_offset": Vector2(0, -43)
 		},
 		{
 			"id": "small_hangar",

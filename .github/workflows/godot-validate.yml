@@ -35,6 +35,9 @@ jobs:
       - name: Test aircraft mastery
         run: timeout 20s godot --headless --path . --script res://tests/aircraft_mastery_test.gd
 
+      - name: Test Fleet screen
+        run: timeout 20s godot --headless --path . --script res://tests/fleet_screen_test.gd
+
       - name: Test passenger support
         run: timeout 20s godot --headless --path . --script res://tests/passenger_support_test.gd
 

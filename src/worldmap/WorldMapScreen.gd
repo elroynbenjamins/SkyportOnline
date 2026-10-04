@@ -22,6 +22,8 @@ var selected_aircraft_index := 0
 var selected_destination_id := ""
 var player_level := 1
 var mastery_hours_by_type: Dictionary = {}
+var passenger_stock := 0
+var passenger_capacity := 0
 var refresh_accumulator := 0.0
 
 
@@ -46,11 +48,15 @@ func _process(delta: float) -> void:
 func open_map(
 	aircraft_nodes: Array[AircraftPrototype],
 	current_player_level: int,
-	mastery_hours: Dictionary = {}
+	mastery_hours: Dictionary = {},
+	current_passengers: int = 0,
+	current_passenger_capacity: int = 0
 ) -> void:
 	aircraft = aircraft_nodes
 	player_level = current_player_level
 	mastery_hours_by_type = mastery_hours.duplicate(true)
+	passenger_stock = maxi(current_passengers, 0)
+	passenger_capacity = maxi(current_passenger_capacity, 0)
 	selected_aircraft_index = clampi(
 		selected_aircraft_index,
 		0,
@@ -70,6 +76,16 @@ func open_map(
 
 func close_map() -> void:
 	root.visible = false
+
+
+func set_passenger_stock(
+	current_passengers: int,
+	current_capacity: int
+) -> void:
+	passenger_stock = maxi(current_passengers, 0)
+	passenger_capacity = maxi(current_capacity, 0)
+	if root != null and root.visible:
+		_refresh_details()
 
 
 func set_assignment_status(text: String) -> void:
@@ -368,9 +384,22 @@ func _refresh_details() -> void:
 		int(profile.get("passengers", 0)),
 		0
 	)
-	var required_passengers := AircraftMastery.passenger_requirement(
-		base_passengers,
+	var demand_preview := PassengerDemandRules.preview(
+		profile,
+		destination,
 		mastery_hours
+	)
+	var route_passengers := int(
+		demand_preview.get("route_requirement", base_passengers)
+	)
+	var required_passengers := int(
+		demand_preview.get("mastery_requirement", route_passengers)
+	)
+	var load_factor := float(
+		demand_preview.get("adjusted_load_factor", 1.0)
+	)
+	var demand_label := String(
+		demand_preview.get("demand_label", "Standard")
 	)
 	var required_level := int(destination.get("unlock_level", 1))
 	var level_ok := player_level >= required_level
@@ -423,8 +452,12 @@ func _refresh_details() -> void:
 			AircraftMastery.format_stars(mastery_stars),
 			mastery_hours
 		]
-		+ "Passenger demand: %d → %d\n"
-		% [base_passengers, required_passengers]
+		+ "Passenger demand: %s • %.0f%% load\n"
+		% [demand_label, load_factor * 100.0]
+		+ "Seats %d → route %d → Mastery %d\n"
+		% [base_passengers, route_passengers, required_passengers]
+		+ "Airport stock: %d / %d\n"
+		% [passenger_stock, passenger_capacity]
 		+ "Mastery: XP +%.0f%% • Coins +%.0f%%\n"
 		% [
 			float(mastery_bonuses.get("xp_bonus", 0.0)) * 100.0,

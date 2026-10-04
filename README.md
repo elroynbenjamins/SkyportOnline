@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 6 — Landscape airport + full local flight lifecycle
+## Current milestone: Pass 7 — Passenger economy bottleneck
 
 The repository now contains a playable airport-building and airport-operations foundation:
 
@@ -21,6 +21,12 @@ The repository now contains a playable airport-building and airport-operations f
 - Runway occupancy and arrival/departure queues.
 - Two connected starter stands with two S-class aircraft.
 - Continuous aircraft turnaround and flight demo loop.
+- Passenger terminal storage and real passenger consumption on departures.
+- Active batch producers plus slower passive passenger buildings.
+- Rewarded passenger boost hook: +25 passengers, maximum 3 uses per day.
+- Friend passenger gifts: +5 per friend, maximum 50 received per day.
+- Non-visual passenger-building upgrades that improve rate/storage/capacity.
+- Upgrade costs use country-resource IDs so the future World Map economy can plug in directly.
 
 ### Current building catalog
 
@@ -40,6 +46,46 @@ The repository now contains a playable airport-building and airport-operations f
 | Regional Runway | 10×3 | 90,000 | Lv 12 | S/M |
 
 Fuel infrastructure stores both service speed and vehicle capacity. Normal and rapid stations therefore differ mechanically by aircraft compatibility, truck count, and turnaround speed.
+
+## Passenger economy
+
+Passengers are now a real operational bottleneck rather than a display-only currency.
+
+The starter airport contains:
+
+- Small Terminal: 120 passenger capacity.
+- Airport Bus Stop: +8 passengers every 4 minutes, stored locally until collected.
+- Small Airport Hotel: +18 passengers every 10 minutes, stored locally until collected.
+- Two S-class aircraft: each departure consumes 12 passengers.
+
+Later passenger buildings add passive generation:
+
+- Taxi Rank: +1 every 8 minutes.
+- Residential District: +1 every 3 minutes.
+- Railway Connection: +1 every 2 minutes.
+
+The HUD exposes three recovery paths:
+
+- Collect completed passenger production.
+- Rewarded ad hook: +25 passengers, up to 3 times daily.
+- Friend gift hook: +5 passengers per friend, with a 50-passenger daily receive cap.
+
+The ad button currently grants the prototype reward directly. When an ad SDK is integrated, the same reward method should only be called from the successful rewarded-ad completion callback.
+
+### Passenger building upgrades
+
+Passenger buildings keep their existing world art when upgraded. Upgrades are mechanical only and can increase generation speed, internal storage, or terminal capacity.
+
+Upgrade recipes already support country resources such as:
+
+- Germany — Precision Gears (`de_precision_gears`)
+- Italy — Ceramic Tiles (`it_ceramic_tiles`)
+- Japan — Signal Modules (`jp_signal_modules`)
+- France — Hospitality Linen (`fr_hospitality_linen`)
+- Canada — Construction Lumber (`ca_construction_lumber`)
+- Brazil — Hardwood Panels (`br_hardwood_panels`)
+
+These IDs are intentionally data-driven so final country resource names/rewards can be balanced when the World Map system lands.
 
 ## Airside connectivity
 
@@ -133,12 +179,19 @@ GitHub Actions currently performs:
 
 ## Next pass
 
-**Pass 7 — Flight destinations + first World Map bridge**
+**Pass 8 — Passenger building interaction + flight destinations**
 
 Recommended next work:
 
+- Make placed passenger buildings selectable and expose their stored passengers / upgrade recipe.
+- Add a real friend-list claim/send flow in place of the local friend-gift prototype identity.
+- Connect rewarded passenger boosts to the production ad SDK callback.
 - Replace the temporary en-route timer with a small flight-data model.
 - Add the first local destination list and flight duration / reward data.
-- Make an aircraft remain airborne until its assigned route completes.
-- Prepare a dedicated World Map scene without yet building the final global resource economy.
-- Begin first proper pixel aircraft and fuel-truck sprites once their required angles are locked.
+- Begin feeding real country-resource drops into the upgrade inventory.
+
+### Following pass
+
+**World Map bridge**
+
+After the passenger interaction layer is stable, prepare the dedicated World Map scene and route/country resource economy.

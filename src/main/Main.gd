@@ -17,6 +17,7 @@ var selected_building_rotation := 0
 var aircraft_demos: Array[AircraftPrototype] = []
 var ground_services: GroundServiceDispatcher
 var runway_dispatcher: RunwayDispatcher
+var taxi_traffic: TaxiTrafficController
 var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
 var pending_passenger_departures: Array[Dictionary] = []
@@ -100,6 +101,7 @@ func _start_gameplay() -> void:
 
 	_setup_ground_services()
 	_setup_runway_dispatcher()
+	_setup_taxi_traffic()
 	_setup_world_map()
 	_setup_fleet_screen()
 	_setup_return_summary()
@@ -131,6 +133,14 @@ func _setup_runway_dispatcher() -> void:
 	runway_dispatcher.queue_changed.connect(_on_runway_queue_changed)
 	add_child(runway_dispatcher)
 	ground_services.aircraft_serviced.connect(_on_aircraft_serviced)
+
+
+func _setup_taxi_traffic() -> void:
+	taxi_traffic = TaxiTrafficController.new()
+	taxi_traffic.hold_changed.connect(
+		_on_taxi_hold_changed
+	)
+	add_child(taxi_traffic)
 
 
 func _setup_world_map() -> void:
@@ -249,6 +259,7 @@ func _spawn_aircraft_demos() -> void:
 			index % default_destinations.size()
 		]
 		aircraft.configure_aircraft_type(profile_id)
+		aircraft.configure_taxi_traffic(taxi_traffic)
 
 		var destination := DestinationCatalog.get_destination(destination_id)
 		var initial_plan := _create_current_flight_plan(
@@ -303,6 +314,25 @@ func _on_passenger_boarding_requested(
 
 func _on_runway_status(text: String, tone: String) -> void:
 	hud.set_operation_status(text, tone)
+
+
+func _on_taxi_hold_changed(
+	aircraft: AircraftPrototype,
+	holding: bool,
+	reason: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+	if not holding:
+		return
+
+	hud.set_operation_status(
+		"%s taxi hold • %s" % [
+			String(aircraft.name),
+			reason
+		],
+		"warning"
+	)
 
 
 func _on_runway_queue_changed(waiting: int, active: int) -> void:

@@ -41,6 +41,18 @@ var gameplay_started := false
 var current_event_snapshot: Dictionary = {}
 
 
+func _process(delta: float) -> void:
+	if not gameplay_started or delta <= 0.0:
+		return
+
+	for index in range(pending_arrivals.size()):
+		var request: Dictionary = pending_arrivals[index]
+		request["wait_seconds"] = float(
+			request.get("wait_seconds", 0.0)
+		) + delta
+		pending_arrivals[index] = request
+
+
 func _ready() -> void:
 	camera_controller.world_tapped.connect(_on_world_tapped)
 	airport_grid.parcel_selected.connect(_on_parcel_selected)
@@ -489,11 +501,25 @@ func _operations_analytics_snapshot() -> Dictionary:
 			ground_services.get_service_analytics_snapshot()
 		)
 
+	var waiting_required_total := 0
+	for request_variant in pending_passenger_departures:
+		var request: Dictionary = request_variant
+		var aircraft := request.get(
+			"aircraft"
+		) as AircraftPrototype
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+		waiting_required_total += _passenger_requirement(
+			aircraft
+		)
+
 	var passenger_snapshot := {
 		"stock": 0,
 		"capacity": 0,
 		"production_per_minute": 0.0,
-		"waiting_aircraft": pending_passenger_departures.size()
+		"waiting_aircraft": pending_passenger_departures.size(),
+		"waiting_required_total": waiting_required_total,
+		"waiting_shortfall": 0
 	}
 	if passenger_economy != null:
 		passenger_snapshot["stock"] = (
@@ -505,14 +531,40 @@ func _operations_analytics_snapshot() -> Dictionary:
 		passenger_snapshot["production_per_minute"] = (
 			passenger_economy.get_production_per_minute()
 		)
+	passenger_snapshot["waiting_shortfall"] = maxi(
+		waiting_required_total
+		- int(passenger_snapshot.get("stock", 0)),
+		0
+	)
 
 	var airside: Dictionary = airport_grid.get_airside_status()
+	var total_current_hold_seconds := 0.0
+	var max_current_hold_seconds := 0.0
+	for request_variant in pending_arrivals:
+		var request: Dictionary = request_variant
+		var wait_seconds := maxf(
+			float(
+				request.get(
+					"wait_seconds",
+					0.0
+				)
+			),
+			0.0
+		)
+		total_current_hold_seconds += wait_seconds
+		max_current_hold_seconds = maxf(
+			max_current_hold_seconds,
+			wait_seconds
+		)
+
 	var stand_snapshot := {
 		"total": int(
 			airside.get("stands_total", 0)
 		),
 		"occupied": stand_occupancy.size(),
-		"pending_arrivals": pending_arrivals.size()
+		"pending_arrivals": pending_arrivals.size(),
+		"total_current_hold_seconds": total_current_hold_seconds,
+		"max_current_hold_seconds": max_current_hold_seconds
 	}
 
 	var snapshot := {
@@ -523,6 +575,13 @@ func _operations_analytics_snapshot() -> Dictionary:
 	}
 	snapshot["analysis"] = OperationsAnalyticsRules.analyze(
 		snapshot
+	)
+	snapshot["payoff"] = OperationsPayoffEstimator.estimate(
+		snapshot,
+		airport_grid,
+		resource_inventory,
+		player_level,
+		coins
 	)
 	return snapshot
 
@@ -684,7 +743,8 @@ func _on_demo_arrival_requested(
 	if not _assign_arrival_if_possible(aircraft, label):
 		pending_arrivals.append({
 			"aircraft": aircraft,
-			"label": label
+			"label": label,
+			"wait_seconds": 0.0
 		})
 		_refresh_operations_analytics()
 		hud.set_operation_status(

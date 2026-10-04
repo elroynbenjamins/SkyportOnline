@@ -6,6 +6,8 @@ signal upgrade_requested(building_uid: int)
 var root: Control
 var title_label: Label
 var stats_label: Label
+var current_stats_label: Label
+var next_stats_label: Label
 var cost_label: Label
 var upgrade_button: Button
 var current_building_uid := -1
@@ -34,22 +36,49 @@ func open_building(
 		level
 	]
 
-	stats_label.text = "Current: +%.1f passengers/min • Storage %d" % [
+	current_stats_label.text = (
+		"CURRENT\n"
+		+ "+%.1f passengers/min\nStorage %d"
+	) % [
 		float(current.get("passengers_per_minute", 0.0)),
 		int(current.get("storage", 0))
 	]
 
 	if next.is_empty():
-		cost_label.text = "Maximum upgrade level reached."
+		next_stats_label.text = "MAX LEVEL\nNo further upgrades"
+		next_stats_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_GOLD
+		)
+		cost_label.text = "All upgrades complete."
 		upgrade_button.text = "MAX LEVEL"
 		upgrade_button.disabled = true
 		root.visible = true
 		return
 
-	stats_label.text += "\nNext: +%.1f passengers/min • Storage %d" % [
-		float(next.get("passengers_per_minute", 0.0)),
+	var production_delta := (
+		float(next.get("passengers_per_minute", 0.0))
+		- float(current.get("passengers_per_minute", 0.0))
+	)
+	var storage_delta := (
 		int(next.get("storage", 0))
+		- int(current.get("storage", 0))
+	)
+	next_stats_label.text = (
+		"NEXT • LV %d\n"
+		+ "+%.1f passengers/min  (%+.1f)\n"
+		+ "Storage %d  (%+d)"
+	) % [
+		int(next.get("level", level + 1)),
+		float(next.get("passengers_per_minute", 0.0)),
+		production_delta,
+		int(next.get("storage", 0)),
+		storage_delta
 	]
+	next_stats_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_SUCCESS
+	)
 
 	var coin_cost := int(next.get("coin_cost", 0))
 	var resource_cost: Dictionary = next.get(
@@ -58,14 +87,14 @@ func open_building(
 	).duplicate(true)
 	var can_afford := coins >= coin_cost
 
-	var cost_text := "Upgrade cost: 🪙 %d" % coin_cost
+	var cost_text := "REQUIREMENTS\n🪙 %d coins" % coin_cost
 	for resource_id in resource_cost.keys():
 		var needed := int(resource_cost[resource_id])
 		var owned := int(resource_inventory.get(resource_id, 0))
 		var resource := CountryResourceCatalog.get_resource(
 			String(resource_id)
 		)
-		cost_text += "\n%s: %d / %d" % [
+		cost_text += "\n%s  •  %d / %d" % [
 			String(resource.get("name", resource_id)),
 			owned,
 			needed
@@ -128,10 +157,48 @@ func _build_ui() -> void:
 	GameUIStyle.apply_button(close_button, "secondary", true)
 	header.add_child(close_button)
 
-	stats_label = Label.new()
-	stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	stats_label.add_theme_font_size_override("font_size", 16)
-	column.add_child(stats_label)
+	var compare_row := HBoxContainer.new()
+	compare_row.add_theme_constant_override("separation", 10)
+	column.add_child(compare_row)
+
+	var current_card := PanelContainer.new()
+	current_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameUIStyle.apply_panel(current_card, "dark")
+	compare_row.add_child(current_card)
+
+	current_stats_label = Label.new()
+	current_stats_label.custom_minimum_size = Vector2(0, 86)
+	current_stats_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	current_stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	current_stats_label.add_theme_font_size_override("font_size", 14)
+	current_card.add_child(current_stats_label)
+
+	var arrow := Label.new()
+	arrow.text = "→"
+	arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	arrow.custom_minimum_size = Vector2(34, 0)
+	arrow.add_theme_font_size_override("font_size", 24)
+	arrow.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	compare_row.add_child(arrow)
+
+	var next_card := PanelContainer.new()
+	next_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameUIStyle.apply_panel(next_card, "raised")
+	compare_row.add_child(next_card)
+
+	next_stats_label = Label.new()
+	next_stats_label.custom_minimum_size = Vector2(0, 86)
+	next_stats_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	next_stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	next_stats_label.add_theme_font_size_override("font_size", 14)
+	next_card.add_child(next_stats_label)
+
+	# Legacy alias kept for compatibility with any external UI checks.
+	stats_label = current_stats_label
 
 	var note := Label.new()
 	note.text = (
@@ -146,7 +213,11 @@ func _build_ui() -> void:
 	cost_label = Label.new()
 	cost_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cost_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	cost_label.add_theme_font_size_override("font_size", 15)
+	cost_label.add_theme_font_size_override("font_size", 14)
+	cost_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
 	column.add_child(cost_label)
 
 	upgrade_button = Button.new()

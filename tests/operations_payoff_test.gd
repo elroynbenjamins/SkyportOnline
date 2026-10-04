@@ -301,9 +301,16 @@ func _run() -> void:
 		_fail("Affordable payoff should be clearly marked ready now.")
 		return
 
+	var affordable_alternative := fuel_candidate.duplicate(true)
+	affordable_alternative["id"] = "build:small_stand"
+	affordable_alternative["title"] = "Build Small Aircraft Stand"
+	affordable_alternative["resource_missing_total"] = 0
+	affordable_alternative["resource_ready"] = true
+	affordable_alternative["affordable_now"] = true
+
 	var manual_payoff := {
 		"best_value": blocked_candidate,
-		"best_affordable": fuel_candidate
+		"best_affordable": affordable_alternative
 	}
 	hud.set_operations_analytics({
 		"analysis": OperationsAnalyticsRules.analyze(

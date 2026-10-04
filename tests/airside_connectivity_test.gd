@@ -107,11 +107,24 @@ func _run() -> void:
 	runway_dispatcher.request_departure(plane_a, "Test A")
 	runway_dispatcher.request_departure(plane_b, "Test B")
 
-	if runway_dispatcher.get_active_count() != 1:
-		_fail("Only one aircraft should hold a runway clearance at a time.")
+	if runway_dispatcher.get_active_count() != 0:
+		_fail("Taxi-to-hold aircraft should not reserve the runway yet.")
 		return
+	if runway_dispatcher.get_waiting_count() != 0:
+		_fail("Departure runway queue should begin only at hold short.")
+		return
+	if runway_dispatcher.get_taxiing_to_hold_count() != 2:
+		_fail("Both departures should initially taxi toward hold short.")
+		return
+
+	plane_a.hold_short_reached.emit()
+	if runway_dispatcher.get_active_count() != 1:
+		_fail("First aircraft at hold short should receive free runway clearance.")
+		return
+
+	plane_b.hold_short_reached.emit()
 	if runway_dispatcher.get_waiting_count() != 1:
-		_fail("Second aircraft should queue for the occupied runway.")
+		_fail("Second hold-short aircraft should queue for the occupied runway.")
 		return
 
 	plane_a.runway_cleared.emit()

@@ -84,7 +84,7 @@ static func passenger_requirement(
 		bonuses.get("passenger_reduction", 0.0)
 	)
 	return maxi(
-		int(ceil(
+		int(round(
 			float(base_passengers) * (1.0 - reduction)
 		)),
 		0

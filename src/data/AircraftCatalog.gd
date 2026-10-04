@@ -15,6 +15,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Pico P8",
 			"size": "S",
 			"unlock_level": 1,
+			"purchase_price": 12000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 0.55,
+			"fixed_operating_cost": 110,
+			"service_cost_per_passenger": 2.0,
 			"catalog_role": "Cheap starter",
 			"cruise_speed_kph": 280.0,
 			"range_km": 320,
@@ -37,6 +42,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Swift S14",
 			"size": "S",
 			"unlock_level": 2,
+			"purchase_price": 22000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 0.72,
+			"fixed_operating_cost": 150,
+			"service_cost_per_passenger": 2.2,
 			"catalog_role": "Fast short-route aircraft",
 			"cruise_speed_kph": 360.0,
 			"range_km": 430,
@@ -59,6 +69,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Comet C22",
 			"size": "S",
 			"unlock_level": 4,
+			"purchase_price": 45000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 0.90,
+			"fixed_operating_cost": 210,
+			"service_cost_per_passenger": 2.4,
 			"catalog_role": "Early economy aircraft",
 			"cruise_speed_kph": 420.0,
 			"range_km": 600,
@@ -81,6 +96,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Voyager V32",
 			"size": "S",
 			"unlock_level": 6,
+			"purchase_price": 82000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 1.10,
+			"fixed_operating_cost": 280,
+			"service_cost_per_passenger": 2.6,
 			"catalog_role": "Long-range small aircraft",
 			"cruise_speed_kph": 470.0,
 			"range_km": 900,
@@ -103,6 +123,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Nimbus N40",
 			"size": "M",
 			"unlock_level": 8,
+			"purchase_price": 185000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 1.55,
+			"fixed_operating_cost": 480,
+			"service_cost_per_passenger": 3.0,
 			"catalog_role": "First regional aircraft",
 			"cruise_speed_kph": 540.0,
 			"range_km": 1050,
@@ -125,6 +150,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Arrow A52",
 			"size": "M",
 			"unlock_level": 10,
+			"purchase_price": 270000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 1.85,
+			"fixed_operating_cost": 600,
+			"service_cost_per_passenger": 3.2,
 			"catalog_role": "Fast regional aircraft",
 			"cruise_speed_kph": 620.0,
 			"range_km": 1300,
@@ -147,6 +177,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Atlas A64",
 			"size": "M",
 			"unlock_level": 12,
+			"purchase_price": 390000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 2.00,
+			"fixed_operating_cost": 720,
+			"service_cost_per_passenger": 3.4,
 			"catalog_role": "Capacity / economy aircraft",
 			"cruise_speed_kph": 560.0,
 			"range_km": 1500,
@@ -169,6 +204,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Falcon F72",
 			"size": "M",
 			"unlock_level": 15,
+			"purchase_price": 575000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 2.35,
+			"fixed_operating_cost": 900,
+			"service_cost_per_passenger": 3.6,
 			"catalog_role": "Higher-performance regional aircraft",
 			"cruise_speed_kph": 680.0,
 			"range_km": 1900,
@@ -191,6 +231,11 @@ static func all() -> Array[Dictionary]:
 			"name": "Horizon H88",
 			"size": "M",
 			"unlock_level": 17,
+			"purchase_price": 850000,
+			"hangar_space": 1,
+			"fuel_cost_per_km": 2.65,
+			"fixed_operating_cost": 1100,
+			"service_cost_per_passenger": 3.8,
 			"catalog_role": "V1 flagship",
 			"cruise_speed_kph": 720.0,
 			"range_km": 2350,
@@ -234,3 +279,17 @@ static func supports_destination(
 	if profile.is_empty():
 		return false
 	return distance_km <= float(profile.get("range_km", 0.0))
+
+
+static func size_rank(size_class: String) -> int:
+	match size_class.to_upper():
+		"S":
+			return 0
+		"M":
+			return 1
+		"L":
+			return 2
+		"XL":
+			return 3
+		_:
+			return 99

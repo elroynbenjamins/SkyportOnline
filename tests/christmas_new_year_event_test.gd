@@ -34,6 +34,14 @@ func _run() -> void:
 	if int(event.get("featured_route_currency", -1)) != 0:
 		_fail("Featured launch routes must not grant unlimited repeatable event currency.")
 		return
+	if String(
+		event.get("pico_livery_cosmetic_id", "")
+	) != "event_xmas_pico_livery":
+		_fail("Christmas event should map to the Candy Cane Pico livery ID.")
+		return
+	if String(event.get("featured_marker_text", "")) != "XMAS":
+		_fail("Christmas featured flights should use the XMAS marker.")
+		return
 
 	var featured: Array = event.get("featured_destinations", [])
 	for destination_id in ["brussels", "london", "berlin"]:
@@ -206,6 +214,14 @@ func _run() -> void:
 		return
 	if String(snapshot.get("name", "")) != "Christmas & New Year Airbridge":
 		_fail("Event snapshot should use Christmas & New Year Airbridge.")
+		return
+	if String(
+		snapshot.get("pico_livery_cosmetic_id", "")
+	) != "event_xmas_pico_livery":
+		_fail("Event snapshot should expose the Christmas livery cosmetic ID.")
+		return
+	if String(snapshot.get("featured_marker_text", "")) != "XMAS":
+		_fail("Event snapshot should expose the XMAS featured marker.")
 		return
 
 	manager.record_destination_flight("brussels")

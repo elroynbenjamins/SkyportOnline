@@ -55,6 +55,47 @@ static func get_levels(building_id: String) -> Array[Dictionary]:
 					}
 				}
 			]
+		"shuttle_station":
+			return [
+				{
+					"level": 1,
+					"passengers_per_minute": 2.8,
+					"storage": 30,
+					"coin_cost": 0,
+					"resource_cost": {}
+				},
+				{
+					"level": 2,
+					"passengers_per_minute": 4.0,
+					"storage": 42,
+					"coin_cost": 6500,
+					"resource_cost": {
+						"de_automotive_parts": 2,
+						"fr_gourmet_food": 1
+					}
+				},
+				{
+					"level": 3,
+					"passengers_per_minute": 5.5,
+					"storage": 58,
+					"coin_cost": 13000,
+					"resource_cost": {
+						"dk_renewable_parts": 2,
+						"be_precision_parts": 2
+					}
+				},
+				{
+					"level": 4,
+					"passengers_per_minute": 7.5,
+					"storage": 80,
+					"coin_cost": 24000,
+					"resource_cost": {
+						"gb_aerospace_parts": 3,
+						"de_machinery": 3,
+						"fr_luxury_goods": 2
+					}
+				}
+			]
 		_:
 			return []
 

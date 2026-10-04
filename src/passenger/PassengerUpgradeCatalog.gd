@@ -4,6 +4,59 @@ extends RefCounted
 
 static func get_levels(building_id: String) -> Array[Dictionary]:
 	match building_id:
+		"small_terminal":
+			return [
+				{
+					"level": 1,
+					"passengers_per_minute": 0.0,
+					"storage": 120,
+					"coin_cost": 0,
+					"resource_cost": {}
+				},
+				{
+					"level": 2,
+					"passengers_per_minute": 0.0,
+					"storage": 250,
+					"coin_cost": 18000,
+					"resource_cost": {
+						"be_precision_parts": 2,
+						"gb_specialty_goods": 1
+					}
+				},
+				{
+					"level": 3,
+					"passengers_per_minute": 0.0,
+					"storage": 450,
+					"coin_cost": 60000,
+					"resource_cost": {
+						"de_industrial_tools": 3,
+						"fr_cosmetics": 2,
+						"gb_specialty_goods": 2
+					}
+				},
+				{
+					"level": 4,
+					"passengers_per_minute": 0.0,
+					"storage": 750,
+					"coin_cost": 175000,
+					"resource_cost": {
+						"dk_renewable_parts": 4,
+						"de_machinery": 4,
+						"be_precision_parts": 3
+					}
+				},
+				{
+					"level": 5,
+					"passengers_per_minute": 0.0,
+					"storage": 1200,
+					"coin_cost": 500000,
+					"resource_cost": {
+						"gb_aerospace_parts": 5,
+						"fr_luxury_goods": 5,
+						"nl_horticulture": 4
+					}
+				}
+			]
 		"travel_office":
 			return [
 				{

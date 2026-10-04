@@ -4,6 +4,12 @@ extends CanvasLayer
 var root: Control
 var owned_list: VBoxContainer
 var details_title: Label
+var selected_aircraft_image: TextureRect
+var seats_chip: Label
+var range_chip: Label
+var speed_chip: Label
+var size_chip: Label
+var resource_chip: Label
 var details_body: Label
 var mastery_bar: ProgressBar
 var mastery_label: Label
@@ -189,6 +195,28 @@ func _build_details_panel(parent: HBoxContainer) -> void:
 	GameUIStyle.heading(details_title, 24)
 	column.add_child(details_title)
 
+	var preview_card := PanelContainer.new()
+	preview_card.custom_minimum_size = Vector2(0, 116)
+	GameUIStyle.apply_panel(preview_card, "dark")
+	column.add_child(preview_card)
+
+	selected_aircraft_image = TextureRect.new()
+	selected_aircraft_image.custom_minimum_size = Vector2(180, 108)
+	selected_aircraft_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	selected_aircraft_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	selected_aircraft_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	preview_card.add_child(selected_aircraft_image)
+
+	var chip_row := HBoxContainer.new()
+	chip_row.add_theme_constant_override("separation", 6)
+	column.add_child(chip_row)
+
+	seats_chip = _make_stat_chip(chip_row, "SEATS", GameUIStyle.COLOR_ACCENT)
+	range_chip = _make_stat_chip(chip_row, "RANGE", GameUIStyle.COLOR_SUCCESS)
+	speed_chip = _make_stat_chip(chip_row, "SPEED", GameUIStyle.COLOR_GOLD)
+	size_chip = _make_stat_chip(chip_row, "SIZE", Color("d8b9ff"))
+	resource_chip = _make_stat_chip(chip_row, "RESOURCE", GameUIStyle.COLOR_EVENT)
+
 	mastery_label = Label.new()
 	mastery_label.add_theme_font_size_override("font_size", 16)
 	mastery_label.add_theme_color_override(
@@ -277,6 +305,9 @@ func _refresh_owned_aircraft() -> void:
 			continue
 
 		var plane := aircraft[index]
+		button.icon = _aircraft_texture(plane.aircraft_type_id)
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.expand_icon = true
 		var hours := _mastery_hours(plane.aircraft_type_id)
 		var stars := AircraftMastery.stars_for_hours(hours)
 		var route := _route_text(plane)
@@ -319,6 +350,8 @@ func _refresh_owned_aircraft() -> void:
 func _refresh_selected_details() -> void:
 	if aircraft.is_empty():
 		details_title.text = "NO AIRCRAFT OWNED"
+		selected_aircraft_image.texture = null
+		_clear_stat_chips()
 		mastery_label.text = "Purchase or unlock aircraft to build your fleet."
 		mastery_bar.value = 0.0
 		details_body.text = ""
@@ -339,6 +372,25 @@ func _refresh_selected_details() -> void:
 		String(plane.name),
 		plane.aircraft_display_name
 	]
+	selected_aircraft_image.texture = _aircraft_texture(
+		plane.aircraft_type_id
+	)
+
+	seats_chip.text = "SEATS\n%d" % int(
+		profile.get("passengers", 0)
+	)
+	range_chip.text = "RANGE\n%d km" % int(
+		profile.get("range_km", 0)
+	)
+	speed_chip.text = "SPEED\n%d km/h" % int(
+		profile.get("cruise_speed_kph", 0)
+	)
+	size_chip.text = "SIZE\n%s" % String(
+		profile.get("size", "?")
+	)
+	resource_chip.text = "RESOURCE\n%+.0f%%" % (
+		float(profile.get("resource_drop_modifier", 0.0)) * 100.0
+	)
 
 	mastery_label.text = "%s  •  %.1f flight hours" % [
 		AircraftMastery.format_stars(stars),
@@ -504,6 +556,54 @@ func _refresh_catalog() -> void:
 			)
 
 		card.add_child(label)
+
+
+func _make_stat_chip(
+	parent: HBoxContainer,
+	title: String,
+	color: Color
+) -> Label:
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.custom_minimum_size = Vector2(0, 52)
+	GameUIStyle.apply_panel(card, "dark")
+	parent.add_child(card)
+
+	var label := Label.new()
+	label.text = title + "\n—"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 11)
+	label.add_theme_color_override("font_color", color)
+	card.add_child(label)
+	return label
+
+
+func _clear_stat_chips() -> void:
+	for chip in [
+		seats_chip,
+		range_chip,
+		speed_chip,
+		size_chip,
+		resource_chip
+	]:
+		if chip != null:
+			chip.text = "—"
+
+
+func _aircraft_texture(aircraft_type_id: String) -> Texture2D:
+	if aircraft_type_id.is_empty():
+		return null
+	var path := (
+		"res://assets/pixel/aircraft/%s/%s_ne.png"
+		% [aircraft_type_id, aircraft_type_id]
+	)
+	if not ResourceLoader.exists(path):
+		return null
+	var resource := load(path)
+	if resource is Texture2D:
+		return resource as Texture2D
+	return null
 
 
 func _mastery_hours(aircraft_type_id: String) -> float:

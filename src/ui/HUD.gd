@@ -5,6 +5,7 @@ signal building_selected(building_id: String)
 signal rotate_building_requested
 signal confirm_building_requested
 signal cancel_building_requested
+signal navigation_requested(tab: String)
 
 var level_label: Label
 var coins_label: Label
@@ -267,8 +268,13 @@ func _build_bottom_navigation(root: Control) -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.custom_minimum_size = Vector2(0, 54)
 		button.add_theme_font_size_override("font_size", 15)
-		if item.begins_with("🔨"):
+
+		var parts := item.split("\n")
+		var tab := String(parts[1]).to_lower()
+		if tab == "build":
 			button.disabled = true
+		else:
+			button.pressed.connect(_on_navigation_pressed.bind(tab))
 		nav_row.add_child(button)
 
 
@@ -571,3 +577,7 @@ func _format_number(value: int) -> String:
 		result = text[i] + result
 		count += 1
 	return result
+
+
+func _on_navigation_pressed(tab: String) -> void:
+	navigation_requested.emit(tab)

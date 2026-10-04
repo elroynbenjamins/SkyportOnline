@@ -5,8 +5,11 @@ extends Node2D
 @onready var hud = $HUD
 
 var player_level: int = 4
+var player_xp: int = 0
 var coins: int = 18420
 var gems: int = 120
+var resource_inventory: Dictionary = {}
+var reward_rng := RandomNumberGenerator.new()
 
 var selected_building_id := ""
 var selected_building_rotation := 0
@@ -16,6 +19,7 @@ var runway_dispatcher: RunwayDispatcher
 var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
 var world_map: WorldMapScreen
+var return_summary: FlightReturnSummary
 
 
 func _ready() -> void:
@@ -38,6 +42,8 @@ func _ready() -> void:
 	_setup_ground_services()
 	_setup_runway_dispatcher()
 	_setup_world_map()
+	_setup_return_summary()
+	reward_rng.randomize()
 	_spawn_aircraft_demos()
 
 
@@ -64,6 +70,11 @@ func _setup_world_map() -> void:
 		_on_world_map_flight_assignment_requested
 	)
 	add_child(world_map)
+
+
+func _setup_return_summary() -> void:
+	return_summary = FlightReturnSummary.new()
+	add_child(return_summary)
 
 
 func _spawn_aircraft_demos() -> void:
@@ -291,6 +302,8 @@ func _on_demo_arrival_completed(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
+	_apply_completed_flight_reward(aircraft, label)
+
 	var route_info: Dictionary = airport_grid.get_departure_route_for_stand(
 		aircraft.stand_uid,
 		aircraft.aircraft_size
@@ -313,6 +326,51 @@ func _on_demo_arrival_completed(
 		int(route_info.get("runway_uid", -1))
 	)
 	ground_services.request_fuel(aircraft, label)
+
+
+func _apply_completed_flight_reward(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	var plan := aircraft.get_flight_plan()
+	var profile := aircraft.get_aircraft_profile()
+	if plan.is_empty() or profile.is_empty():
+		return
+
+	var reward := FlightRewardRules.create_return_reward(
+		profile,
+		plan,
+		reward_rng
+	)
+	if reward.is_empty():
+		return
+
+	coins += int(reward.get("coins", 0))
+	player_xp += int(reward.get("xp", 0))
+
+	var resources_won: Array = reward.get("resources_won", [])
+	for resource in resources_won:
+		var resource_id := String(resource.get("id", ""))
+		if resource_id.is_empty():
+			continue
+		var amount := int(resource.get("amount", 1))
+		resource_inventory[resource_id] = (
+			int(resource_inventory.get(resource_id, 0)) + amount
+		)
+
+	hud.set_player_data(player_level, coins, gems)
+	return_summary.show_reward(
+		label,
+		reward,
+		resource_inventory
+	)
+	hud.set_operation_status(
+		"%s returned from %s • rewards collected" % [
+			label,
+			String(reward.get("city", "destination"))
+		],
+		"success"
+	)
 
 
 func _on_navigation_requested(tab: String) -> void:

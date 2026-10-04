@@ -4,6 +4,7 @@ extends Node2D
 signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
+signal placed_building_selected(data: Dictionary)
 signal network_status_changed(data: Dictionary)
 
 const TILE_WIDTH := 64.0
@@ -342,6 +343,22 @@ func select_world_position(world_position: Vector2) -> void:
 	var tile := world_to_tile(world_position)
 	if not _tile_in_world(tile):
 		return
+
+	var key := _cell_key(tile)
+	if occupied_cells.has(key):
+		var building := _building_by_uid(int(occupied_cells[key]))
+		if not building.is_empty():
+			var definition := BuildingCatalog.get_definition(
+				String(building.get("definition_id", ""))
+			)
+			var is_passenger_building := (
+				int(definition.get("passenger_capacity", 0)) > 0
+				or not String(definition.get("passenger_mode", "")).is_empty()
+			)
+			if is_passenger_building:
+				clear_parcel_selection()
+				placed_building_selected.emit(building.duplicate(true))
+				return
 
 	var parcel := _parcel_for_tile(tile)
 	if not parcel.is_empty():

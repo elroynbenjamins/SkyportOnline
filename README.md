@@ -2,172 +2,228 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 7 — Aircraft-specific flight timers + first World Map
+## Current milestone: Pass 8 — Country resources + completed-flight economy
 
-Skyport Online now has a complete local airport loop plus the first destination/route layer.
+Skyport Online now has a complete local airport loop, a first World Map, aircraft-specific route timers, and the first destination economy.
 
 ### Current foundation
 
 - Godot 4 mobile project using a landscape 1280×720 reference viewport.
-- Isometric 24×24 airport grid split into 3×3 expansion parcels.
-- Level-gated and coin-gated land expansion.
-- Pan / pinch zoom on mobile and desktop editor controls.
-- Landscape HUD with airport controls around the edge and build catalog on the right.
-- Pixel-art airport building assets integrated into the live grid and build catalog.
-- Real taxiway connectivity from stands / hangars to compatible runways.
-- Placeable service roads used by ground vehicles.
-- Ground-service queueing and station vehicle-capacity bottlenecks.
-- Shared runway queues for arrivals and departures.
-- Two starter aircraft running through the physical airport lifecycle.
-- Interactive first Europe World Map.
-- Aircraft-specific destination timers, range checks, rewards and level gates.
+- Isometric airport grid with level-gated and coin-gated land expansion.
+- Landscape airport HUD and interactive Europe World Map.
+- Placeable airport buildings, taxiways, and service roads.
+- Airside connectivity validation.
+- Ground-service queues and fuel-station vehicle-capacity bottlenecks.
+- Shared runway arrival / departure queues.
+- Physical takeoff, landing, taxi-out, and taxi-in lifecycle.
+- Aircraft-specific range, speed, and flight timers.
+- Three country resources per configured destination country.
+- Independent resource rolls on successful flight returns.
+- Completed-flight coin, XP, and regional-resource rewards.
 
-## Building catalog
+## Aircraft lifecycle
 
-| Building | Footprint | Cost | Unlock | Aircraft |
-| --- | ---: | ---: | ---: | --- |
-| Short Runway | 7×2 | 10,000 | Lv 1 | S |
-| Small Aircraft Stand | 2×2 | 4,500 | Lv 1 | S |
-| Taxiway | 1×1 | 250 | Lv 1 | S/M/L |
-| Service Road | 1×1 | 150 | Lv 1 | Ground vehicles |
-| Small Terminal | 3×2 | 8,000 | Lv 1 | S |
-| Basic Fuel Station | 2×2 | 7,500 | Lv 2 | S |
-| Small Hangar | 3×3 | 12,000 | Lv 3 | S |
-| Rapid Small Fuel Station | 2×2 | 30,000 | Lv 6 | S |
-| Medium Aircraft Stand | 3×3 | 35,000 | Lv 8 | S/M |
-| Regional Fuel Depot | 3×3 | 45,000 | Lv 8 | S/M |
-| Regional Rapid Fuel Station | 4×3 | 85,000 | Lv 10 | S/M |
-| Regional Runway | 10×3 | 90,000 | Lv 12 | S/M |
+The physical loop is:
 
-## Aircraft operations
+**Parked → Fuel request → Fuel truck → Destination → Ready → Runway queue → Taxi out → Line up → Takeoff → Climb → En route → Inbound → Approach → Landing → Taxi in → Parked → Rewards**
 
-The physical aircraft lifecycle is:
+The flight is not rewarded when it is dispatched.
 
-**Parked → Fuel request → Fuel truck → Ready → Runway queue → Taxi out → Line up → Takeoff roll → Climb → En route → Holding for arrival → Approach → Landing roll → Taxi in → Parked**
-
-Aircraft release their stand when taxiing out. Returning aircraft reserve a free compatible stand before approach. If every compatible stand is occupied, they remain in a holding state until one becomes available.
-
-Arrivals and departures use the same runway dispatcher, so a runway can only handle one active aircraft operation at a time.
-
-## Ground services
-
-Fuel trucks require a real:
-
-**Fuel Station → Service Road → Aircraft Stand**
-
-route.
-
-The dispatcher also respects each station's service speed and vehicle capacity.
-
-Example starter bottleneck:
-
-- Basic Fuel Station — S aircraft, x1.0 speed, 1 truck.
-- Rapid Small Fuel Station — S aircraft, x1.6 speed, 2 trucks.
-
-With two aircraft, the basic station produces a queue while the rapid station can handle both simultaneously.
+Coins, XP, and country resources are awarded only after the aircraft physically returns and reaches its stand.
 
 ## Aircraft-specific flight timers
 
-The old fixed demo flight timer has been removed from the gameplay path.
+The fixed demo timer has been removed from the real flight path.
 
-Each aircraft type now has flight data including:
+Flight duration comes from:
 
-- Size class.
-- Cruise speed.
-- Range.
-- Passenger capacity placeholder.
-- Timer balancing factor.
+**Destination distance ÷ aircraft cruise speed × gameplay compression × aircraft timer factor**
 
-Flight duration is calculated from:
-
-**Destination distance ÷ aircraft cruise speed × gameplay time compression × aircraft timer factor**
-
-This means different aircraft types can remain away for different lengths of time on exactly the same route.
-
-Current prototype example for Amsterdam → London:
+Current tested prototype example for Amsterdam → London:
 
 - Aerolet 100 — about 11m 15s.
 - Aerolet 120 — about 8m 26s.
 
-These aircraft names and values are temporary prototype data and can be replaced by the final V1 plane catalog without rewriting the flight system.
+These aircraft names and balance values are prototype data. The final V1 plane catalog can replace them without rewriting the flight or reward systems.
 
-Longer-distance aircraft introduced later can therefore naturally support much longer flight timers.
+## Country resources
 
-## First World Map
+Each configured country currently exposes exactly **3 regional resources**.
 
-The bottom **WORLD** button now opens the first interactive Europe network screen.
+Examples:
 
-Current development destinations:
+- Netherlands — Flowers, Dairy, Horticulture.
+- Belgium — Chocolate, Chemicals, Precision Parts.
+- United Kingdom — Aerospace Parts, Financial Documents, Specialty Goods.
+- Germany — Machinery, Automotive Parts, Industrial Tools.
+- France — Luxury Goods, Gourmet Food, Cosmetics.
+- Denmark — Pharma Goods, Design Goods, Renewable Parts.
 
-- Brussels, Belgium.
-- London, United Kingdom.
-- Frankfurt, Germany.
-- Paris, France.
-- Berlin, Germany.
-- Copenhagen, Denmark.
+The first World Map shows the destination's three resources before a flight is assigned.
 
-The map currently supports:
+The larger country catalog can be expanded later when the final V1 country list is locked.
 
-- Selecting one of the player's aircraft.
-- Selecting a destination visually.
-- Destination level locks.
-- Aircraft range validation.
-- Per-aircraft calculated flight duration.
-- Coin / XP reward preview.
-- Current aircraft state.
-- Current assigned route.
-- En-route countdown.
-- Reassigning a destination while the aircraft is still available on the ground.
+## Resource drop chance
 
-Amsterdam is only the **development home airport**. The airport-creation / country-selection system will replace it with the player's selected home country and airport.
+The base chance remains:
 
-## Flight data model
+**40% per resource, rolled independently.**
 
-Each assigned flight carries:
+A successful return therefore rolls all three destination resources separately. A flight can return with:
 
-- Destination ID.
-- City and country.
-- Distance.
-- Calculated duration.
-- Coin reward.
-- XP reward.
+**0, 1, 2, or all 3 resources.**
 
-An aircraft cannot depart after servicing unless it has a valid destination plan.
+The 40% base chance is modified by three factors.
 
-Once airborne, its local airport sprite disappears and its assigned flight timer runs. When the timer completes, the aircraft requests a compatible stand and runway before physically returning to the airport.
+### 1. Aircraft-specific modifier
+
+Aircraft profiles support:
+
+**−20% to +20% relative resource chance**
+
+This is separate from speed and capacity and gives individual aircraft another strategic identity.
+
+Current prototype examples:
+
+- Aerolet 100 — 0%.
+- Aerolet 120 — −20%.
+- Regional 200 — +20%.
+
+### 2. Travel-time modifier
+
+Longer flight timers improve the chance while very short flights reduce it:
+
+| Flight timer | Relative modifier |
+| --- | ---: |
+| Under 5 min | −10% |
+| 5–10 min | −5% |
+| 10–20 min | 0% |
+| 20–40 min | +5% |
+| 40+ min | +10% |
+
+Because the timer is aircraft-specific, a slower aircraft can naturally receive a better resource chance on the same destination than a very fast aircraft.
+
+### 3. Aircraft-size modifier
+
+Larger aircraft receive a modest additional resource benefit:
+
+| Size | Relative modifier |
+| --- | ---: |
+| S | 0% |
+| M | +5% |
+| L | +10% |
+| XL | +15% |
+
+L and XL remain future-ready and do not need to be part of the V1 aircraft implementation.
+
+### Formula
+
+The modifiers are multiplicative:
+
+**Final chance = 40% × aircraft factor × travel-time factor × size factor**
+
+The final chance is currently clamped between **20% and 70%** so stacking bonuses never produces guaranteed country resources.
+
+Current automated balance examples:
+
+| Aircraft / route | Resource chance per item |
+| --- | ---: |
+| Aerolet 100 → London | 40.0% |
+| Aerolet 120 → London | 30.4% |
+| Regional 200 → London | 47.9% |
+| Regional 200 → Copenhagen | 50.4% |
+
+This means longer travel, larger aircraft, and aircraft designed around resource hauling all become meaningful without making short flights useless.
+
+## Flight-return rewards
+
+After the aircraft lands and parks, the game now awards:
+
+- Destination coins.
+- Destination XP.
+- Three independent country-resource rolls.
+
+A return summary appears with:
+
+- Flight / destination.
+- Coins earned.
+- XP earned.
+- Final resource chance.
+- Each of the three resource successes / failures.
+- Updated owned count for resources that dropped.
+
+Example flow:
+
+**SO-001 returned from London**  
+**Coins +760 • XP +48**  
+**Country resource chance: 40.0% each**  
+**✓ Aerospace Parts +1**  
+**✕ Financial Documents**  
+**✓ Specialty Goods +1**
+
+Resource results are stored in the player's resource inventory for later construction, upgrades, contracts, and other systems.
+
+## World Map
+
+The current first Europe network contains:
+
+- Brussels.
+- London.
+- Frankfurt.
+- Paris.
+- Berlin.
+- Copenhagen.
+
+The player can:
+
+- Select an aircraft.
+- Select a destination.
+- View route distance.
+- View that aircraft's flight timer.
+- View range compatibility.
+- View coin and XP rewards.
+- View all three regional resources.
+- View the adjusted resource chance for that exact aircraft / route combination.
+- See the aircraft, flight-time, and size modifier components.
+- Assign or change a route while the aircraft is still available on the ground.
+- Watch the remaining timer while the aircraft is en route.
+
+Amsterdam remains only the temporary development origin. The airport-creation / country-selection flow will replace it with the player's selected home country.
 
 ## Automated validation
 
 GitHub Actions currently validates:
 
-- Godot project import / GDScript parsing.
+- Godot project import and GDScript parsing.
 - Landscape main-scene startup.
-- Airside taxiway connectivity.
+- Taxiway / runway connectivity.
 - Service-road vehicle routing.
-- Fuel speed and truck capacity.
-- Departure runway queues.
-- Arrival runway queues.
+- Fuel speed and vehicle-capacity queues.
+- Arrival and departure runway queues.
 - Full takeoff → flight → landing → parking lifecycle.
-- Aircraft range limits.
-- Flight-plan creation.
-- Aircraft-specific flight duration differences.
-- Multi-minute timers replacing the old demo-duration behavior.
+- Aircraft range validation.
+- Aircraft-specific flight timers.
+- Country code propagation through flight plans.
+- Exactly three configured resources per country.
+- Independent resource rolls.
+- Aircraft −20% / +20% resource modifiers.
+- Short vs longer flight-time modifiers.
+- S vs M size effects.
+- Completed-flight reward construction.
 
-## Run
+Current CI balance check:
 
-1. Install Godot 4.3 or newer.
-2. Import this repository by selecting `project.godot`.
-3. Run the project.
+**Baseline 40.0% • Fast aircraft 30.4% • Regional aircraft 47.9% • Longer regional flight 50.4%**
 
 ## Next pass
 
-**Pass 8 — World Map resources + flight completion economy**
+**Pass 9 — Resource inventory + construction / upgrade sinks**
 
 Recommended next work:
 
-- Connect destination countries to the agreed three-resource country system.
-- Apply the independent ~40% drop chance per resource on completed flights.
-- Award coins / XP only when a flight successfully returns.
-- Add a flight-return summary showing rewards and country-resource rolls.
-- Begin replacing the temporary Amsterdam development origin with the player's selected home country.
-- Add favorites / recent destinations once the send-flow is established.
+- Add a proper regional-resource inventory screen.
+- Start using country resources for airport building upgrades.
+- Keep distinct physical building families while allowing internal production / storage upgrades.
+- Add resource requirements to passenger-generation buildings first.
+- Begin tying the passenger bottleneck and country economy together.
+- Later add friend / Alliance destinations as alternative ways to obtain country resources.

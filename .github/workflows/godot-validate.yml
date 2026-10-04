@@ -91,8 +91,8 @@ jobs:
       - name: Test event framework
         run: timeout 20s godot --headless --path . --script res://tests/event_framework_test.gd
 
-      - name: Test live Autumn event
-        run: timeout 20s godot --headless --path . --script res://tests/autumn_event_live_test.gd
+      - name: Test Winter launch event shop
+        run: timeout 20s godot --headless --path . --script res://tests/winter_launch_event_test.gd
 
       - name: Test physical event visuals
         run: timeout 20s godot --headless --path . --script res://tests/event_visual_presence_test.gd

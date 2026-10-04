@@ -101,6 +101,28 @@ func _show_next() -> void:
 
 	text += "\n"
 
+	var contract_bonus: Dictionary = reward.get(
+		"priority_contract_bonus",
+		{}
+	)
+	if not contract_bonus.is_empty():
+		text += "★ PRIORITY CONTRACT COMPLETE!\n"
+		text += "Bonus: 🪙 +%d    XP +%d\n" % [
+			int(contract_bonus.get("coins", 0)),
+			int(contract_bonus.get("xp", 0))
+		]
+		var contract_resources: Array = contract_bonus.get(
+			"resources",
+			[]
+		)
+		if not contract_resources.is_empty():
+			text += "Bundle: %s\n" % (
+				RouteContractRules.format_resource_bundle(
+					contract_resources
+				)
+			)
+		text += "\n"
+
 	var rolls: Array = reward.get("resource_rolls", [])
 	for result in rolls:
 		var resource_id := String(result.get("id", ""))

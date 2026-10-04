@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 12 — Live turnaround UI + service upgrades
+## Current milestone: Pass 13 — Physical pushback + tow-tug capacity
 
 Skyport Online now connects the international country economy directly back into airport progression.
 
@@ -58,12 +58,13 @@ The starter airport uses **2× Pico P8** aircraft. L and XL remain future-ready 
 
 Aircraft turnaround is now constrained by real service fleets rather than invisible timers.
 
-The starter airport includes a compact **Ground Operations Depot** connected to the service-road loop. It provides four independent one-vehicle fleets:
+The starter airport includes a compact **Ground Operations Depot** connected to the service-road loop. It provides five independent one-vehicle fleets:
 
 - Passenger handling.
 - Baggage / cargo handling.
 - Cabin cleaning.
 - Catering.
+- Pushback tug.
 
 Fuel remains a separate fuel-station fleet.
 
@@ -79,11 +80,12 @@ Specialized service buildings unlock later:
 
 | Building | Unlock | Service | Speed | Vehicles |
 | --- | ---: | --- | ---: | ---: |
-| Ground Operations Depot | Lv 1 | Pax / Cargo / Clean / Cater | x1.00 | 1 each |
+| Ground Operations Depot | Lv 1 | Pax / Cargo / Clean / Cater / Tow | x1.00 | 1 each |
 | Cleaning Center | Lv 3 | Cleaning | x1.35 | 2 |
 | Passenger Service Hub | Lv 4 | Passenger | x1.25 | 2 |
 | Baggage Depot | Lv 5 | Cargo | x1.35 | 2 |
 | Catering Kitchen | Lv 6 | Catering | x1.30 | 2 |
+| Tow Operations | Lv 7 | Pushback | x1.25 | 2 |
 
 The dispatcher always prefers the fastest compatible facility with free capacity and a valid service-road route. This makes airport layout and specialized infrastructure real throughput decisions.
 
@@ -97,7 +99,7 @@ The card distinguishes between:
 - **→** — the service vehicle has been assigned and is driving to the stand.
 - **Countdown** — the vehicle is actively servicing the aircraft.
 - **Passenger shortage** — shows the airport's live passenger stock versus that aircraft's Mastery-adjusted requirement.
-- **Pushback** — counts down the final pre-departure checks.
+- **Pushback** — shows tug queue/arrival/service state before departure.
 - **Ready** — the aircraft has completed turnaround and is waiting for runway clearance.
 
 Examples:
@@ -131,7 +133,7 @@ The intended progression is:
 
 Upgrade costs combine coins with regional resources. Service buildings can be tapped directly in the airport to open their upgrade panel, which shows current versus next speed/capacity and every required material.
 
-The starter **Ground Operations Depot** begins at x1.00 speed with one passenger, baggage, cleaning, and catering vehicle per service. Its current internal progression is:
+The starter **Ground Operations Depot** begins at x1.00 speed with one passenger, baggage, cleaning, catering, and pushback vehicle per service. Its current internal progression is:
 
 | Level | Speed | Capacity per service |
 | --- | ---: | ---: |
@@ -169,6 +171,31 @@ Vehicles now stop at those individual positions and display simple service inter
 - Catering truck → raised catering-lift cue.
 
 These are code-drawn placeholders and can later be replaced by pixel vehicle sprites without changing the routing or timing systems.
+
+## Physical pushback
+
+Pushback is now a real queued ground-service operation rather than an unconditional timer.
+
+After passenger/cargo loading completes:
+
+1. The aircraft requests a compatible tow tug.
+2. If all tugs are occupied, the aircraft remains at the stand with **Tow WAIT** on its status card.
+3. The tug drives over the existing service-road network to the aircraft nose.
+4. During the aircraft-specific pushback timer, the tug and aircraft physically move together toward the first taxiway segment.
+5. The aircraft only becomes **READY FOR DEPARTURE** after the tow completes.
+6. The tug must return to its facility before that tug capacity can be assigned again.
+
+The starter Ground Operations Depot provides **one x1.00 tow tug**, so two simultaneous departures can create a real pushback queue.
+
+The **Tow Operations** building unlocks at airport **Lv7**:
+
+- Cost: 28,000 coins.
+- Supports S/M aircraft.
+- Base speed: x1.25.
+- Base fleet: 2 tugs.
+- Internal regional-resource upgrades improve speed/capacity without changing its visual.
+
+Aircraft now have a dedicated nose-tug docking anchor and a size-scaled pushback distance. Both can be overridden per aircraft profile when the final pixel plane sprites require model-specific wheel/nose geometry.
 
 ## Passenger bottleneck
 
@@ -543,8 +570,9 @@ Two useful directions are now ready and can be worked independently:
 - Track passengers generated, passengers boarded, resources earned, coins/XP returned, and aircraft utilization.
 - Add a compact economy/history screen for identifying bottlenecks.
 
-**Parallel airport-operations pass**
+**Next airport-operations pass**
 
-- Add visible per-aircraft turnaround progress at the stand.
-- Add internal service-facility capacity/speed upgrades using regional resources.
-- Keep the physical building visually unchanged while its throughput improves.
+- Integrate the final plane sprite pack with model-specific service/tug anchors.
+- Add turn/steering polish between pushback release and taxi-out.
+- Add vehicle sprite replacements for the code-drawn service placeholders.
+- Review stand spacing and visual congestion with multiple simultaneous turnarounds.

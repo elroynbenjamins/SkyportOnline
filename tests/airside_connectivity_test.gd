@@ -240,7 +240,10 @@ func _run() -> void:
 		_fail("Parked aircraft should be visible at the airport.")
 		return
 
-	var disconnected_position := grid.tile_to_world(Vector2(8, 10))
+	grid.select_parcel("east")
+	grid.purchase_selected()
+
+	var disconnected_position := grid.tile_to_world(Vector2(15, 10))
 	var preview := grid.set_build_preview("small_stand", disconnected_position, 0)
 	if not bool(preview.get("valid", false)):
 		_fail("Disconnected stand test placement should be buildable.")
@@ -258,7 +261,7 @@ func _run() -> void:
 		_fail("Third stand should remain disconnected before adding taxiway.")
 		return
 
-	var connector_position := grid.tile_to_world(Vector2(10, 10))
+	var connector_position := grid.tile_to_world(Vector2(14, 10))
 	var connector_preview := grid.set_build_preview("taxiway", connector_position, 0)
 	if not bool(connector_preview.get("valid", false)):
 		_fail("Connector taxiway test placement should be valid.")

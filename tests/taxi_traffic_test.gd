@@ -140,11 +140,11 @@ func _run() -> void:
 	})
 	plane_a.mark_service_complete()
 	plane_b.mark_service_complete()
-	plane_a.begin_departure_after_clearance()
-	plane_b.begin_departure_after_clearance()
+	plane_a.begin_taxi_to_hold_short()
+	plane_b.begin_taxi_to_hold_short()
 
-	plane_a._process(0.60)
-	plane_b._process(0.60)
+	plane_a._process(0.10)
+	plane_b._process(0.10)
 	if plane_a.state != "TAXIING_OUT" or plane_b.state != "TAXIING_OUT":
 		_fail("Both test aircraft should enter taxi-out state.")
 		return

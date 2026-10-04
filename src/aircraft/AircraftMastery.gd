@@ -83,12 +83,17 @@ static func passenger_requirement(
 	var reduction := float(
 		bonuses.get("passenger_reduction", 0.0)
 	)
-	return maxi(
-		int(round(
-			float(base_passengers) * (1.0 - reduction)
-		)),
-		0
+	if reduction <= 0.0 or base_passengers <= 0:
+		return maxi(base_passengers, 0)
+
+	var reduction_count := maxi(
+		int(round(float(base_passengers) * reduction)),
+		1
 	)
+	if reduction >= 0.10:
+		reduction_count = maxi(reduction_count, 2)
+
+	return maxi(base_passengers - reduction_count, 1)
 
 
 static func apply_coin_bonus(base_coins: int, hours: float) -> int:

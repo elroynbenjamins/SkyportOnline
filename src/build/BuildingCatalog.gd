@@ -367,6 +367,36 @@ static func all() -> Array[Dictionary]:
 			"required_cosmetic_id": "event_autumn_leaf_garden"
 		},
 		{
+			"id": "winter_event_flag",
+			"name": "Winter Event Flag",
+			"menu_name": "WINTER FLAG",
+			"category": "Decorations",
+			"footprint": Vector2i(1, 1),
+			"cost": 0,
+			"level": 1,
+			"color": Color("b72f3c"),
+			"rotatable": false,
+			"sizes": PackedStringArray([]),
+			"description": "Placeable Winter Airbridge flag cosmetic.",
+			"event_decoration": true,
+			"required_cosmetic_id": "event_winter_alliance_flag"
+		},
+		{
+			"id": "winter_snow_globe_garden",
+			"name": "Snow Globe Garden",
+			"menu_name": "SNOW GLOBE",
+			"category": "Decorations",
+			"footprint": Vector2i(2, 1),
+			"cost": 0,
+			"level": 1,
+			"color": Color("8eb8c8"),
+			"rotatable": true,
+			"sizes": PackedStringArray([]),
+			"description": "Placeable Winter event garden unlocked from the seasonal shop.",
+			"event_decoration": true,
+			"required_cosmetic_id": "event_winter_snow_globe_garden"
+		},
+		{
 			"id": "rapid_regional_fuel",
 			"name": "Regional Rapid Fuel Station",
 			"menu_name": "RAPID FUEL",

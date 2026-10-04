@@ -24,6 +24,7 @@ var tow_start_aircraft_position := Vector2.ZERO
 var tow_end_aircraft_position := Vector2.ZERO
 var tow_start_vehicle_position := Vector2.ZERO
 var tow_initialized := false
+var vehicle_sprite_atlas: Texture2D
 
 
 func set_launch_delay(seconds: float) -> void:
@@ -67,6 +68,7 @@ func start_service(
 	service_duration = maxf(duration, 0.25)
 	service_remaining = service_duration
 	service_type = kind
+	_load_vehicle_sprite()
 	position = outbound_route[0]
 	visible = true
 	phase = "WAITING_LAUNCH" if launch_delay_remaining > 0.0 else "OUTBOUND"
@@ -177,64 +179,108 @@ func _follow_route(points: PackedVector2Array, delta: float) -> bool:
 func _draw() -> void:
 	_draw_shadow()
 
-	var body_color := _body_color()
-	draw_rect(
-		Rect2(Vector2(-12, -7), Vector2(24, 14)),
-		body_color
-	)
-	draw_rect(
-		Rect2(Vector2(5, -6), Vector2(10, 12)),
-		Color("e9ecec")
-	)
+	var sprite_drawn := _draw_directional_sprite()
+	if not sprite_drawn:
+		var body_color := _body_color()
+		draw_rect(
+			Rect2(Vector2(-12, -7), Vector2(24, 14)),
+			body_color
+		)
+		draw_rect(
+			Rect2(Vector2(5, -6), Vector2(10, 12)),
+			Color("e9ecec")
+		)
 
-	match service_type:
-		"passenger":
-			draw_rect(
-				Rect2(Vector2(-8, -5), Vector2(4, 10)),
-				Color("dff4f7")
-			)
-			draw_rect(
-				Rect2(Vector2(-2, -5), Vector2(4, 10)),
-				Color("dff4f7")
-			)
-		"cargo":
-			draw_rect(
-				Rect2(Vector2(-17, -5), Vector2(7, 10)),
-				Color("8a775f")
-			)
-		"cleaning":
-			draw_circle(Vector2(-5, 0), 4.0, Color("d7f5ef"))
-		"catering":
-			draw_rect(
-				Rect2(Vector2(-10, -10), Vector2(12, 4)),
-				Color("f5ead8")
-			)
-		"pushback":
-			draw_rect(
-				Rect2(Vector2(12, -3), Vector2(10, 6)),
-				Color("d9b85f")
-			)
-			draw_line(
-				Vector2(18, -5),
-				Vector2(24, -7),
-				Color("e7cf8a"),
-				2.0
-			)
-			draw_line(
-				Vector2(18, 5),
-				Vector2(24, 7),
-				Color("e7cf8a"),
-				2.0
-			)
-
-	draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(9, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
-	draw_circle(Vector2(9, 8), 3.0, Color("292f32"))
-
+	if not sprite_drawn:
+		match service_type:
+			"passenger":
+				draw_rect(
+					Rect2(Vector2(-8, -5), Vector2(4, 10)),
+					Color("dff4f7")
+				)
+				draw_rect(
+					Rect2(Vector2(-2, -5), Vector2(4, 10)),
+					Color("dff4f7")
+				)
+			"cargo":
+				draw_rect(
+					Rect2(Vector2(-17, -5), Vector2(7, 10)),
+					Color("8a775f")
+				)
+			"cleaning":
+				draw_circle(Vector2(-5, 0), 4.0, Color("d7f5ef"))
+			"catering":
+				draw_rect(
+					Rect2(Vector2(-10, -10), Vector2(12, 4)),
+					Color("f5ead8")
+				)
+			"pushback":
+				draw_rect(
+					Rect2(Vector2(12, -3), Vector2(10, 6)),
+					Color("d9b85f")
+				)
+				draw_line(
+					Vector2(18, -5),
+					Vector2(24, -7),
+					Color("e7cf8a"),
+					2.0
+				)
+				draw_line(
+					Vector2(18, 5),
+					Vector2(24, 7),
+					Color("e7cf8a"),
+					2.0
+				)
+	
+		draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(9, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
+		draw_circle(Vector2(9, 8), 3.0, Color("292f32"))
+	
 	if phase == "SERVICING":
 		draw_circle(Vector2(0, -15), 4.0, Color("ffd166"))
 		_draw_service_attachment()
+
+
+func _load_vehicle_sprite() -> void:
+	vehicle_sprite_atlas = null
+	var path := GroundVehicleVisuals.atlas_path(service_type)
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return
+
+	var texture = load(path)
+	if texture is Texture2D:
+		vehicle_sprite_atlas = texture
+
+
+func _draw_directional_sprite() -> bool:
+	if vehicle_sprite_atlas == null:
+		return false
+
+	var display_size := GroundVehicleVisuals.display_size(
+		service_type
+	)
+	var source_region := GroundVehicleVisuals.source_region(
+		service_type,
+		rotation
+	)
+
+	draw_set_transform(
+		Vector2.ZERO,
+		-rotation,
+		Vector2.ONE
+	)
+	draw_texture_rect_region(
+		vehicle_sprite_atlas,
+		Rect2(-display_size * 0.5, display_size),
+		source_region
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+	return true
 
 
 func _draw_service_attachment() -> void:

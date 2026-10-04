@@ -16,11 +16,20 @@ var service_type := "cargo"
 var phase := "IDLE"
 var service_pose_rotation := 0.0
 var has_service_pose_rotation := false
+var service_connection_target := Vector2.ZERO
+var has_service_connection_target := false
 
 
 func set_service_pose_rotation(value: float) -> void:
 	service_pose_rotation = value
 	has_service_pose_rotation = true
+
+
+func set_service_connection_target(
+	global_target: Vector2
+) -> void:
+	service_connection_target = global_target
+	has_service_connection_target = true
 
 
 func start_service(
@@ -132,6 +141,78 @@ func _draw() -> void:
 
 	if phase == "SERVICING":
 		draw_circle(Vector2(0, -15), 4.0, Color("ffd166"))
+		_draw_service_attachment()
+
+
+func _draw_service_attachment() -> void:
+	if not has_service_connection_target:
+		return
+
+	var target := to_local(service_connection_target)
+	if target.length() < 1.0:
+		return
+	var connection := target.normalized() * minf(
+		target.length(),
+		34.0
+	)
+
+	match service_type:
+		"passenger":
+			var step_direction := connection / 4.0
+			for index in range(1, 5):
+				var point := step_direction * float(index)
+				draw_line(
+					point + Vector2(-5, 0),
+					point + Vector2(5, 0),
+					Color("dff4f7"),
+					2.0
+				)
+			draw_line(
+				Vector2.ZERO,
+				connection,
+				Color("dff4f7"),
+				2.0
+			)
+		"cargo":
+			draw_line(
+				Vector2.ZERO,
+				connection,
+				Color("d7b37c"),
+				4.0
+			)
+			for fraction in [0.35, 0.65, 0.9]:
+				draw_circle(
+					connection * float(fraction),
+					2.2,
+					Color("f2cf96")
+				)
+		"cleaning":
+			draw_line(
+				Vector2.ZERO,
+				connection,
+				Color("b9efe5"),
+				2.0
+			)
+			draw_circle(
+				connection,
+				3.0,
+				Color("d7f5ef")
+			)
+		"catering":
+			var lift_end := connection * 0.85
+			draw_line(
+				Vector2.ZERO,
+				lift_end,
+				Color("f5ead8"),
+				3.0
+			)
+			draw_rect(
+				Rect2(
+					lift_end - Vector2(7, 4),
+					Vector2(14, 8)
+				),
+				Color("f5ead8")
+			)
 
 
 func _body_color() -> Color:

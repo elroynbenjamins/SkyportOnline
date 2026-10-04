@@ -98,6 +98,65 @@ func get_snapshot() -> Dictionary:
 	}
 
 
+func get_lighting_inventory() -> Dictionary:
+	var result := {
+		"runways": 0,
+		"taxiways": 0,
+		"stands": 0,
+		"window_buildings": 0,
+		"floodlights": 0
+	}
+	if airport_grid == null:
+		return result
+
+	for building in airport_grid.placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if definition.is_empty():
+			continue
+
+		var building_id := String(
+			definition.get("id", "")
+		)
+		if building_id.contains("runway"):
+			result["runways"] += 1
+		elif building_id == "taxiway":
+			result["taxiways"] += 1
+		elif building_id.contains("stand"):
+			result["stands"] += 1
+
+		if building_id == "apron_light":
+			result["floodlights"] += 1
+
+		if _supports_window_glow(definition):
+			result["window_buildings"] += 1
+
+	return result
+
+
+func _supports_window_glow(definition: Dictionary) -> bool:
+	var category := String(
+		definition.get("category", "")
+	)
+	var building_id := String(
+		definition.get("id", "")
+	)
+	if category not in [
+		"Passenger",
+		"Services",
+		"Operations"
+	]:
+		return false
+	if building_id.contains("runway"):
+		return false
+	if building_id.contains("stand"):
+		return false
+	if building_id == "taxiway":
+		return false
+	return true
+
+
 func _apply_hour(hour: int) -> void:
 	current_hour = posmod(hour, 24)
 	if phase_override.is_empty():
@@ -392,13 +451,7 @@ func _draw_building_window_glow(
 		definition.get("id", "")
 	)
 
-	if category not in [
-		"Passenger",
-		"Services",
-		"Operations"
-	]:
-		return
-	if building_id.contains("runway") or building_id.contains("stand"):
+	if not _supports_window_glow(definition):
 		return
 
 	var warm := Color(

@@ -115,3 +115,7 @@ jobs:
 
       - name: Test runway throughput pacing
         run: timeout 20s godot --headless --path . --script res://tests/runway_pacing_test.gd
+
+
+      - name: Test ATC Tower throughput upgrades
+        run: timeout 20s godot --headless --path . --script res://tests/atc_tower_upgrade_test.gd

@@ -15,6 +15,41 @@ var departure_taxi_pending: Dictionary = {}
 var last_operation_by_runway: Dictionary = {}
 var separation_elapsed_by_runway: Dictionary = {}
 var atc_emit_accumulator := 0.0
+var airport_grid: AirportGrid
+var separation_multiplier := 1.0
+var active_atc_building: Dictionary = {}
+
+
+func configure(grid: AirportGrid) -> void:
+	airport_grid = grid
+	refresh_air_traffic_control()
+
+
+func refresh_air_traffic_control() -> void:
+	separation_multiplier = 1.0
+	active_atc_building = {}
+	if airport_grid != null:
+		var tower := airport_grid.get_best_air_traffic_control()
+		if not tower.is_empty():
+			active_atc_building = tower.duplicate(true)
+			separation_multiplier = clampf(
+				float(
+					tower.get(
+						"separation_multiplier",
+						1.0
+					)
+				),
+				0.50,
+				1.0
+			)
+
+	for runway_uid in _known_runway_uids():
+		_emit_runway_visual_state(runway_uid)
+	_emit_atc_state()
+
+
+func get_separation_multiplier() -> float:
+	return separation_multiplier
 
 
 func _process(delta: float) -> void:
@@ -286,7 +321,20 @@ func get_atc_snapshot() -> Dictionary:
 		"primary_runway": primary,
 		"waiting": get_waiting_count(),
 		"active": get_active_count(),
-		"taxiing_to_hold": get_taxiing_to_hold_count()
+		"taxiing_to_hold": get_taxiing_to_hold_count(),
+		"separation_multiplier": separation_multiplier,
+		"atc_level": int(
+			active_atc_building.get(
+				"upgrade_level",
+				0
+			)
+		),
+		"atc_building_uid": int(
+			active_atc_building.get(
+				"uid",
+				-1
+			)
+		)
 	}
 
 
@@ -451,7 +499,8 @@ func _separation_remaining_for_operation(
 	)
 	var required := RunwayPacingRules.separation_seconds(
 		previous_operation,
-		next_operation
+		next_operation,
+		separation_multiplier
 	)
 	var elapsed := float(
 		separation_elapsed_by_runway.get(runway_uid, 0.0)

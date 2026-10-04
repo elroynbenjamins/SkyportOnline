@@ -131,3 +131,13 @@ static func resources_for_country(country_code: String) -> Array[Dictionary]:
 	for resource in catalog[country_code]:
 		result.append(resource.duplicate(true))
 	return result
+
+
+static func get_resource(resource_id: String) -> Dictionary:
+	for country_code in all().keys():
+		for resource in all()[country_code]:
+			if String(resource.get("id", "")) == resource_id:
+				var result: Dictionary = resource.duplicate(true)
+				result["country_code"] = String(country_code)
+				return result
+	return {}

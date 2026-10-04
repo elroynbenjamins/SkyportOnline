@@ -225,7 +225,7 @@ func configure(
 		var can_dispatch := bool(route.get("can_dispatch", false))
 		var reason := String(route.get("reason", ""))
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(0, 48)
+		button.custom_minimum_size = Vector2(0, 68)
 
 		if bool(route.get("compatible", false)):
 			button.text = "%s → %s  •  %d km\n%d/%d pax • %d min • +%d XP\nGross 🪙 %s • Cost 🪙 %s • Net +🪙 %s" % [

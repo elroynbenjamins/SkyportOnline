@@ -93,6 +93,43 @@ func _run() -> void:
 		)
 		return
 
+	var snapshot_a := dispatcher.get_turnaround_snapshot(plane_a)
+	var status_a: Dictionary = snapshot_a.get(
+		"service_status",
+		{}
+	)
+	if String(
+		(status_a.get("fuel", {}) as Dictionary).get(
+			"state",
+			""
+		)
+	) != "en_route":
+		_fail("First aircraft should show fuel vehicle en route.")
+		return
+	if plane_a.turnaround_panel == null or not plane_a.turnaround_panel.visible:
+		_fail("Active turnaround should show an aircraft status card.")
+		return
+	if not plane_a.turnaround_label.text.contains("Fuel"):
+		_fail("Aircraft status card should name active services.")
+		return
+
+	var snapshot_b := dispatcher.get_turnaround_snapshot(plane_b)
+	var status_b: Dictionary = snapshot_b.get(
+		"service_status",
+		{}
+	)
+	if String(
+		(status_b.get("fuel", {}) as Dictionary).get(
+			"state",
+			""
+		)
+	) != "queued":
+		_fail("Second aircraft should expose queued fuel status.")
+		return
+	if not plane_b.turnaround_label.text.contains("WAIT"):
+		_fail("Queued aircraft status should visibly show WAIT.")
+		return
+
 	var waiting := dispatcher.get_waiting_by_service()
 	if int(waiting.get("fuel", 0)) != 1:
 		_fail("Second aircraft should queue for the single fuel truck.")

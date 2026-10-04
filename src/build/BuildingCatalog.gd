@@ -353,6 +353,36 @@ static func all() -> Array[Dictionary]:
 			"required_cosmetic_id": "event_autumn_leaf_garden"
 		},
 		{
+			"id": "xmas_event_flag",
+			"name": "New Year Event Flag",
+			"menu_name": "NEW YEAR FLAG",
+			"category": "Decorations",
+			"footprint": Vector2i(1, 1),
+			"cost": 0,
+			"level": 1,
+			"color": Color("b72f3c"),
+			"rotatable": false,
+			"sizes": PackedStringArray([]),
+			"description": "Placeable Christmas & New Year flag cosmetic.",
+			"event_decoration": true,
+			"required_cosmetic_id": "event_xmas_alliance_flag"
+		},
+		{
+			"id": "xmas_snow_globe_garden",
+			"name": "Snow Globe Garden",
+			"menu_name": "SNOW GLOBE",
+			"category": "Decorations",
+			"footprint": Vector2i(2, 1),
+			"cost": 0,
+			"level": 1,
+			"color": Color("8eb8c8"),
+			"rotatable": true,
+			"sizes": PackedStringArray([]),
+			"description": "Placeable winter garden unlocked from the Christmas & New Year event.",
+			"event_decoration": true,
+			"required_cosmetic_id": "event_xmas_snow_globe_garden"
+		},
+		{
 			"id": "rapid_regional_fuel",
 			"name": "Regional Rapid Fuel Station",
 			"menu_name": "RAPID FUEL",

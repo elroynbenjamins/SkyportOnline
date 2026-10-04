@@ -241,4 +241,16 @@ func _update_parcel_label(id: String) -> void:
 		if id == "home":
 			label.text = "YOUR AIRPORT"
 	else:
-		label.text = "🔒  Lv %d\n%,d coins" % [int(parcel["level"]), int(parcel["cost"])]
+		label.text = "🔒  Lv %d\n%s coins" % [int(parcel["level"]), _format_number(int(parcel["cost"]))]
+
+
+func _format_number(value: int) -> String:
+	var text := str(value)
+	var result := ""
+	var count := 0
+	for i in range(text.length() - 1, -1, -1):
+		if count > 0 and count % 3 == 0:
+			result = "," + result
+		result = text[i] + result
+		count += 1
+	return result

@@ -44,6 +44,7 @@ var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
 var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
+var stand_visual_states: Dictionary = {}
 var event_visual_snapshot: Dictionary = {}
 var event_owned_cosmetics: Dictionary = {}
 
@@ -169,7 +170,15 @@ func _draw_buildings() -> void:
 		if not _definition_has_world_sprite(definition):
 			_draw_building_detail(building, definition, footprint)
 		else:
-			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
+			_draw_building_sprite(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"])
+			)
+
+		if String(definition.get("id", "")).contains("stand"):
+			_draw_stand_activity_overlay(building, footprint)
 
 
 func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:
@@ -235,6 +244,171 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 
 	elif id == "winter_snow_globe_garden":
 		_draw_winter_snow_globe_garden(origin, footprint)
+
+
+func set_stand_visual_state(
+	stand_uid: int,
+	state: String,
+	aircraft_size: String = "S"
+) -> bool:
+	var stand := _building_by_uid(stand_uid)
+	if stand.is_empty():
+		return false
+
+	var definition := BuildingCatalog.get_definition(
+		String(stand.get("definition_id", ""))
+	)
+	if (
+		definition.is_empty()
+		or not String(
+			definition.get("id", "")
+		).contains("stand")
+	):
+		return false
+
+	stand_visual_states[stand_uid] = {
+		"state": state,
+		"canonical_state": StandVisualRules.canonical_state(state),
+		"aircraft_size": aircraft_size
+	}
+	queue_redraw()
+	return true
+
+
+func clear_stand_visual_state(stand_uid: int) -> void:
+	stand_visual_states.erase(stand_uid)
+	queue_redraw()
+
+
+func get_stand_visual_state(stand_uid: int) -> Dictionary:
+	if not stand_visual_states.has(stand_uid):
+		return {
+			"state": "IDLE",
+			"canonical_state": "IDLE",
+			"aircraft_size": "",
+			"occupied": false
+		}
+
+	var result: Dictionary = (
+		stand_visual_states[stand_uid] as Dictionary
+	).duplicate(true)
+	result["occupied"] = StandVisualRules.is_occupied(
+		String(result.get("state", "IDLE"))
+	)
+	return result
+
+
+func _draw_stand_activity_overlay(
+	building: Dictionary,
+	footprint: Vector2i
+) -> void:
+	var stand_uid := int(building.get("uid", -1))
+	var snapshot := get_stand_visual_state(stand_uid)
+	var raw_state := String(snapshot.get("state", "IDLE"))
+	var canonical := StandVisualRules.canonical_state(raw_state)
+	var color := StandVisualRules.color_for_state(raw_state)
+	var origin: Vector2i = building.get("origin", Vector2i.ZERO)
+	var center := _footprint_center_world(origin, footprint)
+
+	var cells := _cells_for(origin, footprint)
+	var taxi_cell := _first_adjacent_reachable_taxiway(cells)
+	var inward := Vector2(1.0, -0.5).normalized()
+	if taxi_cell.x >= 0:
+		var taxi_world := tile_to_world(
+			Vector2(taxi_cell.x, taxi_cell.y)
+		)
+		inward = (center - taxi_world).normalized()
+		if inward == Vector2.ZERO:
+			inward = Vector2(1.0, -0.5).normalized()
+
+	var normal := Vector2(-inward.y, inward.x)
+	var longitudinal := 25.0 if footprint.x <= 2 else 31.0
+	var lateral := 21.0 if footprint.y <= 2 else 27.0
+	var light_positions := [
+		center - inward * longitudinal - normal * lateral,
+		center - inward * longitudinal + normal * lateral,
+		center + inward * longitudinal - normal * lateral,
+		center + inward * longitudinal + normal * lateral
+	]
+
+	for p in light_positions:
+		draw_circle(p, 3.8, Color(0.02, 0.06, 0.08, 0.62))
+		draw_circle(p, 2.1, color)
+
+	var outline_alpha := 0.34 if canonical == "IDLE" else 0.62
+	var box_half_width := 20.0 if footprint.x <= 2 else 27.0
+	var box_half_length := 24.0 if footprint.y <= 2 else 31.0
+	var corners := PackedVector2Array([
+		center - normal * box_half_width - inward * box_half_length,
+		center + normal * box_half_width - inward * box_half_length,
+		center + normal * box_half_width + inward * box_half_length,
+		center - normal * box_half_width + inward * box_half_length,
+		center - normal * box_half_width - inward * box_half_length
+	])
+	draw_polyline(
+		corners,
+		Color(color.r, color.g, color.b, outline_alpha),
+		1.4
+	)
+
+	if StandVisualRules.should_draw_entry_chevron(raw_state):
+		var arrow_start := center - inward * 42.0
+		var arrow_tip := center - inward * 12.0
+		draw_line(
+			arrow_start,
+			arrow_tip,
+			color,
+			2.4
+		)
+		draw_line(
+			arrow_tip,
+			arrow_tip - inward * 9.0 + normal * 7.0,
+			color,
+			2.4
+		)
+		draw_line(
+			arrow_tip,
+			arrow_tip - inward * 9.0 - normal * 7.0,
+			color,
+			2.4
+		)
+
+	if StandVisualRules.should_draw_departure_chevron(raw_state):
+		var arrow_start := center + inward * 8.0
+		var arrow_tip := center - inward * 34.0
+		draw_line(
+			arrow_start,
+			arrow_tip,
+			color,
+			2.4
+		)
+		draw_line(
+			arrow_tip,
+			arrow_tip + inward * 9.0 + normal * 7.0,
+			color,
+			2.4
+		)
+		draw_line(
+			arrow_tip,
+			arrow_tip + inward * 9.0 - normal * 7.0,
+			color,
+			2.4
+		)
+
+	if canonical != "IDLE":
+		var badge_center := (
+			center + inward * (longitudinal + 9.0)
+		)
+		draw_circle(
+			badge_center,
+			7.5,
+			Color(0.02, 0.07, 0.09, 0.78)
+		)
+		draw_circle(
+			badge_center,
+			4.5,
+			color
+		)
 
 
 func set_event_visual_state(

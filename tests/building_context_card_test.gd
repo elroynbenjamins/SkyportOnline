@@ -2,6 +2,7 @@ extends SceneTree
 
 
 var selected_building: Dictionary = {}
+var primary_emitted := false
 
 
 func _init() -> void:
@@ -66,10 +67,8 @@ func _run() -> void:
 		_fail("Upgradeable service building should expose Upgrade action.")
 		return
 
-	var primary_emitted := false
 	card.primary_action_requested.connect(
-		func(_building: Dictionary) -> void:
-			primary_emitted = true
+		_on_primary_action_requested
 	)
 	card.primary_button.pressed.emit()
 	if not primary_emitted:
@@ -121,6 +120,12 @@ func _run() -> void:
 
 func _on_building_selected(building: Dictionary) -> void:
 	selected_building = building.duplicate(true)
+
+
+func _on_primary_action_requested(
+	_building: Dictionary
+) -> void:
+	primary_emitted = true
 
 
 func _fail(message: String) -> void:

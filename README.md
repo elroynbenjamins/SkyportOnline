@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 3 — Airside network + first moving aircraft
+## Current milestone: Pass 4 — Ground-service queues + two-aircraft starter airport
 
 The repository now contains a playable airport-building foundation with real airside connectivity:
 
@@ -19,7 +19,14 @@ The repository now contains a playable airport-building foundation with real air
 - Taxiway network connectivity from stands / hangars to runways.
 - Live Airfield Status HUD with disconnected-building warnings.
 - Placement preview warning when an airside building has no runway-connected taxiway.
-- First S-class aircraft prototype that follows the real stand → taxiway → runway route.
+- Two connected starter stands with two S-class aircraft.
+- Aircraft follow real stand → taxiway → runway routes.
+- Aircraft wait for fuel before departure.
+- Visible fuel trucks drive from the selected fuel station to the aircraft and back.
+- Ground-service dispatcher queues aircraft when all compatible trucks are busy.
+- Fuel station vehicle capacity controls parallel servicing.
+- Faster compatible fuel infrastructure is preferred automatically.
+- Fuel service duration scales with the station's speed multiplier.
 
 ### Current building catalog
 
@@ -50,23 +57,29 @@ A stand or hangar is considered connected only when:
 
 Disconnected airside buildings remain placeable for layout flexibility, but the game shows a warning marker, changes the building label, and updates the Airfield Status HUD.
 
-The starter airport currently passes an automated connectivity test that checks:
+The starter airport currently passes automated connectivity and ground-service tests that check:
 
-- the starter stand is connected;
+- both starter stands are connected;
+- both stands expose valid departure routes;
 - a newly placed disconnected stand is detected;
 - the disconnected stand preview warns the player;
 - extending the taxiway connects that stand;
-- a valid stand-to-runway departure route is exposed.
+- a valid stand-to-runway departure route is exposed;
+- the basic 1-truck fuel station services one aircraft while the second queues;
+- a rapid 2-truck fuel station services two aircraft in parallel with no queue;
+- the faster compatible fuel station is preferred.
 
-## First aircraft prototype
+## Aircraft and ground-service prototype
 
-The starter airport spawns one temporary S-class commuter aircraft.
+The starter airport now spawns two temporary S-class commuter aircraft.
 
 Current behavior:
 
-**Parked at stand → taxi to runway → roll to runway end → hold**
+**Parked at stand → request fuel → truck dispatch / queue → fueling → ready → taxi to runway → roll to runway end → hold**
 
-The aircraft uses the same taxiway graph as the connectivity system. Its visual is still code-drawn; the dedicated pixel aircraft sprite pack should replace it after movement and sizing are finalized.
+The aircraft use the same taxiway graph as the connectivity system. Fuel trucks currently travel directly between the fuel station and stand; service-road routing comes in a later pass.
+
+Aircraft and vehicle visuals are still temporary code-drawn prototypes. Dedicated pixel sprites should replace them after movement, service sizing, and path rules are finalized.
 
 ## Run
 
@@ -82,13 +95,13 @@ GitHub Actions currently performs:
 
 ## Next pass
 
-**Pass 4 — Aircraft servicing foundation**
+**Pass 5 — Runway traffic + service-road refinement**
 
 Recommended next work:
 
-- Aircraft S/M compatibility checks against runway and stand.
-- Parked aircraft state and turnaround/service requirements.
-- Basic fuel request and fuel-station assignment.
-- Standard vs rapid fuel service timing.
-- First visible fuel-truck prototype.
-- Replace the temporary aircraft drawing with the proper Skyport Online pixel aircraft asset.
+- Runway occupancy so only one departure/arrival uses a runway at a time.
+- Departure queue when multiple serviced aircraft are ready.
+- Service-road routing for fuel trucks instead of direct-line travel.
+- Station/truck busy indicators in the airport view.
+- Dedicated Skyport Online pixel aircraft and fuel-truck sprites.
+- Then expand servicing into baggage, catering, and maintenance.

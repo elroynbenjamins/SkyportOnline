@@ -7,6 +7,10 @@ signal passenger_boarding_requested(
 	aircraft: AircraftPrototype,
 	label: String
 )
+signal departure_route_requested(
+	aircraft: AircraftPrototype,
+	label: String
+)
 signal aircraft_serviced(
 	aircraft: AircraftPrototype,
 	label: String
@@ -364,6 +368,16 @@ func _wait_for_destination(job_id: int) -> void:
 
 
 func _begin_pushback(job_id: int) -> void:
+	if turnaround_jobs.has(job_id):
+		var job: Dictionary = turnaround_jobs[job_id]
+		var aircraft := job.get("aircraft") as AircraftPrototype
+		var label := String(job.get("label", "Aircraft"))
+		if aircraft != null and is_instance_valid(aircraft):
+			departure_route_requested.emit(
+				aircraft,
+				label
+			)
+
 	_begin_vehicle_stage(
 		job_id,
 		"PUSHBACK_PREP",

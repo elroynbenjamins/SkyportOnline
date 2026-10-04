@@ -25,6 +25,7 @@ var mastery_hours_by_type: Dictionary = {}
 var passenger_stock := 0
 var passenger_capacity := 0
 var route_history: Dictionary = {}
+var demand_now_override := -1
 var refresh_accumulator := 0.0
 
 
@@ -80,6 +81,20 @@ func open_map(
 
 func close_map() -> void:
 	root.visible = false
+
+
+func set_demand_time_override(now_unix: int) -> void:
+	demand_now_override = now_unix
+	if root != null and root.visible:
+		_refresh_destination_buttons()
+		_refresh_details()
+
+
+func _demand_condition(destination_id: String) -> Dictionary:
+	return DynamicDemandRules.condition_for(
+		destination_id,
+		demand_now_override
+	)
 
 
 func set_passenger_stock(
@@ -348,9 +363,7 @@ func _refresh_destination_buttons() -> void:
 			]
 			continue
 
-		var condition := DynamicDemandRules.condition_for(
-			destination_id
-		)
+		var condition := _demand_condition(destination_id)
 		button.text = "%s\n%s • %s" % [
 			String(destination["city"]).to_upper(),
 			String(destination["country_code"]),
@@ -398,7 +411,7 @@ func _refresh_details() -> void:
 		int(profile.get("passengers", 0)),
 		0
 	)
-	var condition := DynamicDemandRules.condition_for(
+	var condition := _demand_condition(
 		String(destination.get("id", ""))
 	)
 	var demand_preview := PassengerDemandRules.preview(

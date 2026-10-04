@@ -61,7 +61,9 @@ static func condition_for(
 	if timestamp < 0:
 		timestamp = int(Time.get_unix_time_from_system())
 
-	var slot := timestamp / SLOT_SECONDS
+	var slot := floori(
+		float(timestamp) / float(SLOT_SECONDS)
+	)
 	var offset := _stable_destination_offset(destination_id)
 	var condition_id := String(
 		CONDITION_ORDER[
@@ -166,7 +168,7 @@ static func condition_summary(
 
 static func format_remaining(seconds: int) -> String:
 	var total := maxi(seconds, 0)
-	var minutes := total / 60
+	var minutes := floori(float(total) / 60.0)
 	var remaining := total % 60
 	return "%02d:%02d" % [minutes, remaining]
 

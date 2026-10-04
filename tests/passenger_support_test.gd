@@ -1,5 +1,8 @@
 extends SceneTree
 
+var unavailable_called := false
+var reward_called := false
+
 
 func _init() -> void:
 	call_deferred("_run")
@@ -56,18 +59,10 @@ func _run() -> void:
 		_fail("Shuttle Station Lv1 should provide 30 storage.")
 		return
 
-	var unavailable_called := false
-	var reward_called := false
 	var bridge := RewardedPassengerAdBridge.new()
 	root.add_child(bridge)
-	bridge.unavailable.connect(
-		func() -> void:
-			unavailable_called = true
-	)
-	bridge.reward_granted.connect(
-		func() -> void:
-			reward_called = true
-	)
+	bridge.unavailable.connect(_on_ad_unavailable)
+	bridge.reward_granted.connect(_on_ad_reward)
 
 	bridge.request_ad()
 	if not unavailable_called:
@@ -155,3 +150,11 @@ func _fail(message: String) -> void:
 	_cleanup_profile()
 	push_error(message)
 	quit(1)
+
+
+func _on_ad_unavailable() -> void:
+	unavailable_called = true
+
+
+func _on_ad_reward() -> void:
+	reward_called = true

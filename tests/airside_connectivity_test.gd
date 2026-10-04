@@ -174,6 +174,53 @@ func _run() -> void:
 		_fail("Second arrival should enter APPROACH after clearance.")
 		return
 
+
+	var lifecycle_plane := AircraftPrototype.new()
+	root.add_child(lifecycle_plane)
+	lifecycle_plane.set_departure_route(
+		starter_routes[0]["route"],
+		"S",
+		int(starter_routes[0]["stand_uid"]),
+		int(starter_routes[0]["runway_uid"])
+	)
+	lifecycle_plane.mark_service_complete()
+	lifecycle_plane.begin_departure_after_clearance()
+
+	for _step in range(160):
+		lifecycle_plane._process(0.2)
+		if lifecycle_plane.state == "EN_ROUTE":
+			break
+
+	if lifecycle_plane.state != "EN_ROUTE":
+		_fail("Aircraft should complete taxi, lineup, takeoff roll, and climb.")
+		return
+	if lifecycle_plane.visible:
+		_fail("En-route aircraft should leave the local airport view.")
+		return
+
+	lifecycle_plane.set_arrival_route(
+		arrival_routes[0]["route"],
+		int(arrival_routes[0]["stand_uid"]),
+		int(arrival_routes[0]["runway_uid"])
+	)
+	lifecycle_plane._process(lifecycle_plane.demo_flight_duration + 0.1)
+	if lifecycle_plane.state != "HOLDING_FOR_ARRIVAL":
+		_fail("Finished demo flight should request an arrival.")
+		return
+
+	lifecycle_plane.begin_arrival_after_clearance()
+	for _step in range(180):
+		lifecycle_plane._process(0.2)
+		if lifecycle_plane.state == "PARKED":
+			break
+
+	if lifecycle_plane.state != "PARKED":
+		_fail("Aircraft should complete approach, landing, taxi-in, and parking.")
+		return
+	if not lifecycle_plane.visible:
+		_fail("Parked aircraft should be visible at the airport.")
+		return
+
 	var disconnected_position := grid.tile_to_world(Vector2(8, 10))
 	var preview := grid.set_build_preview("small_stand", disconnected_position, 0)
 	if not bool(preview.get("valid", false)):
@@ -271,7 +318,7 @@ func _run() -> void:
 		_fail("No aircraft should queue when rapid fuel has two free trucks.")
 		return
 
-	print("Landscape airside, service roads, fuel capacity, departure queues, and arrival queues passed.")
+	print("Landscape airport operations and full aircraft lifecycle tests passed.")
 	quit(0)
 
 

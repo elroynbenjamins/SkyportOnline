@@ -121,10 +121,18 @@ func _on_service_started(label: String) -> void:
 
 
 func _on_service_completed(aircraft: AircraftPrototype, label: String) -> void:
-	if aircraft != null and is_instance_valid(aircraft):
-		aircraft.mark_service_complete()
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	aircraft.mark_service_complete()
+	if aircraft.has_flight_plan():
 		aircraft_serviced.emit(aircraft, label)
-	status_changed.emit("%s fueled • awaiting runway" % label, "success")
+		status_changed.emit("%s fueled • awaiting runway" % label, "success")
+	else:
+		status_changed.emit(
+			"%s fueled • destination required" % label,
+			"warning"
+		)
 
 
 func _on_truck_returned(station_uid: int, _label: String) -> void:

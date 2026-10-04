@@ -630,13 +630,28 @@ func set_atc_state(snapshot: Dictionary) -> void:
 	if atc_status_label == null:
 		return
 
+	var atc_level := int(
+		snapshot.get("atc_level", 0)
+	)
+	var multiplier := float(
+		snapshot.get("separation_multiplier", 1.0)
+	)
+	var control_text := "BASE ATC"
+	if atc_level > 0:
+		control_text = "ATC LV %d • x%.2f" % [
+			atc_level,
+			multiplier
+		]
+
 	var primary_value = snapshot.get("primary_runway", {})
 	var primary: Dictionary = {}
 	if primary_value is Dictionary:
 		primary = primary_value
 
 	if primary.is_empty():
-		atc_status_label.text = "RUNWAY CONTROL\nNo active movements"
+		atc_status_label.text = "RUNWAY CONTROL • %s\nNo active movements" % (
+			control_text
+		)
 		atc_status_label.add_theme_color_override(
 			"font_color",
 			Color("9fe3b7")
@@ -652,7 +667,8 @@ func set_atc_state(snapshot: Dictionary) -> void:
 	)
 	var status := String(primary.get("status", "clear"))
 
-	atc_status_label.text = "RUNWAY CONTROL • RWY %d\n%s" % [
+	atc_status_label.text = "RUNWAY CONTROL • %s • RWY %d\n%s" % [
+		control_text,
 		runway_uid,
 		sequence
 	]

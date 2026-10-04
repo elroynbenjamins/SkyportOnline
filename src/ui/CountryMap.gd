@@ -7,13 +7,13 @@ var countries: Array[Dictionary] = []
 var selected_country_id := ""
 var hovered_country_id := ""
 
-const OCEAN_COLOR := Color("0b2a3b")
+const OCEAN_COLOR := Color("0a3145")
 const GRID_COLOR := Color(0.22, 0.45, 0.55, 0.18)
-const LAND_COLOR := Color("315d55")
-const LAND_EDGE := Color("5d8a73")
-const MARKER_COLOR := Color("80c7d8")
-const MARKER_HOVER := Color("bceaf2")
-const MARKER_SELECTED := Color("f2c96d")
+const LAND_COLOR := Color("3e765f")
+const LAND_EDGE := Color("79a984")
+const MARKER_COLOR := Color("6fd2e8")
+const MARKER_HOVER := Color("d7f6fb")
+const MARKER_SELECTED := Color("f3c65e")
 
 
 func _ready() -> void:
@@ -112,20 +112,31 @@ func _draw_country_marker(country: Dictionary) -> void:
 			glow
 		)
 
-	draw_rect(
-		Rect2(
-			marker_position - Vector2(marker_size, marker_size) * 0.5,
-			Vector2(marker_size, marker_size)
-		),
+	draw_circle(
+		marker_position,
+		marker_size * 0.5 + 3.0,
+		Color(0, 0, 0, 0.28)
+	)
+	draw_circle(
+		marker_position,
+		marker_size * 0.5,
 		fill
 	)
 
 	if is_selected:
-		draw_rect(
-			Rect2(marker_position - Vector2(11, 11), Vector2(22, 22)),
+		draw_circle(
+			marker_position,
+			13.0,
 			Color("fff3bd"),
 			false,
 			2.0
+		)
+		draw_circle(
+			marker_position,
+			17.0,
+			Color("f2c96d", 0.28),
+			false,
+			3.0
 		)
 
 

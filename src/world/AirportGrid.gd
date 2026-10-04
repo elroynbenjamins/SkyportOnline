@@ -162,14 +162,28 @@ func _draw_buildings() -> void:
 		if _definition_has_world_sprite(definition):
 			color.a = 0.72
 
-		for y in range(footprint.y):
-			for x in range(footprint.x):
-				_draw_tile_overlay(origin + Vector2i(x, y), color, Color("eef2f1", 0.30), 1.0)
+		var preserve_ground := bool(
+			definition.get("preserve_ground", false)
+		)
+		if not preserve_ground:
+			for y in range(footprint.y):
+				for x in range(footprint.x):
+					_draw_tile_overlay(
+						origin + Vector2i(x, y),
+						color,
+						Color("eef2f1", 0.30),
+						1.0
+					)
 
 		if not _definition_has_world_sprite(definition):
 			_draw_building_detail(building, definition, footprint)
 		else:
-			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
+			_draw_building_sprite(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"])
+			)
 
 
 func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:
@@ -1312,6 +1326,8 @@ func _refresh_building_labels() -> void:
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty() or String(definition["id"]) == "taxiway":
+			continue
+		if String(definition.get("category", "")) == "Decorations":
 			continue
 
 		var footprint := _footprint_for(definition, int(building["rotation"]))

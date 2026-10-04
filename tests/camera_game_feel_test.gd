@@ -76,11 +76,12 @@ func _run() -> void:
 	if String(takeoff_request.get("kind", "")) != "takeoff":
 		_fail("Takeoff camera emphasis should report takeoff kind.")
 		return
-	if not (
-		takeoff_request.get("target", Vector2.ZERO)
-		is Vector2
-	):
-		_fail("Camera emphasis should record a world-space target.")
+	var takeoff_target: Vector2 = takeoff_request.get(
+		"target",
+		Vector2.ZERO
+	)
+	if takeoff_target.distance_to(aircraft.global_position) > 0.01:
+		_fail("Camera emphasis should record the aircraft world target.")
 		return
 	if float(
 		takeoff_request.get("zoom_multiplier", 1.0)

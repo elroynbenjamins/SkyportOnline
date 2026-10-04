@@ -26,6 +26,17 @@ func _run() -> void:
 		_fail("Starter airport should expose a stand-to-runway departure route.")
 		return
 
+	var starter_fuel := grid.get_best_service_building("fuel", "S")
+	if starter_fuel.is_empty():
+		_fail("Starter airport should expose a compatible fuel station.")
+		return
+	if String(starter_fuel.get("definition_id", "")) != "basic_fuel":
+		_fail("Starter service assignment should use the basic fuel station.")
+		return
+	if absf(float(starter_fuel.get("service_speed", 0.0)) - 1.0) > 0.001:
+		_fail("Basic fuel station should use x1.0 service speed.")
+		return
+
 	var disconnected_position := grid.tile_to_world(Vector2(14, 10))
 	var preview := grid.set_build_preview("small_stand", disconnected_position, 0)
 	if not bool(preview.get("valid", false)):
@@ -56,7 +67,22 @@ func _run() -> void:
 		_fail("Both stands should connect after extending the taxiway.")
 		return
 
-	print("Airside connectivity test passed.")
+	var rapid_position := grid.tile_to_world(Vector2(8, 10))
+	var rapid_preview := grid.set_build_preview("rapid_small_fuel", rapid_position, 0)
+	if not bool(rapid_preview.get("valid", false)):
+		_fail("Rapid fuel station test placement should be valid.")
+		return
+	grid.confirm_build_preview()
+
+	var preferred_fuel := grid.get_best_service_building("fuel", "S")
+	if String(preferred_fuel.get("definition_id", "")) != "rapid_small_fuel":
+		_fail("Service assignment should prefer the faster compatible fuel station.")
+		return
+	if absf(float(preferred_fuel.get("service_speed", 0.0)) - 1.6) > 0.001:
+		_fail("Rapid small fuel station should use x1.6 service speed.")
+		return
+
+	print("Airside connectivity and service selection test passed.")
 	quit(0)
 
 

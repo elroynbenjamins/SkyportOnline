@@ -2,6 +2,7 @@ class_name AircraftPrototype
 extends Node2D
 
 signal runway_cleared
+signal hold_short_reached
 signal departed
 signal arrival_requested
 signal arrival_completed
@@ -34,6 +35,7 @@ var flight_remaining := 0.0
 var takeoff_velocity := 0.0
 var taxi_current_speed := 0.0
 var taxi_turn_rate_deg := 145.0
+var departure_hold_short_index := -1
 var arrival_runway_cleared := false
 var turnaround_panel: PanelContainer
 var turnaround_label: Label
@@ -398,11 +400,28 @@ func mark_waiting_passengers() -> void:
 	_set_state("WAITING_PASSENGERS")
 
 
-func begin_departure_after_clearance() -> void:
-	if departure_route.size() < 4 or flight_plan.is_empty():
+func begin_taxi_to_hold_short() -> void:
+	if departure_route.size() < 5 or flight_plan.is_empty():
 		return
+	route_index = mini(
+		route_index,
+		maxi(departure_hold_short_index - 1, 0)
+	)
+	taxi_current_speed = 0.0
+	_set_state("TAXIING_OUT")
+
+
+func begin_departure_after_clearance() -> void:
+	if departure_route.size() < 5 or flight_plan.is_empty():
+		return
+
+	# Compatibility for direct/internal callers that invoke runway
+	# clearance without first taxiing through the dispatcher.
+	if state != "HOLD_SHORT":
+		route_index = maxi(departure_hold_short_index, 0)
+		position = departure_route[route_index]
+
 	delay_remaining = departure_delay
-	route_index = 0
 	takeoff_velocity = taxi_speed
 	taxi_current_speed = 0.0
 	_set_state("CLEARED")
@@ -431,10 +450,13 @@ func _process(delta: float) -> void:
 		"CLEARED":
 			delay_remaining -= delta
 			if delay_remaining <= 0.0:
-				_set_state("TAXIING_OUT")
+				_set_state("ENTERING_RUNWAY")
 
 		"TAXIING_OUT":
 			_process_departure_taxi(delta)
+
+		"ENTERING_RUNWAY":
+			_process_runway_entry(delta)
 
 		"LINE_UP":
 			delay_remaining -= delta
@@ -465,16 +487,22 @@ func _process(delta: float) -> void:
 
 
 func _process_departure_taxi(delta: float) -> void:
-	var runway_entry_index := departure_route.size() - 2
-	if route_index >= runway_entry_index:
+	if departure_hold_short_index < 0:
+		return
+	if route_index >= departure_hold_short_index:
 		taxi_current_speed = 0.0
-		delay_remaining = lineup_delay
-		_set_state("LINE_UP")
+		_release_taxi_segment()
+		_set_state("HOLD_SHORT")
+		set_turnaround_status(
+			"HOLD SHORT\nAwaiting runway",
+			"warning"
+		)
+		hold_short_reached.emit()
 		return
 
 	var target_index := mini(
 		route_index + 1,
-		runway_entry_index
+		departure_hold_short_index
 	)
 	if not _request_taxi_segment(
 		departure_route[route_index],
@@ -507,10 +535,40 @@ func _process_departure_taxi(delta: float) -> void:
 	):
 		route_index = target_index
 		_release_taxi_segment()
-		if route_index >= runway_entry_index:
+		if route_index >= departure_hold_short_index:
 			taxi_current_speed = 0.0
-			delay_remaining = lineup_delay
-			_set_state("LINE_UP")
+			_set_state("HOLD_SHORT")
+			set_turnaround_status(
+				"HOLD SHORT\nAwaiting runway",
+				"warning"
+			)
+			hold_short_reached.emit()
+
+
+func _process_runway_entry(delta: float) -> void:
+	var runway_entry_index := departure_route.size() - 2
+	if route_index >= runway_entry_index:
+		taxi_current_speed = 0.0
+		delay_remaining = lineup_delay
+		_set_state("LINE_UP")
+		return
+
+	var target_speed := taxi_speed * 0.62
+	taxi_current_speed = _approach_taxi_speed(
+		taxi_current_speed,
+		target_speed,
+		delta
+	)
+	if _move_toward_point(
+		departure_route[runway_entry_index],
+		taxi_current_speed,
+		delta,
+		taxi_turn_rate_deg
+	):
+		route_index = runway_entry_index
+		taxi_current_speed = 0.0
+		delay_remaining = lineup_delay
+		_set_state("LINE_UP")
 
 
 func _process_takeoff_roll(delta: float) -> void:
@@ -762,13 +820,17 @@ func _refined_departure_route(
 	points: PackedVector2Array
 ) -> PackedVector2Array:
 	if points.size() < 4:
+		departure_hold_short_index = -1
 		return points.duplicate()
 
-	# Keep the exact stand -> first taxiway leg and runway entry/end pair.
-	# Pushback uses that first leg, while later taxiway corners are rounded.
+	var source := _ensure_hold_short_point(points)
+	var hold_raw_index := source.size() - 3
+
+	# Keep the exact stand, hold-short line, runway entry and runway end.
+	# Only the taxiway section before hold-short is rounded.
 	var taxi_points := PackedVector2Array()
-	for index in range(1, points.size() - 1):
-		taxi_points.append(points[index])
+	for index in range(1, hold_raw_index + 1):
+		taxi_points.append(source[index])
 
 	var refined_taxi := TaxiMotionRules.refined_route(
 		taxi_points,
@@ -776,10 +838,35 @@ func _refined_departure_route(
 		aircraft_profile
 	)
 	var result := PackedVector2Array()
-	result.append(points[0])
+	result.append(source[0])
 	for point in refined_taxi:
 		result.append(point)
-	result.append(points[points.size() - 1])
+
+	departure_hold_short_index = result.size() - 1
+	result.append(source[source.size() - 2])
+	result.append(source[source.size() - 1])
+	return result
+
+
+func _ensure_hold_short_point(
+	points: PackedVector2Array
+) -> PackedVector2Array:
+	if points.size() >= 5:
+		return points.duplicate()
+
+	# Legacy four-point route:
+	# stand -> taxiway -> runway entry -> runway end.
+	var result := PackedVector2Array()
+	result.append(points[0])
+	result.append(points[1])
+
+	var taxi_point := points[1]
+	var runway_entry := points[2]
+	result.append(
+		taxi_point.lerp(runway_entry, 0.58)
+	)
+	result.append(runway_entry)
+	result.append(points[3])
 	return result
 
 
@@ -789,10 +876,10 @@ func _refined_arrival_route(
 	if points.size() < 4:
 		return points.duplicate()
 
-	# Keep runway end/exit as the first two exact points for landing-roll
-	# logic, then round the taxiway/stand portion.
+	# Arrival routes are the reverse of departure routes. Keep runway
+	# end/entry exact, then round from the hold-short exit toward the stand.
 	var taxi_points := PackedVector2Array()
-	for index in range(1, points.size()):
+	for index in range(2, points.size()):
 		taxi_points.append(points[index])
 
 	var refined_taxi := TaxiMotionRules.refined_route(
@@ -802,6 +889,7 @@ func _refined_arrival_route(
 	)
 	var result := PackedVector2Array()
 	result.append(points[0])
+	result.append(points[1])
 	for point in refined_taxi:
 		result.append(point)
 	return result
@@ -811,11 +899,17 @@ func _set_state(new_state: String) -> void:
 	if state == new_state:
 		return
 	state = new_state
-	if new_state not in ["TAXIING_OUT", "TAXIING_IN"]:
+	if new_state not in [
+		"TAXIING_OUT",
+		"TAXIING_IN",
+		"ENTERING_RUNWAY"
+	]:
 		_release_taxi_segment()
 		_set_taxi_hold(false, "")
 	if new_state in [
 		"TAXIING_OUT",
+		"HOLD_SHORT",
+		"ENTERING_RUNWAY",
 		"LINE_UP",
 		"TAKEOFF_ROLL",
 		"CLIMBING",
@@ -886,7 +980,9 @@ func _draw() -> void:
 			draw_circle(Vector2(-2, -26), 6.0, Color("ff9f68"))
 		"READY_FOR_DEPARTURE":
 			draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
-		"CLEARED", "LINE_UP":
+		"HOLD_SHORT":
+			draw_circle(Vector2(-2, -26), 6.0, Color("f3c969"))
+		"CLEARED", "ENTERING_RUNWAY", "LINE_UP":
 			draw_circle(Vector2(-2, -26), 6.0, Color("78b7e8"))
 		"HOLDING_FOR_ARRIVAL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))

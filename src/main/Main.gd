@@ -570,7 +570,8 @@ func _on_navigation_requested(tab: String) -> void:
 				passenger_economy.get_passengers(),
 				passenger_economy.get_capacity(),
 				passenger_economy.get_production_per_minute(),
-				rewarded_passenger_ad_bridge.provider_connected
+				rewarded_passenger_ad_bridge.provider_connected,
+				ProfileStore.get_passenger_ad_status()
 			)
 
 
@@ -636,6 +637,19 @@ func _on_world_tapped(world_position: Vector2) -> void:
 
 
 func _on_rewarded_passenger_boost_requested() -> void:
+	var ad_status := ProfileStore.get_passenger_ad_status()
+	if not bool(ad_status.get("can_claim", false)):
+		hud.set_operation_status(
+			"Daily rewarded passenger limit reached • 3 / 3 used.",
+			"warning"
+		)
+		return
+	if passenger_economy.get_passengers() >= passenger_economy.get_capacity():
+		hud.set_operation_status(
+			"Passenger storage is full. Use some passengers first.",
+			"warning"
+		)
+		return
 	rewarded_passenger_ad_bridge.request_ad()
 
 
@@ -647,6 +661,14 @@ func _on_rewarded_passenger_ad_unavailable() -> void:
 
 
 func _on_rewarded_passenger_ad_reward_granted() -> void:
+	var ad_status := ProfileStore.get_passenger_ad_status()
+	if not bool(ad_status.get("can_claim", false)):
+		hud.set_operation_status(
+			"Daily rewarded passenger limit reached • 3 / 3 used.",
+			"warning"
+		)
+		return
+
 	var added := PassengerSupportRules.grant_rewarded_ad_passengers(
 		passenger_economy
 	)
@@ -656,6 +678,9 @@ func _on_rewarded_passenger_ad_reward_granted() -> void:
 			"warning"
 		)
 	else:
+		var updated_profile := ProfileStore.record_rewarded_passenger_ad()
+		if not updated_profile.is_empty():
+			current_profile = updated_profile
 		hud.set_operation_status(
 			"Rewarded ad complete • +%d passengers" % added,
 			"success"
@@ -666,7 +691,8 @@ func _on_rewarded_passenger_ad_reward_granted() -> void:
 		passenger_economy.get_passengers(),
 		passenger_economy.get_capacity(),
 		passenger_economy.get_production_per_minute(),
-		rewarded_passenger_ad_bridge.provider_connected
+		rewarded_passenger_ad_bridge.provider_connected,
+		ProfileStore.get_passenger_ad_status()
 	)
 
 
@@ -811,7 +837,7 @@ func _on_building_selected_world(building: Dictionary) -> void:
 	var definition := BuildingCatalog.get_definition(
 		String(building.get("definition_id", ""))
 	)
-	if not bool(definition.get("passenger_generator", false)):
+	if not bool(definition.get("passenger_upgradable", false)):
 		hud.set_operation_status(
 			String(definition.get("name", "Airport building"))
 		)

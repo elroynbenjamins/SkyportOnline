@@ -8,6 +8,7 @@ signal cancel_building_requested
 signal collect_passengers_requested
 signal rewarded_passengers_requested
 signal friend_passengers_requested
+signal passenger_building_upgrade_requested(uid: int)
 signal navigation_requested(tab: String)
 
 var level_label: Label
@@ -31,6 +32,12 @@ var build_title: Label
 var build_status: Label
 var rotate_button: Button
 var place_button: Button
+
+var passenger_building_panel: PanelContainer
+var passenger_building_title: Label
+var passenger_building_details: Label
+var passenger_building_upgrade_button: Button
+var selected_passenger_building_uid := -1
 
 var catalog_buttons: Dictionary = {}
 var catalog_definitions: Array[Dictionary] = []
@@ -274,6 +281,42 @@ func _build_context_panel(root: Control) -> void:
 	place_button.pressed.connect(_on_confirm_building_pressed)
 	build_row.add_child(place_button)
 
+	passenger_building_panel = PanelContainer.new()
+	passenger_building_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	passenger_building_panel.offset_left = 12
+	passenger_building_panel.offset_top = -154
+	passenger_building_panel.offset_right = -450
+	passenger_building_panel.offset_bottom = -82
+	passenger_building_panel.visible = false
+	root.add_child(passenger_building_panel)
+
+	var passenger_building_row := HBoxContainer.new()
+	passenger_building_row.add_theme_constant_override("separation", 12)
+	passenger_building_panel.add_child(passenger_building_row)
+
+	var passenger_building_text := VBoxContainer.new()
+	passenger_building_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	passenger_building_row.add_child(passenger_building_text)
+
+	passenger_building_title = Label.new()
+	passenger_building_title.text = "PASSENGER BUILDING"
+	passenger_building_title.add_theme_font_size_override("font_size", 18)
+	passenger_building_text.add_child(passenger_building_title)
+
+	passenger_building_details = Label.new()
+	passenger_building_details.text = "Select a passenger building."
+	passenger_building_details.add_theme_font_size_override("font_size", 13)
+	passenger_building_text.add_child(passenger_building_details)
+
+	passenger_building_upgrade_button = Button.new()
+	passenger_building_upgrade_button.custom_minimum_size = Vector2(190, 72)
+	passenger_building_upgrade_button.text = "UPGRADE"
+	passenger_building_upgrade_button.disabled = true
+	passenger_building_upgrade_button.pressed.connect(
+		_on_passenger_building_upgrade_pressed
+	)
+	passenger_building_row.add_child(passenger_building_upgrade_button)
+
 
 func _build_catalog_panel(root: Control) -> void:
 	var catalog_panel := PanelContainer.new()
@@ -412,6 +455,8 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 
 	parcel_panel.visible = true
 	build_action_panel.visible = false
+	passenger_building_panel.visible = false
+	selected_passenger_building_uid = -1
 
 	if parcel.is_empty():
 		parcel_title.text = "EXPAND LAND"
@@ -445,7 +490,9 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 
 func enter_building_mode(definition: Dictionary) -> void:
 	active_building_id = String(definition["id"])
+	selected_passenger_building_uid = -1
 	parcel_panel.visible = false
+	passenger_building_panel.visible = false
 	build_action_panel.visible = true
 	build_title.text = String(definition["name"]).to_upper()
 	var footprint: Vector2i = definition["footprint"]
@@ -459,6 +506,84 @@ func enter_building_mode(definition: Dictionary) -> void:
 	rotate_button.visible = bool(definition.get("rotatable", false))
 	place_button.text = "TAP LAND"
 	place_button.disabled = true
+
+
+func show_passenger_building(
+	building: Dictionary,
+	definition: Dictionary,
+	state: Dictionary
+) -> void:
+	if building.is_empty() or definition.is_empty() or state.is_empty():
+		return
+
+	active_building_id = ""
+	selected_passenger_building_uid = int(building.get("uid", -1))
+	parcel_panel.visible = false
+	build_action_panel.visible = false
+	passenger_building_panel.visible = true
+
+	var upgrade_level := int(state.get("upgrade_level", 1))
+	passenger_building_title.text = "%s  •  LV %d" % [
+		String(definition.get("name", "Passenger Building")).to_upper(),
+		upgrade_level
+	]
+
+	var detail_parts: Array[String] = []
+	var mode := String(definition.get("passenger_mode", ""))
+	if not mode.is_empty():
+		detail_parts.append(
+			"Ready %d/%d" % [
+				int(state.get("stored", 0)),
+				int(state.get("storage_capacity", 0))
+			]
+		)
+
+	var terminal_capacity := int(state.get("terminal_capacity", 0))
+	if terminal_capacity > 0:
+		detail_parts.append("Terminal capacity %d" % terminal_capacity)
+
+	var quote: Dictionary = state.get("upgrade_quote", {})
+	if not bool(quote.get("available", false)):
+		detail_parts.append("MAX UPGRADE LEVEL")
+		passenger_building_upgrade_button.text = "MAX LEVEL"
+		passenger_building_upgrade_button.disabled = true
+	else:
+		var resource_costs: Dictionary = quote.get("resource_costs", {})
+		var needs: Array[String] = []
+		for resource_id_variant in resource_costs.keys():
+			var resource_id := String(resource_id_variant)
+			needs.append(
+				"%s x%d" % [
+					DestinationCatalog.get_resource_name(resource_id),
+					int(resource_costs[resource_id])
+				]
+			)
+
+		if terminal_capacity > 0:
+			detail_parts.append(
+				"Next: capacity x%.2f" % float(
+					quote.get("capacity_multiplier", 1.0)
+				)
+			)
+		else:
+			detail_parts.append(
+				"Next: production x%.2f • storage x%.2f" % [
+					float(quote.get("rate_multiplier", 1.0)),
+					float(quote.get("storage_multiplier", 1.0))
+				]
+			)
+
+		if not needs.is_empty():
+			detail_parts.append("Needs: " + " • ".join(needs))
+
+		passenger_building_upgrade_button.text = "UPGRADE  LV %d" % int(
+			quote.get("next_level", upgrade_level + 1)
+		)
+		passenger_building_upgrade_button.disabled = not bool(
+			quote.get("can_afford", false)
+		)
+
+	passenger_building_details.text = "  |  ".join(detail_parts)
 
 
 func show_build_preview(definition: Dictionary, status: Dictionary, player_level: int, player_coins: int) -> void:
@@ -608,7 +733,9 @@ func set_airside_status(status: Dictionary) -> void:
 
 func exit_building_mode() -> void:
 	active_building_id = ""
+	selected_passenger_building_uid = -1
 	build_action_panel.visible = false
+	passenger_building_panel.visible = false
 	parcel_panel.visible = true
 	show_parcel(current_parcel, current_level, current_coins)
 
@@ -686,6 +813,12 @@ func _on_rewarded_passengers_pressed() -> void:
 
 func _on_friend_passengers_pressed() -> void:
 	friend_passengers_requested.emit()
+
+
+func _on_passenger_building_upgrade_pressed() -> void:
+	if selected_passenger_building_uid < 0:
+		return
+	passenger_building_upgrade_requested.emit(selected_passenger_building_uid)
 
 
 func _format_number(value: int) -> String:

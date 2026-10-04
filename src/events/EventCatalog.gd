@@ -231,7 +231,7 @@ static func all() -> Array[Dictionary]:
 			"featured_destinations": [
 				"brussels",
 				"london",
-				"copenhagen"
+				"berlin"
 			],
 			"featured_route_currency": 0,
 			"quests": [
@@ -310,11 +310,11 @@ static func all() -> Array[Dictionary]:
 					"alliance_points": 15
 				},
 				{
-					"id": "xmas_w3_copenhagen",
+					"id": "xmas_w3_berlin",
 					"week": 3,
-					"title": "Copenhagen New Year Countdown",
+					"title": "Berlin New Year Countdown",
 					"metric": "destination_flights",
-					"destination_id": "copenhagen",
+					"destination_id": "berlin",
 					"target": 6,
 					"currency_reward": 70,
 					"alliance_points": 20

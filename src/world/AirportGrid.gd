@@ -593,7 +593,35 @@ func get_airside_status() -> Dictionary:
 	return airside_status.duplicate(true)
 
 
-func get_first_departure_route() -> PackedVector2Array:
+func get_first_service_building(service_type: String, aircraft_size: String) -> Dictionary:
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
+		if definition.is_empty():
+			continue
+		if String(definition.get("service", "")) != service_type:
+			continue
+		if not _definition_supports_size(definition, aircraft_size):
+			continue
+
+		var footprint := _footprint_for(definition, int(building["rotation"]))
+		return {
+			"uid": int(building["uid"]),
+			"definition_id": String(building["definition_id"]),
+			"world_position": _footprint_center_world(building["origin"], footprint),
+			"service_speed": float(definition.get("service_speed", 1.0)),
+			"vehicle_capacity": int(definition.get("vehicle_capacity", 1)),
+			"sizes": definition.get("sizes", PackedStringArray())
+		}
+
+	return {}
+
+
+func _definition_supports_size(definition: Dictionary, aircraft_size: String) -> bool:
+	var sizes: PackedStringArray = definition.get("sizes", PackedStringArray())
+	return sizes.has(aircraft_size)
+
+
+func get_first_departure_route(aircraft_size: String = "S") -> PackedVector2Array:
 	var connected_uids: Array = airside_status.get("connected_uids", [])
 	if connected_uids.is_empty():
 		return PackedVector2Array()
@@ -601,6 +629,8 @@ func get_first_departure_route() -> PackedVector2Array:
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty() or not String(definition["id"]).contains("stand"):
+			continue
+		if not _definition_supports_size(definition, aircraft_size):
 			continue
 		if not connected_uids.has(int(building["uid"])):
 			continue
@@ -611,15 +641,15 @@ func get_first_departure_route() -> PackedVector2Array:
 		if start_taxiway.x < 0:
 			continue
 
-		var taxi_path := _taxiway_path_to_runway(start_taxiway)
+		var taxi_path := _taxiway_path_to_runway(start_taxiway, aircraft_size)
 		if taxi_path.is_empty():
 			continue
 
-		var runway_entry := _adjacent_runway_cell(taxi_path[taxi_path.size() - 1])
+		var runway_entry := _adjacent_runway_cell(taxi_path[taxi_path.size() - 1], aircraft_size)
 		if runway_entry.x < 0:
 			continue
 
-		var runway_exit := _farthest_cell_on_same_runway(runway_entry)
+		var runway_exit := _farthest_cell_on_same_runway(runway_entry, aircraft_size)
 		var result := PackedVector2Array()
 		result.append(_footprint_center_world(building["origin"], footprint))
 		for taxi_cell in taxi_path:
@@ -645,7 +675,7 @@ func _first_adjacent_reachable_taxiway(cells: Array[Vector2i]) -> Vector2i:
 	return Vector2i(-1, -1)
 
 
-func _taxiway_path_to_runway(start: Vector2i) -> Array[Vector2i]:
+func _taxiway_path_to_runway(start: Vector2i, aircraft_size: String = "") -> Array[Vector2i]:
 	var reachable_keys: Array = airside_status.get("reachable_taxiway_cells", [])
 	var reachable: Dictionary = {}
 	for key in reachable_keys:
@@ -664,7 +694,7 @@ func _taxiway_path_to_runway(start: Vector2i) -> Array[Vector2i]:
 		var current := queue[cursor]
 		cursor += 1
 
-		if _adjacent_runway_cell(current).x >= 0:
+		if _adjacent_runway_cell(current, aircraft_size).x >= 0:
 			goal = current
 			break
 
@@ -690,11 +720,13 @@ func _taxiway_path_to_runway(start: Vector2i) -> Array[Vector2i]:
 	return reversed
 
 
-func _adjacent_runway_cell(taxiway: Vector2i) -> Vector2i:
+func _adjacent_runway_cell(taxiway: Vector2i, aircraft_size: String = "") -> Vector2i:
 	for neighbor in _orthogonal_neighbors(taxiway):
 		for building in placed_buildings:
 			var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 			if definition.is_empty() or not _is_runway_definition(definition):
+				continue
+			if not aircraft_size.is_empty() and not _definition_supports_size(definition, aircraft_size):
 				continue
 			var footprint := _footprint_for(definition, int(building["rotation"]))
 			for runway_cell in _cells_for(building["origin"], footprint):
@@ -703,10 +735,12 @@ func _adjacent_runway_cell(taxiway: Vector2i) -> Vector2i:
 	return Vector2i(-1, -1)
 
 
-func _farthest_cell_on_same_runway(entry: Vector2i) -> Vector2i:
+func _farthest_cell_on_same_runway(entry: Vector2i, aircraft_size: String = "") -> Vector2i:
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty() or not _is_runway_definition(definition):
+			continue
+		if not aircraft_size.is_empty() and not _definition_supports_size(definition, aircraft_size):
 			continue
 
 		var footprint := _footprint_for(definition, int(building["rotation"]))

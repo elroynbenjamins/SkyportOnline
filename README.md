@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 10 — Aircraft Mastery + passenger support
+## Current milestone: Pass 11 — Fleet Control + Mastery presentation
 
 Skyport Online now connects the international country economy directly back into airport progression.
 
@@ -21,6 +21,7 @@ Skyport Online now connects the international country economy directly back into
 - Passive passenger generation and passenger storage.
 - Passenger stock now gates aircraft departures.
 - Country resources now have their first real upgrade sink.
+- Fleet tab now opens a live aircraft roster with Mastery and V1 catalog progression.
 
 ## V1 aircraft turnaround timings
 
@@ -100,10 +101,7 @@ If the airport does not have enough passengers for that aircraft's seat requirem
 
 Passenger generation continues in the background. As soon as enough passengers are available, the waiting aircraft automatically boards them and enters the runway queue.
 
-The current prototype aircraft use their passenger capacity as the boarding requirement:
-
-- Aerolet 100 — 18 passengers.
-- Aerolet 120 — 24 passengers.
+The live starter fleet currently uses **2× Pico P8** aircraft, so each fresh Pico normally boards 8 passengers before Mastery. The requirement comes from the selected aircraft profile and is reduced by Mastery when applicable.
 
 This makes passenger production a real operational bottleneck rather than a cosmetic counter.
 
@@ -182,14 +180,14 @@ Adjusted by:
 
 The current result is clamped between 20% and 70%.
 
-Current tested examples:
+Current tested V1 examples:
 
 | Aircraft / route | Resource chance per item |
 | --- | ---: |
-| Aerolet 100 → London | 40.0% |
-| Aerolet 120 → London | 30.4% |
-| Regional 200 → London | 47.9% |
-| Regional 200 → Copenhagen | 50.4% |
+| Swift S14 → London | 28.8% |
+| Comet C22 → London | 32.4% |
+| Nimbus N40 → London | 41.6% |
+| Nimbus N40 → Copenhagen | 43.9% |
 
 Rewards are granted only after the aircraft physically lands, taxis back, and reaches its stand.
 
@@ -295,6 +293,45 @@ The World Map now displays:
 
 The flight return summary shows current mastery hours and calls out a newly unlocked star.
 
+
+## Fleet Control screen
+
+The bottom **FLEET** button now opens a dedicated landscape fleet-management screen rather than a placeholder.
+
+The screen has three live areas:
+
+1. **Owned aircraft** — every current aircraft instance with flight number, model, Mastery stars, live state and assigned route.
+2. **Selected aircraft details** — operational state, route, stand/runway assignment, seats, Mastery-adjusted passenger requirement, cruise speed, range, taxi speed, resource modifier, turnaround timing and Mastery progression.
+3. **V1 aircraft catalog** — all approved S/M aircraft with level locks, ownership count, seats, range and shared model Mastery.
+
+Current live V1 progression is:
+
+**Pico P8 → Swift S14 → Comet C22 → Voyager V32 → Nimbus N40 → Arrow A52 → Atlas A64 → Falcon F72 → Horizon H88**
+
+The Fleet header also summarizes the current airport fleet as:
+
+**owned • airborne • ground operations • waiting**
+
+### Fleet + Mastery integration
+
+Mastery is shared per aircraft type, so all owned copies of the same model show the same star progression.
+
+The selected-aircraft panel shows:
+
+- Current Mastery stars.
+- Total flight-hours.
+- Progress bar to the next star.
+- Current Mastery benefits.
+- Next Mastery reward.
+- Base seats → Mastery-adjusted passenger demand.
+- Current destination and remaining en-route time when airborne.
+- Per-model resource-drop modifier.
+- Full ground turnaround profile.
+
+When a returning flight adds Mastery hours, an open Fleet screen refreshes immediately. A new star therefore appears without closing/reopening the screen.
+
+The V1 catalog remains visible even for locked aircraft, which makes long-term fleet progression explicit. For example, Horizon H88 remains visible as a **Lv17** target before it is unlocked.
+
 ## Passenger-support systems
 
 ### Rewarded passenger boost
@@ -396,22 +433,27 @@ The validation suite now covers:
 - Mastery passenger reductions.
 - Mastery XP and coin bonuses.
 - Mastery hours persistence by aircraft type.
+- Fleet screen owned-aircraft list, V1 catalog locks, live state and Mastery refresh.
 - Rewarded +25 passenger capacity handling.
 - Rewarded-ad callback safety.
 - Shuttle Station production/storage profile.
 - Daily friend passenger-gift cap/reset logic.
 
+
 ## Next pass
 
-The next useful pass is **service-facility upgrades and visible turnaround UI**: show per-aircraft service progress directly at the stand, then let regional resources upgrade fleet capacity/speed without visually replacing the building.
+Two useful directions are now ready and can be worked independently:
 
-**Pass 11 — Fleet screen + Mastery presentation + passenger demand depth**
+**Pass 12 — Passenger demand + economy history**
 
-Recommended next work:
+- Replace “always fill every seat” with destination-specific demand/load factors.
+- Show expected passengers before dispatch, then apply Mastery reductions to that demand.
+- Add route demand differences by destination, contract/event conditions, and later time/season.
+- Track passengers generated, passengers boarded, resources earned, coins/XP returned, and aircraft utilization.
+- Add a compact economy/history screen for identifying bottlenecks.
 
-- Turn the currently placeholder Fleet tab into a real aircraft roster.
-- Show each owned plane model, Mastery stars, hours, next reward, range, seats, and turnaround profile.
-- Add per-route passenger demand/load factors rather than always requiring the full seat count before Mastery.
-- Add passenger-demand differences by destination and time/contract conditions.
-- Begin economy/history tracking for passengers generated, passengers consumed, resources earned, and operational bottlenecks.
-- Connect a real rewarded-ad provider only when the monetization SDK choice is made.
+**Parallel airport-operations pass**
+
+- Add visible per-aircraft turnaround progress at the stand.
+- Add internal service-facility capacity/speed upgrades using regional resources.
+- Keep the physical building visually unchanged while its throughput improves.

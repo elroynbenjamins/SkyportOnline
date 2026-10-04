@@ -1,6 +1,8 @@
 class_name FlightReturnSummary
 extends CanvasLayer
 
+signal reward_displayed(flight_label: String, reward: Dictionary)
+
 var root: Control
 var title_label: Label
 var coin_tile_label: Label
@@ -192,6 +194,10 @@ func _show_next() -> void:
 
 	body_label.text = text
 	root.visible = true
+	reward_displayed.emit(
+		flight_label,
+		reward.duplicate(true)
+	)
 
 
 func _make_reward_tile(

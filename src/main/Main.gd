@@ -29,6 +29,7 @@ var resource_inventory_screen: ResourceInventoryScreen
 var passenger_upgrade_panel: PassengerUpgradePanel
 var service_upgrade_panel: ServiceUpgradePanel
 var air_traffic_upgrade_panel: AirTrafficUpgradePanel
+var runway_strategy_panel: RunwayStrategyPanel
 var passenger_economy: PassengerEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var event_manager: EventManager
@@ -114,6 +115,7 @@ func _start_gameplay() -> void:
 	_setup_passenger_upgrade_panel()
 	_setup_service_upgrade_panel()
 	_setup_air_traffic_upgrade_panel()
+	_setup_runway_strategy_panel()
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
 
@@ -144,7 +146,13 @@ func _setup_runway_dispatcher() -> void:
 		_on_atc_state_changed
 	)
 	add_child(runway_dispatcher)
-	runway_dispatcher.configure(airport_grid)
+	runway_dispatcher.configure(
+		airport_grid,
+		current_profile.get(
+			"runway_strategies",
+			{}
+		)
+	)
 	hud.set_atc_state(
 		runway_dispatcher.get_atc_snapshot()
 	)
@@ -260,6 +268,14 @@ func _setup_air_traffic_upgrade_panel() -> void:
 		_on_air_traffic_upgrade_requested
 	)
 	add_child(air_traffic_upgrade_panel)
+
+
+func _setup_runway_strategy_panel() -> void:
+	runway_strategy_panel = RunwayStrategyPanel.new()
+	runway_strategy_panel.strategy_requested.connect(
+		_on_runway_strategy_requested
+	)
+	add_child(runway_strategy_panel)
 
 
 func _spawn_aircraft_demos() -> void:
@@ -1497,6 +1513,36 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		building.get("definition_id", "")
 	)
 
+	if building_id.contains("runway"):
+		if passenger_upgrade_panel != null:
+			passenger_upgrade_panel.close_panel()
+		if service_upgrade_panel != null:
+			service_upgrade_panel.close_panel()
+		if air_traffic_upgrade_panel != null:
+			air_traffic_upgrade_panel.close_panel()
+
+		var strategies: Dictionary = current_profile.get(
+			"runway_strategies",
+			{}
+		)
+		var building_key := airport_grid.get_building_key(
+			building
+		)
+		var strategy := RunwayStrategyRules.normalize(
+			String(
+				strategies.get(
+					building_key,
+					RunwayStrategyRules.AUTO
+				)
+			)
+		)
+		runway_strategy_panel.open_runway(
+			building,
+			strategy,
+			airport_grid.get_runway_buildings().size()
+		)
+		return
+
 	if AirTrafficUpgradeCatalog.is_upgradeable(
 		building_id
 	):
@@ -1512,6 +1558,8 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		return
 
 	if bool(definition.get("passenger_generator", false)):
+		if runway_strategy_panel != null:
+			runway_strategy_panel.close_panel()
 		if service_upgrade_panel != null:
 			service_upgrade_panel.close_panel()
 		if air_traffic_upgrade_panel != null:
@@ -1524,6 +1572,8 @@ func _on_building_selected_world(building: Dictionary) -> void:
 		return
 
 	if ServiceUpgradeCatalog.is_upgradeable(building_id):
+		if runway_strategy_panel != null:
+			runway_strategy_panel.close_panel()
 		if passenger_upgrade_panel != null:
 			passenger_upgrade_panel.close_panel()
 		if air_traffic_upgrade_panel != null:
@@ -1537,6 +1587,8 @@ func _on_building_selected_world(building: Dictionary) -> void:
 
 	if passenger_upgrade_panel != null:
 		passenger_upgrade_panel.close_panel()
+	if runway_strategy_panel != null:
+		runway_strategy_panel.close_panel()
 	if service_upgrade_panel != null:
 		service_upgrade_panel.close_panel()
 	if air_traffic_upgrade_panel != null:
@@ -1697,6 +1749,53 @@ func _on_service_upgrade_requested(
 				).get("name", "Service building")
 			),
 			int(next.get("level", current_level + 1))
+		],
+		"success"
+	)
+
+
+func _on_runway_strategy_requested(
+	runway_uid: int,
+	strategy: String
+) -> void:
+	var runway: Dictionary = airport_grid.get_building(
+		runway_uid
+	)
+	if runway.is_empty():
+		return
+
+	var building_key := airport_grid.get_building_key(
+		runway
+	)
+	var updated_profile := ProfileStore.set_runway_strategy(
+		building_key,
+		strategy
+	)
+	if updated_profile.is_empty():
+		return
+
+	current_profile = updated_profile
+	var strategies: Dictionary = current_profile.get(
+		"runway_strategies",
+		{}
+	)
+	runway_dispatcher.set_runway_strategies(
+		strategies
+	)
+
+	runway_strategy_panel.open_runway(
+		runway,
+		runway_dispatcher.get_runway_strategy(
+			runway_uid
+		),
+		airport_grid.get_runway_buildings().size()
+	)
+	hud.set_operation_status(
+		"Runway %d strategy • %s" % [
+			runway_uid,
+			RunwayStrategyRules.display_name(
+				strategy
+			)
 		],
 		"success"
 	)
@@ -1893,6 +1992,12 @@ func _on_confirm_building_requested() -> void:
 		).contains("runway")
 	):
 		runway_dispatcher.refresh_air_traffic_control()
+		runway_dispatcher.set_runway_strategies(
+			current_profile.get(
+				"runway_strategies",
+				{}
+			)
+		)
 	hud.set_player_data(player_level, coins, gems)
 	hud.show_build_preview(definition, {}, player_level, coins)
 

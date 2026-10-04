@@ -25,3 +25,6 @@ jobs:
 
       - name: Test flight economy
         run: timeout 20s godot --headless --path . --script res://tests/flight_economy_test.gd
+
+      - name: Test fleet rules
+        run: timeout 20s godot --headless --path . --script res://tests/fleet_rules_test.gd

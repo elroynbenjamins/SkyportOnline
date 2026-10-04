@@ -171,9 +171,9 @@ func configure(
 		var aircraft_id := String(entry.get("id", ""))
 		var can_purchase := bool(entry.get("can_purchase", false))
 		var reason := String(entry.get("purchase_reason", ""))
-		button.text = "%s  [S%s]\n%d pax • %d km • 🪙 %s" % [
+		button.text = "%s  [%s]\n%d pax • %d km • 🪙 %s" % [
 			String(entry.get("name", "Aircraft")),
-			String(entry.get("size_class", "S")).trim_prefix("S"),
+			String(entry.get("size_class", "S")),
 			int(entry.get("capacity", 0)),
 			int(entry.get("range_km", 0)),
 			_format_number(int(entry.get("purchase_price", 0)))

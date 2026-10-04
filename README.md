@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 8 — Fleet catalog + player route selection
+## Current milestone: Pass 9 — Interactive World Map + country resources
 
 The repository now contains a playable airport-building and airport-operations foundation:
 
@@ -20,7 +20,7 @@ The repository now contains a playable airport-building and airport-operations f
 - Service-road routing for ground vehicles.
 - Runway occupancy and arrival/departure queues.
 - Two connected starter stands, a 3-slot starter hangar, and two Pico P8 aircraft.
-- Player-selected routes with real manifests, passenger loads, operating costs, profit, and airport XP.
+- Player-selected routes from Fleet or World Map with real manifests, passenger loads, operating costs, profit, Airport XP, and country-resource drops.
 
 ### Current building catalog
 
@@ -155,6 +155,31 @@ Purchased aircraft may remain stored in the hangar while all stands are occupied
 
 Connected infrastructure is required for purchases: a suitable hangar, stand/runway path, and reachable fuel service must exist for the aircraft size. This is already generic across **S → M → L → XL**, even though only S and M aircraft are currently exposed.
 
+## Interactive World Map
+
+The **WORLD** navigation button now opens a working landscape route map.
+
+- Fleet and World share the same selected aircraft and the same dispatch logic.
+- Destination markers can be inspected even when locked or incompatible.
+- The default Europe view spreads the current V1 destinations for touch use; a full World view is also available for the future global route set.
+- The selected route shows distance, passenger demand, aircraft-size limit, passenger load, duration, Airport XP, gross revenue, operating cost, and net profit.
+- Route markers and route lines are generated from country latitude/longitude data rather than fixed screen pixels.
+- The map origin is a game-state field. It currently defaults to **Netherlands (NL)** for the prototype and is ready to receive the airport country chosen during account/airport creation.
+
+The current route distances are still the V1 Netherlands-origin balance values. Dynamic distance rebalance for arbitrary home countries should happen when the airport-creation country choice is connected to this branch.
+
+## Country resources
+
+Every destination country currently has **three unique upgrade resources**. Each resource makes its own independent roll when a flight successfully returns:
+
+**Resource 1: 40% • Resource 2: 40% • Resource 3: 40%**
+
+That means a flight can return with **0, 1, 2, or all 3** country resources.
+
+The current V1 countries include Germany, Belgium, United Kingdom, Switzerland, Denmark, Czechia, Italy, and Spain. The Netherlands also has a three-resource definition ready for the future home-country system.
+
+The World Map displays all three possible resources and the player's current owned amount. Successful rolls are added to the in-session resource inventory immediately when the aircraft finishes landing and parking.
+
 ## Automated validation
 
 GitHub Actions currently performs:
@@ -169,6 +194,7 @@ GitHub Actions currently performs:
 - Full aircraft lifecycle test from takeoff through landing and parking.
 - Aircraft catalog, route compatibility, profitability, and Airport XP tests.
 - Fleet hangar-capacity and infrastructure-readiness tests.
+- Country catalog integrity and independent 40% resource-drop tests.
 
 ## Run
 
@@ -178,13 +204,14 @@ GitHub Actions currently performs:
 
 ## Next pass
 
-**Pass 9 — Interactive World Map + country route resources**
+**Pass 10 — Passenger supply, storage, and terminal bottleneck**
 
 Recommended next work:
 
-- Turn the WORLD navigation button into the first landscape world-map screen.
-- Reuse the route catalog as selectable destination markers/regions.
-- Wire each country into its three unique resource drops.
-- Resolve the existing 40% per-resource roll after a completed flight.
-- Show route range, aircraft suitability, passenger demand, expected economics, and possible country resources on the map.
-- Let the Fleet route planner and World Map open the same underlying dispatch flow.
+- Add a finite airport passenger pool that flights actually consume.
+- Make passenger buildings/terminals slowly generate passengers over time instead of providing unlimited demand.
+- Give passenger buildings upgradeable production and storage without requiring visual building upgrades.
+- Use country resources as part of higher passenger-building upgrade costs.
+- Add the planned rewarded-ad hook for **+25 passengers** without making ads mandatory for normal progression.
+- Prepare the daily friend/alliance passenger-gifting hook.
+- Balance flight demand against passenger production so high-capacity aircraft create a real airport-throughput bottleneck.

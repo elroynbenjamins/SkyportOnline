@@ -50,7 +50,17 @@ static func load_profile() -> Dictionary:
 			config.get_value("profile", "passenger_balance", 20)
 		),
 		"building_upgrades": building_upgrades,
-		"aircraft_mastery_hours": aircraft_mastery
+		"aircraft_mastery_hours": aircraft_mastery,
+		"passenger_gift_day": String(
+			config.get_value("profile", "passenger_gift_day", "")
+		),
+		"passenger_gifts_received_today": int(
+			config.get_value(
+				"profile",
+				"passenger_gifts_received_today",
+				0
+			)
+		)
 	}
 
 
@@ -82,7 +92,9 @@ static func create_guest_airport(
 		"resource_inventory": {},
 		"passenger_balance": 20,
 		"building_upgrades": {},
-		"aircraft_mastery_hours": {}
+		"aircraft_mastery_hours": {},
+		"passenger_gift_day": "",
+		"passenger_gifts_received_today": 0
 	}
 	if not _save_profile(profile):
 		return {}
@@ -201,6 +213,60 @@ static func get_aircraft_mastery_hours(
 		float(mastery.get(aircraft_type_id, 0.0)),
 		0.0
 	)
+
+
+
+
+static func get_passenger_gift_status(
+	day_key: String = ""
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var today := day_key
+	if today.is_empty():
+		today = Time.get_date_string_from_system()
+
+	var stored_day := String(
+		profile.get("passenger_gift_day", "")
+	)
+	var received := int(
+		profile.get("passenger_gifts_received_today", 0)
+	)
+	if stored_day != today:
+		received = 0
+
+	return {
+		"day": today,
+		"received": received,
+		"cap": PassengerSupportRules.DAILY_INCOMING_FRIEND_GIFT_CAP,
+		"can_receive": (
+			received
+			< PassengerSupportRules.DAILY_INCOMING_FRIEND_GIFT_CAP
+		)
+	}
+
+
+static func record_friend_passenger_gift(
+	day_key: String = ""
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var status := get_passenger_gift_status(day_key)
+	if status.is_empty() or not bool(status.get("can_receive", false)):
+		return {}
+
+	var today := String(status.get("day", day_key))
+	var received := int(status.get("received", 0)) + 1
+
+	profile["passenger_gift_day"] = today
+	profile["passenger_gifts_received_today"] = received
+	if not _save_profile(profile):
+		return {}
+	return profile
 
 
 static func attach_linked_account(

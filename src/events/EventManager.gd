@@ -3,6 +3,8 @@ extends Node
 
 signal changed(snapshot: Dictionary)
 signal message(text: String, tone: String)
+signal coins_granted(amount: int)
+signal resource_granted(resource_id: String, amount: int)
 
 var passenger_economy: PassengerEconomy
 var event_definition: Dictionary = {}
@@ -339,6 +341,15 @@ func purchase_shop_item(item_id: String) -> Dictionary:
 				"Need %d free passenger storage." % amount
 			)
 
+	elif item_type == "coins":
+		if int(item.get("coins", 0)) <= 0:
+			return _result(false, "Coin bundle is not configured.")
+	elif item_type == "resource_choice":
+		return _result(
+			false,
+			"Choose a country resource before buying this crate."
+		)
+
 	state["currency"] = get_currency() - price
 	purchases[item_id] = bought + 1
 	state["shop_purchases"] = purchases
@@ -350,6 +361,13 @@ func purchase_shop_item(item_id: String) -> Dictionary:
 		passenger_economy.add_passengers(passenger_amount)
 		message.emit(
 			"Event shop • +%d passengers" % passenger_amount,
+			"success"
+		)
+	elif item_type == "coins":
+		var coin_amount := int(item.get("coins", 0))
+		coins_granted.emit(coin_amount)
+		message.emit(
+			"Event shop • +%d coins" % coin_amount,
 			"success"
 		)
 	elif item_type == "cosmetic":
@@ -366,6 +384,73 @@ func purchase_shop_item(item_id: String) -> Dictionary:
 
 	changed.emit(get_snapshot())
 	return _result(true, "Purchase complete.")
+
+
+func purchase_resource_choice(
+	item_id: String,
+	resource_id: String
+) -> Dictionary:
+	if not has_active_event():
+		return _result(false, "No active event.")
+
+	var item := EventCatalog.shop_item_by_id(
+		event_definition,
+		item_id
+	)
+	if item.is_empty():
+		return _result(false, "Shop item not found.")
+	if String(item.get("type", "")) != "resource_choice":
+		return _result(false, "This item is not a resource crate.")
+
+	var resource := CountryResourceCatalog.get_resource(resource_id)
+	if resource.is_empty():
+		return _result(false, "Country resource not found.")
+
+	var allowed_codes: Array = item.get(
+		"resource_country_codes",
+		[]
+	)
+	if (
+		not allowed_codes.is_empty()
+		and not allowed_codes.has(
+			String(resource.get("country_code", ""))
+		)
+	):
+		return _result(false, "That resource is not available in this crate.")
+
+	var purchases: Dictionary = state.get(
+		"shop_purchases",
+		{}
+	).duplicate(true)
+	var bought := int(purchases.get(item_id, 0))
+	var limit := maxi(int(item.get("purchase_limit", 1)), 1)
+	if bought >= limit:
+		return _result(false, "Purchase limit reached.")
+
+	var price := maxi(int(item.get("price", 0)), 0)
+	if get_currency() < price:
+		return _result(false, "Not enough event currency.")
+
+	var amount := maxi(
+		int(item.get("resource_amount", 1)),
+		1
+	)
+	state["currency"] = get_currency() - price
+	purchases[item_id] = bought + 1
+	state["shop_purchases"] = purchases
+	if not _save_state():
+		return _result(false, "Could not save event purchase.")
+
+	resource_granted.emit(resource_id, amount)
+	message.emit(
+		"Winter Supply Crate • +%d %s" % [
+			amount,
+			String(resource.get("name", "resource"))
+		],
+		"success"
+	)
+	changed.emit(get_snapshot())
+	return _result(true, "Resource crate purchased.")
 
 
 func set_alliance_total_from_server(total: int) -> void:
@@ -523,6 +608,12 @@ func get_snapshot() -> Dictionary:
 		),
 		"theme": String(
 			event_definition.get("theme", "")
+		),
+		"featured_marker_text": String(
+			event_definition.get(
+				"featured_marker_text",
+				""
+			)
 		),
 		"currency_name": String(
 			event_definition.get("currency_name", "Event Currency")

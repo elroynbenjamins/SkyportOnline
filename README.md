@@ -101,7 +101,7 @@ When the runway is occupied, later aircraft wait automatically. The next compati
 
 ## Aircraft lifecycle
 
-The starter airport continuously runs two temporary S-class aircraft through the local airport loop:
+The starter airport begins with two Pico P8 aircraft. Once the player assigns routes, each aircraft uses the full local airport loop:
 
 **Parked → Fuel request → Fuel truck → Ready → Runway queue → Taxi out → Line up → Takeoff roll → Climb → En route → Holding for arrival → Approach → Landing roll → Taxi in → Parked**
 

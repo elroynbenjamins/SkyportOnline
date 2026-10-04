@@ -1,3 +1,4 @@
+class_name CameraController
 extends Camera2D
 
 signal world_tapped(world_position: Vector2)

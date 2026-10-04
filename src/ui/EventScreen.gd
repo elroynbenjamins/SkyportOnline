@@ -20,6 +20,7 @@ var resource_choice_overlay: Control
 var resource_choice_list: VBoxContainer
 var resource_choice_title: Label
 var pending_resource_item_id := ""
+var current_resource_inventory: Dictionary = {}
 
 
 func _ready() -> void:
@@ -47,6 +48,9 @@ func refresh(snapshot: Dictionary) -> void:
 		return
 
 	var active := bool(snapshot.get("active", false))
+	current_resource_inventory = (
+		snapshot.get("resource_inventory", {}) as Dictionary
+	).duplicate(true)
 	empty_label.visible = not active
 	if not active:
 		title_label.text = "EVENTS"
@@ -383,11 +387,17 @@ func _refresh_quests(snapshot: Dictionary) -> void:
 func _refresh_shop(snapshot: Dictionary) -> void:
 	_clear(shop_list)
 
+	var last_category := ""
 	for item_variant in snapshot.get("shop", []):
 		var item: Dictionary = item_variant
 		var button := Button.new()
 		var item_id := String(item.get("id", ""))
 		var item_type := String(item.get("type", ""))
+		var category := _shop_category_name(item_type)
+		if category != last_category:
+			_add_shop_category_header(category)
+			last_category = category
+
 		var remaining := int(item.get("remaining", 0))
 		var sold_out := bool(item.get("sold_out", false))
 		var can_afford := bool(item.get("can_afford", false))
@@ -599,9 +609,21 @@ func _open_resource_choice(item: Dictionary) -> void:
 				continue
 			var selected_resource_id := resource_id
 			var button := Button.new()
-			button.text = String(
-				resource.get("name", resource_id)
+			var owned_amount := int(
+				current_resource_inventory.get(
+					resource_id,
+					0
+				)
 			)
+			button.text = "%s  •  Owned %d" % [
+				String(
+					resource.get(
+						"name",
+						resource_id
+					)
+				),
+				owned_amount
+			]
 			button.custom_minimum_size = Vector2(0, 44)
 			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			GameUIStyle.apply_button(button, "secondary", true)
@@ -623,6 +645,35 @@ func _close_resource_choice() -> void:
 	pending_resource_item_id = ""
 	if resource_choice_overlay != null:
 		resource_choice_overlay.visible = false
+
+
+func _shop_category_name(item_type: String) -> String:
+	match item_type:
+		"cosmetic":
+			return "COSMETICS"
+		"passengers":
+			return "PASSENGERS"
+		"coins":
+			return "AIRPORT COINS"
+		"resource_choice":
+			return "WINTER SUPPLIES"
+		_:
+			return "OTHER"
+
+
+func _add_shop_category_header(text: String) -> void:
+	var header := Label.new()
+	header.text = text
+	header.add_theme_font_size_override(
+		"font_size",
+		13
+	)
+	header.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
+	header.custom_minimum_size = Vector2(0, 26)
+	shop_list.add_child(header)
 
 
 func _clear(container: Container) -> void:

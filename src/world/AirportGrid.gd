@@ -2205,6 +2205,52 @@ func get_building_key(building: Dictionary) -> String:
 	]
 
 
+func get_runway_buildings(
+	aircraft_size: String = ""
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not _is_runway_definition(definition)
+		):
+			continue
+		if (
+			not aircraft_size.is_empty()
+			and not _definition_supports_size(
+				definition,
+				aircraft_size
+			)
+		):
+			continue
+
+		var footprint := _footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+		result.append({
+			"uid": int(building.get("uid", -1)),
+			"definition_id": String(
+				building.get("definition_id", "")
+			),
+			"upgrade_level": int(
+				building.get("upgrade_level", 1)
+			),
+			"world_position": _footprint_center_world(
+				building["origin"],
+				footprint
+			),
+			"sizes": definition.get(
+				"sizes",
+				PackedStringArray()
+			)
+		})
+	return result
+
+
 func get_air_traffic_control_buildings() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for building in placed_buildings:

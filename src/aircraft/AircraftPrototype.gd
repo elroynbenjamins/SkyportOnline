@@ -13,13 +13,17 @@ signal state_changed(state: String)
 @export var landing_speed: float = 150.0
 @export var departure_delay: float = 0.55
 @export var lineup_delay: float = 0.45
-@export var demo_flight_duration: float = 4.5
+
 
 var departure_route := PackedVector2Array()
 var arrival_route := PackedVector2Array()
 var route_index := 0
 var state := "PARKED"
 var aircraft_size := "S"
+var aircraft_type_id := ""
+var aircraft_display_name := "Aircraft"
+var aircraft_profile: Dictionary = {}
+var flight_plan: Dictionary = {}
 var stand_uid := -1
 var runway_uid := -1
 
@@ -27,6 +31,48 @@ var delay_remaining := 0.0
 var flight_remaining := 0.0
 var takeoff_velocity := 0.0
 var arrival_runway_cleared := false
+
+
+func configure_aircraft_type(type_id: String) -> void:
+	var profile: Dictionary = AircraftCatalog.get_profile(type_id)
+	if profile.is_empty():
+		return
+
+	aircraft_type_id = type_id
+	aircraft_profile = profile
+	aircraft_display_name = String(profile.get("name", type_id))
+	aircraft_size = String(profile.get("size", aircraft_size))
+
+
+func assign_flight_plan(plan: Dictionary) -> void:
+	flight_plan = plan.duplicate(true)
+	if state == "READY_FOR_DESTINATION" and not flight_plan.is_empty():
+		_set_state("READY_FOR_DEPARTURE")
+
+
+func has_flight_plan() -> bool:
+	return not flight_plan.is_empty()
+
+
+func get_flight_plan() -> Dictionary:
+	return flight_plan.duplicate(true)
+
+
+func get_aircraft_profile() -> Dictionary:
+	return aircraft_profile.duplicate(true)
+
+
+func get_flight_remaining_seconds() -> float:
+	return maxf(flight_remaining, 0.0)
+
+
+func can_change_flight_plan() -> bool:
+	return state in [
+		"PARKED",
+		"WAITING_FUEL",
+		"READY_FOR_DESTINATION",
+		"READY_FOR_DEPARTURE"
+	]
 
 
 func set_departure_route(
@@ -66,11 +112,14 @@ func set_arrival_route(
 
 
 func mark_service_complete() -> void:
-	_set_state("READY_FOR_DEPARTURE")
+	if flight_plan.is_empty():
+		_set_state("READY_FOR_DESTINATION")
+	else:
+		_set_state("READY_FOR_DEPARTURE")
 
 
 func begin_departure_after_clearance() -> void:
-	if departure_route.size() < 4:
+	if departure_route.size() < 4 or flight_plan.is_empty():
 		return
 	delay_remaining = departure_delay
 	route_index = 0
@@ -169,7 +218,10 @@ func _process_climb(delta: float) -> void:
 	var climb_target := departure_route[departure_route.size() - 1]
 	if _move_toward_point(climb_target, takeoff_speed * 1.15, delta):
 		visible = false
-		flight_remaining = demo_flight_duration
+		flight_remaining = maxf(
+			float(flight_plan.get("duration_seconds", 0.0)),
+			1.0
+		)
 		_set_state("EN_ROUTE")
 		departed.emit()
 
@@ -279,6 +331,8 @@ func _draw() -> void:
 	match state:
 		"WAITING_FUEL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
+		"READY_FOR_DESTINATION":
+			draw_circle(Vector2(-2, -26), 6.0, Color("f0a6ff"))
 		"READY_FOR_DEPARTURE":
 			draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
 		"CLEARED", "LINE_UP":

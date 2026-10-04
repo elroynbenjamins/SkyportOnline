@@ -77,11 +77,127 @@ static func all() -> Array[Dictionary]:
 			"color": Color("bac6c8"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Basic passenger handling.",
+			"description": "Basic passenger handling and terminal storage.",
+			"passenger_capacity": 120,
+			"passenger_upgrade_costs": [
+				{"de_precision_gears": 2, "it_ceramic_tiles": 3},
+				{"jp_signal_modules": 3, "fr_hospitality_linen": 4, "ca_construction_lumber": 3},
+				{"de_precision_gears": 6, "jp_signal_modules": 5, "br_hardwood_panels": 5}
+			],
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/terminal_small.svg", "res://assets/pixel/airport_v1/terminal_small_b.svg"]),
 			"world_sprite_size": Vector2(205, 154),
 			"world_sprite_offset": Vector2(0, -50)
+		},
+		{
+			"id": "bus_stop",
+			"name": "Airport Bus Stop",
+			"menu_name": "BUS STOP",
+			"category": "Passenger",
+			"footprint": Vector2i(1, 1),
+			"cost": 3000,
+			"level": 1,
+			"color": Color("4f8c75"),
+			"rotatable": false,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Fast passenger batches for active play.",
+			"passenger_mode": "batch",
+			"passenger_yield": 8,
+			"passenger_cycle_seconds": 240.0,
+			"passenger_storage": 24,
+			"passenger_upgrade_costs": [
+				{"it_ceramic_tiles": 2, "ca_construction_lumber": 2},
+				{"de_precision_gears": 3, "fr_hospitality_linen": 3, "ca_construction_lumber": 3},
+				{"jp_signal_modules": 4, "de_precision_gears": 5, "br_hardwood_panels": 4}
+			]
+		},
+		{
+			"id": "small_hotel",
+			"name": "Small Airport Hotel",
+			"menu_name": "SMALL HOTEL",
+			"category": "Passenger",
+			"footprint": Vector2i(2, 2),
+			"cost": 6500,
+			"level": 2,
+			"color": Color("b78c68"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Produces larger passenger batches over time.",
+			"passenger_mode": "batch",
+			"passenger_yield": 18,
+			"passenger_cycle_seconds": 600.0,
+			"passenger_storage": 54,
+			"passenger_upgrade_costs": [
+				{"fr_hospitality_linen": 2, "it_ceramic_tiles": 3},
+				{"fr_hospitality_linen": 5, "ca_construction_lumber": 4, "de_precision_gears": 3},
+				{"jp_signal_modules": 5, "fr_hospitality_linen": 7, "br_hardwood_panels": 5}
+			]
+		},
+		{
+			"id": "taxi_rank",
+			"name": "Taxi Rank",
+			"menu_name": "TAXI RANK",
+			"category": "Passenger",
+			"footprint": Vector2i(1, 1),
+			"cost": 9000,
+			"level": 3,
+			"color": Color("d0aa45"),
+			"rotatable": false,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Slow passive passenger trickle with local storage.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 480.0,
+			"passenger_storage": 10,
+			"passenger_upgrade_costs": [
+				{"de_precision_gears": 2, "it_ceramic_tiles": 2},
+				{"jp_signal_modules": 3, "de_precision_gears": 4, "ca_construction_lumber": 3},
+				{"jp_signal_modules": 5, "br_hardwood_panels": 4, "de_precision_gears": 6}
+			]
+		},
+		{
+			"id": "residential_district",
+			"name": "Residential District",
+			"menu_name": "RESIDENTIAL",
+			"category": "Passenger",
+			"footprint": Vector2i(2, 2),
+			"cost": 22000,
+			"level": 5,
+			"color": Color("879b79"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "Steady offline-friendly passenger generation.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 180.0,
+			"passenger_storage": 40,
+			"passenger_upgrade_costs": [
+				{"ca_construction_lumber": 3, "it_ceramic_tiles": 3},
+				{"de_precision_gears": 4, "jp_signal_modules": 4, "ca_construction_lumber": 5},
+				{"jp_signal_modules": 6, "br_hardwood_panels": 6, "fr_hospitality_linen": 5}
+			]
+		},
+		{
+			"id": "rail_connection",
+			"name": "Railway Connection",
+			"menu_name": "RAIL LINK",
+			"category": "Passenger",
+			"footprint": Vector2i(3, 2),
+			"cost": 65000,
+			"level": 9,
+			"color": Color("64747f"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["PAX"]),
+			"description": "High-capacity passive passenger connection.",
+			"passenger_mode": "passive",
+			"passenger_yield": 1,
+			"passenger_cycle_seconds": 120.0,
+			"passenger_storage": 75,
+			"passenger_upgrade_costs": [
+				{"de_precision_gears": 4, "ca_construction_lumber": 5, "it_ceramic_tiles": 4},
+				{"jp_signal_modules": 6, "de_precision_gears": 7, "fr_hospitality_linen": 5},
+				{"jp_signal_modules": 9, "br_hardwood_panels": 8, "de_precision_gears": 10}
+			]
 		},
 		{
 			"id": "small_hangar",

@@ -34,6 +34,7 @@ var event_manager: EventManager
 var event_screen: EventScreen
 var current_profile: Dictionary = {}
 var gameplay_started := false
+var current_event_snapshot: Dictionary = {}
 
 
 func _ready() -> void:
@@ -300,6 +301,10 @@ func _spawn_aircraft_demos() -> void:
 		)
 		stand_occupancy[stand_uid] = aircraft
 		aircraft_demos.append(aircraft)
+		_apply_event_visual_to_aircraft(
+			aircraft,
+			current_event_snapshot
+		)
 		ground_services.request_turnaround(aircraft, label, false)
 
 	hud.set_operation_status(
@@ -878,6 +883,31 @@ func _on_navigation_requested(tab: String) -> void:
 
 
 func _on_event_changed(snapshot: Dictionary) -> void:
+	current_event_snapshot = snapshot.duplicate(true)
+
+	var refreshed_profile := ProfileStore.load_profile()
+	if not refreshed_profile.is_empty():
+		current_profile = refreshed_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+
+	var owned_cosmetics: Dictionary = current_profile.get(
+		"owned_cosmetics",
+		{}
+	).duplicate(true)
+	airport_grid.set_event_visual_state(
+		snapshot,
+		owned_cosmetics
+	)
+	hud.set_build_catalog(
+		BuildingCatalog.get_menu_definitions(
+			owned_cosmetics
+		)
+	)
+	_refresh_aircraft_event_visuals(snapshot)
+
 	var active := bool(snapshot.get("active", false))
 	hud.set_event_available(
 		active,
@@ -998,6 +1028,10 @@ func _on_world_map_flight_assignment_requested(
 	var previous_state := aircraft.state
 	var plan := _create_current_flight_plan(profile, destination)
 	aircraft.assign_flight_plan(plan)
+	_apply_event_visual_to_aircraft(
+		aircraft,
+		current_event_snapshot
+	)
 
 	var route_passengers := _passenger_requirement(aircraft)
 	world_map.set_assignment_status(

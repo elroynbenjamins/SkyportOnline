@@ -21,6 +21,7 @@ var aircraft: Array[AircraftPrototype] = []
 var selected_aircraft_index := 0
 var selected_destination_id := ""
 var player_level := 1
+var mastery_hours_by_type: Dictionary = {}
 var refresh_accumulator := 0.0
 
 
@@ -44,10 +45,12 @@ func _process(delta: float) -> void:
 
 func open_map(
 	aircraft_nodes: Array[AircraftPrototype],
-	current_player_level: int
+	current_player_level: int,
+	mastery_hours: Dictionary = {}
 ) -> void:
 	aircraft = aircraft_nodes
 	player_level = current_player_level
+	mastery_hours_by_type = mastery_hours.duplicate(true)
 	selected_aircraft_index = clampi(
 		selected_aircraft_index,
 		0,
@@ -280,15 +283,28 @@ func _refresh_aircraft_buttons() -> void:
 		if not plan.is_empty():
 			destination_text = String(plan.get("city", "Assigned"))
 
+		var mastery_hours := maxf(
+			float(
+				mastery_hours_by_type.get(
+					plane.aircraft_type_id,
+					0.0
+				)
+			),
+			0.0
+		)
+		var mastery_stars := AircraftMastery.stars_for_hours(
+			mastery_hours
+		)
 		var state_text := plane.state.replace("_", " ").capitalize()
 		if plane.state == "EN_ROUTE":
 			state_text = "En Route • %s" % FlightRules.format_duration(
 				plane.get_flight_remaining_seconds()
 			)
 
-		button.text = "%s  •  %s\n%s → %s" % [
+		button.text = "%s  •  %s  %s\n%s → %s" % [
 			plane.name,
 			plane.aircraft_display_name,
+			AircraftMastery.format_stars(mastery_stars),
 			state_text,
 			destination_text
 		]
@@ -333,12 +349,43 @@ func _refresh_details() -> void:
 		return
 
 	var profile := plane.get_aircraft_profile()
+	var mastery_hours := maxf(
+		float(
+			mastery_hours_by_type.get(
+				plane.aircraft_type_id,
+				0.0
+			)
+		),
+		0.0
+	)
+	var mastery_status := AircraftMastery.status(mastery_hours)
+	var mastery_stars := int(mastery_status.get("stars", 0))
+	var mastery_bonuses: Dictionary = mastery_status.get(
+		"bonuses",
+		{}
+	).duplicate(true)
+	var base_passengers := maxi(
+		int(profile.get("passengers", 0)),
+		0
+	)
+	var required_passengers := AircraftMastery.passenger_requirement(
+		base_passengers,
+		mastery_hours
+	)
 	var required_level := int(destination.get("unlock_level", 1))
 	var level_ok := player_level >= required_level
 	var range_ok := FlightRules.can_fly(profile, destination)
 	var can_change := plane.can_change_flight_plan()
 	var duration_seconds := FlightRules.duration_seconds(profile, destination)
 	var preview_plan := FlightRules.create_flight_plan(profile, destination)
+	var preview_coins := AircraftMastery.apply_coin_bonus(
+		int(destination.get("coin_reward", 0)),
+		mastery_hours
+	)
+	var preview_xp := AircraftMastery.apply_xp_bonus(
+		int(destination.get("xp_reward", 0)),
+		mastery_hours
+	)
 	var resource_chance := ResourceDropRules.chance_for_flight(
 		profile,
 		preview_plan
@@ -371,7 +418,20 @@ func _refresh_details() -> void:
 		% int(profile.get("cruise_speed_kph", 0))
 		+ "Range: %d km\n"
 		% int(profile.get("range_km", 0))
-		+ "Ground: ~%.0fs return + taxi\n"
+		+ "Mastery: %s • %.1f h flown\n"
+		% [
+			AircraftMastery.format_stars(mastery_stars),
+			mastery_hours
+		]
+		+ "Passenger demand: %d → %d\n"
+		% [base_passengers, required_passengers]
+		+ "Mastery: XP +%.0f%% • Coins +%.0f%%\n"
+		% [
+			float(mastery_bonuses.get("xp_bonus", 0.0)) * 100.0,
+			float(mastery_bonuses.get("coin_bonus", 0.0)) * 100.0
+		]
+		+ _next_mastery_text(mastery_status)
+		+ "\nGround: ~%.0fs return + taxi\n"
 		% TurnaroundRules.estimated_turnaround_seconds(profile)
 		+ "Fuel %.0fs • Pax %.0f/%.0fs\n"
 		% [
@@ -393,8 +453,8 @@ func _refresh_details() -> void:
 		% FlightRules.format_duration(duration_seconds)
 		+ "Reward: 🪙 %d  •  XP %d\n\n"
 		% [
-			int(destination.get("coin_reward", 0)),
-			int(destination.get("xp_reward", 0))
+			preview_coins,
+			preview_xp
 		]
 		+ "REGIONAL RESOURCES\n"
 		+ "%s\n"
@@ -421,6 +481,17 @@ func _refresh_details() -> void:
 
 	var map_position: Vector2 = destination["map_position"]
 	map_canvas.set_selected_position(map_position)
+
+
+func _next_mastery_text(status: Dictionary) -> String:
+	var stars := int(status.get("stars", 0))
+	if stars >= 5:
+		return "Mastery complete • 5 Stars"
+
+	return "Next Star: %.1f / %.0f flight hours" % [
+		float(status.get("hours", 0.0)),
+		float(status.get("next_hours", 0.0))
+	]
 
 
 func _resource_names(resources: Array[Dictionary]) -> String:

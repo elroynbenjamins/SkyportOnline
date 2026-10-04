@@ -52,11 +52,11 @@ func _try_dispatch() -> void:
 				made_progress = true
 				break
 
-				var stations := airport_grid.get_compatible_service_buildings(
+			var stations: Array[Dictionary] = airport_grid.get_compatible_service_buildings(
 				String(request.get("service", "fuel")),
 				aircraft.aircraft_size
 			)
-			var station := _first_available_station(stations, aircraft.stand_uid)
+			var station: Dictionary = _first_available_station(stations, aircraft.stand_uid)
 			if station.is_empty():
 				continue
 

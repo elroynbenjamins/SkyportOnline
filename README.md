@@ -2,27 +2,27 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 6 — Landscape airport + full local flight lifecycle
+## Current milestone: Pass 7 — Aircraft-specific flight timers + first World Map
 
-The repository now contains a playable airport-building and airport-operations foundation:
+Skyport Online now has a complete local airport loop plus the first destination/route layer.
+
+### Current foundation
 
 - Godot 4 mobile project using a landscape 1280×720 reference viewport.
 - Isometric 24×24 airport grid split into 3×3 expansion parcels.
 - Level-gated and coin-gated land expansion.
-- One-finger pan and two-finger pinch zoom on mobile.
-- Right-mouse drag and mouse-wheel zoom for desktop/editor testing.
-- Landscape HUD with build catalog on the right and airport controls around the edges.
-- Build catalog with level locks, costs, aircraft-size compatibility, and footprints.
-- Green/red placement preview based on land ownership and occupied tiles.
-- Rotation for rotatable buildings.
-- Pixel-art airport building assets integrated into the live grid and catalog.
-- Taxiway connectivity from stands / hangars to compatible runways.
-- Service-road routing for ground vehicles.
-- Runway occupancy and arrival/departure queues.
-- Two connected starter stands with two S-class aircraft.
-- Continuous aircraft turnaround and flight demo loop.
+- Pan / pinch zoom on mobile and desktop editor controls.
+- Landscape HUD with airport controls around the edge and build catalog on the right.
+- Pixel-art airport building assets integrated into the live grid and build catalog.
+- Real taxiway connectivity from stands / hangars to compatible runways.
+- Placeable service roads used by ground vehicles.
+- Ground-service queueing and station vehicle-capacity bottlenecks.
+- Shared runway queues for arrivals and departures.
+- Two starter aircraft running through the physical airport lifecycle.
+- Interactive first Europe World Map.
+- Aircraft-specific destination timers, range checks, rewards and level gates.
 
-### Current building catalog
+## Building catalog
 
 | Building | Footprint | Cost | Unlock | Aircraft |
 | --- | ---: | ---: | ---: | --- |
@@ -39,91 +39,119 @@ The repository now contains a playable airport-building and airport-operations f
 | Regional Rapid Fuel Station | 4×3 | 85,000 | Lv 10 | S/M |
 | Regional Runway | 10×3 | 90,000 | Lv 12 | S/M |
 
-Fuel infrastructure stores both service speed and vehicle capacity. Normal and rapid stations therefore differ mechanically by aircraft compatibility, truck count, and turnaround speed.
+## Aircraft operations
 
-## Airside connectivity
-
-Taxiway cells form the operational aircraft network.
-
-A stand or hangar is operational only when:
-
-1. it touches a taxiway; and
-2. that taxiway network reaches a compatible runway.
-
-Disconnected buildings remain placeable for layout freedom, but the game shows warnings in the world view and Airfield Status HUD.
-
-## Ground-service roads
-
-Fuel trucks no longer cross the airport in a direct line.
-
-A compatible fuel station must have a valid:
-
-**Fuel Station → Service Road → Aircraft Stand**
-
-route before the dispatcher can assign one of its trucks.
-
-The truck follows that route outbound, services the aircraft, and follows the same route back to its station.
-
-## Ground-service capacity
-
-The starter airport demonstrates real servicing bottlenecks:
-
-**Basic Fuel Station**
-- S-class aircraft
-- x1.0 service speed
-- 1 truck
-- two waiting aircraft = one serviced, one queued
-
-**Rapid Small Fuel Station**
-- S-class aircraft
-- x1.6 service speed
-- 2 trucks
-- two waiting aircraft = both can be serviced simultaneously
-
-The dispatcher automatically prefers faster compatible stations that still have an available truck and valid road access.
-
-## Runway traffic
-
-Every departure and arrival route identifies its runway.
-
-A runway can handle only one active aircraft operation at a time.
-
-Operations use a shared queue:
-
-**Departure ready → request runway → clearance → taxi / takeoff**
-
-or:
-
-**Inbound aircraft → request runway → clearance → approach / landing**
-
-When the runway is occupied, later aircraft wait automatically. The next compatible operation is released as soon as the previous aircraft clears the runway.
-
-## Aircraft lifecycle
-
-The starter airport continuously runs two temporary S-class aircraft through the local airport loop:
+The physical aircraft lifecycle is:
 
 **Parked → Fuel request → Fuel truck → Ready → Runway queue → Taxi out → Line up → Takeoff roll → Climb → En route → Holding for arrival → Approach → Landing roll → Taxi in → Parked**
 
-After parking, the aircraft re-enters the turnaround flow and requests fuel again.
+Aircraft release their stand when taxiing out. Returning aircraft reserve a free compatible stand before approach. If every compatible stand is occupied, they remain in a holding state until one becomes available.
 
-Aircraft release their stand when taxiing out. Returning aircraft reserve a free compatible stand before requesting landing clearance. If every compatible stand is occupied, they remain in a holding state until one becomes available.
+Arrivals and departures use the same runway dispatcher, so a runway can only handle one active aircraft operation at a time.
 
-The en-route segment is still a short local demo timer. The future World Map / route system will replace that temporary timer with real destination travel.
+## Ground services
 
-Aircraft and fuel-truck visuals are still temporary code-drawn prototypes. The airport buildings already use the first Skyport Online pixel-art asset set.
+Fuel trucks require a real:
+
+**Fuel Station → Service Road → Aircraft Stand**
+
+route.
+
+The dispatcher also respects each station's service speed and vehicle capacity.
+
+Example starter bottleneck:
+
+- Basic Fuel Station — S aircraft, x1.0 speed, 1 truck.
+- Rapid Small Fuel Station — S aircraft, x1.6 speed, 2 trucks.
+
+With two aircraft, the basic station produces a queue while the rapid station can handle both simultaneously.
+
+## Aircraft-specific flight timers
+
+The old fixed demo flight timer has been removed from the gameplay path.
+
+Each aircraft type now has flight data including:
+
+- Size class.
+- Cruise speed.
+- Range.
+- Passenger capacity placeholder.
+- Timer balancing factor.
+
+Flight duration is calculated from:
+
+**Destination distance ÷ aircraft cruise speed × gameplay time compression × aircraft timer factor**
+
+This means different aircraft types can remain away for different lengths of time on exactly the same route.
+
+Current prototype example for Amsterdam → London:
+
+- Aerolet 100 — about 11m 15s.
+- Aerolet 120 — about 8m 26s.
+
+These aircraft names and values are temporary prototype data and can be replaced by the final V1 plane catalog without rewriting the flight system.
+
+Longer-distance aircraft introduced later can therefore naturally support much longer flight timers.
+
+## First World Map
+
+The bottom **WORLD** button now opens the first interactive Europe network screen.
+
+Current development destinations:
+
+- Brussels, Belgium.
+- London, United Kingdom.
+- Frankfurt, Germany.
+- Paris, France.
+- Berlin, Germany.
+- Copenhagen, Denmark.
+
+The map currently supports:
+
+- Selecting one of the player's aircraft.
+- Selecting a destination visually.
+- Destination level locks.
+- Aircraft range validation.
+- Per-aircraft calculated flight duration.
+- Coin / XP reward preview.
+- Current aircraft state.
+- Current assigned route.
+- En-route countdown.
+- Reassigning a destination while the aircraft is still available on the ground.
+
+Amsterdam is only the **development home airport**. The airport-creation / country-selection system will replace it with the player's selected home country and airport.
+
+## Flight data model
+
+Each assigned flight carries:
+
+- Destination ID.
+- City and country.
+- Distance.
+- Calculated duration.
+- Coin reward.
+- XP reward.
+
+An aircraft cannot depart after servicing unless it has a valid destination plan.
+
+Once airborne, its local airport sprite disappears and its assigned flight timer runs. When the timer completes, the aircraft requests a compatible stand and runway before physically returning to the airport.
 
 ## Automated validation
 
-GitHub Actions currently performs:
+GitHub Actions currently validates:
 
 - Godot project import / GDScript parsing.
-- Landscape main-scene headless startup smoke test.
-- Airside connectivity tests.
-- Service-road routing tests.
-- Fuel speed and truck-capacity tests.
-- Departure runway queue tests.
-- Arrival runway queue tests.
-- Full aircraft lifecycle test from takeoff through landing and parking.
+- Landscape main-scene startup.
+- Airside taxiway connectivity.
+- Service-road vehicle routing.
+- Fuel speed and truck capacity.
+- Departure runway queues.
+- Arrival runway queues.
+- Full takeoff → flight → landing → parking lifecycle.
+- Aircraft range limits.
+- Flight-plan creation.
+- Aircraft-specific flight duration differences.
+- Multi-minute timers replacing the old demo-duration behavior.
 
 ## Run
 
@@ -133,12 +161,13 @@ GitHub Actions currently performs:
 
 ## Next pass
 
-**Pass 7 — Flight destinations + first World Map bridge**
+**Pass 8 — World Map resources + flight completion economy**
 
 Recommended next work:
 
-- Replace the temporary en-route timer with a small flight-data model.
-- Add the first local destination list and flight duration / reward data.
-- Make an aircraft remain airborne until its assigned route completes.
-- Prepare a dedicated World Map scene without yet building the final global resource economy.
-- Begin first proper pixel aircraft and fuel-truck sprites once their required angles are locked.
+- Connect destination countries to the agreed three-resource country system.
+- Apply the independent ~40% drop chance per resource on completed flights.
+- Award coins / XP only when a flight successfully returns.
+- Add a flight-return summary showing rewards and country-resource rolls.
+- Begin replacing the temporary Amsterdam development origin with the player's selected home country.
+- Add favorites / recent destinations once the send-flow is established.

@@ -105,3 +105,7 @@ jobs:
 
       - name: Test runway visual controls
         run: timeout 20s godot --headless --path . --script res://tests/runway_visual_control_test.gd
+
+
+      - name: Test runway throughput pacing
+        run: timeout 20s godot --headless --path . --script res://tests/runway_pacing_test.gd

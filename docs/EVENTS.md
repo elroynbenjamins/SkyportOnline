@@ -27,6 +27,36 @@ normally remain 21 so all events share the same structure.
 
 The included **Sky Lantern Festival** is a disabled example/template.
 
+## Operator safety
+
+Before activating an event, run the catalog validation:
+
+`EventCatalog.validate_catalog()`
+
+The runtime also performs this validation automatically. If the catalog is
+invalid, Events stay disabled and the game reports an Event catalog warning
+rather than guessing which configuration to run.
+
+Validation currently catches:
+
+- Duplicate event IDs.
+- Duplicate quest/shop/Alliance milestone IDs.
+- Missing Week 1, Week 2, or Week 3 quest content.
+- Invalid quest weeks or non-positive quest targets.
+- More than **150 event-shop passengers** in one event.
+- Alliance milestones that do not increase in target.
+- Two enabled 21-day events whose schedules overlap.
+
+Back-to-back events are valid. For example, an event may start exactly when
+the previous 21-day event ends.
+
+Standard template totals can also be inspected directly:
+
+- `EventCatalog.total_personal_currency(event)` → normally **600**.
+- `EventCatalog.total_shop_passengers(event)` → maximum **150**.
+- `EventCatalog.total_alliance_currency(event)` → normally **300**.
+
+
 ## Fixed event structure
 
 Every event follows the same loop:
@@ -212,3 +242,5 @@ Each event state contains:
 - Cosmetic persistence.
 - Alliance milestone rewards.
 - The sample event shipping disabled by default.
+- Event catalog operator validation and overlap detection.
+- Standard 600 personal / 150 passenger / 300 Alliance-currency template totals.

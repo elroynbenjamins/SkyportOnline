@@ -929,16 +929,27 @@ func _apply_event_visual_to_aircraft(
 		0
 	)
 	var marker := ""
-	if featured and route_currency > 0:
-		marker = "+%d" % route_currency
+	if featured:
+		if route_currency > 0:
+			marker = "+%d" % route_currency
+		else:
+			marker = String(
+				snapshot.get(
+					"featured_marker_text",
+					""
+				)
+			)
 
 	var owned_cosmetics: Dictionary = current_profile.get(
 		"owned_cosmetics",
 		{}
 	)
-	var livery_id := ""
-	if not theme.is_empty():
-		livery_id = "event_%s_pico_livery" % theme
+	var livery_id := String(
+		snapshot.get(
+			"pico_livery_cosmetic_id",
+			""
+		)
+	)
 	var livery_enabled := (
 		aircraft.aircraft_type_id == "pico_p8"
 		and not livery_id.is_empty()

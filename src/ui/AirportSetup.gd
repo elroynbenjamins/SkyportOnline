@@ -247,7 +247,7 @@ func _build_interface() -> void:
 	resource_header.add_child(resource_title)
 
 	var drop_badge := Label.new()
-	drop_badge.text = " 40% EACH • INDEPENDENT ROLLS "
+	drop_badge.text = " 40% BASE • PLANE / ROUTE MODIFIERS "
 	drop_badge.add_theme_font_size_override("font_size", 13)
 	drop_badge.add_theme_color_override("font_color", Color("f1d27a"))
 	resource_header.add_child(drop_badge)
@@ -275,7 +275,7 @@ func _build_interface() -> void:
 		resource_labels.append(resource_label)
 
 	var probability_note := Label.new()
-	probability_note.text = "Per completed flight: 21.6% none • 43.2% one • 28.8% two • 6.4% all three • average 1.2 resources"
+	probability_note.text = "At the 40% base chance: 21.6% none • 43.2% one • 28.8% two • 6.4% all three. Actual chance varies by aircraft, duration, and size."
 	probability_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	probability_note.add_theme_font_size_override("font_size", 12)
 	probability_note.add_theme_color_override("font_color", Color("9fb7c0"))
@@ -385,7 +385,7 @@ func _select_country(country_id: String) -> void:
 			resource_labels[index].text = ""
 			continue
 		var resource: Dictionary = resources[index]
-		resource_labels[index].text = "%s\n40%% chance\n%s" % [
+		resource_labels[index].text = "%s\n40%% base chance\n%s" % [
 			String(resource.get("name", "Resource")),
 			String(resource.get("use", ""))
 		]

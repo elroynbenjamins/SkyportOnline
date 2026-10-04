@@ -9,7 +9,7 @@ static func all() -> Array[Dictionary]:
 	return [
 		{
 			"id": "autumn_airbridge_2026",
-			"enabled": true,
+			"enabled": false,
 			"name": "Autumn Airbridge",
 			"short_name": "AUTUMN AIRBRIDGE",
 			"currency_id": "autumn_voucher",
@@ -223,6 +223,268 @@ static func all() -> Array[Dictionary]:
 						"reward_type": "currency",
 						"currency_reward": 150,
 						"name": "Autumn Grand Finale"
+					}
+				]
+			}
+		},
+		{
+			"id": "christmas_new_year_airbridge_2026",
+			"enabled": false,
+			"name": "Winter Airbridge: Christmas & New Year",
+			"short_name": "WINTER AIRBRIDGE",
+			"currency_id": "festive_voucher",
+			"currency_name": "Festive Vouchers",
+			"start_unix": 1797552000,
+			"theme": "winter",
+			"pico_livery_cosmetic_id": "event_winter_pico_livery",
+			"featured_marker_text": "XMAS",
+			"featured_destinations": [
+				"brussels",
+				"london",
+				"berlin"
+			],
+			"featured_route_currency": 0,
+			"quests": [
+				{
+					"id": "winter_w1_flights",
+					"week": 1,
+					"title": "Christmas Rush Begins",
+					"metric": "flights_completed",
+					"target": 5,
+					"currency_reward": 40,
+					"alliance_points": 10
+				},
+				{
+					"id": "winter_w1_brussels",
+					"week": 1,
+					"title": "Brussels Christmas Shuttle",
+					"metric": "destination_flights",
+					"destination_id": "brussels",
+					"target": 3,
+					"currency_reward": 45,
+					"alliance_points": 12
+				},
+				{
+					"id": "winter_w1_passengers",
+					"week": 1,
+					"title": "Holiday Travelers",
+					"metric": "passengers_boarded",
+					"target": 40,
+					"currency_reward": 40,
+					"alliance_points": 10
+				},
+				{
+					"id": "winter_w1_resources",
+					"week": 1,
+					"title": "Christmas Supplies",
+					"metric": "resources_earned",
+					"target": 4,
+					"currency_reward": 40,
+					"alliance_points": 10
+				},
+				{
+					"id": "winter_w2_london",
+					"week": 2,
+					"title": "London Christmas Flights",
+					"metric": "destination_flights",
+					"destination_id": "london",
+					"target": 5,
+					"currency_reward": 55,
+					"alliance_points": 15
+				},
+				{
+					"id": "winter_w2_passengers",
+					"week": 2,
+					"title": "Christmas Crowds",
+					"metric": "passengers_boarded",
+					"target": 100,
+					"currency_reward": 50,
+					"alliance_points": 15
+				},
+				{
+					"id": "winter_w2_coins",
+					"week": 2,
+					"title": "Festive Flight Revenue",
+					"metric": "flight_coins",
+					"target": 4500,
+					"currency_reward": 50,
+					"alliance_points": 15
+				},
+				{
+					"id": "winter_w2_resources",
+					"week": 2,
+					"title": "Gift Cargo",
+					"metric": "resources_earned",
+					"target": 9,
+					"currency_reward": 50,
+					"alliance_points": 15
+				},
+				{
+					"id": "winter_w3_berlin",
+					"week": 3,
+					"title": "Berlin New Year Countdown",
+					"metric": "destination_flights",
+					"destination_id": "berlin",
+					"target": 6,
+					"currency_reward": 70,
+					"alliance_points": 20
+				},
+				{
+					"id": "winter_w3_flights",
+					"week": 3,
+					"title": "New Year Airbridge",
+					"metric": "flights_completed",
+					"target": 15,
+					"currency_reward": 60,
+					"alliance_points": 20
+				},
+				{
+					"id": "winter_w3_passengers",
+					"week": 3,
+					"title": "New Year Travelers",
+					"metric": "passengers_boarded",
+					"target": 180,
+					"currency_reward": 60,
+					"alliance_points": 20
+				},
+				{
+					"id": "winter_w3_resources",
+					"week": 3,
+					"title": "Fireworks & Celebration Supplies",
+					"metric": "resources_earned",
+					"target": 14,
+					"currency_reward": 60,
+					"alliance_points": 20
+				}
+			],
+			"shop": [
+				{
+					"id": "winter_airport_border",
+					"name": "Winter Lights Airport Border",
+					"type": "cosmetic",
+					"cosmetic_id": "event_winter_airport_border",
+					"price": 145,
+					"purchase_limit": 1
+				},
+				{
+					"id": "winter_terminal_skin",
+					"name": "Snowy Terminal Skin",
+					"type": "cosmetic",
+					"cosmetic_id": "event_winter_terminal_skin",
+					"price": 180,
+					"purchase_limit": 1
+				},
+				{
+					"id": "winter_pico_livery",
+					"name": "Candy Cane Pico Livery",
+					"type": "cosmetic",
+					"cosmetic_id": "event_winter_pico_livery",
+					"price": 220,
+					"purchase_limit": 1
+				},
+				{
+					"id": "winter_alliance_flag",
+					"name": "New Year Alliance Flag",
+					"type": "cosmetic",
+					"cosmetic_id": "event_winter_alliance_flag",
+					"price": 130,
+					"purchase_limit": 1
+				},
+				{
+					"id": "winter_snow_globe_garden",
+					"name": "Snow Globe Garden",
+					"type": "cosmetic",
+					"cosmetic_id": "event_winter_snow_globe_garden",
+					"price": 110,
+					"purchase_limit": 1
+				},
+				{
+					"id": "winter_passengers_25",
+					"name": "+25 Passengers",
+					"type": "passengers",
+					"passengers": 25,
+					"price": 25,
+					"purchase_limit": 3
+				},
+				{
+					"id": "winter_passengers_50",
+					"name": "+50 Passengers",
+					"type": "passengers",
+					"passengers": 50,
+					"price": 40,
+					"purchase_limit": 2
+				},
+				{
+					"id": "winter_passengers_75",
+					"name": "+75 Passengers",
+					"type": "passengers",
+					"passengers": 75,
+					"price": 60,
+					"purchase_limit": 1
+				},
+				{
+					"id": "winter_coins_2500",
+					"name": "Winter Coin Pouch",
+					"type": "coins",
+					"coins": 2500,
+					"price": 35,
+					"purchase_limit": 2
+				},
+				{
+					"id": "winter_coins_6000",
+					"name": "New Year Coin Case",
+					"type": "coins",
+					"coins": 6000,
+					"price": 75,
+					"purchase_limit": 1
+				},
+				{
+					"id": "winter_supply_crate",
+					"name": "Winter Supply Crate",
+					"type": "resource_choice",
+					"resource_amount": 1,
+					"resource_country_codes": [
+						"NL",
+						"BE",
+						"DE",
+						"GB",
+						"FR",
+						"DK"
+					],
+					"price": 55,
+					"purchase_limit": 3
+				}
+			],
+			"alliance": {
+				"enabled": true,
+				"milestones": [
+					{
+						"id": "winter_alliance_150",
+						"target": 150,
+						"reward_type": "currency",
+						"currency_reward": 50,
+						"name": "Christmas Warm-Up"
+					},
+					{
+						"id": "winter_alliance_400",
+						"target": 400,
+						"reward_type": "cosmetic",
+						"cosmetic_id": "event_winter_alliance_emblem",
+						"name": "North Star Alliance Emblem"
+					},
+					{
+						"id": "winter_alliance_800",
+						"target": 800,
+						"reward_type": "currency",
+						"currency_reward": 100,
+						"name": "Holiday Night Flights"
+					},
+					{
+						"id": "winter_alliance_1400",
+						"target": 1400,
+						"reward_type": "currency",
+						"currency_reward": 150,
+						"name": "New Year Grand Finale"
 					}
 				]
 			}

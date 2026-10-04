@@ -5,6 +5,7 @@ signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
 signal network_status_changed(data: Dictionary)
+signal building_selected_world(data: Dictionary)
 
 const TILE_WIDTH := 64.0
 const TILE_HEIGHT := 32.0
@@ -70,6 +71,7 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
 	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
+	_place_building_internal("travel_office", Vector2i(8, 10), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
 	_place_building_internal("service_road", Vector2i(11, 13), 0)
 	_place_building_internal("service_road", Vector2i(12, 13), 0)
@@ -341,6 +343,13 @@ func select_world_position(world_position: Vector2) -> void:
 	if not _tile_in_world(tile):
 		return
 
+	var key := _cell_key(tile)
+	if occupied_cells.has(key):
+		var building := get_building(int(occupied_cells[key]))
+		if not building.is_empty():
+			building_selected_world.emit(building)
+			return
+
 	var parcel := _parcel_for_tile(tile)
 	if not parcel.is_empty():
 		select_parcel(String(parcel["id"]))
@@ -496,7 +505,8 @@ func _place_building_internal(definition_id: String, origin: Vector2i, rotation:
 		"uid": next_building_uid,
 		"definition_id": definition_id,
 		"origin": origin,
-		"rotation": rotation % 2
+		"rotation": rotation % 2,
+		"upgrade_level": 1
 	}
 	next_building_uid += 1
 	placed_buildings.append(placed)
@@ -635,6 +645,10 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 		return "STAND  •  " + _size_text(definition) + "  ✓"
 	if id.contains("terminal"):
 		return "TERMINAL"
+	if id == "travel_office":
+		return "PASSENGERS  •  LV %d" % int(
+			building.get("upgrade_level", 1)
+		)
 	if id.contains("hangar"):
 		if not _is_airside_building_connected(int(building["uid"])):
 			return "HANGAR  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
@@ -1201,6 +1215,61 @@ func _draw_airside_warnings() -> void:
 		draw_line(marker_center + Vector2(0, -5), marker_center + Vector2(0, 2), Color("2a2118"), 3.0)
 		draw_circle(marker_center + Vector2(0, 6), 1.8, Color("2a2118"))
 
+
+
+
+func get_building(uid: int) -> Dictionary:
+	for building in placed_buildings:
+		if int(building.get("uid", -1)) == uid:
+			return building.duplicate(true)
+	return {}
+
+
+func get_building_key(building: Dictionary) -> String:
+	if building.is_empty():
+		return ""
+	var origin: Vector2i = building.get("origin", Vector2i.ZERO)
+	return "%s@%d,%d" % [
+		String(building.get("definition_id", "")),
+		origin.x,
+		origin.y
+	]
+
+
+func get_passenger_generator_buildings() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if bool(definition.get("passenger_generator", false)):
+			result.append(building.duplicate(true))
+	return result
+
+
+func set_building_upgrade_level(uid: int, level: int) -> bool:
+	for index in range(placed_buildings.size()):
+		if int(placed_buildings[index].get("uid", -1)) != uid:
+			continue
+		placed_buildings[index]["upgrade_level"] = maxi(level, 1)
+		_refresh_building_labels()
+		queue_redraw()
+		return true
+	return false
+
+
+func apply_saved_building_upgrades(saved: Dictionary) -> void:
+	for index in range(placed_buildings.size()):
+		var building: Dictionary = placed_buildings[index]
+		var key := get_building_key(building)
+		if key.is_empty() or not saved.has(key):
+			continue
+		placed_buildings[index]["upgrade_level"] = maxi(
+			int(saved[key]),
+			1
+		)
+	_refresh_building_labels()
+	queue_redraw()
 
 func _building_by_uid(uid: int) -> Dictionary:
 	for building in placed_buildings:

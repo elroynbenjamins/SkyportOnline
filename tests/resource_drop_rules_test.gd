@@ -6,24 +6,25 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var aerolet_100 := AircraftCatalog.get_profile("aerolet_100")
-	var aerolet_120 := AircraftCatalog.get_profile("aerolet_120")
-	var regional_200 := AircraftCatalog.get_profile("regional_200")
+	var pico := AircraftCatalog.get_profile("pico_p8")
+	var swift := AircraftCatalog.get_profile("swift_s14")
+	var nimbus := AircraftCatalog.get_profile("nimbus_n40")
+	var brussels := DestinationCatalog.get_destination("brussels")
 	var london := DestinationCatalog.get_destination("london")
 	var copenhagen := DestinationCatalog.get_destination("copenhagen")
 
 	var plans := [
-		FlightRules.create_flight_plan(aerolet_100, london),
-		FlightRules.create_flight_plan(aerolet_120, london),
-		FlightRules.create_flight_plan(regional_200, london),
-		FlightRules.create_flight_plan(regional_200, copenhagen)
+		FlightRules.create_flight_plan(pico, brussels),
+		FlightRules.create_flight_plan(swift, london),
+		FlightRules.create_flight_plan(nimbus, london),
+		FlightRules.create_flight_plan(nimbus, copenhagen)
 	]
 	for plan in plans:
 		if plan.is_empty():
 			_fail("Expected valid test flight plan.")
 			return
 
-	var profiles := [aerolet_100, aerolet_120, regional_200, regional_200]
+	var profiles := [pico, swift, nimbus, nimbus]
 	for index in range(plans.size()):
 		var chance := ResourceDropRules.chance_for_flight(
 			profiles[index],
@@ -33,13 +34,13 @@ func _run() -> void:
 			_fail("Every configured country resource must use a fixed 40% chance.")
 			return
 
-	var london_resources := CountryResourceCatalog.resources_for_country("GB")
-	if london_resources.size() != 3:
+	var belgium_resources := CountryResourceCatalog.resources_for_country("BE")
+	if belgium_resources.size() != 3:
 		_fail("Each configured country should expose exactly three resources.")
 		return
 
 	var deterministic := ResourceDropRules.evaluate_resources(
-		"GB",
+		"BE",
 		[0.10, 0.40, 0.39]
 	)
 	var wins := 0
@@ -53,7 +54,7 @@ func _run() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 987654321
 	var rolls := ResourceDropRules.roll_resources(
-		aerolet_100,
+		pico,
 		plans[0],
 		rng
 	)
@@ -73,14 +74,14 @@ func _run() -> void:
 
 	rng.seed = 987654321
 	var reward := FlightRewardRules.create_return_reward(
-		aerolet_100,
+		pico,
 		plans[0],
 		rng
 	)
-	if int(reward.get("coins", 0)) != int(london.get("coin_reward", 0)):
+	if int(reward.get("coins", 0)) != int(brussels.get("coin_reward", 0)):
 		_fail("Return reward should preserve destination coin reward.")
 		return
-	if int(reward.get("xp", 0)) != int(london.get("xp_reward", 0)):
+	if int(reward.get("xp", 0)) != int(brussels.get("xp_reward", 0)):
 		_fail("Return reward should preserve destination XP reward.")
 		return
 	if absf(float(reward.get("resource_chance", 0.0)) - 0.40) > 0.001:
@@ -90,7 +91,7 @@ func _run() -> void:
 		_fail("Return reward should include all three resource roll results.")
 		return
 
-	print("Resource rules passed: three independent country rolls at a fixed 40% each.")
+	print("Resource rules passed for reconciled V1 aircraft: three independent 40% rolls.")
 	quit(0)
 
 

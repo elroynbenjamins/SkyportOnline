@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="160" viewBox="0 0 192 160" shape-rendering="crispEdges"><g><g stroke="#263a46" stroke-width="4" stroke-linejoin="miter">
+    <polygon fill="#7a8b90" points="27,121 82,93 146,118 90,148"/>
+    <rect fill="#7f9096" x="83" y="67" width="8" height="58"/>
+    <line x1="87" y1="68" x2="67" y2="119" stroke="#8fa0a5" stroke-width="4"/>
+    <line x1="87" y1="68" x2="108" y2="118" stroke="#8fa0a5" stroke-width="4"/>
+    <line x1="71" y1="94" x2="103" y2="94" stroke="#8fa0a5" stroke-width="4"/>
+    <line x1="76" y1="81" x2="98" y2="108" stroke="#8fa0a5" stroke-width="3"/>
+    <line x1="99" y1="81" x2="76" y2="108" stroke="#8fa0a5" stroke-width="3"/>
+    <ellipse fill="#dce6e7" cx="87" cy="58" rx="27" ry="9"/>
+    <path fill="#91a6ad" d="M61 58 Q87 34 113 58 Q87 66 61 58Z"/>
+    <rect fill="#647981" x="84" y="45" width="6" height="13"/>
+    <circle fill="#efc44e" cx="87" cy="41" r="5"/>
+  </g></g></svg>

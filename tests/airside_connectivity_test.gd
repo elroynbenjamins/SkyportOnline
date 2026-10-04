@@ -21,6 +21,11 @@ func _run() -> void:
 		_fail("Starter stand should connect to its runway through taxiway.")
 		return
 
+	var starter_route := grid.get_first_departure_route()
+	if starter_route.size() < 4:
+		_fail("Starter airport should expose a stand-to-runway departure route.")
+		return
+
 	var disconnected_position := grid.tile_to_world(Vector2(14, 10))
 	var preview := grid.set_build_preview("small_stand", disconnected_position, 0)
 	if not bool(preview.get("valid", false)):

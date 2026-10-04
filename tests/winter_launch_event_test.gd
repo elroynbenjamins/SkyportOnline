@@ -312,6 +312,26 @@ func _run() -> void:
 			_fail("Winter shop should contain section header %s." % expected_header)
 			return
 
+	var shop_text := _collect_label_texts(screen.shop_list)
+	for expected_tag in [
+		"PERMANENT",
+		"AIRPORT FLOW",
+		"INFRASTRUCTURE",
+		"UPGRADE TARGET"
+	]:
+		if not shop_text.has(expected_tag):
+			_fail("Winter shop should visibly render purpose chip %s." % expected_tag)
+			return
+
+	if not shop_text.has(
+		"Strong passenger refill for busy departures."
+	):
+		_fail("Winter shop cards should render their value hints.")
+		return
+	if not shop_text.has("PERMANENT COSMETIC"):
+		_fail("Winter cosmetic cards should clearly identify permanent rewards.")
+		return
+
 	screen._open_resource_choice(crate)
 	if not screen.resource_choice_overlay.visible:
 		_fail("Winter Supply Crate should open a resource-choice overlay.")
@@ -337,6 +357,18 @@ func _run() -> void:
 		+ "3 chosen resources, capped purchases and resource-choice UI."
 	)
 	quit(0)
+
+
+func _collect_label_texts(node: Node) -> PackedStringArray:
+	var result := PackedStringArray()
+	if node is Label:
+		result.append(String(node.text))
+
+	for child in node.get_children():
+		for text_value in _collect_label_texts(child):
+			result.append(text_value)
+
+	return result
 
 
 func _route_accessible(

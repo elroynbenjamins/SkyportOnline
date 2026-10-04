@@ -14,6 +14,7 @@ const HOME_COLOR := Color("f5d76e")
 var route_entries: Array[Dictionary] = []
 var marker_buttons: Array[Button] = []
 var view_mode := "EUROPE"
+var origin_country_code := "NL"
 
 
 func _ready() -> void:
@@ -24,7 +25,11 @@ func _ready() -> void:
 	queue_redraw()
 
 
-func configure(entries: Array[Dictionary]) -> void:
+func configure(
+	entries: Array[Dictionary],
+	origin_code: String = "NL"
+) -> void:
+	origin_country_code = origin_code.to_upper()
 	route_entries.clear()
 	for entry in entries:
 		route_entries.append(entry.duplicate(true))
@@ -55,11 +60,18 @@ func _draw() -> void:
 	else:
 		_draw_europe_land()
 
-	var home := CountryCatalog.get_country("NL")
+	var home_point := Vector2.ZERO
+	var home := CountryCatalog.get_country(origin_country_code)
 	if not home.is_empty():
-		var home_point := _project_country(home)
+		home_point = _project_country(home)
 		draw_circle(home_point, 8.0, HOME_COLOR)
-		draw_circle(home_point, 12.0, Color(HOME_COLOR, 0.35), false, 2.0)
+		draw_circle(
+			home_point,
+			12.0,
+			Color(HOME_COLOR.r, HOME_COLOR.g, HOME_COLOR.b, 0.35),
+			false,
+			2.0
+		)
 
 	for entry in route_entries:
 		var country := CountryCatalog.get_country(

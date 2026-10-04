@@ -223,13 +223,14 @@ func _draw_building_sprite(
 func _draw_taxiway_detail(origin: Vector2i) -> void:
 	var center := tile_to_world(Vector2(origin.x, origin.y))
 	var connections := 0
-	for direction in [
+	var directions: Array[Vector2i] = [
 		Vector2i(1, 0),
 		Vector2i(-1, 0),
 		Vector2i(0, 1),
 		Vector2i(0, -1)
-	]:
-		var neighbor := origin + direction
+	]
+	for direction: Vector2i in directions:
+		var neighbor: Vector2i = origin + direction
 		if not _taxiway_visually_connects_to(neighbor):
 			continue
 		var edge_tile := Vector2(origin.x, origin.y) + Vector2(direction.x, direction.y) * 0.48

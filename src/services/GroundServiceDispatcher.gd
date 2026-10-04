@@ -637,7 +637,9 @@ func _dispatch_service(
 			_on_service_started.bind(
 				label,
 				service_type,
-				duration
+				duration,
+				job_id,
+				service_key
 			)
 		)
 		vehicle.service_completed.connect(

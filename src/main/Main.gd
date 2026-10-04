@@ -364,6 +364,11 @@ func _spawn_aircraft_demos() -> void:
 			runway_uid
 		)
 		stand_occupancy[stand_uid] = aircraft
+		airport_grid.set_stand_visual_state(
+			stand_uid,
+			aircraft.state,
+			aircraft.aircraft_size
+		)
 		aircraft_demos.append(aircraft)
 		_apply_event_visual_to_aircraft(
 			aircraft,
@@ -517,11 +522,33 @@ func _on_ground_service_queue_changed(waiting: int, active: int) -> void:
 		)
 
 
+func _sync_aircraft_stand_visual(
+	aircraft: AircraftPrototype,
+	state: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	var stand_uid := aircraft.stand_uid
+	if stand_uid < 0:
+		return
+	if stand_occupancy.get(stand_uid) != aircraft:
+		return
+
+	airport_grid.set_stand_visual_state(
+		stand_uid,
+		state,
+		aircraft.aircraft_size
+	)
+
+
 func _on_demo_aircraft_state_changed(
 	state: String,
 	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
+	_sync_aircraft_stand_visual(aircraft, state)
+
 	match state:
 		"TAXIING_OUT":
 			_release_stand(aircraft)
@@ -694,6 +721,11 @@ func _assign_arrival_if_possible(
 		return false
 
 	stand_occupancy[stand_uid] = aircraft
+	airport_grid.set_stand_visual_state(
+		stand_uid,
+		"INBOUND_RESERVED",
+		aircraft.aircraft_size
+	)
 	aircraft.set_arrival_route(
 		route,
 		stand_uid,
@@ -721,6 +753,7 @@ func _release_stand(aircraft: AircraftPrototype) -> void:
 
 	if stand_occupancy.get(stand_uid) == aircraft:
 		stand_occupancy.erase(stand_uid)
+		airport_grid.clear_stand_visual_state(stand_uid)
 	_try_assign_pending_arrivals()
 
 

@@ -527,9 +527,10 @@ func _dispatch_service(
 		station_uid,
 		service_type
 	)
-	station_active[active_key] = (
-		int(station_active.get(active_key, 0)) + 1
+	var station_active_before := int(
+		station_active.get(active_key, 0)
 	)
+	station_active[active_key] = station_active_before + 1
 	active_jobs += 1
 
 	var speed := maxf(
@@ -554,8 +555,13 @@ func _dispatch_service(
 	var approach_count := int(
 		stand_approach_active.get(stand_uid, 0)
 	)
-	var launch_delay := ApronTrafficRules.stagger_delay(
-		approach_count
+	var launch_delay := maxf(
+		ApronTrafficRules.stagger_delay(
+			approach_count
+		),
+		ApronTrafficRules.station_stagger_delay(
+			station_active_before
+		)
 	)
 	stand_approach_active[stand_uid] = approach_count + 1
 

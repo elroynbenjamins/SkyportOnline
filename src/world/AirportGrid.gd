@@ -236,7 +236,7 @@ func _draw_building_sprite(
 
 func _draw_taxiway_detail(origin: Vector2i) -> void:
 	var center := tile_to_world(Vector2(origin.x, origin.y))
-	var connections := 0
+	var connections := get_taxiway_connection_count(origin)
 	var directions: Array[Vector2i] = [
 		Vector2i(1, 0),
 		Vector2i(-1, 0),
@@ -249,7 +249,6 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 			continue
 		var edge_tile := Vector2(origin.x, origin.y) + Vector2(direction.x, direction.y) * 0.48
 		draw_line(center, tile_to_world(edge_tile), Color("f0c94c"), 3.0)
-		connections += 1
 
 	if connections == 0:
 		draw_line(
@@ -515,6 +514,23 @@ func _adjacent_runway_cells(
 				result.append(neighbor)
 				break
 	return result
+
+
+func get_taxiway_connection_count(
+	origin: Vector2i
+) -> int:
+	var count := 0
+	for direction in [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]:
+		if _taxiway_visually_connects_to(
+			origin + direction
+		):
+			count += 1
+	return count
 
 
 func _taxiway_visually_connects_to(cell: Vector2i) -> bool:

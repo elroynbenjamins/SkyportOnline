@@ -65,6 +65,21 @@ func get_flight_plan() -> Dictionary:
 	return flight_plan.duplicate(true)
 
 
+func clear_flight_plan() -> void:
+	flight_plan.clear()
+	if state in [
+		"PARKED",
+		"WAITING_FUEL",
+		"UNLOADING",
+		"SERVICING",
+		"LOADING",
+		"PUSHBACK_PREP",
+		"READY_FOR_DEPARTURE",
+		"WAITING_PASSENGERS"
+	]:
+		_set_state("READY_FOR_DESTINATION")
+
+
 func get_aircraft_profile() -> Dictionary:
 	return aircraft_profile.duplicate(true)
 

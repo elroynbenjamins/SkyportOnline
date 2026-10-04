@@ -80,7 +80,7 @@ func _build_ui() -> void:
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color("071923", 0.985)
+	backdrop.color = Color("07151d", 0.975)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(backdrop)
 
@@ -108,6 +108,7 @@ func _build_header(parent: Control) -> void:
 	panel.offset_right = -14
 	panel.offset_bottom = 68
 	parent.add_child(panel)
+	GameUIStyle.apply_panel(panel, "top")
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -115,23 +116,21 @@ func _build_header(parent: Control) -> void:
 
 	var title := Label.new()
 	title.text = "✈  FLEET CONTROL"
-	title.add_theme_font_size_override("font_size", 24)
+	GameUIStyle.heading(title, 24)
 	row.add_child(title)
 
 	fleet_summary_label = Label.new()
 	fleet_summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fleet_summary_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	fleet_summary_label.add_theme_font_size_override("font_size", 14)
-	fleet_summary_label.add_theme_color_override(
-		"font_color",
-		Color("a9c6cf")
-	)
+	GameUIStyle.muted(fleet_summary_label)
 	row.add_child(fleet_summary_label)
 
 	var close_button := Button.new()
 	close_button.text = "✕  AIRPORT"
 	close_button.custom_minimum_size = Vector2(145, 42)
 	close_button.pressed.connect(close_fleet)
+	GameUIStyle.apply_button(close_button, "secondary", true)
 	row.add_child(close_button)
 
 
@@ -139,6 +138,7 @@ func _build_owned_panel(parent: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(300, 0)
 	parent.add_child(panel)
+	GameUIStyle.apply_panel(panel, "raised")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
@@ -154,7 +154,7 @@ func _build_owned_panel(parent: HBoxContainer) -> void:
 	var heading := Label.new()
 	heading.text = "OWNED AIRCRAFT"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 17)
+	GameUIStyle.heading(heading, 17)
 	column.add_child(heading)
 
 	var scroll := ScrollContainer.new()
@@ -171,6 +171,7 @@ func _build_details_panel(parent: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(panel)
+	GameUIStyle.apply_panel(panel, "raised")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
@@ -185,14 +186,14 @@ func _build_details_panel(parent: HBoxContainer) -> void:
 
 	details_title = Label.new()
 	details_title.text = "SELECT AIRCRAFT"
-	details_title.add_theme_font_size_override("font_size", 24)
+	GameUIStyle.heading(details_title, 24)
 	column.add_child(details_title)
 
 	mastery_label = Label.new()
 	mastery_label.add_theme_font_size_override("font_size", 16)
 	mastery_label.add_theme_color_override(
 		"font_color",
-		Color("f1d27a")
+		GameUIStyle.COLOR_GOLD
 	)
 	column.add_child(mastery_label)
 
@@ -202,12 +203,17 @@ func _build_details_panel(parent: HBoxContainer) -> void:
 	mastery_bar.max_value = 1.0
 	mastery_bar.value = 0.0
 	mastery_bar.show_percentage = false
+	GameUIStyle.apply_progress(mastery_bar, true)
 	column.add_child(mastery_bar)
 
 	details_body = Label.new()
 	details_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	details_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	details_body.add_theme_font_size_override("font_size", 15)
+	details_body.add_theme_font_size_override("font_size", 14)
+	details_body.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_TEXT
+	)
 	column.add_child(details_body)
 
 
@@ -215,6 +221,7 @@ func _build_catalog_panel(parent: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(330, 0)
 	parent.add_child(panel)
+	GameUIStyle.apply_panel(panel, "dark")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
@@ -230,14 +237,14 @@ func _build_catalog_panel(parent: HBoxContainer) -> void:
 	var heading := Label.new()
 	heading.text = "V1 AIRCRAFT CATALOG"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 17)
+	GameUIStyle.heading(heading, 17)
 	column.add_child(heading)
 
 	var note := Label.new()
 	note.text = "L / XL aircraft remain future-ready."
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_font_size_override("font_size", 12)
-	note.add_theme_color_override("font_color", Color("8faab3"))
+	GameUIStyle.muted(note)
 	column.add_child(note)
 
 	var scroll := ScrollContainer.new()
@@ -257,7 +264,7 @@ func _refresh_owned_aircraft() -> void:
 	while aircraft_buttons.size() < aircraft.size():
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0, 72)
-		button.add_theme_font_size_override("font_size", 13)
+		GameUIStyle.apply_button(button, "secondary", true)
 		var index := aircraft_buttons.size()
 		button.pressed.connect(_on_aircraft_selected.bind(index))
 		owned_list.add_child(button)
@@ -281,6 +288,11 @@ func _refresh_owned_aircraft() -> void:
 			_state_text(plane),
 			route
 		]
+		GameUIStyle.apply_button(
+			button,
+			"selected" if index == selected_index else "secondary",
+			true
+		)
 		button.disabled = index == selected_index
 
 	var active := 0
@@ -450,6 +462,10 @@ func _refresh_catalog() -> void:
 		var stars := AircraftMastery.stars_for_hours(hours)
 
 		var card := PanelContainer.new()
+		GameUIStyle.apply_panel(
+			card,
+			"raised" if owned_count > 0 else "dark"
+		)
 		catalog_list.add_child(card)
 
 		var label := Label.new()
@@ -477,9 +493,15 @@ func _refresh_catalog() -> void:
 		]
 
 		if player_level < unlock_level:
-			label.add_theme_color_override("font_color", Color("82949a"))
+			label.add_theme_color_override(
+				"font_color",
+				Color("71858c")
+			)
 		elif owned_count > 0:
-			label.add_theme_color_override("font_color", Color("9fe3b7"))
+			label.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_SUCCESS
+			)
 
 		card.add_child(label)
 

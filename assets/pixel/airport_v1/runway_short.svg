@@ -2,7 +2,7 @@
 <polygon points="13,71 70,25 243,42 186,89" fill="#162025" opacity=".5"/>
 <polygon points="16,61 67,21 238,37 187,78" fill="#41494e"/>
 <polygon points="27,58 72,28 226,42 181,72" fill="#333a3f"/>
-<polygon points="34,54 49,44 52,46 37,56 M43,57 58,47 61,49 46,59 M190,64 205,54 208,56 193,66 M200,61 215,51 218,53 203,63" fill="#f2efe0"/>
+<path d="M34 54 L49 44 L52 46 L37 56 Z M43 57 L58 47 L61 49 L46 59 Z M190 64 L205 54 L208 56 L193 66 Z M200 61 L215 51 L218 53 L203 63 Z" fill="#f2efe0"/>
 <path d="M78 55 L97 50 M108 53 L127 49 M138 52 L157 48 M168 51 L187 47" stroke="#f3efe1" stroke-width="3"/>
-<text x="62" y="42" font-family="monospace" font-size="13" fill="#f2efe0">27</text>
+<path d="M63 38 L72 36 L72 39 L66 40 L66 43 L72 42 L72 45 L63 47 L63 42 L69 40 L63 41 Z M75 35 L84 33 L84 36 L79 44 L76 45 L81 36 L75 38 Z" fill="#f2efe0"/>
 </svg>

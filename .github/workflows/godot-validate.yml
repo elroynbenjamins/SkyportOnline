@@ -130,3 +130,7 @@ jobs:
 
       - name: Test runway operating strategy
         run: timeout 20s godot --headless --path . --script res://tests/runway_strategy_test.gd
+
+
+      - name: Test runway utilization analytics
+        run: timeout 20s godot --headless --path . --script res://tests/runway_analytics_test.gd

@@ -37,6 +37,9 @@ func _run() -> void:
 	if int(event.get("featured_route_currency", -1)) != 0:
 		_fail("Winter featured routes should not provide repeatable voucher farming.")
 		return
+	if String(event.get("featured_marker_text", "")) != "WINTER":
+		_fail("Winter featured flights should use the WINTER marker.")
+		return
 
 	var personal_currency := 0
 	var week_counts := {1: 0, 2: 0, 3: 0}
@@ -252,6 +255,15 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 	screen.open_event(manager.get_snapshot())
+	if not screen.featured_routes_label.text.contains(
+		"FEATURED WINTER QUEST ROUTES"
+	):
+		_fail("Winter featured destinations should be presented as quest routes.")
+		return
+	if screen.featured_routes_label.text.contains("+0"):
+		_fail("Winter UI should never advertise a +0 voucher route reward.")
+		return
+
 	screen._open_resource_choice(crate)
 	if not screen.resource_choice_overlay.visible:
 		_fail("Winter Supply Crate should open a resource-choice overlay.")

@@ -55,9 +55,13 @@ func _run() -> void:
 		_fail("50 hours should display two Pico P8 Mastery stars.")
 		return
 
-	if not screen.details_body.text.contains("Seats: 8  →  7"):
+	if not screen.details_body.text.contains("Current route demand: Feeder • 65%"):
+		_fail("Fleet should show the assigned route demand tier and load.")
+		return
+
+	if not screen.details_body.text.contains("Passengers: 6 → 5 with Mastery"):
 		_fail(
-			"Fleet details should show Mastery-adjusted Pico passenger demand."
+			"Fleet should show route demand before Mastery reduction."
 		)
 		return
 
@@ -90,8 +94,8 @@ func _run() -> void:
 		_fail("Live Mastery refresh should update Fleet stars immediately.")
 		return
 
-	if not screen.details_body.text.contains("Seats: 8  →  6"):
-		_fail("Star 4 Fleet details should show Pico demand reduced to 6.")
+	if not screen.details_body.text.contains("Passengers: 6 → 4 with Mastery"):
+		_fail("Star 4 Fleet details should reduce Brussels demand to 4.")
 		return
 
 	print(

@@ -507,10 +507,16 @@ func _refresh_details() -> void:
 		assign_button.text = "OUT OF RANGE"
 	elif not can_change:
 		assign_button.text = "AIRCRAFT BUSY"
+	elif passenger_stock < required_passengers:
+		assign_button.text = "ASSIGN • WAIT FOR %d PAX • %s" % [
+			required_passengers,
+			FlightRules.format_duration(duration_seconds)
+		]
 	else:
-		assign_button.text = "ASSIGN  •  %s" % FlightRules.format_duration(
-			duration_seconds
-		)
+		assign_button.text = "ASSIGN • %d PAX • %s" % [
+			required_passengers,
+			FlightRules.format_duration(duration_seconds)
+		]
 
 	var map_position: Vector2 = destination["map_position"]
 	map_canvas.set_selected_position(map_position)

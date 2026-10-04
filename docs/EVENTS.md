@@ -36,6 +36,17 @@ The runtime validates the entire event catalog before selecting an active event.
 If validation fails, Events stay disabled and a warning is shown rather than
 silently choosing a broken configuration.
 
+The standard structure is enforced, not just documented:
+
+- Exactly **4 quests in Week 1**.
+- Exactly **4 quests in Week 2**.
+- Exactly **4 quests in Week 3**.
+- Exactly **4 event cosmetics** in the shop.
+- Exactly **2 passenger shop entries**.
+- Maximum **150 passengers** obtainable from those event shop entries.
+- Exactly **4 Alliance milestones** when the Alliance event track is enabled.
+
+
 `EventCatalog.validate_catalog()` currently checks:
 
 - Unique event IDs.

@@ -44,6 +44,16 @@ static func load_profile() -> Dictionary:
 	if stored_routes is Dictionary:
 		route_history = stored_routes.duplicate(true)
 
+	var event_states := {}
+	var stored_event_states = config.get_value("profile", "event_states", {})
+	if stored_event_states is Dictionary:
+		event_states = stored_event_states.duplicate(true)
+
+	var owned_cosmetics := {}
+	var stored_cosmetics = config.get_value("profile", "owned_cosmetics", {})
+	if stored_cosmetics is Dictionary:
+		owned_cosmetics = stored_cosmetics.duplicate(true)
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -63,6 +73,8 @@ static func load_profile() -> Dictionary:
 		"aircraft_mastery_hours": aircraft_mastery,
 		"economy_stats": economy_stats,
 		"route_history": route_history,
+		"event_states": event_states,
+		"owned_cosmetics": owned_cosmetics,
 		"passenger_gift_day": String(
 			config.get_value("profile", "passenger_gift_day", "")
 		),
@@ -107,6 +119,8 @@ static func create_guest_airport(
 		"aircraft_mastery_hours": {},
 		"economy_stats": {},
 		"route_history": {},
+		"event_states": {},
+		"owned_cosmetics": {},
 		"passenger_gift_day": "",
 		"passenger_gifts_received_today": 0
 	}
@@ -359,6 +373,76 @@ static func record_friend_passenger_gift(
 	if not _save_profile(profile):
 		return {}
 	return profile
+
+
+static func get_event_state(event_id: String) -> Dictionary:
+	if event_id.is_empty():
+		return {}
+
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var states: Dictionary = profile.get("event_states", {})
+	if not states.has(event_id):
+		return {}
+	var stored = states[event_id]
+	if stored is Dictionary:
+		return stored.duplicate(true)
+	return {}
+
+
+static func save_event_state(
+	event_id: String,
+	state: Dictionary
+) -> Dictionary:
+	if event_id.is_empty():
+		return {}
+
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var states: Dictionary = profile.get(
+		"event_states",
+		{}
+	).duplicate(true)
+	states[event_id] = state.duplicate(true)
+	profile["event_states"] = states
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func add_owned_cosmetic(cosmetic_id: String) -> Dictionary:
+	if cosmetic_id.is_empty():
+		return {}
+
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var cosmetics: Dictionary = profile.get(
+		"owned_cosmetics",
+		{}
+	).duplicate(true)
+	cosmetics[cosmetic_id] = true
+	profile["owned_cosmetics"] = cosmetics
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func owns_cosmetic(cosmetic_id: String) -> bool:
+	if cosmetic_id.is_empty():
+		return false
+
+	var profile := load_profile()
+	if profile.is_empty():
+		return false
+
+	var cosmetics: Dictionary = profile.get("owned_cosmetics", {})
+	return bool(cosmetics.get(cosmetic_id, false))
 
 
 static func attach_linked_account(

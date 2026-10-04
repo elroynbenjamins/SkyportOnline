@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="112" viewBox="0 0 256 112" shape-rendering="crispEdges">
+<polygon points="13,71 70,25 243,42 186,89" fill="#162025" opacity=".5"/>
+<polygon points="16,61 67,21 238,37 187,78" fill="#41494e"/>
+<polygon points="27,58 72,28 226,42 181,72" fill="#333a3f"/>
+<polygon points="34,54 49,44 52,46 37,56 M43,57 58,47 61,49 46,59 M190,64 205,54 208,56 193,66 M200,61 215,51 218,53 203,63" fill="#f2efe0"/>
+<path d="M78 55 L97 50 M108 53 L127 49 M138 52 L157 48 M168 51 L187 47" stroke="#f3efe1" stroke-width="3"/>
+<text x="62" y="42" font-family="monospace" font-size="13" fill="#f2efe0">27</text>
+</svg>

@@ -20,6 +20,10 @@ var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
 var world_map: WorldMapScreen
 var return_summary: FlightReturnSummary
+var passenger_economy: PassengerEconomy
+var passenger_waiting_departures: Array[Dictionary] = []
+var demo_friend_gift_index := 1
+var selected_passenger_building_uid := -1
 
 
 func _ready() -> void:
@@ -32,19 +36,40 @@ func _ready() -> void:
 	hud.rotate_building_requested.connect(_on_rotate_building_requested)
 	hud.confirm_building_requested.connect(_on_confirm_building_requested)
 	hud.cancel_building_requested.connect(_on_cancel_building_requested)
+	hud.collect_passengers_requested.connect(_on_collect_passengers_requested)
+	hud.rewarded_passengers_requested.connect(_on_rewarded_passengers_requested)
+	hud.friend_passengers_requested.connect(_on_friend_passengers_requested)
+	hud.passenger_building_upgrade_requested.connect(
+		_on_passenger_building_upgrade_requested
+	)
 	hud.navigation_requested.connect(_on_navigation_requested)
+	airport_grid.building_placed.connect(_on_building_placed_for_passengers)
+	airport_grid.placed_building_selected.connect(
+		_on_placed_passenger_building_selected
+	)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
 	hud.set_player_data(player_level, coins, gems)
 	hud.set_airside_status(airport_grid.get_airside_status())
 	airport_grid.select_parcel("north")
 
+	_setup_passenger_economy()
 	_setup_ground_services()
 	_setup_runway_dispatcher()
 	_setup_world_map()
 	_setup_return_summary()
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
+
+
+func _setup_passenger_economy() -> void:
+	passenger_economy = PassengerEconomy.new()
+	passenger_economy.name = "PassengerEconomy"
+	add_child(passenger_economy)
+	passenger_economy.changed.connect(_on_passenger_economy_changed)
+	passenger_economy.bind_country_resource_inventory(resource_inventory)
+	passenger_economy.configure_from_airport(airport_grid)
+	hud.set_passenger_status(passenger_economy.get_snapshot())
 
 
 func _setup_ground_services() -> void:
@@ -139,7 +164,69 @@ func _spawn_aircraft_demos() -> void:
 
 
 func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
-	runway_dispatcher.request_departure(aircraft, label)
+	_request_departure_with_passengers(aircraft, label)
+
+
+func _passenger_cost_for_aircraft(aircraft: AircraftPrototype) -> int:
+	if aircraft == null:
+		return 0
+	var profile := aircraft.get_aircraft_profile()
+	return maxi(int(profile.get("passengers", 0)), 1)
+
+
+func _request_departure_with_passengers(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	if passenger_economy == null:
+		runway_dispatcher.request_departure(aircraft, label)
+		return
+
+	var passenger_cost := _passenger_cost_for_aircraft(aircraft)
+	if passenger_economy.try_spend_passengers(passenger_cost):
+		runway_dispatcher.request_departure(aircraft, label)
+		return
+
+	for request in passenger_waiting_departures:
+		if request.get("aircraft") == aircraft:
+			return
+
+	passenger_waiting_departures.append({
+		"aircraft": aircraft,
+		"label": label,
+		"passenger_cost": passenger_cost
+	})
+	hud.set_operation_status(
+		"%s waiting • needs %d passengers" % [label, passenger_cost],
+		"warning"
+	)
+
+
+func _try_release_passenger_waiters() -> void:
+	if passenger_economy == null or passenger_waiting_departures.is_empty():
+		return
+
+	var index := 0
+	while index < passenger_waiting_departures.size():
+		var request: Dictionary = passenger_waiting_departures[index]
+		var aircraft := request.get("aircraft") as AircraftPrototype
+		var label := String(request.get("label", "Aircraft"))
+		var passenger_cost := int(request.get("passenger_cost", 0))
+
+		if aircraft == null or not is_instance_valid(aircraft):
+			passenger_waiting_departures.remove_at(index)
+			continue
+
+		if not passenger_economy.try_spend_passengers(passenger_cost):
+			index += 1
+			continue
+
+		passenger_waiting_departures.remove_at(index)
+		runway_dispatcher.request_departure(aircraft, label)
+		hud.set_operation_status(
+			"%s boarded • %d passengers dispatched" % [label, passenger_cost],
+			"success"
+		)
 
 
 func _on_runway_status(text: String, tone: String) -> void:
@@ -358,6 +445,9 @@ func _apply_completed_flight_reward(
 			int(resource_inventory.get(resource_id, 0)) + amount
 		)
 
+	if passenger_economy != null:
+		passenger_economy.notify_country_resource_inventory_changed()
+
 	hud.set_player_data(player_level, coins, gems)
 	return_summary.show_reward(
 		label,
@@ -371,6 +461,134 @@ func _apply_completed_flight_reward(
 		],
 		"success"
 	)
+
+
+func _on_passenger_economy_changed(snapshot: Dictionary) -> void:
+	hud.set_passenger_status(snapshot)
+	if selected_passenger_building_uid >= 0:
+		_refresh_selected_passenger_building()
+
+
+func _on_collect_passengers_requested() -> void:
+	if passenger_economy == null:
+		return
+
+	var collected := passenger_economy.collect_all()
+	if collected > 0:
+		hud.set_operation_status(
+			"Collected %d passengers from landside buildings" % collected,
+			"success"
+		)
+		_try_release_passenger_waiters()
+	elif passenger_economy.passengers >= passenger_economy.terminal_capacity:
+		hud.set_operation_status("Terminal passenger storage is full", "warning")
+	else:
+		hud.set_operation_status("No passengers ready to collect yet")
+
+
+func _on_rewarded_passengers_requested() -> void:
+	if passenger_economy == null:
+		return
+
+	# Prototype hook. Production must call this reward only after the
+	# rewarded-ad SDK reports a completed view.
+	var granted := passenger_economy.claim_rewarded_ad()
+	if granted > 0:
+		hud.set_operation_status(
+			"Rewarded boost • +%d passengers" % granted,
+			"success"
+		)
+		_try_release_passenger_waiters()
+	else:
+		hud.set_operation_status(
+			"Passenger ad boost unavailable or terminal full",
+			"warning"
+		)
+
+
+func _on_friend_passengers_requested() -> void:
+	if passenger_economy == null:
+		return
+
+	# Temporary local identities until the online friends backend is connected.
+	var friend_id := "demo_friend_%02d" % demo_friend_gift_index
+	var granted := passenger_economy.claim_friend_gift(friend_id)
+	if granted > 0:
+		demo_friend_gift_index += 1
+		hud.set_operation_status(
+			"Friend gift • +%d passengers" % granted,
+			"success"
+		)
+		_try_release_passenger_waiters()
+	else:
+		hud.set_operation_status(
+			"Daily friend passenger limit reached or terminal full",
+			"warning"
+		)
+
+
+func _on_building_placed_for_passengers(building: Dictionary) -> void:
+	if passenger_economy == null:
+		return
+	passenger_economy.register_building(
+		int(building.get("uid", -1)),
+		String(building.get("definition_id", ""))
+	)
+
+
+func _on_placed_passenger_building_selected(building: Dictionary) -> void:
+	if passenger_economy == null:
+		return
+
+	var uid := int(building.get("uid", -1))
+	var state := passenger_economy.get_building_state(uid)
+	if state.is_empty():
+		return
+
+	selected_passenger_building_uid = uid
+	_refresh_selected_passenger_building()
+
+
+func _refresh_selected_passenger_building() -> void:
+	if passenger_economy == null or selected_passenger_building_uid < 0:
+		return
+
+	var building := airport_grid.get_building_by_uid(
+		selected_passenger_building_uid
+	)
+	if building.is_empty():
+		selected_passenger_building_uid = -1
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	var state := passenger_economy.get_building_state(
+		selected_passenger_building_uid
+	)
+	if definition.is_empty() or state.is_empty():
+		selected_passenger_building_uid = -1
+		return
+
+	hud.show_passenger_building(building, definition, state)
+
+
+func _on_passenger_building_upgrade_requested(uid: int) -> void:
+	if passenger_economy == null:
+		return
+
+	selected_passenger_building_uid = uid
+	if passenger_economy.try_upgrade_building(uid):
+		hud.set_operation_status(
+			"Passenger building upgraded using country resources",
+			"success"
+		)
+	else:
+		hud.set_operation_status(
+			"Missing country resources for this upgrade",
+			"warning"
+		)
+	_refresh_selected_passenger_building()
 
 
 func _on_navigation_requested(tab: String) -> void:
@@ -426,7 +644,7 @@ func _on_world_map_flight_assignment_requested(
 
 	if previous_state == "READY_FOR_DESTINATION":
 		aircraft.mark_service_complete()
-		runway_dispatcher.request_departure(aircraft, String(aircraft.name))
+		_request_departure_with_passengers(aircraft, String(aircraft.name))
 
 
 func _on_world_tapped(world_position: Vector2) -> void:
@@ -448,6 +666,7 @@ func _on_network_status_changed(status: Dictionary) -> void:
 
 
 func _on_parcel_selected(_parcel_id: String, parcel_data: Dictionary) -> void:
+	selected_passenger_building_uid = -1
 	if selected_building_id.is_empty():
 		hud.show_parcel(parcel_data, player_level, coins)
 
@@ -474,6 +693,7 @@ func _on_building_selected(building_id: String) -> void:
 	if definition.is_empty():
 		return
 
+	selected_passenger_building_uid = -1
 	selected_building_id = building_id
 	selected_building_rotation = 0
 	airport_grid.clear_parcel_selection()

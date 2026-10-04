@@ -19,6 +19,8 @@ var ground_services: GroundServiceDispatcher
 var runway_dispatcher: RunwayDispatcher
 var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
+var pending_passenger_departures: Array[Dictionary] = []
+var processing_passenger_queue := false
 var world_map: WorldMapScreen
 var return_summary: FlightReturnSummary
 var resource_inventory_screen: ResourceInventoryScreen
@@ -223,7 +225,7 @@ func _spawn_aircraft_demos() -> void:
 
 
 func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
-	runway_dispatcher.request_departure(aircraft, label)
+	_attempt_boarding_and_departure(aircraft, label)
 
 
 func _on_runway_status(text: String, tone: String) -> void:
@@ -280,6 +282,15 @@ func _on_demo_aircraft_state_changed(
 		"READY_FOR_DESTINATION":
 			hud.set_operation_status(
 				"%s fueled • choose destination" % label,
+				"warning"
+			)
+		"WAITING_PASSENGERS":
+			var required := _passenger_requirement(aircraft)
+			hud.set_operation_status(
+				"%s waiting for passengers • needs %d" % [
+					label,
+					required
+				],
 				"warning"
 			)
 		"READY_FOR_DEPARTURE":
@@ -521,9 +532,12 @@ func _on_world_map_flight_assignment_requested(
 		]
 	)
 
-	if previous_state == "READY_FOR_DESTINATION":
+	if previous_state in ["READY_FOR_DESTINATION", "WAITING_PASSENGERS"]:
 		aircraft.mark_service_complete()
-		runway_dispatcher.request_departure(aircraft, String(aircraft.name))
+		_attempt_boarding_and_departure(
+			aircraft,
+			String(aircraft.name)
+		)
 
 
 func _on_world_tapped(world_position: Vector2) -> void:
@@ -549,6 +563,113 @@ func _on_passenger_economy_changed(
 	var updated := ProfileStore.save_passenger_balance(passengers)
 	if not updated.is_empty():
 		current_profile = updated
+
+	if not processing_passenger_queue:
+		_try_board_waiting_aircraft()
+
+
+func _passenger_requirement(aircraft: AircraftPrototype) -> int:
+	var profile := aircraft.get_aircraft_profile()
+	return maxi(int(profile.get("passengers", 0)), 0)
+
+
+func _attempt_boarding_and_departure(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	var required := _passenger_requirement(aircraft)
+	if required <= 0:
+		_remove_passenger_waiter(aircraft)
+		runway_dispatcher.request_departure(aircraft, label)
+		return
+
+	processing_passenger_queue = true
+	var boarded := passenger_economy.spend_passengers(required)
+	processing_passenger_queue = false
+
+	if boarded:
+		_remove_passenger_waiter(aircraft)
+		if aircraft.state == "WAITING_PASSENGERS":
+			aircraft.mark_service_complete()
+		hud.set_operation_status(
+			"%s boarded %d passengers • awaiting runway" % [
+				label,
+				required
+			],
+			"success"
+		)
+		runway_dispatcher.request_departure(aircraft, label)
+		return
+
+	aircraft.mark_waiting_passengers()
+	if not _is_passenger_waiter(aircraft):
+		pending_passenger_departures.append({
+			"aircraft": aircraft,
+			"label": label
+		})
+
+	hud.set_operation_status(
+		"%s waiting for passengers • %d / %d available" % [
+			label,
+			passenger_economy.get_passengers(),
+			required
+		],
+		"warning"
+	)
+
+
+func _try_board_waiting_aircraft() -> void:
+	if processing_passenger_queue:
+		return
+
+	processing_passenger_queue = true
+	var index := 0
+	while index < pending_passenger_departures.size():
+		var request: Dictionary = pending_passenger_departures[index]
+		var aircraft := request.get("aircraft") as AircraftPrototype
+		var label := String(request.get("label", "Aircraft"))
+
+		if aircraft == null or not is_instance_valid(aircraft):
+			pending_passenger_departures.remove_at(index)
+			continue
+
+		var required := _passenger_requirement(aircraft)
+		if passenger_economy.get_passengers() < required:
+			index += 1
+			continue
+
+		if not passenger_economy.spend_passengers(required):
+			index += 1
+			continue
+
+		pending_passenger_departures.remove_at(index)
+		aircraft.mark_service_complete()
+		runway_dispatcher.request_departure(aircraft, label)
+		hud.set_operation_status(
+			"%s boarded %d passengers • released for departure" % [
+				label,
+				required
+			],
+			"success"
+		)
+
+	processing_passenger_queue = false
+
+
+func _is_passenger_waiter(aircraft: AircraftPrototype) -> bool:
+	for request in pending_passenger_departures:
+		if request.get("aircraft") == aircraft:
+			return true
+	return false
+
+
+func _remove_passenger_waiter(aircraft: AircraftPrototype) -> void:
+	for index in range(pending_passenger_departures.size() - 1, -1, -1):
+		if pending_passenger_departures[index].get("aircraft") == aircraft:
+			pending_passenger_departures.remove_at(index)
 
 
 func _on_building_selected_world(building: Dictionary) -> void:

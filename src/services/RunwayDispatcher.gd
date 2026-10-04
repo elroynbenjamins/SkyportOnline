@@ -19,11 +19,58 @@ var atc_emit_accumulator := 0.0
 var airport_grid: AirportGrid
 var separation_multiplier := 1.0
 var active_atc_building: Dictionary = {}
+var runway_strategy_by_uid: Dictionary = {}
 
 
-func configure(grid: AirportGrid) -> void:
+func configure(
+	grid: AirportGrid,
+	strategies_by_key: Dictionary = {}
+) -> void:
 	airport_grid = grid
+	set_runway_strategies(strategies_by_key)
 	refresh_air_traffic_control()
+
+
+func set_runway_strategies(
+	strategies_by_key: Dictionary
+) -> void:
+	runway_strategy_by_uid.clear()
+	if airport_grid == null:
+		return
+
+	for runway in airport_grid.get_runway_buildings():
+		var runway_uid := int(
+			runway.get("uid", -1)
+		)
+		var building_key := String(
+			runway.get("building_key", "")
+		)
+		if runway_uid < 0:
+			continue
+		var strategy := RunwayStrategyRules.AUTO
+		if (
+			not building_key.is_empty()
+			and strategies_by_key.has(building_key)
+		):
+			strategy = RunwayStrategyRules.normalize(
+				String(strategies_by_key[building_key])
+			)
+		runway_strategy_by_uid[runway_uid] = strategy
+
+	for runway_uid in _known_runway_uids():
+		_emit_runway_visual_state(runway_uid)
+	_emit_atc_state()
+
+
+func get_runway_strategy(runway_uid: int) -> String:
+	return RunwayStrategyRules.normalize(
+		String(
+			runway_strategy_by_uid.get(
+				runway_uid,
+				RunwayStrategyRules.AUTO
+			)
+		)
+	)
 
 
 func refresh_air_traffic_control() -> void:
@@ -419,7 +466,20 @@ func get_runway_assignment_score(
 		runway_uid,
 		operation
 	)
+	var runway_count := 1
+	if airport_grid != null:
+		runway_count = maxi(
+			airport_grid.get_runway_buildings().size(),
+			1
+		)
+	var strategy := get_runway_strategy(runway_uid)
+
 	var score := active_penalty
+	score += RunwayStrategyRules.score_adjustment(
+		strategy,
+		operation,
+		runway_count
+	)
 	score += float(waiting_arrivals) * 36.0
 	score += float(waiting_departures) * 22.0
 	score += float(planned_count) * 12.0
@@ -492,7 +552,8 @@ func get_atc_snapshot() -> Dictionary:
 				"uid",
 				-1
 			)
-		)
+		),
+		"runway_strategy_count": runway_strategy_by_uid.size()
 	}
 
 
@@ -825,7 +886,11 @@ func _build_runway_visual_state(
 		"taxiing_departures": taxiing_departures,
 		"arrival_priority": waiting_arrivals > 0,
 		"separation_remaining": spacing_remaining,
-		"next_operation": next_operation
+		"next_operation": next_operation,
+		"strategy": get_runway_strategy(runway_uid),
+		"strategy_label": RunwayStrategyRules.short_label(
+			get_runway_strategy(runway_uid)
+		)
 	}
 
 
@@ -913,6 +978,10 @@ func _build_atc_runway_state(
 
 	var result := visual.duplicate(true)
 	result["active_label"] = active_label
+	result["strategy"] = get_runway_strategy(runway_uid)
+	result["strategy_label"] = RunwayStrategyRules.short_label(
+		get_runway_strategy(runway_uid)
+	)
 	result["waiting"] = queue.size()
 	result["taxiing_to_hold"] = taxiing
 	result["sequence"] = sequence

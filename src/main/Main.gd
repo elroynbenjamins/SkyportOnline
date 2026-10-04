@@ -5,6 +5,7 @@ extends Node2D
 @onready var hud = $HUD
 
 var player_level: int = 4
+var airport_xp: int = 0
 var coins: int = 18420
 var gems: int = 120
 
@@ -29,8 +30,15 @@ func _ready() -> void:
 	hud.cancel_building_requested.connect(_on_cancel_building_requested)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
-	hud.set_player_data(player_level, coins, gems)
+	hud.set_player_data(
+		player_level,
+		coins,
+		gems,
+		airport_xp,
+		LevelProgression.xp_to_next(player_level)
+	)
 	hud.set_airside_status(airport_grid.get_airside_status())
+	hud.set_flight_status("Assigning starter routes...")
 	airport_grid.select_parcel("north")
 
 	_setup_ground_services()
@@ -61,17 +69,23 @@ func _spawn_aircraft_demos() -> void:
 		hud.set_operation_status("No connected S-class stand/runway.", "warning")
 		return
 
-	var count := mini(routes.size(), 2)
+	var starter_aircraft_ids := PackedStringArray(["pico_p8", "swift_s14"])
+	var count := mini(mini(routes.size(), 2), starter_aircraft_ids.size())
 	for index in range(count):
 		var route_info: Dictionary = routes[index]
 		var route: PackedVector2Array = route_info.get("route", PackedVector2Array())
 		if route.size() < 2:
 			continue
 
+		var definition := AircraftCatalog.get_definition(starter_aircraft_ids[index])
+		if definition.is_empty():
+			continue
+
 		var label := "SO-%03d" % (index + 1)
 		var aircraft := AircraftPrototype.new()
 		aircraft.name = label
 		aircraft.z_index = 80 + index
+		aircraft.configure_aircraft(definition)
 		aircraft.state_changed.connect(
 			_on_demo_aircraft_state_changed.bind(aircraft, label)
 		)
@@ -88,10 +102,11 @@ func _spawn_aircraft_demos() -> void:
 		var runway_uid := int(route_info.get("runway_uid", -1))
 		aircraft.set_departure_route(
 			route,
-			"S",
+			aircraft.aircraft_size,
 			stand_uid,
 			runway_uid
 		)
+		_assign_best_flight(aircraft, label)
 		stand_occupancy[stand_uid] = aircraft
 		aircraft_demos.append(aircraft)
 		ground_services.request_fuel(aircraft, label)
@@ -99,6 +114,82 @@ func _spawn_aircraft_demos() -> void:
 	hud.set_operation_status(
 		"%d aircraft awaiting turnaround" % aircraft_demos.size()
 	)
+
+
+func _assign_best_flight(aircraft: AircraftPrototype, label: String) -> bool:
+	if aircraft == null or aircraft.aircraft_definition.is_empty():
+		return false
+
+	var manifest := FlightEconomy.best_manifest_for_aircraft(
+		aircraft.aircraft_definition,
+		player_level
+	)
+	if manifest.is_empty():
+		hud.set_flight_status(
+			"%s has no compatible route at airport Lv %d." % [label, player_level],
+			"warning"
+		)
+		return false
+
+	aircraft.assign_flight(manifest)
+	hud.set_flight_status(
+		"%s planned: %s → %s • %d/%d pax • ~%d min" % [
+			label,
+			String(manifest.get("route_name", "Route")),
+			String(manifest.get("destination_name", "Destination")),
+			int(manifest.get("passengers", 0)),
+			int(manifest.get("capacity", 0)),
+			int(manifest.get("duration_minutes", 0))
+		]
+	)
+	return true
+
+
+func _settle_completed_flight(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	var manifest := aircraft.get_flight_manifest()
+	if manifest.is_empty():
+		return
+
+	var profit := int(manifest.get("net_profit", 0))
+	var xp_reward := int(manifest.get("xp_reward", 0))
+	coins += profit
+
+	var progression := LevelProgression.add_xp(
+		player_level,
+		airport_xp,
+		xp_reward
+	)
+	var previous_level := player_level
+	player_level = int(progression.get("level", player_level))
+	airport_xp = int(progression.get("xp", airport_xp))
+
+	hud.set_player_data(
+		player_level,
+		coins,
+		gems,
+		airport_xp,
+		int(progression.get("xp_to_next", 0))
+	)
+	hud.set_flight_status(
+		"%s returned from %s • +🪙 %d net • +%d XP" % [
+			label,
+			String(manifest.get("destination_name", "route")),
+			profit,
+			xp_reward
+		],
+		"success"
+	)
+
+	if player_level > previous_level:
+		hud.set_operation_status(
+			"Airport level %d reached • new unlocks available" % player_level,
+			"success"
+		)
+
+	aircraft.clear_flight_manifest()
 
 
 func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
@@ -145,7 +236,19 @@ func _on_demo_aircraft_state_changed(
 		"CLIMBING":
 			hud.set_operation_status("%s airborne • climbing" % label, "success")
 		"EN_ROUTE":
+			var manifest := aircraft.get_flight_manifest()
 			hud.set_operation_status("%s en route" % label, "success")
+			if not manifest.is_empty():
+				hud.set_flight_status(
+					"%s → %s • %d/%d pax • ~%d min • est. 🪙 %d net" % [
+						label,
+						String(manifest.get("destination_name", "Destination")),
+						int(manifest.get("passengers", 0)),
+						int(manifest.get("capacity", 0)),
+						int(manifest.get("duration_minutes", 0)),
+						int(manifest.get("net_profit", 0))
+					]
+				)
 		"HOLDING_FOR_ARRIVAL":
 			hud.set_operation_status("%s inbound • awaiting stand/runway" % label)
 		"APPROACH":
@@ -168,10 +271,20 @@ func _on_demo_aircraft_state_changed(
 
 
 func _on_demo_aircraft_departed(
-	_aircraft: AircraftPrototype,
+	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
 	hud.set_operation_status("%s departed airport" % label, "success")
+	var manifest := aircraft.get_flight_manifest()
+	if not manifest.is_empty():
+		hud.set_flight_status(
+			"%s departed for %s • %d km • ~%d min" % [
+				label,
+				String(manifest.get("destination_name", "Destination")),
+				int(manifest.get("distance_km", 0)),
+				int(manifest.get("duration_minutes", 0))
+			]
+		)
 
 
 func _on_demo_arrival_requested(
@@ -250,6 +363,8 @@ func _on_demo_arrival_completed(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
+	_settle_completed_flight(aircraft, label)
+
 	var route_info: Dictionary = airport_grid.get_departure_route_for_stand(
 		aircraft.stand_uid,
 		aircraft.aircraft_size
@@ -271,6 +386,7 @@ func _on_demo_arrival_completed(
 		int(route_info.get("stand_uid", -1)),
 		int(route_info.get("runway_uid", -1))
 	)
+	_assign_best_flight(aircraft, label)
 	ground_services.request_fuel(aircraft, label)
 
 

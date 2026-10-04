@@ -24,6 +24,8 @@ const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
 const AIRSIDE_WARNING := Color("ffb84d")
 const AIRSIDE_CONNECTED := Color("76d39b")
+const HOLD_SHORT_SOLID := Color("f5d76e")
+const HOLD_SHORT_DASH := Color("fff2a8")
 
 var parcels: Dictionary = {}
 var selected_id := ""
@@ -109,6 +111,7 @@ func _draw() -> void:
 			_draw_parcel_tiles(parcel)
 
 	_draw_buildings()
+	_draw_runway_hold_short_markings()
 	_draw_airside_warnings()
 	_draw_build_preview()
 	_draw_selected_outline()
@@ -243,6 +246,112 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 	if connections == 0:
 		draw_line(center + Vector2(-8, 4), center + Vector2(8, -4), Color("f0c94c"), 3.0)
 	draw_circle(center, 3.5, Color("f4d866"))
+
+
+func _draw_runway_hold_short_markings() -> void:
+	var seen: Dictionary = {}
+	for building in placed_buildings:
+		if String(building.get("definition_id", "")) != "taxiway":
+			continue
+
+		var taxi_cell: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		for runway_cell in _adjacent_runway_cells(taxi_cell):
+			var key := "%s>%s" % [
+				_cell_key(taxi_cell),
+				_cell_key(runway_cell)
+			]
+			if seen.has(key):
+				continue
+			seen[key] = true
+
+			var taxi_center := tile_to_world(
+				Vector2(taxi_cell.x, taxi_cell.y)
+			)
+			var runway_center := tile_to_world(
+				Vector2(runway_cell.x, runway_cell.y)
+			)
+			var direction := (
+				runway_center - taxi_center
+			).normalized()
+			if direction == Vector2.ZERO:
+				continue
+
+			var hold := _hold_short_world_position(
+				taxi_cell,
+				runway_cell
+			)
+			var normal := Vector2(
+				-direction.y,
+				direction.x
+			)
+			var half_width := 12.0
+
+			for distance in [-3.0, 1.0]:
+				draw_line(
+					hold
+					+ direction * distance
+					- normal * half_width,
+					hold
+					+ direction * distance
+					+ normal * half_width,
+					HOLD_SHORT_SOLID,
+					2.0
+				)
+
+			for side in [-1.0, 1.0]:
+				var dash_center := (
+					hold
+					+ direction * 5.0
+					+ normal * 6.0 * side
+				)
+				draw_line(
+					dash_center - normal * 3.0,
+					dash_center + normal * 3.0,
+					HOLD_SHORT_DASH,
+					2.0
+				)
+
+
+func _hold_short_world_position(
+	taxiway_cell: Vector2i,
+	runway_cell: Vector2i
+) -> Vector2:
+	var taxi_center := tile_to_world(
+		Vector2(taxiway_cell.x, taxiway_cell.y)
+	)
+	var runway_center := tile_to_world(
+		Vector2(runway_cell.x, runway_cell.y)
+	)
+	return taxi_center.lerp(runway_center, 0.58)
+
+
+func _adjacent_runway_cells(
+	taxiway_cell: Vector2i
+) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for neighbor in _orthogonal_neighbors(taxiway_cell):
+		for building in placed_buildings:
+			var definition := BuildingCatalog.get_definition(
+				String(building.get("definition_id", ""))
+			)
+			if definition.is_empty() or not _is_runway_definition(
+				definition
+			):
+				continue
+			var footprint := _footprint_for(
+				definition,
+				int(building.get("rotation", 0))
+			)
+			if _cells_for(
+				building["origin"],
+				footprint
+			).has(neighbor):
+				result.append(neighbor)
+				break
+	return result
 
 
 func _taxiway_visually_connects_to(cell: Vector2i) -> bool:
@@ -891,9 +1000,15 @@ func get_departure_routes(aircraft_size: String = "S") -> Array[Dictionary]:
 		var runway_uid := _runway_uid_for_cell(runway_entry, aircraft_size)
 		var points := PackedVector2Array()
 		var stand_position := _footprint_center_world(building["origin"], footprint)
+		var last_taxi_cell: Vector2i = taxi_path[taxi_path.size() - 1]
+		var hold_short_position := _hold_short_world_position(
+			last_taxi_cell,
+			runway_entry
+		)
 		points.append(stand_position)
 		for taxi_cell in taxi_path:
 			points.append(tile_to_world(Vector2(taxi_cell.x, taxi_cell.y)))
+		points.append(hold_short_position)
 		points.append(tile_to_world(Vector2(runway_entry.x, runway_entry.y)))
 		if runway_exit != runway_entry:
 			points.append(tile_to_world(Vector2(runway_exit.x, runway_exit.y)))
@@ -903,6 +1018,7 @@ func get_departure_routes(aircraft_size: String = "S") -> Array[Dictionary]:
 			"stand_definition_id": String(building["definition_id"]),
 			"stand_world_position": stand_position,
 			"runway_uid": runway_uid,
+			"hold_short_position": hold_short_position,
 			"route": points
 		})
 
@@ -953,6 +1069,10 @@ func get_arrival_routes(aircraft_size: String = "S") -> Array[Dictionary]:
 				Vector2.ZERO
 			),
 			"runway_uid": int(departure.get("runway_uid", -1)),
+			"hold_short_position": departure.get(
+				"hold_short_position",
+				Vector2.ZERO
+			),
 			"route": arrival_points
 		})
 

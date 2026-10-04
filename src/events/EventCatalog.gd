@@ -8,6 +8,218 @@ const SECONDS_PER_DAY := 86400
 static func all() -> Array[Dictionary]:
 	return [
 		{
+			"id": "autumn_airbridge_2026",
+			"enabled": true,
+			"name": "Autumn Airbridge",
+			"short_name": "AUTUMN AIRBRIDGE",
+			"currency_id": "autumn_voucher",
+			"currency_name": "Autumn Vouchers",
+			"start_unix": 1790812800,
+			"theme": "autumn",
+			"featured_destinations": [
+				"brussels",
+				"london",
+				"paris"
+			],
+			"featured_route_currency": 5,
+			"quests": [
+				{
+					"id": "autumn_w1_flights",
+					"week": 1,
+					"title": "Opening Airbridge",
+					"metric": "flights_completed",
+					"target": 5,
+					"currency_reward": 40,
+					"alliance_points": 10
+				},
+				{
+					"id": "autumn_w1_brussels",
+					"week": 1,
+					"title": "Brussels Harvest Shuttle",
+					"metric": "destination_flights",
+					"destination_id": "brussels",
+					"target": 3,
+					"currency_reward": 45,
+					"alliance_points": 12
+				},
+				{
+					"id": "autumn_w1_passengers",
+					"week": 1,
+					"title": "Autumn Travelers",
+					"metric": "passengers_boarded",
+					"target": 40,
+					"currency_reward": 40,
+					"alliance_points": 10
+				},
+				{
+					"id": "autumn_w1_resources",
+					"week": 1,
+					"title": "Harvest Cargo",
+					"metric": "resources_earned",
+					"target": 4,
+					"currency_reward": 40,
+					"alliance_points": 10
+				},
+				{
+					"id": "autumn_w2_london",
+					"week": 2,
+					"title": "London Leaflift",
+					"metric": "destination_flights",
+					"destination_id": "london",
+					"target": 5,
+					"currency_reward": 55,
+					"alliance_points": 15
+				},
+				{
+					"id": "autumn_w2_passengers",
+					"week": 2,
+					"title": "Busy Autumn Terminals",
+					"metric": "passengers_boarded",
+					"target": 100,
+					"currency_reward": 50,
+					"alliance_points": 15
+				},
+				{
+					"id": "autumn_w2_coins",
+					"week": 2,
+					"title": "Golden Routes",
+					"metric": "flight_coins",
+					"target": 4500,
+					"currency_reward": 50,
+					"alliance_points": 15
+				},
+				{
+					"id": "autumn_w2_resources",
+					"week": 2,
+					"title": "Regional Supplies",
+					"metric": "resources_earned",
+					"target": 9,
+					"currency_reward": 50,
+					"alliance_points": 15
+				},
+				{
+					"id": "autumn_w3_paris",
+					"week": 3,
+					"title": "Paris Finale",
+					"metric": "destination_flights",
+					"destination_id": "paris",
+					"target": 6,
+					"currency_reward": 70,
+					"alliance_points": 20
+				},
+				{
+					"id": "autumn_w3_flights",
+					"week": 3,
+					"title": "Closing Airshow",
+					"metric": "flights_completed",
+					"target": 15,
+					"currency_reward": 60,
+					"alliance_points": 20
+				},
+				{
+					"id": "autumn_w3_passengers",
+					"week": 3,
+					"title": "Finale Crowds",
+					"metric": "passengers_boarded",
+					"target": 180,
+					"currency_reward": 60,
+					"alliance_points": 20
+				},
+				{
+					"id": "autumn_w3_resources",
+					"week": 3,
+					"title": "Grand Harvest",
+					"metric": "resources_earned",
+					"target": 14,
+					"currency_reward": 60,
+					"alliance_points": 20
+				}
+			],
+			"shop": [
+				{
+					"id": "autumn_airport_border",
+					"name": "Autumn Airport Border",
+					"type": "cosmetic",
+					"cosmetic_id": "event_autumn_airport_border",
+					"price": 160,
+					"purchase_limit": 1
+				},
+				{
+					"id": "autumn_terminal_skin",
+					"name": "Autumn Terminal Skin",
+					"type": "cosmetic",
+					"cosmetic_id": "event_autumn_terminal_skin",
+					"price": 220,
+					"purchase_limit": 1
+				},
+				{
+					"id": "autumn_pico_livery",
+					"name": "Harvest Pico Livery",
+					"type": "cosmetic",
+					"cosmetic_id": "event_autumn_pico_livery",
+					"price": 260,
+					"purchase_limit": 1
+				},
+				{
+					"id": "autumn_alliance_flag",
+					"name": "Autumn Alliance Flag",
+					"type": "cosmetic",
+					"cosmetic_id": "event_autumn_alliance_flag",
+					"price": 180,
+					"purchase_limit": 1
+				},
+				{
+					"id": "autumn_passengers_25",
+					"name": "+25 Passengers",
+					"type": "passengers",
+					"passengers": 25,
+					"price": 25,
+					"purchase_limit": 3
+				},
+				{
+					"id": "autumn_passengers_75",
+					"name": "+75 Passengers",
+					"type": "passengers",
+					"passengers": 75,
+					"price": 60,
+					"purchase_limit": 1
+				}
+			],
+			"alliance": {
+				"enabled": true,
+				"milestones": [
+					{
+						"id": "autumn_alliance_150",
+						"target": 150,
+						"reward_type": "currency",
+						"currency_reward": 50,
+						"name": "Autumn Warm-Up"
+					},
+					{
+						"id": "autumn_alliance_400",
+						"target": 400,
+						"reward_type": "cosmetic",
+						"cosmetic_id": "event_autumn_alliance_emblem",
+						"name": "Autumn Alliance Emblem"
+					},
+					{
+						"id": "autumn_alliance_800",
+						"target": 800,
+						"reward_type": "currency",
+						"currency_reward": 100,
+						"name": "Autumn Night Flights"
+					},
+					{
+						"id": "autumn_alliance_1400",
+						"target": 1400,
+						"reward_type": "currency",
+						"currency_reward": 150,
+						"name": "Autumn Grand Finale"
+					}
+				]
+			}
+		},
+		{
 			"id": "sky_lantern_festival_2026",
 			"enabled": false,
 			"name": "Sky Lantern Festival",

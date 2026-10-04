@@ -6,34 +6,42 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var slow := AircraftCatalog.get_profile("aerolet_100")
-	var fast := AircraftCatalog.get_profile("aerolet_120")
+	var slow := AircraftCatalog.get_profile("pico_p8")
+	var fast := AircraftCatalog.get_profile("swift_s14")
+	var brussels := DestinationCatalog.get_destination("brussels")
 	var london := DestinationCatalog.get_destination("london")
-	var paris := DestinationCatalog.get_destination("paris")
 
 	if slow.is_empty() or fast.is_empty():
-		_fail("Prototype aircraft profiles should exist.")
+		_fail("V1 Pico and Swift aircraft profiles should exist.")
 		return
-	if london.is_empty() or paris.is_empty():
+	if brussels.is_empty() or london.is_empty():
 		_fail("Starter Europe destinations should exist.")
 		return
 
-	var slow_london := FlightRules.duration_seconds(slow, london)
-	var fast_london := FlightRules.duration_seconds(fast, london)
+	var slow_brussels := FlightRules.duration_seconds(slow, brussels)
+	var fast_brussels := FlightRules.duration_seconds(fast, brussels)
 
-	if slow_london <= fast_london:
-		_fail("Slower aircraft type should remain away longer on same route.")
+	if slow_brussels <= fast_brussels:
+		_fail("Slower aircraft type should remain away longer on the same route.")
 		return
-	if slow_london < 180.0:
+	if slow_brussels < 180.0:
 		_fail("Starter flight timers should no longer be demo-length seconds.")
 		return
 
-	var slow_plan := FlightRules.create_flight_plan(slow, paris)
+	var slow_plan := FlightRules.create_flight_plan(slow, brussels)
 	if slow_plan.is_empty():
-		_fail("In-range destination should create a flight plan.")
+		_fail("Pico P8 should create an in-range Brussels flight plan.")
 		return
 	if float(slow_plan.get("duration_seconds", 0.0)) <= 0.0:
 		_fail("Flight plan should contain a positive timer.")
+		return
+
+	var swift_london := FlightRules.create_flight_plan(fast, london)
+	if swift_london.is_empty():
+		_fail("Swift S14 should reach London at 360 km.")
+		return
+	if FlightRules.can_fly(slow, london):
+		_fail("Pico P8 should not reach London with its 320 km range.")
 		return
 
 	var unreachable := {
@@ -53,7 +61,7 @@ func _run() -> void:
 
 	var plane := AircraftPrototype.new()
 	root.add_child(plane)
-	plane.configure_aircraft_type("aerolet_100")
+	plane.configure_aircraft_type("pico_p8")
 	plane.assign_flight_plan(slow_plan)
 
 	if plane.aircraft_display_name != String(slow.get("name", "")):
@@ -63,11 +71,16 @@ func _run() -> void:
 		_fail("Aircraft should retain its assigned flight plan.")
 		return
 
+	plane.clear_flight_plan()
+	if not plane.get_flight_plan().is_empty():
+		_fail("Returned aircraft should be able to clear its completed flight plan.")
+		return
+
 	print(
-		"Flight timer rules passed: slow London %s, fast London %s."
+		"Flight timer rules passed: Pico Brussels %s, Swift Brussels %s."
 		% [
-			FlightRules.format_duration(slow_london),
-			FlightRules.format_duration(fast_london)
+			FlightRules.format_duration(slow_brussels),
+			FlightRules.format_duration(fast_brussels)
 		]
 	)
 	quit(0)

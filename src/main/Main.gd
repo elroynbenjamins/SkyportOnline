@@ -32,6 +32,7 @@ var passenger_economy: PassengerEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var event_manager: EventManager
 var event_screen: EventScreen
+var cosmetic_screen: CosmeticScreen
 var current_profile: Dictionary = {}
 var gameplay_started := false
 
@@ -109,10 +110,12 @@ func _start_gameplay() -> void:
 	_setup_event_system()
 	_setup_rewarded_passenger_ad_bridge()
 	_setup_resource_inventory()
+	_setup_cosmetic_screen()
 	_setup_passenger_upgrade_panel()
 	_setup_service_upgrade_panel()
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
+	_apply_cosmetic_loadout()
 
 
 func _setup_ground_services() -> void:
@@ -220,7 +223,18 @@ func _setup_resource_inventory() -> void:
 	resource_inventory_screen.rewarded_passenger_boost_requested.connect(
 		_on_rewarded_passenger_boost_requested
 	)
+	resource_inventory_screen.customize_requested.connect(
+		_on_customize_requested
+	)
 	add_child(resource_inventory_screen)
+
+
+func _setup_cosmetic_screen() -> void:
+	cosmetic_screen = CosmeticScreen.new()
+	cosmetic_screen.equip_requested.connect(
+		_on_cosmetic_equip_requested
+	)
+	add_child(cosmetic_screen)
 
 
 func _setup_passenger_upgrade_panel() -> void:
@@ -294,6 +308,18 @@ func _spawn_aircraft_demos() -> void:
 		)
 		stand_occupancy[stand_uid] = aircraft
 		aircraft_demos.append(aircraft)
+		var equipped: Dictionary = current_profile.get(
+			"equipped_cosmetics",
+			{}
+		)
+		aircraft.set_livery_cosmetic(
+			String(
+				equipped.get(
+					CosmeticCatalog.SLOT_AIRCRAFT_LIVERY,
+					""
+				)
+			)
+		)
 		ground_services.request_turnaround(aircraft, label, false)
 
 	hud.set_operation_status(
@@ -919,6 +945,77 @@ func _on_event_shop_purchase_requested(item_id: String) -> void:
 func _on_event_alliance_claim_requested(milestone_id: String) -> void:
 	if event_manager != null:
 		event_manager.claim_alliance_milestone(milestone_id)
+
+
+func _on_customize_requested() -> void:
+	if resource_inventory_screen != null:
+		resource_inventory_screen.close_inventory()
+
+	var profile := ProfileStore.load_profile()
+	if profile.is_empty():
+		return
+	current_profile = profile
+	cosmetic_screen.open_customization(
+		profile.get("owned_cosmetics", {}),
+		profile.get("equipped_cosmetics", {})
+	)
+
+
+func _on_cosmetic_equip_requested(
+	slot: String,
+	cosmetic_id: String
+) -> void:
+	var updated := ProfileStore.equip_cosmetic(
+		slot,
+		cosmetic_id
+	)
+	if updated.is_empty():
+		hud.set_operation_status(
+			"Cosmetic could not be equipped.",
+			"warning"
+		)
+		return
+
+	current_profile = updated
+	_apply_cosmetic_loadout()
+	cosmetic_screen.refresh(
+		current_profile.get("owned_cosmetics", {}),
+		current_profile.get("equipped_cosmetics", {})
+	)
+
+	var label := "Default style"
+	if not cosmetic_id.is_empty():
+		var cosmetic := CosmeticCatalog.get_cosmetic(
+			cosmetic_id
+		)
+		label = String(
+			cosmetic.get("name", "Cosmetic")
+		)
+	hud.set_operation_status(
+		"%s equipped" % label,
+		"success"
+	)
+
+
+func _apply_cosmetic_loadout() -> void:
+	var loadout: Dictionary = current_profile.get(
+		"equipped_cosmetics",
+		{}
+	).duplicate(true)
+
+	hud.set_cosmetic_loadout(loadout)
+	airport_grid.set_cosmetic_loadout(loadout)
+
+	var livery_id := String(
+		loadout.get(
+			CosmeticCatalog.SLOT_AIRCRAFT_LIVERY,
+			""
+		)
+	)
+	for aircraft in aircraft_demos:
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+		aircraft.set_livery_cosmetic(livery_id)
 
 
 func _create_current_flight_plan(

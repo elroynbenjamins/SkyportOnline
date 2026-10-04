@@ -23,6 +23,13 @@ func _run() -> void:
 	# HUD has no global class_name; the existing main-scene smoke test
 	# validates HUD construction. The remaining screens can be built directly.
 
+	var hud_script := load("res://src/ui/HUD.gd")
+	if hud_script == null:
+		_fail("HUD script should load for modernization regression.")
+		return
+	var hud = hud_script.new()
+	root.add_child(hud)
+
 	var world := WorldMapScreen.new()
 	root.add_child(world)
 
@@ -48,6 +55,62 @@ func _run() -> void:
 	root.add_child(setup)
 
 	await process_frame
+
+	if hud.airside_status_chip == null:
+		_fail("Airport HUD should expose compact Airfield status chip.")
+		return
+	if hud.operation_status_chip == null:
+		_fail("Airport HUD should expose compact Ground Ops status chip.")
+		return
+	if hud.atc_status_chip == null:
+		_fail("Airport HUD should expose compact ATC status chip.")
+		return
+	if hud.status_detail_panel == null:
+		_fail("Airport HUD should expose contextual status detail drawer.")
+		return
+	if hud.status_detail_panel.visible:
+		_fail("Airport status detail drawer should start collapsed.")
+		return
+	if hud.catalog_filter_buttons.size() < 6:
+		_fail("Build Tray should expose category filter chips.")
+		return
+
+	if world.route_card_label == null:
+		_fail("World Map should expose compact Route information card.")
+		return
+	if world.reward_card_label == null:
+		_fail("World Map should expose compact Reward information card.")
+		return
+	if world.resource_card_label == null:
+		_fail("World Map should expose compact Resource information card.")
+		return
+	if world.aircraft_fit_label == null:
+		_fail("World Map should expose compact Aircraft Fit card.")
+		return
+
+	if passenger_upgrade.current_stats_label == null:
+		_fail("Passenger upgrade should show Current stat card.")
+		return
+	if passenger_upgrade.next_stats_label == null:
+		_fail("Passenger upgrade should show Next stat card.")
+		return
+
+	if service_upgrade.current_stats_label == null:
+		_fail("Service upgrade should show Current stat card.")
+		return
+	if service_upgrade.next_stats_label == null:
+		_fail("Service upgrade should show Next stat card.")
+		return
+
+	if return_summary.coin_tile_label == null:
+		_fail("Flight return should show Coin reward tile.")
+		return
+	if return_summary.xp_tile_label == null:
+		_fail("Flight return should show XP reward tile.")
+		return
+	if return_summary.mastery_tile_label == null:
+		_fail("Flight return should show Mastery reward tile.")
+		return
 
 	for screen in [
 		world.root,
@@ -84,8 +147,9 @@ func _run() -> void:
 		return
 
 	print(
-		"UI modernization passed: shared cards/buttons, all major screens, "
-		+ "and game-first country map surface."
+		"UI modernization passed: compact airport chips, build tray, "
+		+ "World Map cards, upgrade comparisons, reward tiles, and "
+		+ "shared game styling."
 	)
 	quit(0)
 

@@ -134,7 +134,13 @@ func _setup_runway_dispatcher() -> void:
 	runway_dispatcher.runway_visual_state_changed.connect(
 		_on_runway_visual_state_changed
 	)
+	runway_dispatcher.atc_state_changed.connect(
+		_on_atc_state_changed
+	)
 	add_child(runway_dispatcher)
+	hud.set_atc_state(
+		runway_dispatcher.get_atc_snapshot()
+	)
 	ground_services.aircraft_serviced.connect(_on_aircraft_serviced)
 
 
@@ -329,6 +335,12 @@ func _on_runway_visual_state_changed(
 	)
 
 
+func _on_atc_state_changed(
+	snapshot: Dictionary
+) -> void:
+	hud.set_atc_state(snapshot)
+
+
 func _on_taxi_hold_changed(
 	aircraft: AircraftPrototype,
 	holding: bool,
@@ -351,7 +363,7 @@ func _on_taxi_hold_changed(
 func _on_runway_queue_changed(waiting: int, active: int) -> void:
 	if waiting > 0:
 		hud.set_operation_status(
-			"Departure queue: %d waiting • %d runway active" % [waiting, active],
+			"Runway queue: %d waiting • %d active" % [waiting, active],
 			"warning"
 		)
 
@@ -1309,7 +1321,7 @@ func _on_passenger_upgrade_requested(building_uid: int) -> void:
 		{}
 	).duplicate(true)
 	var building_key: String = airport_grid.get_building_key(building)
-	var updated_profile := ProfileStore.apply_building_upgrade(
+	var updated_profile: Dictionary = ProfileStore.apply_building_upgrade(
 		building_key,
 		int(next.get("level", current_level + 1)),
 		resource_cost
@@ -1359,7 +1371,7 @@ func _on_passenger_upgrade_requested(building_uid: int) -> void:
 func _on_service_upgrade_requested(
 	building_uid: int
 ) -> void:
-	var building := airport_grid.get_building(building_uid)
+	var building: Dictionary = airport_grid.get_building(building_uid)
 	if building.is_empty():
 		return
 
@@ -1389,7 +1401,7 @@ func _on_service_upgrade_requested(
 		"resource_cost",
 		{}
 	).duplicate(true)
-	var building_key := airport_grid.get_building_key(
+	var building_key: String = airport_grid.get_building_key(
 		building
 	)
 	var updated_profile := ProfileStore.apply_building_upgrade(
@@ -1418,7 +1430,7 @@ func _on_service_upgrade_requested(
 	)
 	hud.set_player_data(player_level, coins, gems)
 
-	var refreshed := airport_grid.get_building(building_uid)
+	var refreshed: Dictionary = airport_grid.get_building(building_uid)
 	service_upgrade_panel.open_building(
 		refreshed,
 		resource_inventory,

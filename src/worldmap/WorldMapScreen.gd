@@ -24,6 +24,7 @@ var player_level := 1
 var mastery_hours_by_type: Dictionary = {}
 var passenger_stock := 0
 var passenger_capacity := 0
+var route_history: Dictionary = {}
 var refresh_accumulator := 0.0
 
 
@@ -42,6 +43,7 @@ func _process(delta: float) -> void:
 	if refresh_accumulator >= 1.0:
 		refresh_accumulator = 0.0
 		_refresh_aircraft_buttons()
+		_refresh_destination_buttons()
 		_refresh_details()
 
 
@@ -50,13 +52,15 @@ func open_map(
 	current_player_level: int,
 	mastery_hours: Dictionary = {},
 	current_passengers: int = 0,
-	current_passenger_capacity: int = 0
+	current_passenger_capacity: int = 0,
+	history: Dictionary = {}
 ) -> void:
 	aircraft = aircraft_nodes
 	player_level = current_player_level
 	mastery_hours_by_type = mastery_hours.duplicate(true)
 	passenger_stock = maxi(current_passengers, 0)
 	passenger_capacity = maxi(current_passenger_capacity, 0)
+	route_history = history.duplicate(true)
 	selected_aircraft_index = clampi(
 		selected_aircraft_index,
 		0,
@@ -342,6 +346,16 @@ func _refresh_destination_buttons() -> void:
 				String(destination["city"]).to_upper(),
 				required_level
 			]
+			continue
+
+		var condition := DynamicDemandRules.condition_for(
+			destination_id
+		)
+		button.text = "%s\n%s • %s" % [
+			String(destination["city"]).to_upper(),
+			String(destination["country_code"]),
+			String(condition.get("short_label", "NORMAL"))
+		]
 
 
 func _refresh_details() -> void:
@@ -384,10 +398,14 @@ func _refresh_details() -> void:
 		int(profile.get("passengers", 0)),
 		0
 	)
+	var condition := DynamicDemandRules.condition_for(
+		String(destination.get("id", ""))
+	)
 	var demand_preview := PassengerDemandRules.preview(
 		profile,
 		destination,
-		mastery_hours
+		mastery_hours,
+		float(condition.get("demand_modifier", 1.0))
 	)
 	var route_passengers := int(
 		demand_preview.get("route_requirement", base_passengers)
@@ -406,13 +424,16 @@ func _refresh_details() -> void:
 	var range_ok := FlightRules.can_fly(profile, destination)
 	var can_change := plane.can_change_flight_plan()
 	var duration_seconds := FlightRules.duration_seconds(profile, destination)
-	var preview_plan := FlightRules.create_flight_plan(profile, destination)
+	var preview_plan := DynamicDemandRules.apply_to_flight_plan(
+		FlightRules.create_flight_plan(profile, destination),
+		condition
+	)
 	var preview_coins := AircraftMastery.apply_coin_bonus(
-		int(destination.get("coin_reward", 0)),
+		int(preview_plan.get("coin_reward", 0)),
 		mastery_hours
 	)
 	var preview_xp := AircraftMastery.apply_xp_bonus(
-		int(destination.get("xp_reward", 0)),
+		int(preview_plan.get("xp_reward", 0)),
 		mastery_hours
 	)
 	var resource_chance := ResourceDropRules.chance_for_flight(
@@ -436,6 +457,29 @@ func _refresh_details() -> void:
 			String(current_plan.get("country", ""))
 		]
 
+	var history_entry: Dictionary = route_history.get(
+		String(destination.get("id", "")),
+		{}
+	)
+	var history_text := "No completed flights yet"
+	var history_flights := int(
+		history_entry.get("flights_completed", 0)
+	)
+	if history_flights > 0:
+		var total_boarded := int(
+			history_entry.get("passengers_boarded", 0)
+		)
+		var avg_boarded := float(total_boarded) / float(history_flights)
+		history_text = (
+			"%d flights • %.1f avg pax • 🪙 %d • %d resources"
+			% [
+				history_flights,
+				avg_boarded,
+				int(history_entry.get("coins_earned", 0)),
+				int(history_entry.get("resources_earned", 0))
+			]
+		)
+
 	details_body.text = (
 		"AIRCRAFT\n"
 		+ "%s • %s class\n"
@@ -458,6 +502,19 @@ func _refresh_details() -> void:
 		% [base_passengers, route_passengers, required_passengers]
 		+ "Airport stock: %d / %d\n"
 		% [passenger_stock, passenger_capacity]
+		+ "Condition: %s • %s left\n"
+		% [
+			String(condition.get("label", "Normal")),
+			DynamicDemandRules.format_remaining(
+				int(condition.get("remaining_seconds", 0))
+			)
+		]
+		+ "Demand modifier: %+.0f%% • Coins %+.0f%% • XP %+.0f%%\n"
+		% [
+			(float(condition.get("demand_modifier", 1.0)) - 1.0) * 100.0,
+			(float(condition.get("coin_multiplier", 1.0)) - 1.0) * 100.0,
+			(float(condition.get("xp_multiplier", 1.0)) - 1.0) * 100.0
+		]
 		+ "Mastery: XP +%.0f%% • Coins +%.0f%%\n"
 		% [
 			float(mastery_bonuses.get("xp_bonus", 0.0)) * 100.0,
@@ -494,6 +551,9 @@ func _refresh_details() -> void:
 		% _resource_names(country_resources)
 		+ "Chance: %.1f%% each • rolled independently\n\n"
 		% (resource_chance * 100.0)
+		+ "ROUTE HISTORY\n"
+		+ "%s\n\n"
+		% history_text
 		+ "Current route: %s\n"
 		% current_route
 		+ "Aircraft state: %s"

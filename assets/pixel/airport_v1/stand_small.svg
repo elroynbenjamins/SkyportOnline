@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="160" viewBox="0 0 192 160" shape-rendering="crispEdges">
-<polygon points="18,93 91,50 175,78 101,123" fill="#162126" opacity=".55"/>
-<polygon points="18,84 91,42 175,70 101,114" fill="#7d8789"/>
-<polygon points="27,82 91,47 166,72 101,108" fill="none" stroke="#d9ded8" stroke-width="3"/>
-<path d="M46 90 L77 72 L112 84 L82 102 Z" fill="none" stroke="#e3e7e2" stroke-width="3"/>
-<polygon points="80,69 98,58 112,63 97,72" fill="#e8ece9"/>
-<polygon points="97,72 123,56 128,60 107,78" fill="#dfe5e2"/>
-<polygon points="94,71 72,55 77,51 102,66" fill="#dfe5e2"/>
-<polygon points="96,70 104,65 109,78 101,91 94,88" fill="#f0f2ef"/>
-<polygon points="102,66 108,63 114,73 107,78" fill="#4a90a7"/>
-<rect x="98" y="85" width="5" height="9" fill="#24414c"/>
-<rect x="56" y="72" width="4" height="20" fill="#f1d45d"/><rect x="142" y="73" width="4" height="20" fill="#f1d45d"/>
+<polygon points="18,98 91,55 175,83 101,128" fill="#162126" opacity=".55"/>
+<polygon points="18,88 91,46 175,74 101,118" fill="#747e82"/>
+<polygon points="27,86 91,51 166,76 101,112" fill="none" stroke="#d9ded8" stroke-width="3"/>
+<path d="M48 94 L83 74 L119 86 L84 106 Z" fill="none" stroke="#eef0e8" stroke-width="3"/>
+<path d="M61 89 L91 72 L137 87" fill="none" stroke="#e6c642" stroke-width="3"/>
+<path d="M91 72 L91 91" fill="none" stroke="#e6c642" stroke-width="3"/>
+<path d="M80 95 L101 83" fill="none" stroke="#f1f0e7" stroke-width="4"/>
+<rect x="55" y="72" width="4" height="21" fill="#efc84a"/>
+<rect x="143" y="75" width="4" height="21" fill="#efc84a"/>
+<rect x="37" y="86" width="5" height="5" fill="#e96c42"/>
+<rect x="155" y="82" width="5" height="5" fill="#e96c42"/>
 </svg>

@@ -14,7 +14,8 @@ static func all() -> Array[Dictionary]:
 			"cruise_speed_kph": 320.0,
 			"range_km": 850,
 			"passengers": 18,
-			"timer_factor": 1.00
+			"timer_factor": 1.00,
+			"resource_drop_modifier": 0.00
 		},
 		{
 			"id": "aerolet_120",
@@ -23,7 +24,8 @@ static func all() -> Array[Dictionary]:
 			"cruise_speed_kph": 410.0,
 			"range_km": 1050,
 			"passengers": 24,
-			"timer_factor": 0.96
+			"timer_factor": 0.96,
+			"resource_drop_modifier": -0.20
 		},
 		{
 			"id": "regional_200",
@@ -32,7 +34,8 @@ static func all() -> Array[Dictionary]:
 			"cruise_speed_kph": 610.0,
 			"range_km": 1800,
 			"passengers": 58,
-			"timer_factor": 1.00
+			"timer_factor": 1.00,
+			"resource_drop_modifier": 0.20
 		}
 	]
 

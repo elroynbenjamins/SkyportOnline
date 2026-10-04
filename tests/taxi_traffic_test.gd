@@ -166,14 +166,16 @@ func _run() -> void:
 		_fail("Only the moving aircraft should own the conflict reservation.")
 		return
 
-	# Let A clear both shared-intersection segments.
-	plane_a._process(2.0)
-	plane_a._process(1.0)
-	if plane_a.state != "LINE_UP":
-		_fail("Lead aircraft should clear the intersection and reach lineup.")
+	# Let A clear the shared intersection and reach runway hold short.
+	for _step in range(80):
+		plane_a._process(0.10)
+		if plane_a.state == "HOLD_SHORT":
+			break
+	if plane_a.state != "HOLD_SHORT":
+		_fail("Lead aircraft should clear the intersection and reach hold short.")
 		return
 	if live_controller.has_reservation(plane_a):
-		_fail("Aircraft should release taxi reservation after reaching lineup.")
+		_fail("Aircraft should release taxi reservation at hold short.")
 		return
 
 	plane_b._process(0.10)

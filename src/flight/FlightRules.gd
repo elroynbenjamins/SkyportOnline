@@ -63,6 +63,7 @@ static func create_flight_plan(
 		"destination_id": String(destination.get("id", "")),
 		"city": String(destination.get("city", "")),
 		"country": String(destination.get("country", "")),
+		"country_code": String(destination.get("country_code", "")),
 		"distance_km": float(destination.get("distance_km", 0.0)),
 		"duration_seconds": duration_seconds(aircraft_profile, destination),
 		"coin_reward": int(destination.get("coin_reward", 0)),

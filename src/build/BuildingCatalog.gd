@@ -84,6 +84,20 @@ static func all() -> Array[Dictionary]:
 			"world_sprite_offset": Vector2(0, -50)
 		},
 		{
+			"id": "travel_office",
+			"name": "Travel Office",
+			"menu_name": "TRAVEL OFFICE",
+			"category": "Passenger",
+			"footprint": Vector2i(2, 2),
+			"cost": 6500,
+			"level": 2,
+			"color": Color("4d8f8e"),
+			"rotatable": true,
+			"sizes": PackedStringArray([]),
+			"description": "Slowly attracts passengers and stores them for flights.",
+			"passenger_generator": true
+		},
+		{
 			"id": "small_hangar",
 			"name": "Small Hangar",
 			"menu_name": "SMALL HANGAR",

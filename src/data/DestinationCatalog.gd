@@ -5,6 +5,34 @@ extends RefCounted
 # the player's selected home country / airport.
 const DEVELOPMENT_HOME_NAME := "Amsterdam"
 
+const COUNTRY_RESOURCES := {
+	"BE": [
+		{"id": "be_composite_panels", "name": "Composite Panels", "drop_chance": 0.40},
+		{"id": "be_glass_fittings", "name": "Glass Fittings", "drop_chance": 0.40},
+		{"id": "be_logistics_tags", "name": "Logistics Tags", "drop_chance": 0.40}
+	],
+	"GB": [
+		{"id": "gb_terminal_signage", "name": "Terminal Signage", "drop_chance": 0.40},
+		{"id": "gb_service_parts", "name": "Service Parts", "drop_chance": 0.40},
+		{"id": "gb_aviation_textiles", "name": "Aviation Textiles", "drop_chance": 0.40}
+	],
+	"DE": [
+		{"id": "de_precision_gears", "name": "Precision Gears", "drop_chance": 0.40},
+		{"id": "de_steel_fasteners", "name": "Steel Fasteners", "drop_chance": 0.40},
+		{"id": "de_control_relays", "name": "Control Relays", "drop_chance": 0.40}
+	],
+	"FR": [
+		{"id": "fr_hospitality_linen", "name": "Hospitality Linen", "drop_chance": 0.40},
+		{"id": "fr_glass_panels", "name": "Glass Panels", "drop_chance": 0.40},
+		{"id": "fr_design_fixtures", "name": "Design Fixtures", "drop_chance": 0.40}
+	],
+	"DK": [
+		{"id": "dk_timber_panels", "name": "Timber Panels", "drop_chance": 0.40},
+		{"id": "dk_led_modules", "name": "LED Modules", "drop_chance": 0.40},
+		{"id": "dk_modular_fittings", "name": "Modular Fittings", "drop_chance": 0.40}
+	]
+}
+
 
 static func all() -> Array[Dictionary]:
 	return [
@@ -90,3 +118,51 @@ static func unlocked_for_level(level: int) -> Array[Dictionary]:
 		if level >= int(destination.get("unlock_level", 1)):
 			result.append(destination.duplicate(true))
 	return result
+
+
+static func resources_for_country(country_code: String) -> Array[Dictionary]:
+	var resources: Array[Dictionary] = []
+	var entries: Array = COUNTRY_RESOURCES.get(country_code.to_upper(), [])
+	for entry_variant in entries:
+		var entry: Dictionary = entry_variant
+		resources.append(entry.duplicate(true))
+	return resources
+
+
+static func resources_for_destination(destination_id: String) -> Array[Dictionary]:
+	var destination := get_destination(destination_id)
+	if destination.is_empty():
+		return []
+	return resources_for_country(String(destination.get("country_code", "")))
+
+
+static func get_resource_name(resource_id: String) -> String:
+	for country_code in COUNTRY_RESOURCES.keys():
+		for entry_variant in COUNTRY_RESOURCES[country_code]:
+			var entry: Dictionary = entry_variant
+			if String(entry.get("id", "")) == resource_id:
+				return String(entry.get("name", resource_id))
+	return resource_id
+
+
+static func roll_country_resources(
+	destination_id: String,
+	rng: RandomNumberGenerator = null
+) -> Dictionary:
+	var resources := resources_for_destination(destination_id)
+	if resources.is_empty():
+		return {}
+
+	var roller := rng
+	if roller == null:
+		roller = RandomNumberGenerator.new()
+		roller.randomize()
+
+	var drops: Dictionary = {}
+	for resource in resources:
+		var chance := clampf(float(resource.get("drop_chance", 0.40)), 0.0, 1.0)
+		if roller.randf() <= chance:
+			var resource_id := String(resource.get("id", ""))
+			if not resource_id.is_empty():
+				drops[resource_id] = int(drops.get(resource_id, 0)) + 1
+	return drops

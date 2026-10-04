@@ -857,10 +857,53 @@ func get_departure_routes(aircraft_size: String = "S") -> Array[Dictionary]:
 
 
 func get_first_departure_route(aircraft_size: String = "S") -> PackedVector2Array:
-	var routes := get_departure_routes(aircraft_size)
+	var routes: Array[Dictionary] = get_departure_routes(aircraft_size)
 	if routes.is_empty():
 		return PackedVector2Array()
 	return routes[0]["route"] as PackedVector2Array
+
+
+func get_departure_route_for_stand(
+	stand_uid: int,
+	aircraft_size: String = "S"
+) -> Dictionary:
+	var routes: Array[Dictionary] = get_departure_routes(aircraft_size)
+	for route_info in routes:
+		if int(route_info.get("stand_uid", -1)) == stand_uid:
+			return route_info.duplicate(true)
+	return {}
+
+
+func get_arrival_routes(aircraft_size: String = "S") -> Array[Dictionary]:
+	var arrivals: Array[Dictionary] = []
+	var departures: Array[Dictionary] = get_departure_routes(aircraft_size)
+
+	for departure in departures:
+		var departure_points: PackedVector2Array = departure.get(
+			"route",
+			PackedVector2Array()
+		)
+		if departure_points.size() < 4:
+			continue
+
+		var arrival_points := PackedVector2Array()
+		for index in range(departure_points.size() - 1, -1, -1):
+			arrival_points.append(departure_points[index])
+
+		arrivals.append({
+			"stand_uid": int(departure.get("stand_uid", -1)),
+			"stand_definition_id": String(
+				departure.get("stand_definition_id", "")
+			),
+			"stand_world_position": departure.get(
+				"stand_world_position",
+				Vector2.ZERO
+			),
+			"runway_uid": int(departure.get("runway_uid", -1)),
+			"route": arrival_points
+		})
+
+	return arrivals
 
 
 func _first_adjacent_reachable_taxiway(cells: Array[Vector2i]) -> Vector2i:

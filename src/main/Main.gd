@@ -169,36 +169,28 @@ func _spawn_aircraft_demos() -> void:
 		hud.set_operation_status("No connected S-class stand/runway.", "warning")
 		return
 
-	var count := mini(routes.size(), 2)
+	var starter_aircraft_ids: Array[String] = ["pico_p8", "pico_p8"]
+	var count := mini(routes.size(), starter_aircraft_ids.size())
 	for index in range(count):
 		var route_info: Dictionary = routes[index]
-		var route: PackedVector2Array = route_info.get("route", PackedVector2Array())
+		var route: PackedVector2Array = route_info.get(
+			"route",
+			PackedVector2Array()
+		)
 		if route.size() < 2:
 			continue
 
 		var label := "SO-%03d" % (index + 1)
 		var aircraft := AircraftPrototype.new()
-
-		var profile_ids: Array[String] = ["aerolet_100", "aerolet_120"]
-		var default_destinations: Array[String] = ["london", "paris"]
-		var profile_id: String = profile_ids[index % profile_ids.size()]
-		var destination_id: String = default_destinations[
-			index % default_destinations.size()
-		]
-		aircraft.configure_aircraft_type(profile_id)
-
-		var destination := DestinationCatalog.get_destination(destination_id)
-		var initial_plan := FlightRules.create_flight_plan(
-			aircraft.get_aircraft_profile(),
-			destination
-		)
-		aircraft.assign_flight_plan(initial_plan)
+		aircraft.configure_aircraft_type(starter_aircraft_ids[index])
 		aircraft.name = label
 		aircraft.z_index = 80 + index
 		aircraft.state_changed.connect(
 			_on_demo_aircraft_state_changed.bind(aircraft, label)
 		)
-		aircraft.departed.connect(_on_demo_aircraft_departed.bind(aircraft, label))
+		aircraft.departed.connect(
+			_on_demo_aircraft_departed.bind(aircraft, label)
+		)
 		aircraft.arrival_requested.connect(
 			_on_demo_arrival_requested.bind(aircraft, label)
 		)
@@ -211,7 +203,7 @@ func _spawn_aircraft_demos() -> void:
 		var runway_uid := int(route_info.get("runway_uid", -1))
 		aircraft.set_departure_route(
 			route,
-			"S",
+			aircraft.aircraft_size,
 			stand_uid,
 			runway_uid
 		)
@@ -220,11 +212,18 @@ func _spawn_aircraft_demos() -> void:
 		ground_services.request_fuel(aircraft, label)
 
 	hud.set_operation_status(
-		"%d aircraft awaiting turnaround" % aircraft_demos.size()
+		"%d Pico P8 aircraft fueling • choose destinations in WORLD" % aircraft_demos.size(),
+		"warning"
 	)
 
 
 func _on_aircraft_serviced(aircraft: AircraftPrototype, label: String) -> void:
+	if not aircraft.has_flight_plan():
+		hud.set_operation_status(
+			"%s fueled • choose a destination in WORLD" % label,
+			"warning"
+		)
+		return
 	_attempt_boarding_and_departure(aircraft, label)
 
 
@@ -398,6 +397,8 @@ func _on_demo_arrival_completed(
 	label: String
 ) -> void:
 	_apply_completed_flight_reward(aircraft, label)
+	aircraft.clear_flight_plan()
+	_remove_passenger_waiter(aircraft)
 
 	var route_info: Dictionary = airport_grid.get_departure_route_for_stand(
 		aircraft.stand_uid,
@@ -578,6 +579,13 @@ func _attempt_boarding_and_departure(
 	label: String
 ) -> void:
 	if aircraft == null or not is_instance_valid(aircraft):
+		return
+	if not aircraft.has_flight_plan():
+		aircraft.mark_service_complete()
+		hud.set_operation_status(
+			"%s ready • choose a destination before boarding" % label,
+			"warning"
+		)
 		return
 
 	var required := _passenger_requirement(aircraft)

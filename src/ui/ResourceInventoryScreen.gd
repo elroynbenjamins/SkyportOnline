@@ -2,6 +2,7 @@ class_name ResourceInventoryScreen
 extends CanvasLayer
 
 signal rewarded_passenger_boost_requested
+signal customize_requested
 
 var root: Control
 var passenger_label: Label
@@ -79,6 +80,15 @@ func _build_ui() -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 26)
 	header.add_child(title)
+
+	var customize_button := Button.new()
+	customize_button.text = "🎨  CUSTOMIZE"
+	customize_button.custom_minimum_size = Vector2(155, 44)
+	customize_button.pressed.connect(
+		func() -> void:
+			customize_requested.emit()
+	)
+	header.add_child(customize_button)
 
 	var close_button := Button.new()
 	close_button.text = "✕  AIRPORT"

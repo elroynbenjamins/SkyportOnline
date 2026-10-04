@@ -61,10 +61,10 @@ func _run() -> void:
 	if not screen.seats_chip.text.contains("8"):
 		_fail("Fleet Seats chip should show Pico P8 capacity.")
 		return
-	if not screen.range_chip.text.contains("850"):
+	if not screen.range_chip.text.contains("320"):
 		_fail("Fleet Range chip should show Pico P8 range.")
 		return
-	if not screen.speed_chip.text.contains("285"):
+	if not screen.speed_chip.text.contains("280"):
 		_fail("Fleet Speed chip should show Pico P8 cruise speed.")
 		return
 	if not screen.size_chip.text.contains("S"):

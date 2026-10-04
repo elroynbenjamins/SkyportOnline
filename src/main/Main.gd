@@ -844,6 +844,33 @@ func _on_event_changed(snapshot: Dictionary) -> void:
 		active,
 		String(snapshot.get("name", "Event"))
 	)
+
+	var claimable := false
+	for quest_variant in snapshot.get("quests", []):
+		var quest: Dictionary = quest_variant
+		if (
+			bool(quest.get("unlocked", false))
+			and bool(quest.get("complete", false))
+			and not bool(quest.get("claimed", false))
+		):
+			claimable = true
+			break
+
+	if not claimable:
+		for milestone_variant in snapshot.get(
+			"alliance_milestones",
+			[]
+		):
+			var milestone: Dictionary = milestone_variant
+			if (
+				bool(milestone.get("reached", false))
+				and not bool(milestone.get("claimed", false))
+			):
+				claimable = true
+				break
+
+	hud.set_event_attention(active and claimable)
+
 	if event_screen != null and event_screen.is_open():
 		event_screen.refresh(snapshot)
 

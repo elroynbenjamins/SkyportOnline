@@ -22,6 +22,7 @@ var pending_arrivals: Array[Dictionary] = []
 var pending_passenger_departures: Array[Dictionary] = []
 var processing_passenger_queue := false
 var world_map: WorldMapScreen
+var fleet_screen: FleetScreen
 var return_summary: FlightReturnSummary
 var resource_inventory_screen: ResourceInventoryScreen
 var passenger_upgrade_panel: PassengerUpgradePanel
@@ -97,6 +98,7 @@ func _start_gameplay() -> void:
 	_setup_ground_services()
 	_setup_runway_dispatcher()
 	_setup_world_map()
+	_setup_fleet_screen()
 	_setup_return_summary()
 	_setup_passenger_system()
 	_setup_rewarded_passenger_ad_bridge()
@@ -132,6 +134,11 @@ func _setup_world_map() -> void:
 		_on_world_map_flight_assignment_requested
 	)
 	add_child(world_map)
+
+
+func _setup_fleet_screen() -> void:
+	fleet_screen = FleetScreen.new()
+	add_child(fleet_screen)
 
 
 func _setup_return_summary() -> void:
@@ -550,6 +557,11 @@ func _apply_completed_flight_reward(
 	reward["mastery_star_up"] = new_mastery_stars > old_mastery_stars
 	reward["aircraft_name"] = aircraft.aircraft_display_name
 
+	if fleet_screen != null:
+		fleet_screen.set_mastery_hours(
+			current_profile.get("aircraft_mastery_hours", {})
+		)
+
 	hud.set_player_data(player_level, coins, gems)
 	return_summary.show_reward(
 		label,
@@ -577,7 +589,14 @@ func _on_navigation_requested(tab: String) -> void:
 				)
 			)
 		"fleet":
-			hud.set_operation_status("Fleet screen comes in a later pass.")
+			fleet_screen.open_fleet(
+				aircraft_demos,
+				player_level,
+				current_profile.get(
+					"aircraft_mastery_hours",
+					{}
+				)
+			)
 		"alliance":
 			hud.set_operation_status("Alliance unlocks later.")
 		"more":

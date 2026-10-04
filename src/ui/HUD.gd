@@ -757,15 +757,56 @@ func set_atc_state(snapshot: Dictionary) -> void:
 
 	if primary.is_empty():
 		var empty_text := "%s • No active movements" % control_text
+		var empty_tone := "success"
+		var empty_compact := "✓ CLEAR"
+		var analytics_value = snapshot.get("analytics", {})
+		if analytics_value is Dictionary:
+			var analytics: Dictionary = analytics_value
+			if not analytics.is_empty():
+				empty_text += "\n%.0f%% util • %.1fs avg wait" % [
+					float(
+						analytics.get(
+							"average_utilization_pct",
+							0.0
+						)
+					),
+					float(
+						analytics.get(
+							"average_wait_seconds",
+							0.0
+						)
+					)
+				]
+				var recommendation_value = analytics.get(
+					"recommendation",
+					{}
+				)
+				if recommendation_value is Dictionary:
+					var recommendation: Dictionary = recommendation_value
+					if not recommendation.is_empty():
+						empty_text += "\nAdvice: %s" % String(
+							recommendation.get(
+								"title",
+								"Keep monitoring"
+							)
+						)
+						if String(
+							recommendation.get(
+								"tone",
+								"normal"
+							)
+						) == "warning":
+							empty_tone = "warning"
+							empty_compact = "⚠ CAPACITY REVIEW"
 		if atc_status_label != null:
 			atc_status_label.text = "RUNWAY CONTROL\n" + empty_text
 		_set_status_chip(
 			"atc",
 			atc_status_chip,
 			"RUNWAY CONTROL",
-			"✓ CLEAR",
+			empty_compact,
 			empty_text,
-			"success"
+			empty_tone
 		)
 		return
 
@@ -788,6 +829,46 @@ func set_atc_state(snapshot: Dictionary) -> void:
 		strategy_label,
 		sequence
 	]
+
+	var analytics_value = snapshot.get("analytics", {})
+	var analytics: Dictionary = {}
+	if analytics_value is Dictionary:
+		analytics = analytics_value
+	if not analytics.is_empty():
+		detail += "\n%.0f%% util • %.1fs avg wait • %.0f%% separation delay" % [
+			float(
+				analytics.get(
+					"average_utilization_pct",
+					0.0
+				)
+			),
+			float(
+				analytics.get(
+					"average_wait_seconds",
+					0.0
+				)
+			),
+			float(
+				analytics.get(
+					"separation_delay_pct",
+					0.0
+				)
+			)
+		]
+		var recommendation_value = analytics.get(
+			"recommendation",
+			{}
+		)
+		if recommendation_value is Dictionary:
+			var recommendation: Dictionary = recommendation_value
+			if not recommendation.is_empty():
+				detail += "\nAdvice: %s" % String(
+					recommendation.get(
+						"title",
+						"Keep monitoring"
+					)
+				)
+
 	var tone := "success"
 	var compact := "✓ RWY %d CLEAR" % runway_uid
 	if status.begins_with("occupied"):
@@ -799,6 +880,22 @@ func set_atc_state(snapshot: Dictionary) -> void:
 			runway_uid,
 			waiting
 		]
+
+	if tone == "success" and not analytics.is_empty():
+		var recommendation_value = analytics.get(
+			"recommendation",
+			{}
+		)
+		if recommendation_value is Dictionary:
+			var recommendation: Dictionary = recommendation_value
+			if String(
+				recommendation.get(
+					"tone",
+					"normal"
+				)
+			) == "warning":
+				tone = "warning"
+				compact = "⚠ CAPACITY REVIEW"
 
 	if atc_status_label != null:
 		atc_status_label.text = "RUNWAY CONTROL\n" + detail

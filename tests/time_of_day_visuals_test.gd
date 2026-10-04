@@ -47,14 +47,17 @@ func _run() -> void:
 		TimeOfDayRules.PHASE_NIGHT
 	)
 
-	if float((day["world_tint"] as Color).a) != 0.0:
+	var day_tint: Color = day.get("world_tint", Color.TRANSPARENT)
+	var dawn_tint: Color = dawn.get("world_tint", Color.TRANSPARENT)
+	var evening_tint: Color = evening.get("world_tint", Color.TRANSPARENT)
+	var night_tint: Color = night.get("world_tint", Color.TRANSPARENT)
+
+	if day_tint.a != 0.0:
 		_fail("Day should not darken the airport.")
 		return
 	if not (
-		float((dawn["world_tint"] as Color).a)
-		< float((evening["world_tint"] as Color).a)
-		and float((evening["world_tint"] as Color).a)
-		< float((night["world_tint"] as Color).a)
+		dawn_tint.a < evening_tint.a
+		and evening_tint.a < night_tint.a
 	):
 		_fail("World tint should strengthen from dawn to evening to night.")
 		return

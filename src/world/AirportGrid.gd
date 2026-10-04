@@ -75,6 +75,12 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("service_road", Vector2i(12, 13), 0)
 	_place_building_internal("service_road", Vector2i(15, 12), 0)
 	_place_building_internal("service_road", Vector2i(15, 13), 0)
+	_place_building_internal("service_road", Vector2i(12, 14), 0)
+	_place_building_internal("service_road", Vector2i(12, 15), 0)
+	_place_building_internal("service_road", Vector2i(13, 15), 0)
+	_place_building_internal("service_road", Vector2i(14, 15), 0)
+	_place_building_internal("service_road", Vector2i(15, 15), 0)
+	_place_building_internal("service_road", Vector2i(15, 14), 0)
 	_rebuild_occupied_cells()
 
 

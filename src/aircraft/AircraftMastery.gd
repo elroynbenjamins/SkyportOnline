@@ -123,3 +123,43 @@ static func format_stars(stars: int) -> String:
 	for index in range(5):
 		result += "★" if index < stars else "☆"
 	return result
+
+
+static func current_benefit_text(stars: int) -> String:
+	var bonuses := bonuses_for_stars(stars)
+	var passenger_reduction := float(
+		bonuses.get("passenger_reduction", 0.0)
+	)
+	var xp_bonus := float(bonuses.get("xp_bonus", 0.0))
+	var coin_bonus := float(bonuses.get("coin_bonus", 0.0))
+
+	if stars <= 0:
+		return "No Mastery bonuses yet."
+
+	var parts: Array[String] = []
+	if passenger_reduction > 0.0:
+		parts.append(
+			"~%.0f%% fewer passengers"
+			% (passenger_reduction * 100.0)
+		)
+	if xp_bonus > 0.0:
+		parts.append("XP +%.0f%%" % (xp_bonus * 100.0))
+	if coin_bonus > 0.0:
+		parts.append("Coins +%.0f%%" % (coin_bonus * 100.0))
+	return " • ".join(parts)
+
+
+static func next_reward_text(stars: int) -> String:
+	match clampi(stars, 0, 5):
+		0:
+			return "★  ~5% fewer passengers"
+		1:
+			return "★★  +5% flight XP"
+		2:
+			return "★★★  +5% flight coins"
+		3:
+			return "★★★★  Passenger reduction ~10% + XP +10%"
+		4:
+			return "★★★★★  Flight coins improve to +10%"
+		_:
+			return "Mastery complete"

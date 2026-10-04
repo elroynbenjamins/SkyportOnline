@@ -134,6 +134,8 @@ func get_service_docking_local_offset(
 			base = Vector2(14, 30)
 		"fuel":
 			base = Vector2(-2, -40)
+		"pushback":
+			base = Vector2(36, 0)
 		_:
 			base = Vector2(0, 34)
 
@@ -158,10 +160,34 @@ func get_service_docking_rotation(
 		)
 
 	match service_type:
-		"cargo", "catering":
+		"cargo", "catering", "pushback":
 			return rotation + PI
 		_:
 			return rotation
+
+
+func get_pushback_target_position() -> Vector2:
+	var distance := float(
+		aircraft_profile.get("pushback_distance", 28.0)
+	)
+	match aircraft_size:
+		"M":
+			distance = maxf(distance, 38.0)
+		"L":
+			distance = maxf(distance, 50.0)
+		"XL":
+			distance = maxf(distance, 62.0)
+
+	if departure_route.size() >= 2:
+		var direction := (
+			departure_route[1] - departure_route[0]
+		).normalized()
+		if direction != Vector2.ZERO:
+			return departure_route[0] + direction * distance
+
+	return global_position + Vector2(-distance, 0).rotated(
+		rotation
+	)
 
 
 func begin_ground_service(stage: String) -> void:
@@ -294,6 +320,12 @@ func set_departure_route(
 
 	visible = true
 	position = departure_route[0]
+	if departure_route.size() >= 2:
+		var taxi_direction := (
+			departure_route[1] - departure_route[0]
+		).normalized()
+		if taxi_direction != Vector2.ZERO:
+			rotation = (-taxi_direction).angle()
 	queue_redraw()
 
 

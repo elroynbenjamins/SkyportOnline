@@ -473,6 +473,66 @@ func _on_atc_state_changed(
 	snapshot: Dictionary
 ) -> void:
 	hud.set_atc_state(snapshot)
+	_refresh_operations_analytics()
+
+
+func _operations_analytics_snapshot() -> Dictionary:
+	var runway_snapshot: Dictionary = {}
+	if runway_dispatcher != null:
+		runway_snapshot = (
+			runway_dispatcher.get_runway_analytics_snapshot()
+		)
+
+	var service_snapshot: Dictionary = {}
+	if ground_services != null:
+		service_snapshot = (
+			ground_services.get_service_analytics_snapshot()
+		)
+
+	var passenger_snapshot := {
+		"stock": 0,
+		"capacity": 0,
+		"production_per_minute": 0.0,
+		"waiting_aircraft": pending_passenger_departures.size()
+	}
+	if passenger_economy != null:
+		passenger_snapshot["stock"] = (
+			passenger_economy.get_passengers()
+		)
+		passenger_snapshot["capacity"] = (
+			passenger_economy.get_capacity()
+		)
+		passenger_snapshot["production_per_minute"] = (
+			passenger_economy.get_production_per_minute()
+		)
+
+	var airside := airport_grid.get_airside_status()
+	var stand_snapshot := {
+		"total": int(
+			airside.get("stands_total", 0)
+		),
+		"occupied": stand_occupancy.size(),
+		"pending_arrivals": pending_arrivals.size()
+	}
+
+	var snapshot := {
+		"runway": runway_snapshot,
+		"services": service_snapshot,
+		"passengers": passenger_snapshot,
+		"stands": stand_snapshot
+	}
+	snapshot["analysis"] = OperationsAnalyticsRules.analyze(
+		snapshot
+	)
+	return snapshot
+
+
+func _refresh_operations_analytics() -> void:
+	if hud == null:
+		return
+	hud.set_operations_analytics(
+		_operations_analytics_snapshot()
+	)
 
 
 func _on_taxi_hold_changed(
@@ -515,6 +575,7 @@ func _on_ground_service_queue_changed(waiting: int, active: int) -> void:
 			],
 			"warning"
 		)
+	_refresh_operations_analytics()
 
 
 func _on_demo_aircraft_state_changed(
@@ -625,6 +686,7 @@ func _on_demo_arrival_requested(
 			"aircraft": aircraft,
 			"label": label
 		})
+		_refresh_operations_analytics()
 		hud.set_operation_status(
 			"%s holding • no free compatible stand" % label,
 			"warning"
@@ -694,6 +756,7 @@ func _assign_arrival_if_possible(
 		return false
 
 	stand_occupancy[stand_uid] = aircraft
+	_refresh_operations_analytics()
 	aircraft.set_arrival_route(
 		route,
 		stand_uid,
@@ -722,6 +785,7 @@ func _release_stand(aircraft: AircraftPrototype) -> void:
 	if stand_occupancy.get(stand_uid) == aircraft:
 		stand_occupancy.erase(stand_uid)
 	_try_assign_pending_arrivals()
+	_refresh_operations_analytics()
 
 
 func _try_assign_pending_arrivals() -> void:
@@ -1553,6 +1617,7 @@ func _on_passenger_economy_changed(
 	_refresh_waiting_passenger_cards()
 	if not processing_passenger_queue:
 		_try_board_waiting_aircraft()
+	_refresh_operations_analytics()
 
 
 func _mastery_hours_for_aircraft(

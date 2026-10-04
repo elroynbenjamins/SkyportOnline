@@ -11,6 +11,7 @@ var gems: int = 120
 var selected_building_id := ""
 var selected_building_rotation := 0
 var aircraft_demo: AircraftPrototype
+var fuel_truck_demo: FuelTruckPrototype
 
 
 func _ready() -> void:
@@ -32,14 +33,71 @@ func _ready() -> void:
 
 
 func _spawn_aircraft_demo() -> void:
-	var route := airport_grid.get_first_departure_route()
+	var route := airport_grid.get_first_departure_route("S")
 	if route.size() < 2:
+		hud.set_operation_status("No connected S-class stand/runway.", "warning")
 		return
 
 	aircraft_demo = AircraftPrototype.new()
 	aircraft_demo.z_index = 80
+	aircraft_demo.state_changed.connect(_on_demo_aircraft_state_changed)
 	add_child(aircraft_demo)
-	aircraft_demo.set_route(route)
+	aircraft_demo.set_departure_route(route, "S")
+	hud.set_operation_status("Aircraft parked • fuel required")
+	_dispatch_demo_fuel_truck()
+
+
+func _dispatch_demo_fuel_truck() -> void:
+	if aircraft_demo == null:
+		return
+
+	var station := airport_grid.get_best_service_building("fuel", aircraft_demo.aircraft_size)
+	if station.is_empty():
+		hud.set_operation_status("No compatible fuel station.", "warning")
+		return
+
+	fuel_truck_demo = FuelTruckPrototype.new()
+	fuel_truck_demo.z_index = 90
+	fuel_truck_demo.service_started.connect(_on_demo_fuel_started)
+	fuel_truck_demo.service_completed.connect(_on_demo_fuel_completed)
+	fuel_truck_demo.returned_to_station.connect(_on_demo_fuel_returned)
+	add_child(fuel_truck_demo)
+
+	var service_speed := maxf(float(station.get("service_speed", 1.0)), 0.1)
+	var service_duration := 6.0 / service_speed
+	fuel_truck_demo.start_service(
+		station["world_position"],
+		aircraft_demo.position,
+		service_duration
+	)
+
+	hud.set_operation_status(
+		"Fuel truck dispatched • x%.1f speed" % service_speed
+	)
+
+
+func _on_demo_fuel_started() -> void:
+	hud.set_operation_status("Fueling aircraft...")
+
+
+func _on_demo_fuel_completed() -> void:
+	if aircraft_demo != null:
+		aircraft_demo.begin_departure_after_service()
+	hud.set_operation_status("Fuel complete • preparing taxi", "success")
+
+
+func _on_demo_fuel_returned() -> void:
+	fuel_truck_demo = null
+
+
+func _on_demo_aircraft_state_changed(state: String) -> void:
+	match state:
+		"TAXIING":
+			hud.set_operation_status("Aircraft taxiing to runway")
+		"HOLDING":
+			hud.set_operation_status("Aircraft at runway end • ready", "success")
+		"WAITING_FUEL":
+			hud.set_operation_status("Aircraft parked • fuel required")
 
 
 func _on_world_tapped(world_position: Vector2) -> void:

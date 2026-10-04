@@ -15,6 +15,7 @@ var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
 var operation_status_label: Label
+var atc_status_label: Label
 
 var parcel_panel: PanelContainer
 var parcel_title: Label
@@ -136,6 +137,26 @@ func _build_interface() -> void:
 	operation_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operation_status_label.add_theme_font_size_override("font_size", 13)
 	operation_panel.add_child(operation_status_label)
+
+	var atc_panel := PanelContainer.new()
+	atc_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	atc_panel.offset_left = 470
+	atc_panel.offset_top = 82
+	atc_panel.offset_right = 850
+	atc_panel.offset_bottom = 146
+	root.add_child(atc_panel)
+
+	atc_status_label = Label.new()
+	atc_status_label.text = "RUNWAY CONTROL\nNo active movements"
+	atc_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	atc_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	atc_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	atc_status_label.add_theme_font_size_override("font_size", 12)
+	atc_status_label.add_theme_color_override(
+		"font_color",
+		Color("9fe3b7")
+	)
+	atc_panel.add_child(atc_status_label)
 
 	var build_hint := Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -556,6 +577,56 @@ func set_operation_status(text: String, tone: String = "normal") -> void:
 			operation_status_label.add_theme_color_override("font_color", Color("9fe3b7"))
 		_:
 			operation_status_label.add_theme_color_override("font_color", Color("f2f5f4"))
+
+
+func set_atc_state(snapshot: Dictionary) -> void:
+	if atc_status_label == null:
+		return
+
+	var primary_value = snapshot.get("primary_runway", {})
+	var primary: Dictionary = {}
+	if primary_value is Dictionary:
+		primary = primary_value
+
+	if primary.is_empty():
+		atc_status_label.text = "RUNWAY CONTROL\nNo active movements"
+		atc_status_label.add_theme_color_override(
+			"font_color",
+			Color("9fe3b7")
+		)
+		return
+
+	var runway_uid := int(primary.get("runway_uid", -1))
+	var sequence := String(
+		primary.get("sequence_text", "CLEAR")
+	)
+	var spacing := float(
+		primary.get("separation_remaining", 0.0)
+	)
+	var status := String(primary.get("status", "clear"))
+
+	atc_status_label.text = "RUNWAY CONTROL • RWY %d\n%s" % [
+		runway_uid,
+		sequence
+	]
+
+	if status.begins_with("occupied"):
+		atc_status_label.add_theme_color_override(
+			"font_color",
+			Color("ff9298")
+		)
+	elif spacing > 0.001 or (
+		int(primary.get("waiting", 0)) > 0
+	):
+		atc_status_label.add_theme_color_override(
+			"font_color",
+			Color("ffc266")
+		)
+	else:
+		atc_status_label.add_theme_color_override(
+			"font_color",
+			Color("9fe3b7")
+		)
 
 
 func set_airside_status(status: Dictionary) -> void:

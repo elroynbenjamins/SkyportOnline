@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 9 — Passenger bottleneck + regional-resource upgrade sinks
+## Current milestone: Pass 10 — Aircraft Mastery + passenger support
 
 Skyport Online now connects the international country economy directly back into airport progression.
 
@@ -217,15 +217,166 @@ Current passenger regression verifies:
 **Aircraft boarding deducts passenger stock**  
 **An aircraft cannot board when stock is insufficient**
 
+
+## Aircraft Mastery
+
+Aircraft Mastery is account-wide **per aircraft type**. Owning or flying multiple copies of the same model contributes to the same mastery track.
+
+Mastery hours are only credited after a flight successfully returns, lands, taxis back, and parks. Dispatching or canceling does not grant mastery.
+
+Flight-hours use the route's aviation time:
+
+**distance ÷ aircraft cruise speed**
+
+rather than the compressed gameplay countdown. This keeps the mastery milestones genuinely long-term.
+
+### Five-star mastery track
+
+| Stars | Hours flown | Cumulative benefit |
+| --- | ---: | --- |
+| ★☆☆☆☆ | 10 h | ~5% lower passenger requirement, with at least 1 passenger saved |
+| ★★☆☆☆ | 50 h | Previous benefit +5% flight XP |
+| ★★★☆☆ | 150 h | Previous benefits +5% flight coins |
+| ★★★★☆ | 400 h | Passenger reduction improves to ~10% with at least 2 saved; XP improves to +10% |
+| ★★★★★ | 1,000 h | Previous benefits; coin bonus improves to +10% |
+
+The minimum absolute passenger reduction prevents a percentage bonus disappearing through rounding on tiny starter planes such as the Pico P8.
+
+For example, the Pico P8 normally requires 8 passengers:
+
+- Unmastered: 8.
+- Star 1: 7.
+- Star 4–5: 6.
+
+Mastery reward bonuses apply to the **next** flight after a milestone is earned. The returning flight contributes the hours that unlock the new star.
+
+The World Map now displays:
+
+- Mastery stars.
+- Total flight-hours.
+- Progress toward the next star.
+- Mastery-adjusted passenger demand.
+- Mastery XP bonus.
+- Mastery coin bonus.
+- Mastery-adjusted reward preview.
+
+The flight return summary shows current mastery hours and calls out a newly unlocked star.
+
+## Passenger-support systems
+
+### Rewarded passenger boost
+
+The passenger economy now has the agreed reward:
+
+**+25 passengers**
+
+The reward respects available passenger storage. If only 10 spaces remain, only 10 passengers are added.
+
+The UI and reward callback are implemented, but an external rewarded-ad provider is **not connected yet**. The ad bridge deliberately does not auto-grant a reward. A future ad SDK must call the completion callback after it confirms a completed rewarded ad.
+
+This prevents the prototype from pretending an ad was watched or allowing a free unlimited +25 button.
+
+### Friend / Alliance passenger gift groundwork
+
+The persistent profile now contains a daily incoming passenger-gift ledger.
+
+Current provisional social balance:
+
+- +10 passengers per received friend / Alliance gift.
+- Maximum 3 incoming gifts per day.
+- Maximum 30 gifted passengers per day before storage limits.
+
+The actual Friends / Alliance networking layer is not connected yet. These rules and persistence are ready for that later integration.
+
+## Second passenger-building family
+
+The **Airport Shuttle Station** is now a second distinct passenger building rather than another Travel Office upgrade.
+
+- Unlock: airport Lv4.
+- Cost: 15,000 coins.
+- Footprint: 3×2.
+- Role: higher passenger throughput with lower storage efficiency.
+
+### Shuttle Station progression
+
+| Level | Passengers / min | Storage | Upgrade direction |
+| --- | ---: | ---: | --- |
+| 1 | 2.8 | 30 | Base |
+| 2 | 4.0 | 42 | Coins + German Automotive Parts + French Gourmet Food |
+| 3 | 5.5 | 58 | Coins + Danish Renewable Parts + Belgian Precision Parts |
+| 4 | 7.5 | 80 | Coins + UK Aerospace Parts + German Machinery + French Luxury Goods |
+
+This gives a real airport-layout choice:
+
+- **Travel Office:** slower generation, better storage.
+- **Shuttle Station:** faster generation, less storage per footprint/progression role.
+
+Both retain their physical building identity while internal upgrades improve production/storage without requiring a new sprite.
+
+## Passenger demand before dispatch
+
+The World Map now previews the aircraft's actual passenger requirement before assignment.
+
+This preview includes Mastery reductions, so a highly mastered aircraft can visibly require fewer passengers than a fresh aircraft of the same type.
+
+Passenger stock remains a real departure gate:
+
+**Serviced aircraft → destination assigned → passenger requirement checked → board passengers → runway queue**
+
+If passenger stock is insufficient, the aircraft remains at the stand in **WAITING PASSENGERS** until enough passengers regenerate or arrive from a future support source.
+
+## Resource-drop reconciliation
+
+The country resource model continues to use:
+
+**40% base chance per resource, rolled independently**
+
+but the final per-flight chance is adjusted by:
+
+- Aircraft-specific modifier: −20% to +20%.
+- Flight-duration modifier.
+- Aircraft-size modifier.
+
+The approved V1 plane catalog now carries those aircraft-specific resource identities as well.
+
+Examples include:
+
+- Swift S14: −20% aircraft modifier.
+- Atlas A64: +20% aircraft modifier.
+- Horizon H88: +15% aircraft modifier.
+
+The airport-creation UI now describes 40% as a **base chance**, not a fixed chance.
+
+## Automated validation
+
+The validation suite now covers:
+
+- Landscape startup.
+- Guest airport creation and country catalog.
+- Airside / service-road connectivity.
+- Aircraft turnaround timing.
+- Flight timers and range.
+- Adjusted independent country-resource drops.
+- Passenger production, storage, and boarding bottleneck.
+- Passenger-building upgrades and persistence.
+- Five Mastery star milestones.
+- Mastery passenger reductions.
+- Mastery XP and coin bonuses.
+- Mastery hours persistence by aircraft type.
+- Rewarded +25 passenger capacity handling.
+- Rewarded-ad callback safety.
+- Shuttle Station production/storage profile.
+- Daily friend passenger-gift cap/reset logic.
+
 ## Next pass
 
-**Pass 10 — Passenger acquisition options + deeper airport economy**
+**Pass 11 — Fleet screen + Mastery presentation + passenger demand depth**
 
 Recommended next work:
 
-- Add the agreed rewarded-ad passenger boost: +25 passengers, capped by available storage.
-- Add daily friend / Alliance passenger gifting groundwork.
-- Add a second physical passenger-building family with a different footprint / production profile.
-- Begin requiring passenger counts by route / aircraft role rather than always filling every seat.
-- Add passenger demand preview to the World Map before dispatch.
-- Start an economy/history panel showing passenger generation, flight consumption, resource income, and bottlenecks.
+- Turn the currently placeholder Fleet tab into a real aircraft roster.
+- Show each owned plane model, Mastery stars, hours, next reward, range, seats, and turnaround profile.
+- Add per-route passenger demand/load factors rather than always requiring the full seat count before Mastery.
+- Add passenger-demand differences by destination and time/contract conditions.
+- Begin economy/history tracking for passengers generated, passengers consumed, resources earned, and operational bottlenecks.
+- Connect a real rewarded-ad provider only when the monetization SDK choice is made.

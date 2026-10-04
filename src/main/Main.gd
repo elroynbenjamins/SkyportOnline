@@ -1875,8 +1875,16 @@ func _on_confirm_building_requested() -> void:
 	coins -= cost
 	if event_manager != null:
 		event_manager.record_metric("buildings_placed", 1)
-	if bool(
-		definition.get("air_traffic_control", false)
+	if (
+		bool(
+			definition.get(
+				"air_traffic_control",
+				false
+			)
+		)
+		or String(
+			definition.get("id", "")
+		).contains("runway")
 	):
 		runway_dispatcher.refresh_air_traffic_control()
 	hud.set_player_data(player_level, coins, gems)

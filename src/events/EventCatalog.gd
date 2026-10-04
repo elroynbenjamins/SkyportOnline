@@ -494,14 +494,17 @@ static func validate_catalog() -> Dictionary:
 				)
 
 		for week in range(1, 4):
-			if int(weeks.get(week, 0)) <= 0:
+			var quest_count := int(weeks.get(week, 0))
+			if quest_count != 4:
 				errors.append(
-					"%s is missing week %d quests."
-					% [event_id, week]
+					"%s week %d must contain exactly 4 quests; found %d."
+					% [event_id, week, quest_count]
 				)
 
 		var seen_shop_ids := {}
 		var passenger_total := 0
+		var passenger_item_count := 0
+		var cosmetic_item_count := 0
 		for item_variant in event.get("shop", []):
 			var item: Dictionary = item_variant
 			var item_id := String(item.get("id", ""))
@@ -515,13 +518,54 @@ static func validate_catalog() -> Dictionary:
 				)
 			seen_shop_ids[item_id] = true
 
-			var limit := maxi(int(item.get("purchase_limit", 1)), 1)
-			if String(item.get("type", "")) == "passengers":
-				passenger_total += (
-					maxi(int(item.get("passengers", 0)), 0)
-					* limit
+			var price := int(item.get("price", -1))
+			if price < 0:
+				errors.append(
+					"%s shop item %s needs a non-negative price."
+					% [event_id, item_id]
 				)
 
+			var raw_limit := int(item.get("purchase_limit", 0))
+			if raw_limit <= 0:
+				errors.append(
+					"%s shop item %s needs a positive purchase limit."
+					% [event_id, item_id]
+				)
+			var limit := maxi(raw_limit, 1)
+
+			var item_type := String(item.get("type", ""))
+			if item_type == "passengers":
+				passenger_item_count += 1
+				var passenger_amount := int(item.get("passengers", 0))
+				if passenger_amount <= 0:
+					errors.append(
+						"%s passenger item %s needs a positive amount."
+						% [event_id, item_id]
+					)
+				passenger_total += maxi(passenger_amount, 0) * limit
+			elif item_type == "cosmetic":
+				cosmetic_item_count += 1
+				if String(item.get("cosmetic_id", "")).is_empty():
+					errors.append(
+						"%s cosmetic item %s needs a cosmetic_id."
+						% [event_id, item_id]
+					)
+			else:
+				errors.append(
+					"%s shop item %s has unsupported type %s."
+					% [event_id, item_id, item_type]
+				)
+
+		if cosmetic_item_count != 4:
+			errors.append(
+				"%s must contain exactly 4 event cosmetics; found %d."
+				% [event_id, cosmetic_item_count]
+			)
+		if passenger_item_count != 2:
+			errors.append(
+				"%s must contain exactly 2 passenger shop items; found %d."
+				% [event_id, passenger_item_count]
+			)
 		if passenger_total > 150:
 			errors.append(
 				"%s exceeds the standard 150 event-passenger cap."
@@ -553,7 +597,37 @@ static func validate_catalog() -> Dictionary:
 					"%s Alliance milestones must increase in target."
 					% event_id
 				)
+			var reward_type := String(
+				milestone.get("reward_type", "")
+			)
+			if reward_type == "currency":
+				if int(milestone.get("currency_reward", 0)) <= 0:
+					errors.append(
+						"%s Alliance currency milestone %s needs a positive reward."
+						% [event_id, milestone_id]
+					)
+			elif reward_type == "cosmetic":
+				if String(milestone.get("cosmetic_id", "")).is_empty():
+					errors.append(
+						"%s Alliance cosmetic milestone %s needs a cosmetic_id."
+						% [event_id, milestone_id]
+					)
+			else:
+				errors.append(
+					"%s Alliance milestone %s has unsupported reward type %s."
+					% [event_id, milestone_id, reward_type]
+				)
+
 			last_target = target
+
+		if (
+			bool(alliance.get("enabled", false))
+			and (alliance.get("milestones", []) as Array).size() != 4
+		):
+			errors.append(
+				"%s enabled Alliance event must contain exactly 4 milestones."
+				% event_id
+			)
 
 	var enabled_events: Array[Dictionary] = []
 	for event in all():

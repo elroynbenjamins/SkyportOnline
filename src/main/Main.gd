@@ -15,6 +15,7 @@ var ground_services: GroundServiceDispatcher
 var runway_dispatcher: RunwayDispatcher
 var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
+var world_map: WorldMapScreen
 
 
 func _ready() -> void:
@@ -27,6 +28,7 @@ func _ready() -> void:
 	hud.rotate_building_requested.connect(_on_rotate_building_requested)
 	hud.confirm_building_requested.connect(_on_confirm_building_requested)
 	hud.cancel_building_requested.connect(_on_cancel_building_requested)
+	hud.navigation_requested.connect(_on_navigation_requested)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
 	hud.set_player_data(player_level, coins, gems)
@@ -35,6 +37,7 @@ func _ready() -> void:
 
 	_setup_ground_services()
 	_setup_runway_dispatcher()
+	_setup_world_map()
 	_spawn_aircraft_demos()
 
 
@@ -55,6 +58,14 @@ func _setup_runway_dispatcher() -> void:
 	ground_services.aircraft_serviced.connect(_on_aircraft_serviced)
 
 
+func _setup_world_map() -> void:
+	world_map = WorldMapScreen.new()
+	world_map.flight_assignment_requested.connect(
+		_on_world_map_flight_assignment_requested
+	)
+	add_child(world_map)
+
+
 func _spawn_aircraft_demos() -> void:
 	var routes: Array[Dictionary] = airport_grid.get_departure_routes("S")
 	if routes.is_empty():
@@ -70,6 +81,21 @@ func _spawn_aircraft_demos() -> void:
 
 		var label := "SO-%03d" % (index + 1)
 		var aircraft := AircraftPrototype.new()
+
+		var profile_ids := ["aerolet_100", "aerolet_120"]
+		var default_destinations := ["london", "paris"]
+		var profile_id := profile_ids[index % profile_ids.size()]
+		var destination_id := default_destinations[
+			index % default_destinations.size()
+		]
+		aircraft.configure_aircraft_type(profile_id)
+
+		var destination := DestinationCatalog.get_destination(destination_id)
+		var initial_plan := FlightRules.create_flight_plan(
+			aircraft.get_aircraft_profile(),
+			destination
+		)
+		aircraft.assign_flight_plan(initial_plan)
 		aircraft.name = label
 		aircraft.z_index = 80 + index
 		aircraft.state_changed.connect(
@@ -156,6 +182,11 @@ func _on_demo_aircraft_state_changed(
 			hud.set_operation_status("%s taxiing to stand" % label)
 		"PARKED":
 			hud.set_operation_status("%s parked at stand" % label, "success")
+		"READY_FOR_DESTINATION":
+			hud.set_operation_status(
+				"%s fueled • choose destination" % label,
+				"warning"
+			)
 		"READY_FOR_DEPARTURE":
 			hud.set_operation_status(
 				"%s ready • waiting for runway" % label,
@@ -168,10 +199,20 @@ func _on_demo_aircraft_state_changed(
 
 
 func _on_demo_aircraft_departed(
-	_aircraft: AircraftPrototype,
+	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
-	hud.set_operation_status("%s departed airport" % label, "success")
+	var plan := aircraft.get_flight_plan()
+	hud.set_operation_status(
+		"%s → %s • %s" % [
+			label,
+			String(plan.get("city", "destination")),
+			FlightRules.format_duration(
+				aircraft.get_flight_remaining_seconds()
+			)
+		],
+		"success"
+	)
 
 
 func _on_demo_arrival_requested(
@@ -272,6 +313,62 @@ func _on_demo_arrival_completed(
 		int(route_info.get("runway_uid", -1))
 	)
 	ground_services.request_fuel(aircraft, label)
+
+
+func _on_navigation_requested(tab: String) -> void:
+	match tab:
+		"world":
+			world_map.open_map(aircraft_demos, player_level)
+		"fleet":
+			hud.set_operation_status("Fleet screen comes in a later pass.")
+		"alliance":
+			hud.set_operation_status("Alliance unlocks later.")
+		"more":
+			hud.set_operation_status("More/settings screen comes later.")
+
+
+func _on_world_map_flight_assignment_requested(
+	aircraft: AircraftPrototype,
+	destination_id: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	var destination := DestinationCatalog.get_destination(destination_id)
+	var profile := aircraft.get_aircraft_profile()
+	if destination.is_empty() or profile.is_empty():
+		world_map.set_assignment_status("Unable to create this flight.")
+		return
+
+	if player_level < int(destination.get("unlock_level", 1)):
+		world_map.set_assignment_status("Destination is still level-locked.")
+		return
+
+	if not FlightRules.can_fly(profile, destination):
+		world_map.set_assignment_status("Destination is outside aircraft range.")
+		return
+
+	if not aircraft.can_change_flight_plan():
+		world_map.set_assignment_status("Aircraft is already committed to a flight.")
+		return
+
+	var previous_state := aircraft.state
+	var plan := FlightRules.create_flight_plan(profile, destination)
+	aircraft.assign_flight_plan(plan)
+
+	world_map.set_assignment_status(
+		"%s assigned to %s • %s" % [
+			aircraft.name,
+			String(destination.get("city", "")),
+			FlightRules.format_duration(
+				float(plan.get("duration_seconds", 0.0))
+			)
+		]
+	)
+
+	if previous_state == "READY_FOR_DESTINATION":
+		aircraft.mark_service_complete()
+		runway_dispatcher.request_departure(aircraft, aircraft.name)
 
 
 func _on_world_tapped(world_position: Vector2) -> void:

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" shape-rendering="crispEdges">
+<g transform="translate(320 0) scale(-1 1)" stroke="#263b49" stroke-width="4" stroke-linejoin="miter">
+<polygon fill="#778a91" points="28,157 139,101 286,157 171,221"/>
+<polygon fill="#dce3df" points="74,104 173,56 252,91 150,142"/>
+<polygon fill="#b8c5c5" points="74,104 150,142 150,185 74,149"/>
+<polygon fill="#9eafb4" points="150,142 252,91 252,136 150,185"/>
+<polygon fill="#f1f3ee" points="84,94 173,51 242,82 150,128"/>
+<polygon fill="#5c8ea4" points="85,111 145,140 145,165 85,137"/>
+<polygon fill="#4c7b91" points="157,140 239,100 239,128 157,168"/>
+<g fill="#80c9e6" stroke-width="2"><rect x="91" y="116" width="14" height="13"/><rect x="110" y="125" width="14" height="13"/><rect x="129" y="134" width="12" height="13"/><rect x="166" y="141" width="15" height="13"/><rect x="186" y="131" width="15" height="13"/><rect x="206" y="121" width="15" height="13"/></g>
+<rect fill="#2f6e91" x="130" y="149" width="24" height="34"/>
+<polygon fill="#c8d1d0" points="88,147 118,161 118,174 88,160"/><polygon fill="#9dacad" points="118,161 141,149 141,162 118,174"/>
+<polygon fill="#c8d1d0" points="181,165 214,149 214,162 181,178"/><polygon fill="#9dacad" points="158,154 181,165 181,178 158,167"/>
+<polygon fill="#d6dedb" points="214,149 246,133 263,141 231,157"/><polygon fill="#96a8ad" points="231,157 263,141 263,151 231,167"/>
+<rect fill="#2b6f95" x="132" y="92" width="57" height="18"/><rect fill="#edf4f4" x="140" y="97" width="41" height="7"/>
+<rect fill="#81959c" x="218" y="52" width="15" height="47"/><polygon fill="#8fa4aa" points="211,53 229,44 246,51 228,60"/><polygon fill="#657d88" points="211,53 228,60 228,78 211,70"/><polygon fill="#4f6f7d" points="228,60 246,51 246,69 228,78"/><rect fill="#72c0de" x="218" y="58" width="7" height="13"/><rect fill="#72c0de" x="232" y="54" width="7" height="13"/>
+<circle fill="#4e8d49" cx="54" cy="168" r="14"/><circle fill="#69ab59" cx="48" cy="162" r="9"/>
+<circle fill="#4e8d49" cx="266" cy="170" r="14"/><circle fill="#69ab59" cx="271" cy="164" r="9"/>
+</g></svg>

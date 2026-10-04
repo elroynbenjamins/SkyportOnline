@@ -463,21 +463,6 @@ func begin_arrival_after_clearance() -> void:
 
 func _process(delta: float) -> void:
 	_sync_turnaround_status_transform()
-	if event_livery_enabled and event_theme == "autumn":
-		draw_rect(
-			Rect2(Vector2(-3, -5), Vector2(6, 10)),
-			Color("e5a23b")
-		)
-		draw_line(
-			Vector2(-10, -14),
-			Vector2(1, -4),
-			Color("a94b2b"),
-			3.0
-		)
-
-	if event_featured and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
-		_draw_event_badge()
-
 	match state:
 		"CLEARED":
 			delay_remaining -= delta
@@ -1000,6 +985,24 @@ func _draw() -> void:
 
 	draw_rect(Rect2(Vector2(2, -4), Vector2(7, 8)), Color("4a7898"))
 	draw_circle(Vector2(14, 0), 2.2, Color("c8e9f1"))
+
+	if event_livery_enabled and event_theme == "autumn":
+		draw_rect(
+			Rect2(Vector2(-3, -5), Vector2(6, 10)),
+			Color("e5a23b")
+		)
+		draw_line(
+			Vector2(-10, -14),
+			Vector2(1, -4),
+			Color("a94b2b"),
+			3.0
+		)
+
+	if (
+		event_featured
+		and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]
+	):
+		_draw_event_badge()
 
 	match state:
 		"WAITING_FUEL":

@@ -140,6 +140,8 @@ func _service_name(service_type: String) -> String:
 			return "Cleaning"
 		"catering":
 			return "Catering"
+		"pushback":
+			return "Pushback"
 		_:
 			return "Fuel"
 

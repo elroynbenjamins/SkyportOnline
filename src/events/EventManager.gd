@@ -118,6 +118,119 @@ func record_metric(metric: String, amount: int) -> void:
 	changed.emit(get_snapshot())
 
 
+func record_destination_flight(destination_id: String) -> void:
+	if (
+		not has_active_event()
+		or destination_id.is_empty()
+	):
+		return
+
+	var current_week := EventCatalog.current_week(
+		event_definition,
+		_now_unix()
+	)
+	var progress: Dictionary = state.get(
+		"quest_progress",
+		{}
+	).duplicate(true)
+	var claimed: Dictionary = state.get(
+		"claimed_quests",
+		{}
+	)
+	var changed_any := false
+
+	for quest_variant in event_definition.get("quests", []):
+		var quest: Dictionary = quest_variant
+		if String(
+			quest.get("metric", "")
+		) != "destination_flights":
+			continue
+		if String(
+			quest.get("destination_id", "")
+		) != destination_id:
+			continue
+		if int(quest.get("week", 1)) > current_week:
+			continue
+
+		var quest_id := String(quest.get("id", ""))
+		if (
+			quest_id.is_empty()
+			or bool(claimed.get(quest_id, false))
+		):
+			continue
+
+		var target := maxi(
+			int(quest.get("target", 0)),
+			0
+		)
+		var before := int(
+			progress.get(quest_id, 0)
+		)
+		var after := mini(before + 1, target)
+		if after != before:
+			progress[quest_id] = after
+			changed_any = true
+
+	var featured: Array = event_definition.get(
+		"featured_destinations",
+		[]
+	)
+	var featured_bonus := maxi(
+		int(
+			event_definition.get(
+				"featured_route_currency",
+				0
+			)
+		),
+		0
+	)
+	var featured_match := featured.has(
+		destination_id
+	)
+	if featured_match and featured_bonus > 0:
+		state["currency"] = (
+			int(state.get("currency", 0))
+			+ featured_bonus
+		)
+		var featured_counts: Dictionary = state.get(
+			"featured_route_flights",
+			{}
+		).duplicate(true)
+		featured_counts[destination_id] = (
+			int(
+				featured_counts.get(
+					destination_id,
+					0
+				)
+			)
+			+ 1
+		)
+		state["featured_route_flights"] = (
+			featured_counts
+		)
+		changed_any = true
+		message.emit(
+			"Featured event route • +%d %s"
+			% [
+				featured_bonus,
+				String(
+					event_definition.get(
+						"currency_name",
+						"event currency"
+					)
+				)
+			],
+			"success"
+		)
+
+	if not changed_any:
+		return
+
+	state["quest_progress"] = progress
+	_save_state()
+	changed.emit(get_snapshot())
+
+
 func claim_quest(quest_id: String) -> Dictionary:
 	if not has_active_event():
 		return _result(false, "No active event.")
@@ -424,7 +537,25 @@ func get_snapshot() -> Dictionary:
 			state.get("alliance_personal", 0)
 		),
 		"alliance_total": int(state.get("alliance_total", 0)),
-		"alliance_milestones": alliance_entries
+		"alliance_milestones": alliance_entries,
+		"featured_destinations": (
+			event_definition.get(
+				"featured_destinations",
+				[]
+			) as Array
+		).duplicate(true),
+		"featured_route_currency": int(
+			event_definition.get(
+				"featured_route_currency",
+				0
+			)
+		),
+		"featured_route_flights": (
+			state.get(
+				"featured_route_flights",
+				{}
+			) as Dictionary
+		).duplicate(true)
 	}
 
 
@@ -434,6 +565,7 @@ func _default_state() -> Dictionary:
 		"quest_progress": {},
 		"claimed_quests": {},
 		"shop_purchases": {},
+		"featured_route_flights": {},
 		"alliance_personal": 0,
 		"alliance_total": 0,
 		"claimed_alliance_milestones": {}

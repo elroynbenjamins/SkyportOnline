@@ -645,8 +645,10 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 			return "STAND  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
 		return "STAND  •  " + _size_text(definition) + "  ✓"
 	if id.contains("terminal"):
-		return "TERMINAL"
-	if id == "travel_office":
+		return "TERMINAL  •  LV %d" % int(
+			building.get("upgrade_level", 1)
+		)
+	if bool(definition.get("passenger_upgradable", false)):
 		return "PASSENGERS  •  LV %d" % int(
 			building.get("upgrade_level", 1)
 		)
@@ -1270,6 +1272,20 @@ func get_passenger_generator_buildings() -> Array[Dictionary]:
 			String(building.get("definition_id", ""))
 		)
 		if bool(definition.get("passenger_generator", false)):
+			result.append(building.duplicate(true))
+	return result
+
+
+func get_passenger_economy_buildings() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			bool(definition.get("passenger_generator", false))
+			or bool(definition.get("passenger_capacity_provider", false))
+		):
 			result.append(building.duplicate(true))
 	return result
 

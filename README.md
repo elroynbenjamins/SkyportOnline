@@ -2,7 +2,7 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 7 — V1 aircraft catalog + route economy
+## Current milestone: Pass 8 — Fleet catalog + player route selection
 
 The repository now contains a playable airport-building and airport-operations foundation:
 
@@ -19,8 +19,8 @@ The repository now contains a playable airport-building and airport-operations f
 - Taxiway connectivity from stands / hangars to compatible runways.
 - Service-road routing for ground vehicles.
 - Runway occupancy and arrival/departure queues.
-- Two connected starter stands with two S-class aircraft.
-- Continuous aircraft turnaround using real route manifests, passenger loads, profit, and airport XP.
+- Two connected starter stands, a 3-slot starter hangar, and two Pico P8 aircraft.
+- Player-selected routes with real manifests, passenger loads, operating costs, profit, and airport XP.
 
 ### Current building catalog
 
@@ -105,7 +105,7 @@ The starter airport continuously runs two temporary S-class aircraft through the
 
 **Parked → Fuel request → Fuel truck → Ready → Runway queue → Taxi out → Line up → Takeoff roll → Climb → En route → Holding for arrival → Approach → Landing roll → Taxi in → Parked**
 
-After parking, the flight is settled, net profit and Airport XP are credited, a new suitable route is assigned, and the aircraft re-enters the turnaround flow.
+After parking, the flight is settled and net profit plus Airport XP are credited. The aircraft then waits for the player to choose its next destination in the Fleet screen before fueling begins.
 
 Aircraft release their stand when taxiing out. Returning aircraft reserve a free compatible stand before requesting landing clearance. If every compatible stand is occupied, they remain in a holding state until one becomes available.
 
@@ -141,6 +141,20 @@ This deliberately prevents a bigger-is-always-better fleet. S-only routes preser
 
 Country-linked routes already retain the planned **40% resource-roll chance** through a resource-pool key; the later World Map/country pass can resolve that key into each country's three unique resources.
 
+## Fleet & route planner
+
+The landscape Fleet screen now exposes three working columns:
+
+- **Owned Fleet** — select any owned aircraft and see whether it is parked, stored, servicing, en route, or inbound.
+- **Aircraft Catalog** — browse all nine V1 S/M aircraft with level lock, purchase price, capacity, range, specialty, and live infrastructure/hangar requirements.
+- **Route Planner** — compare unlocked destinations before dispatch. Compatible rows show passenger load, calculated duration, gross revenue, operating cost, net profit, and Airport XP.
+
+Aircraft purchases use physical hangar capacity. The starter airport begins with a **3-slot Small Hangar** and **2× Pico P8**, so only one additional S aircraft fits before another hangar is required.
+
+Purchased aircraft may remain stored in the hangar while all stands are occupied. Once a compatible stand becomes free, selecting a route deploys the stored aircraft onto that stand and starts its fuel/service/departure lifecycle.
+
+Connected infrastructure is required for purchases: a suitable hangar, stand/runway path, and reachable fuel service must exist for the aircraft size. This is already generic across **S → M → L → XL**, even though only S and M aircraft are currently exposed.
+
 ## Automated validation
 
 GitHub Actions currently performs:
@@ -154,6 +168,7 @@ GitHub Actions currently performs:
 - Arrival runway queue tests.
 - Full aircraft lifecycle test from takeoff through landing and parking.
 - Aircraft catalog, route compatibility, profitability, and Airport XP tests.
+- Fleet hangar-capacity and infrastructure-readiness tests.
 
 ## Run
 
@@ -163,13 +178,13 @@ GitHub Actions currently performs:
 
 ## Next pass
 
-**Pass 8 — Fleet catalog + player route selection**
+**Pass 9 — Interactive World Map + country route resources**
 
 Recommended next work:
 
-- Add a landscape Fleet/Catalog panel using the nine aircraft definitions.
-- Expose aircraft purchase price, range, capacity, specialty, and infrastructure requirements.
-- Replace automatic best-route assignment with a player-facing destination selector.
-- Show expected passengers, duration, gross revenue, operating cost, and net profit before dispatch.
-- Begin enforcing physical hangar capacity for owned aircraft.
-- Bridge the route selector into the interactive World Map and country-resource system.
+- Turn the WORLD navigation button into the first landscape world-map screen.
+- Reuse the route catalog as selectable destination markers/regions.
+- Wire each country into its three unique resource drops.
+- Resolve the existing 40% per-resource roll after a completed flight.
+- Show route range, aircraft suitability, passenger demand, expected economics, and possible country resources on the map.
+- Let the Fleet route planner and World Map open the same underlying dispatch flow.

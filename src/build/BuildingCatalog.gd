@@ -15,7 +15,8 @@ static func all() -> Array[Dictionary]:
 			"color": Color("343c42"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Handles small aircraft."
+			"description": "Handles small aircraft.",
+			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg"
 		},
 		{
 			"id": "small_stand",
@@ -28,7 +29,11 @@ static func all() -> Array[Dictionary]:
 			"color": Color("727f87"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Parking and turnaround for small aircraft."
+			"description": "Parking and turnaround for small aircraft.",
+			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/stand_small.svg",
+			"world_sprite_size": Vector2(130, 108),
+			"world_sprite_offset": Vector2(0, -24)
 		},
 		{
 			"id": "taxiway",
@@ -41,7 +46,8 @@ static func all() -> Array[Dictionary]:
 			"color": Color("59636a"),
 			"rotatable": false,
 			"sizes": PackedStringArray(["S", "M", "L"]),
-			"description": "Connects runways and stands."
+			"description": "Connects runways and stands.",
+			"icon_path": "res://assets/pixel/airport_v1/taxiway.svg"
 		},
 		{
 			"id": "small_terminal",
@@ -54,7 +60,11 @@ static func all() -> Array[Dictionary]:
 			"color": Color("bac6c8"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Basic passenger handling."
+			"description": "Basic passenger handling.",
+			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/terminal_small.svg",
+			"world_sprite_size": Vector2(205, 154),
+			"world_sprite_offset": Vector2(0, -50)
 		},
 		{
 			"id": "small_hangar",
@@ -67,7 +77,11 @@ static func all() -> Array[Dictionary]:
 			"color": Color("8094a1"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
-			"description": "Stores and maintains small aircraft."
+			"description": "Stores and maintains small aircraft.",
+			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/hangar_small.svg",
+			"world_sprite_size": Vector2(205, 154),
+			"world_sprite_offset": Vector2(0, -44)
 		},
 		{
 			"id": "basic_fuel",
@@ -83,7 +97,11 @@ static func all() -> Array[Dictionary]:
 			"description": "One standard-speed fuel truck.",
 			"service": "fuel",
 			"service_speed": 1.0,
-			"vehicle_capacity": 1
+			"vehicle_capacity": 1,
+			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
+			"world_sprite_size": Vector2(155, 122),
+			"world_sprite_offset": Vector2(0, -36)
 		},
 		{
 			"id": "rapid_small_fuel",
@@ -99,7 +117,11 @@ static func all() -> Array[Dictionary]:
 			"description": "Two faster fuel trucks for small aircraft.",
 			"service": "fuel",
 			"service_speed": 1.6,
-			"vehicle_capacity": 2
+			"vehicle_capacity": 2,
+			"icon_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
+			"world_sprite_size": Vector2(160, 124),
+			"world_sprite_offset": Vector2(0, -38)
 		},
 		{
 			"id": "medium_stand",
@@ -112,7 +134,11 @@ static func all() -> Array[Dictionary]:
 			"color": Color("6f7c84"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S", "M"]),
-			"description": "Larger turnaround stand for small and medium aircraft."
+			"description": "Larger turnaround stand for small and medium aircraft.",
+			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/stand_small.svg",
+			"world_sprite_size": Vector2(165, 132),
+			"world_sprite_offset": Vector2(0, -31)
 		},
 		{
 			"id": "regional_fuel",
@@ -128,7 +154,11 @@ static func all() -> Array[Dictionary]:
 			"description": "Two standard-speed trucks for small and medium aircraft.",
 			"service": "fuel",
 			"service_speed": 1.0,
-			"vehicle_capacity": 2
+			"vehicle_capacity": 2,
+			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
+			"world_sprite_size": Vector2(184, 145),
+			"world_sprite_offset": Vector2(0, -42)
 		},
 		{
 			"id": "regional_runway",
@@ -141,7 +171,8 @@ static func all() -> Array[Dictionary]:
 			"color": Color("2c3338"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S", "M"]),
-			"description": "Longer runway for small and medium aircraft."
+			"description": "Longer runway for small and medium aircraft.",
+			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg"
 		},
 		{
 			"id": "rapid_regional_fuel",
@@ -157,7 +188,11 @@ static func all() -> Array[Dictionary]:
 			"description": "Three faster fuel trucks for regional operations.",
 			"service": "fuel",
 			"service_speed": 1.5,
-			"vehicle_capacity": 3
+			"vehicle_capacity": 3,
+			"icon_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
+			"world_sprite_size": Vector2(220, 165),
+			"world_sprite_offset": Vector2(0, -48)
 		}
 	]
 

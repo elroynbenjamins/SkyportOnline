@@ -254,6 +254,16 @@ func _run() -> void:
 		_fail("Winter crate purchase count should persist at three.")
 		return
 
+	var inventory_profile := ProfileStore.add_resource_drops([
+		{
+			"id": "be_chocolate",
+			"amount": 2
+		}
+	])
+	if inventory_profile.is_empty():
+		_fail("Winter UI test resource inventory should persist.")
+		return
+
 	var screen := EventScreen.new()
 	root.add_child(screen)
 	await process_frame
@@ -267,12 +277,37 @@ func _run() -> void:
 		_fail("Winter UI should never advertise a +0 voucher route reward.")
 		return
 
+	var shop_headers := PackedStringArray()
+	for child in screen.shop_list.get_children():
+		if child is Label:
+			shop_headers.append(String(child.text))
+	for expected_header in [
+		"COSMETICS",
+		"PASSENGERS",
+		"AIRPORT COINS",
+		"WINTER SUPPLIES"
+	]:
+		if not shop_headers.has(expected_header):
+			_fail("Winter shop should contain section header %s." % expected_header)
+			return
+
 	screen._open_resource_choice(crate)
 	if not screen.resource_choice_overlay.visible:
 		_fail("Winter Supply Crate should open a resource-choice overlay.")
 		return
 	if screen.resource_choice_list.get_child_count() < 12:
 		_fail("Resource selector should expose the configured country resources.")
+		return
+
+	var found_owned_count := false
+	for child in screen.resource_choice_list.get_children():
+		if child is Button and String(child.text).contains(
+			"Chocolate  •  Owned 2"
+		):
+			found_owned_count = true
+			break
+	if not found_owned_count:
+		_fail("Winter resource selector should show the player's owned resource count.")
 		return
 
 	_cleanup_profile()

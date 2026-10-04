@@ -2,31 +2,25 @@
 
 Mobile-first isometric airport management game.
 
-## Current milestone: Pass 4 — Ground-service queues + two-aircraft starter airport
+## Current milestone: Pass 6 — Landscape airport + full local flight lifecycle
 
-The repository now contains a playable airport-building foundation with real airside connectivity:
+The repository now contains a playable airport-building and airport-operations foundation:
 
-- Godot 4 mobile project targeting a portrait 720×1280 reference viewport.
+- Godot 4 mobile project using a landscape 1280×720 reference viewport.
 - Isometric 24×24 airport grid split into 3×3 expansion parcels.
-- Level-gated and coin-gated land expansion parcels.
+- Level-gated and coin-gated land expansion.
 - One-finger pan and two-finger pinch zoom on mobile.
 - Right-mouse drag and mouse-wheel zoom for desktop/editor testing.
+- Landscape HUD with build catalog on the right and airport controls around the edges.
 - Build catalog with level locks, costs, aircraft-size compatibility, and footprints.
 - Green/red placement preview based on land ownership and occupied tiles.
 - Rotation for rotatable buildings.
-- Coin deduction on confirmed placement.
-- Pixel-art airport building assets integrated into the live grid and build catalog.
-- Taxiway network connectivity from stands / hangars to runways.
-- Live Airfield Status HUD with disconnected-building warnings.
-- Placement preview warning when an airside building has no runway-connected taxiway.
+- Pixel-art airport building assets integrated into the live grid and catalog.
+- Taxiway connectivity from stands / hangars to compatible runways.
+- Service-road routing for ground vehicles.
+- Runway occupancy and arrival/departure queues.
 - Two connected starter stands with two S-class aircraft.
-- Aircraft follow real stand → taxiway → runway routes.
-- Aircraft wait for fuel before departure.
-- Visible fuel trucks drive from the selected fuel station to the aircraft and back.
-- Ground-service dispatcher queues aircraft when all compatible trucks are busy.
-- Fuel station vehicle capacity controls parallel servicing.
-- Faster compatible fuel infrastructure is preferred automatically.
-- Fuel service duration scales with the station's speed multiplier.
+- Continuous aircraft turnaround and flight demo loop.
 
 ### Current building catalog
 
@@ -35,6 +29,7 @@ The repository now contains a playable airport-building foundation with real air
 | Short Runway | 7×2 | 10,000 | Lv 1 | S |
 | Small Aircraft Stand | 2×2 | 4,500 | Lv 1 | S |
 | Taxiway | 1×1 | 250 | Lv 1 | S/M/L |
+| Service Road | 1×1 | 150 | Lv 1 | Ground vehicles |
 | Small Terminal | 3×2 | 8,000 | Lv 1 | S |
 | Basic Fuel Station | 2×2 | 7,500 | Lv 2 | S |
 | Small Hangar | 3×3 | 12,000 | Lv 3 | S |
@@ -44,42 +39,91 @@ The repository now contains a playable airport-building foundation with real air
 | Regional Rapid Fuel Station | 4×3 | 85,000 | Lv 10 | S/M |
 | Regional Runway | 10×3 | 90,000 | Lv 12 | S/M |
 
-Fuel infrastructure already stores service speed and vehicle capacity, so normal and rapid stations can differ by aircraft size, truck count, and turnaround speed.
+Fuel infrastructure stores both service speed and vehicle capacity. Normal and rapid stations therefore differ mechanically by aircraft compatibility, truck count, and turnaround speed.
 
 ## Airside connectivity
 
-Taxiway cells form the operational airside network.
+Taxiway cells form the operational aircraft network.
 
-A stand or hangar is considered connected only when:
+A stand or hangar is operational only when:
 
-1. it touches a taxiway, and
-2. that taxiway network reaches a runway.
+1. it touches a taxiway; and
+2. that taxiway network reaches a compatible runway.
 
-Disconnected airside buildings remain placeable for layout flexibility, but the game shows a warning marker, changes the building label, and updates the Airfield Status HUD.
+Disconnected buildings remain placeable for layout freedom, but the game shows warnings in the world view and Airfield Status HUD.
 
-The starter airport currently passes automated connectivity and ground-service tests that check:
+## Ground-service roads
 
-- both starter stands are connected;
-- both stands expose valid departure routes;
-- a newly placed disconnected stand is detected;
-- the disconnected stand preview warns the player;
-- extending the taxiway connects that stand;
-- a valid stand-to-runway departure route is exposed;
-- the basic 1-truck fuel station services one aircraft while the second queues;
-- a rapid 2-truck fuel station services two aircraft in parallel with no queue;
-- the faster compatible fuel station is preferred.
+Fuel trucks no longer cross the airport in a direct line.
 
-## Aircraft and ground-service prototype
+A compatible fuel station must have a valid:
 
-The starter airport now spawns two temporary S-class commuter aircraft.
+**Fuel Station → Service Road → Aircraft Stand**
 
-Current behavior:
+route before the dispatcher can assign one of its trucks.
 
-**Parked at stand → request fuel → truck dispatch / queue → fueling → ready → taxi to runway → roll to runway end → hold**
+The truck follows that route outbound, services the aircraft, and follows the same route back to its station.
 
-The aircraft use the same taxiway graph as the connectivity system. Fuel trucks currently travel directly between the fuel station and stand; service-road routing comes in a later pass.
+## Ground-service capacity
 
-Aircraft and vehicle visuals are still temporary code-drawn prototypes. Dedicated pixel sprites should replace them after movement, service sizing, and path rules are finalized.
+The starter airport demonstrates real servicing bottlenecks:
+
+**Basic Fuel Station**
+- S-class aircraft
+- x1.0 service speed
+- 1 truck
+- two waiting aircraft = one serviced, one queued
+
+**Rapid Small Fuel Station**
+- S-class aircraft
+- x1.6 service speed
+- 2 trucks
+- two waiting aircraft = both can be serviced simultaneously
+
+The dispatcher automatically prefers faster compatible stations that still have an available truck and valid road access.
+
+## Runway traffic
+
+Every departure and arrival route identifies its runway.
+
+A runway can handle only one active aircraft operation at a time.
+
+Operations use a shared queue:
+
+**Departure ready → request runway → clearance → taxi / takeoff**
+
+or:
+
+**Inbound aircraft → request runway → clearance → approach / landing**
+
+When the runway is occupied, later aircraft wait automatically. The next compatible operation is released as soon as the previous aircraft clears the runway.
+
+## Aircraft lifecycle
+
+The starter airport continuously runs two temporary S-class aircraft through the local airport loop:
+
+**Parked → Fuel request → Fuel truck → Ready → Runway queue → Taxi out → Line up → Takeoff roll → Climb → En route → Holding for arrival → Approach → Landing roll → Taxi in → Parked**
+
+After parking, the aircraft re-enters the turnaround flow and requests fuel again.
+
+Aircraft release their stand when taxiing out. Returning aircraft reserve a free compatible stand before requesting landing clearance. If every compatible stand is occupied, they remain in a holding state until one becomes available.
+
+The en-route segment is still a short local demo timer. The future World Map / route system will replace that temporary timer with real destination travel.
+
+Aircraft and fuel-truck visuals are still temporary code-drawn prototypes. The airport buildings already use the first Skyport Online pixel-art asset set.
+
+## Automated validation
+
+GitHub Actions currently performs:
+
+- Godot project import / GDScript parsing.
+- Landscape main-scene headless startup smoke test.
+- Airside connectivity tests.
+- Service-road routing tests.
+- Fuel speed and truck-capacity tests.
+- Departure runway queue tests.
+- Arrival runway queue tests.
+- Full aircraft lifecycle test from takeoff through landing and parking.
 
 ## Run
 
@@ -87,21 +131,14 @@ Aircraft and vehicle visuals are still temporary code-drawn prototypes. Dedicate
 2. Import this repository by selecting `project.godot`.
 3. Run the project.
 
-GitHub Actions currently performs:
-
-- Godot project import / script parsing.
-- Main-scene headless startup smoke test.
-- Airside connectivity and departure-route regression test.
-
 ## Next pass
 
-**Pass 5 — Runway traffic + service-road refinement**
+**Pass 7 — Flight destinations + first World Map bridge**
 
 Recommended next work:
 
-- Runway occupancy so only one departure/arrival uses a runway at a time.
-- Departure queue when multiple serviced aircraft are ready.
-- Service-road routing for fuel trucks instead of direct-line travel.
-- Station/truck busy indicators in the airport view.
-- Dedicated Skyport Online pixel aircraft and fuel-truck sprites.
-- Then expand servicing into baggage, catering, and maintenance.
+- Replace the temporary en-route timer with a small flight-data model.
+- Add the first local destination list and flight duration / reward data.
+- Make an aircraft remain airborne until its assigned route completes.
+- Prepare a dedicated World Map scene without yet building the final global resource economy.
+- Begin first proper pixel aircraft and fuel-truck sprites once their required angles are locked.

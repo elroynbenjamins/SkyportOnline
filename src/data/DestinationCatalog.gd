@@ -20,6 +20,17 @@ static func all() -> Array[Dictionary]:
 			"map_position": Vector2(0.43, 0.59)
 		},
 		{
+			"id": "bremen",
+			"city": "Bremen",
+			"country": "Germany",
+			"country_code": "DE",
+			"distance_km": 280.0,
+			"unlock_level": 1,
+			"coin_reward": 560,
+			"xp_reward": 40,
+			"map_position": Vector2(0.54, 0.46)
+		},
+		{
 			"id": "london",
 			"city": "London",
 			"country": "United Kingdom",

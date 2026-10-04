@@ -144,6 +144,32 @@ Specialized buildings retain better base performance, so upgrading the starter d
 
 Saved service-building levels are restored from the guest profile and immediately affect future dispatcher assignments.
 
+## Aircraft service docking
+
+Ground-service vehicles now use distinct docking positions around each aircraft instead of all driving to the stand center.
+
+Default docking layout:
+
+- **Passenger handling:** forward-left passenger door.
+- **Catering:** forward-right service door.
+- **Cleaning:** rear-left access point.
+- **Baggage / cargo:** rear-right hold area.
+- **Fuel:** wing / center-fuselage fuel point.
+
+The docking points rotate with the aircraft and automatically widen for M-class aircraft. L and XL scaling hooks are already present for later.
+
+The anchor system also supports per-aircraft overrides through the aircraft profile. This is intentional for the incoming final plane sprite pack: if one aircraft has a different door, wing, or cargo-hold position, that plane can override only its anchor data rather than requiring service-dispatch code changes.
+
+Vehicles now stop at those individual positions and display simple service interactions while active:
+
+- Fuel truck → visible fuel hose.
+- Passenger vehicle → boarding stair / ramp cue.
+- Baggage tractor → conveyor / baggage transfer cue.
+- Cleaning van → cabin-access connection.
+- Catering truck → raised catering-lift cue.
+
+These are code-drawn placeholders and can later be replaced by pixel vehicle sprites without changing the routing or timing systems.
+
 ## Passenger bottleneck
 
 Passenger aircraft now consume passengers before departure.

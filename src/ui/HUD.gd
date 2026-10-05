@@ -1200,14 +1200,26 @@ func _update_placement_expand_action(
 	var cost := int(
 		status.get("locked_parcel_cost", 0)
 	)
+	var reserved_build_cost := 0
+	if active_build_mode == "build":
+		var definition := BuildingCatalog.get_definition(
+			active_building_id
+		)
+		if not definition.is_empty():
+			reserved_build_cost = maxi(
+				int(definition.get("cost", 0)),
+				0
+			)
+	var total_required_coins := cost + reserved_build_cost
+
 	if current_level < required_level:
 		expand_here_button.text = "EXPAND HERE\nLV %d" % required_level
 		expand_here_button.disabled = true
 		return
 
-	if current_coins < cost:
+	if current_coins < total_required_coins:
 		expand_here_button.text = "NEED 🪙 %s" % _format_number(
-			cost - current_coins
+			total_required_coins - current_coins
 		)
 		expand_here_button.disabled = true
 		return

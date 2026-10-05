@@ -22,13 +22,13 @@ const CELLS := {
 }
 
 const WORLD_SIZES := {
-	"crew": Vector2(42, 42),
-	"marshaller": Vector2(48, 48),
-	"civilian": Vector2(39, 39),
-	"utility": Vector2(58, 58),
-	"baggage": Vector2(78, 68),
-	"windsock": Vector2(70, 70),
-	"flag": Vector2(66, 66)
+	"crew": Vector2(54, 54),
+	"marshaller": Vector2(60, 60),
+	"civilian": Vector2(50, 50),
+	"utility": Vector2(60, 60),
+	"baggage": Vector2(86, 76),
+	"windsock": Vector2(84, 84),
+	"flag": Vector2(80, 80)
 }
 
 static var _atlas: Texture2D

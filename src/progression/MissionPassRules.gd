@@ -30,6 +30,8 @@ static func ensure_state(state: Dictionary, unix_time: float, level: int) -> boo
 	var week_key := _week_key(unix_time)
 	var month_key := _month_key(unix_time)
 	var pass_state: Dictionary = state.get("mission_pass", {})
+	if not pass_state.is_empty() and String(pass_state.get("month_key", "")) != month_key:
+		_auto_claim_expiring_pass(state, pass_state)
 	if String(pass_state.get("month_key", "")) != month_key:
 		pass_state = {
 			"month_key": month_key,
@@ -67,20 +69,24 @@ static func ensure_state(state: Dictionary, unix_time: float, level: int) -> boo
 		changed = true
 
 	var weeks_created: Dictionary = pass_state.get("weeks_created", {})
-	if not bool(weeks_created.get(week_key, false)):
-		var weekly: Array = pass_state.get("weekly", [])
+	var weekly: Array = pass_state.get("weekly", [])
+	var current_week_index := _month_week_index(unix_time)
+	for week_index in range(1, current_week_index + 1):
+		var catchup_key := "%s-W%d" % [month_key, week_index]
+		if bool(weeks_created.get(catchup_key, false)):
+			continue
 		weekly.append_array(_generate_missions(
 			MissionPassCatalog.weekly_templates(),
 			WEEKLY_COUNT,
 			level,
 			"weekly",
-			week_key,
+			catchup_key,
 			String(state.get("airport_id", "airport"))
 		))
-		pass_state["weekly"] = weekly
-		weeks_created[week_key] = true
-		pass_state["weeks_created"] = weeks_created
+		weeks_created[catchup_key] = true
 		changed = true
+	pass_state["weekly"] = weekly
+	pass_state["weeks_created"] = weeks_created
 
 	state["mission_pass"] = pass_state
 	return changed
@@ -415,6 +421,26 @@ static func _mission_from_template(
 		"seen": {}
 	}
 
+static func _auto_claim_expiring_pass(state: Dictionary, pass_state: Dictionary) -> void:
+	var points := int(pass_state.get("points", 0))
+	var premium := bool(pass_state.get("premium", false))
+	var claimed_free: Dictionary = pass_state.get("claimed_free", {})
+	var claimed_premium: Dictionary = pass_state.get("claimed_premium", {})
+	for tier_number in range(1, MissionPassCatalog.TIERS + 1):
+		var tier := MissionPassCatalog.tier(tier_number)
+		if points < int(tier.get("points", 0)):
+			break
+		if not bool(claimed_free.get(str(tier_number), false)):
+			_apply_reward(state, tier.get("free", {}))
+			claimed_free[str(tier_number)] = true
+		if premium and not bool(claimed_premium.get(str(tier_number), false)):
+			_apply_reward(state, tier.get("premium", {}))
+			claimed_premium[str(tier_number)] = true
+	pass_state["claimed_free"] = claimed_free
+	pass_state["claimed_premium"] = claimed_premium
+	state["mission_pass"] = pass_state
+	_sync_aero_wallet(state)
+
 static func _apply_reward(state: Dictionary, reward: Dictionary) -> void:
 	var grants: Dictionary = reward.get("grants", {})
 	state["coins"] = int(state.get("coins", 0)) + maxi(int(grants.get("coins", 0)), 0)
@@ -447,6 +473,8 @@ static func _month_key(unix_time: float) -> String:
 	return "%04d-%02d" % [int(date.get("year", 1970)), int(date.get("month", 1))]
 
 static func _week_key(unix_time: float) -> String:
-	var days := int(floor(unix_time / float(SECONDS_PER_DAY)))
-	# 1970-01-01 was Thursday. Adding three makes each bucket begin on Monday.
-	return str(int(floor(float(days + 3) / 7.0)))
+	return "%s-W%d" % [_month_key(unix_time), _month_week_index(unix_time)]
+
+static func _month_week_index(unix_time: float) -> int:
+	var date := Time.get_datetime_dict_from_unix_time(int(unix_time))
+	return clampi(int(floor(float(maxi(int(date.get("day", 1)), 1) - 1) / 7.0)) + 1, 1, 5)

@@ -1,4 +1,4 @@
-name: Validate career and NPC gameplay
+name: Validate progression, missions and NPC gameplay
 on:
   push:
     branches: [main]
@@ -44,6 +44,15 @@ jobs:
           test "$status" -eq 0
           if grep -E 'SCRIPT ERROR|Parse Error|Compile Error' /tmp/skyport-progression-rules.log; then exit 1; fi
           grep -q 'PROGRESSION_TEST_OK' /tmp/skyport-progression-rules.log
+      - name: Daily weekly mission and Airport Pass rules
+        shell: bash
+        run: |
+          status=0
+          timeout 60s godot --headless --path . --script res://tests/mission_pass_rules_test.gd > /tmp/skyport-progression-missions.log 2>&1 || status=$?
+          cat /tmp/skyport-progression-missions.log
+          test "$status" -eq 0
+          if grep -E 'SCRIPT ERROR|Parse Error|Compile Error' /tmp/skyport-progression-missions.log; then exit 1; fi
+          grep -q 'MISSION_PASS_TEST_OK' /tmp/skyport-progression-missions.log
       - name: Real main-scene gameplay and save reload
         shell: bash
         run: |

@@ -67,6 +67,22 @@ func _run() -> void:
 		_fail("Compact pushback tug should use a squarer shadow than the passenger bus.")
 		return
 
+	var straight_se_lean := GroundServiceVehicleArt.turn_lean(
+		GroundServiceVehicleArt.ISO_HEADING_ANGLE
+	)
+	if absf(straight_se_lean) > 0.001:
+		_fail("Exact SE isometric heading should not lean the service sprite.")
+		return
+	var turning_lean := GroundServiceVehicleArt.turn_lean(
+		GroundServiceVehicleArt.ISO_HEADING_ANGLE + 0.22
+	)
+	if absf(turning_lean) <= 0.01:
+		_fail("Intermediate service heading should expose subtle visual turn lean.")
+		return
+	if absf(turning_lean) > GroundServiceVehicleArt.MAX_TURN_LEAN + 0.001:
+		_fail("Service turn lean should remain tightly capped.")
+		return
+
 	var cargo := GroundServiceVehiclePrototype.new()
 	root.add_child(cargo)
 	await process_frame
@@ -166,7 +182,7 @@ func _run() -> void:
 		(
 			"GROUND_SERVICE_VISUAL_MOTION_OK "
 			+ "bus=%.0f fuel=%.0f cleaning=%.0f cargo=%.0f tug=%.0f "
-			+ "smooth_turn=true beacon=true"
+			+ "smooth_turn=true turn_lean=true beacon=true"
 		) % [
 			float(widths["passenger"]),
 			float(widths["fuel"]),

@@ -274,6 +274,39 @@ func get_pushback_target_position() -> Vector2:
 	)
 
 
+func reserve_pushback_path() -> Dictionary:
+	var target := get_pushback_target_position()
+	if taxi_traffic_controller == null:
+		_set_taxi_hold(false, "")
+		return {
+			"allowed": true,
+			"reason": "",
+			"target": target
+		}
+
+	var result := taxi_traffic_controller.request_segment(
+		self,
+		global_position,
+		target
+	)
+	var allowed := bool(result.get("allowed", false))
+	if allowed:
+		_set_taxi_hold(false, "")
+	else:
+		_set_taxi_hold(
+			true,
+			String(result.get("reason", "traffic"))
+		)
+	result["target"] = target
+	return result
+
+
+func release_pushback_path() -> void:
+	_release_taxi_segment()
+	if state == "PUSHBACK_PREP":
+		_set_taxi_hold(false, "")
+
+
 func begin_ground_service(stage: String) -> void:
 	if stage in [
 		"UNLOADING",
@@ -586,8 +619,23 @@ func _process_runway_entry(delta: float) -> void:
 	var runway_entry_index := departure_route.size() - 2
 	if route_index >= runway_entry_index:
 		taxi_current_speed = 0.0
+		_release_taxi_segment()
 		delay_remaining = lineup_delay
 		_set_state("LINE_UP")
+		return
+
+	# Runway clearance is not permission to drive through conflicting
+	# taxi traffic. Reserve the hold-short -> runway-entry corridor so
+	# another aircraft cannot cross the nose while this aircraft lines up.
+	if not _request_taxi_segment(
+		departure_route[route_index],
+		departure_route[runway_entry_index]
+	):
+		taxi_current_speed = _approach_taxi_speed(
+			taxi_current_speed,
+			0.0,
+			delta
+		)
 		return
 
 	var target_speed := taxi_speed * 0.62
@@ -604,6 +652,7 @@ func _process_runway_entry(delta: float) -> void:
 	):
 		route_index = runway_entry_index
 		taxi_current_speed = 0.0
+		_release_taxi_segment()
 		delay_remaining = lineup_delay
 		_set_state("LINE_UP")
 

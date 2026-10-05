@@ -602,7 +602,8 @@ func _operations_analytics_snapshot() -> Dictionary:
 		"runway": runway_snapshot,
 		"services": service_snapshot,
 		"passengers": passenger_snapshot,
-		"stands": stand_snapshot
+		"stands": stand_snapshot,
+		"live": _live_operations_snapshot()
 	}
 	snapshot["analysis"] = OperationsAnalyticsRules.analyze(
 		snapshot
@@ -615,6 +616,162 @@ func _operations_analytics_snapshot() -> Dictionary:
 		coins
 	)
 	return snapshot
+
+
+func _live_operations_snapshot() -> Dictionary:
+	var aircraft_rows: Array[Dictionary] = []
+	var taxiing := 0
+	var taxi_holds := 0
+	var at_stand := 0
+	var airborne := 0
+	var turnaround_active := 0
+	var waiting_passengers := 0
+	var ready_departures := 0
+
+	for aircraft in aircraft_demos:
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+
+		var state := String(aircraft.state)
+		if state in [
+			"TAXIING_OUT",
+			"TAXIING_IN",
+			"ENTERING_RUNWAY"
+		]:
+			taxiing += 1
+		if aircraft.is_taxi_holding():
+			taxi_holds += 1
+		if state in [
+			"PARKED",
+			"WAITING_FUEL",
+			"UNLOADING",
+			"SERVICING",
+			"WAITING_PASSENGERS",
+			"LOADING",
+			"PUSHBACK_PREP",
+			"READY_FOR_DESTINATION",
+			"READY_FOR_DEPARTURE"
+		]:
+			at_stand += 1
+		if state in [
+			"EN_ROUTE",
+			"HOLDING_FOR_ARRIVAL",
+			"APPROACH"
+		]:
+			airborne += 1
+		if state in [
+			"UNLOADING",
+			"SERVICING",
+			"LOADING",
+			"PUSHBACK_PREP"
+		]:
+			turnaround_active += 1
+		if state == "WAITING_PASSENGERS":
+			waiting_passengers += 1
+		if state in [
+			"READY_FOR_DEPARTURE",
+			"TAXIING_OUT",
+			"HOLD_SHORT",
+			"CLEARED",
+			"ENTERING_RUNWAY",
+			"LINE_UP",
+			"TAKEOFF_ROLL"
+		]:
+			ready_departures += 1
+
+		var turnaround: Dictionary = {}
+		if ground_services != null:
+			turnaround = ground_services.get_turnaround_snapshot(
+				aircraft
+			)
+
+		var phase := state.replace("_", " ").capitalize()
+		var phase_progress := -1.0
+		var blocking_reason := ""
+		var remaining_seconds := 0.0
+		var queue_positions := {}
+		if not turnaround.is_empty():
+			phase = String(
+				turnaround.get("stage_label", phase)
+			)
+			phase_progress = float(
+				turnaround.get("stage_progress", 0.0)
+			)
+			blocking_reason = String(
+				turnaround.get("blocking_reason", "")
+			)
+			remaining_seconds = float(
+				turnaround.get("remaining_seconds", 0.0)
+			)
+			queue_positions = turnaround.get(
+				"queue_positions",
+				{}
+			)
+		elif aircraft.is_taxi_holding():
+			blocking_reason = "Taxi hold • %s" % (
+				aircraft.get_taxi_hold_reason()
+			)
+
+		aircraft_rows.append({
+			"label": String(aircraft.name),
+			"model": aircraft.aircraft_display_name,
+			"state": state,
+			"phase": phase,
+			"phase_progress": phase_progress,
+			"remaining_seconds": remaining_seconds,
+			"blocking_reason": blocking_reason,
+			"queue_positions": queue_positions,
+			"stand_uid": aircraft.stand_uid,
+			"runway_uid": aircraft.runway_uid,
+			"taxi_hold": aircraft.is_taxi_holding()
+		})
+
+	var runway_waiting := 0
+	var runway_active := 0
+	var taxiing_to_hold := 0
+	if runway_dispatcher != null:
+		runway_waiting = runway_dispatcher.get_waiting_count()
+		runway_active = runway_dispatcher.get_active_count()
+		taxiing_to_hold = runway_dispatcher.get_taxiing_to_hold_count()
+
+	var ground_waiting := 0
+	var ground_active := 0
+	var service_waiting := {}
+	if ground_services != null:
+		ground_waiting = ground_services.get_waiting_count()
+		ground_active = ground_services.get_active_count()
+		service_waiting = ground_services.get_waiting_by_service()
+
+	var airside: Dictionary = airport_grid.get_airside_status()
+	var oldest_arrival_hold := 0.0
+	for request_variant in pending_arrivals:
+		var request: Dictionary = request_variant
+		oldest_arrival_hold = maxf(
+			oldest_arrival_hold,
+			float(request.get("wait_seconds", 0.0))
+		)
+
+	return {
+		"aircraft": aircraft_rows,
+		"aircraft_total": aircraft_rows.size(),
+		"at_stand": at_stand,
+		"airborne": airborne,
+		"taxiing": taxiing,
+		"taxi_holds": taxi_holds,
+		"turnaround_active": turnaround_active,
+		"waiting_passengers": waiting_passengers,
+		"ready_departures": ready_departures,
+		"runway_waiting": runway_waiting,
+		"runway_active": runway_active,
+		"taxiing_to_hold": taxiing_to_hold,
+		"ground_waiting": ground_waiting,
+		"ground_active": ground_active,
+		"service_waiting": service_waiting,
+		"stands_total": int(airside.get("stands_total", 0)),
+		"stands_occupied": stand_occupancy.size(),
+		"inbound_holding": pending_arrivals.size(),
+		"oldest_arrival_hold_seconds": oldest_arrival_hold
+	}
 
 
 func _refresh_operations_analytics() -> void:

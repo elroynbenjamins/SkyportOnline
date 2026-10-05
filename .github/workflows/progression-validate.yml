@@ -12,24 +12,9 @@ jobs:
       image: barichello/godot-ci:4.3
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare scoped reproduction fixture
-        if: github.event.pull_request.head.ref == 'feature/pass5-npc-career-progression'
-        shell: bash
-        run: |
-          mkdir -p /tmp/progression-runtime
-          cp "$(command -v godot)" /tmp/progression-runtime/godot
-          tar -czf /tmp/progression-runtime/project.tgz --exclude=.git --exclude=.godot .
-      - name: Keep scoped reproduction fixture
-        if: github.event.pull_request.head.ref == 'feature/pass5-npc-career-progression'
-        uses: actions/upload-artifact@v4
-        with:
-          name: progression-reproduction
-          path: /tmp/progression-runtime/
-          retention-days: 1
       - name: Strict project import
         shell: bash
         run: |
-          set -o pipefail
           status=0
           godot --headless --editor --path . --quit > /tmp/skyport-progression-import.log 2>&1 || status=$?
           tail -n 45 /tmp/skyport-progression-import.log

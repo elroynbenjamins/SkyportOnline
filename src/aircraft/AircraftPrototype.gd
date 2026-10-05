@@ -88,8 +88,12 @@ func get_interaction_radius() -> float:
 
 
 func get_world_sprite_direction(
-	heading: float = rotation
+	heading: float = INF
 ) -> String:
+	var resolved_heading := heading
+	if is_inf(resolved_heading):
+		resolved_heading = rotation
+
 	var candidates: Array = [
 		["ne", -ISO_HEADING_ANGLE],
 		["se", ISO_HEADING_ANGLE],
@@ -104,7 +108,7 @@ func get_world_sprite_direction(
 		var candidate_heading := float(candidate[1])
 		var difference := absf(
 			wrapf(
-				heading - candidate_heading,
+				resolved_heading - candidate_heading,
 				-PI,
 				PI
 			)

@@ -1066,12 +1066,9 @@ func _draw_build_preview() -> void:
 		4.0,
 		true
 	)
-	for point in outline_points.slice(
-		0,
-		outline_points.size() - 1
-	):
+	for index in range(outline_points.size() - 1):
 		draw_circle(
-			point,
+			outline_points[index],
 			3.5,
 			outline
 		)
@@ -1447,17 +1444,30 @@ func set_build_preview(
 	world_position: Vector2,
 	rotation: int
 ) -> Dictionary:
+	var snapped_origin := world_to_tile(world_position)
+	var snapped_rotation := rotation % 2
+	var changed := (
+		preview_mode != "build"
+		or preview_building_id != building_id
+		or preview_origin != snapped_origin
+		or preview_rotation != snapped_rotation
+	)
+
 	preview_mode = "build"
 	preview_ignore_uid = -1
 	preview_building_id = building_id
-	preview_origin = world_to_tile(world_position)
-	preview_rotation = rotation % 2
+	preview_origin = snapped_origin
+	preview_rotation = snapped_rotation
 	preview_status = _get_placement_status(
 		building_id,
 		preview_origin,
 		preview_rotation
 	)
-	queue_redraw()
+	preview_status["mode"] = "build"
+	if changed:
+		_trigger_preview_snap_feedback()
+	else:
+		queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
@@ -1503,7 +1513,7 @@ func begin_move_preview(uid: int) -> Dictionary:
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = uid
 	_refresh_building_labels()
-	queue_redraw()
+	_trigger_preview_snap_feedback()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
@@ -1515,8 +1525,15 @@ func set_move_preview(
 	if preview_mode != "move" or preview_ignore_uid < 0:
 		return {}
 
-	preview_origin = world_to_tile(world_position)
-	preview_rotation = rotation % 2
+	var snapped_origin := world_to_tile(world_position)
+	var snapped_rotation := rotation % 2
+	var changed := (
+		preview_origin != snapped_origin
+		or preview_rotation != snapped_rotation
+	)
+
+	preview_origin = snapped_origin
+	preview_rotation = snapped_rotation
 	preview_status = _get_placement_status(
 		preview_building_id,
 		preview_origin,
@@ -1525,7 +1542,10 @@ func set_move_preview(
 	)
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = preview_ignore_uid
-	queue_redraw()
+	if changed:
+		_trigger_preview_snap_feedback()
+	else:
+		queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
@@ -1533,23 +1553,66 @@ func set_move_preview(
 func refresh_build_preview(rotation: int) -> Dictionary:
 	if preview_building_id.is_empty():
 		return {}
-	preview_rotation = rotation % 2
+
+	var snapped_rotation := rotation % 2
+	var changed := preview_rotation != snapped_rotation
+	preview_rotation = snapped_rotation
 	preview_status = _get_placement_status(
 		preview_building_id,
 		preview_origin,
 		preview_rotation,
 		preview_ignore_uid
 	)
+	preview_status["mode"] = preview_mode
 	if preview_mode == "move":
-		preview_status["mode"] = "move"
 		preview_status["building_uid"] = preview_ignore_uid
-	queue_redraw()
+	if changed:
+		_trigger_preview_snap_feedback()
+	else:
+		queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
 
 func get_build_preview_status() -> Dictionary:
 	return preview_status.duplicate(true)
+
+
+func get_preview_visual_snapshot() -> Dictionary:
+	if not has_build_preview():
+		return {
+			"active": false,
+			"mode": preview_mode,
+			"snap_sequence": preview_snap_sequence,
+			"snap_active": false
+		}
+
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
+	var connection: Dictionary = preview_status.get(
+		"connection",
+		{}
+	)
+	var profile := PlacementVisualRules.profile(
+		preview_mode,
+		bool(preview_status.get("valid", false)),
+		bool(definition.get("rotatable", false)),
+		connection
+	)
+
+	return {
+		"active": true,
+		"mode": preview_mode,
+		"building_id": preview_building_id,
+		"origin": preview_origin,
+		"rotation": preview_rotation,
+		"valid": bool(preview_status.get("valid", false)),
+		"lift_px": float(profile.get("lift_px", 0.0)),
+		"snap_sequence": preview_snap_sequence,
+		"snap_active": preview_snap_feedback_remaining > 0.0,
+		"connection": connection.duplicate(true)
+	}
 
 
 func has_build_preview() -> bool:
@@ -1564,8 +1627,19 @@ func clear_build_preview() -> void:
 	preview_status = {}
 	preview_mode = "build"
 	preview_ignore_uid = -1
+	preview_snap_feedback_remaining = 0.0
+	set_process(false)
 	if was_move:
 		_refresh_building_labels()
+	queue_redraw()
+
+
+func _trigger_preview_snap_feedback() -> void:
+	preview_snap_sequence += 1
+	preview_snap_feedback_remaining = (
+		PlacementVisualRules.SNAP_FEEDBACK_DURATION
+	)
+	set_process(true)
 	queue_redraw()
 
 

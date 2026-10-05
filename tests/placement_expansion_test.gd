@@ -1,0 +1,84 @@
+extends SceneTree
+
+
+func _init() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var grid := AirportGrid.new()
+	root.add_child(grid)
+	await process_frame
+
+	var target := Vector2i(10, 3)
+	var status := grid.set_build_preview(
+		"basic_fuel",
+		grid.tile_to_world(
+			Vector2(target.x, target.y)
+		),
+		0
+	)
+	if bool(status.get("valid", false)):
+		_fail("Locked north parcel should block this placement.")
+		return
+	if String(
+		status.get("locked_parcel_id", "")
+	) != "north":
+		_fail("Placement should identify the north parcel as the blocker.")
+		return
+	if int(status.get("locked_parcel_level", 0)) != 5:
+		_fail("Placement should expose the parcel level requirement.")
+		return
+	if int(status.get("locked_parcel_cost", 0)) != 25000:
+		_fail("Placement should expose the parcel expansion cost.")
+		return
+	if not grid.has_build_preview():
+		_fail("Blocked placement should remain an active preview.")
+		return
+
+	var parcel := grid.get_parcel("north")
+	if parcel.is_empty() or bool(parcel.get("owned", true)):
+		_fail("North parcel should begin locked.")
+		return
+
+	if not grid.purchase_parcel("north"):
+		_fail("Direct parcel purchase should unlock locked placement land.")
+		return
+
+	parcel = grid.get_parcel("north")
+	if not bool(parcel.get("owned", false)):
+		_fail("Purchased parcel should report owned immediately.")
+		return
+
+	var refreshed := grid.refresh_build_preview(0)
+	if not bool(refreshed.get("valid", false)):
+		_fail(
+			"Same building preview should become valid after expansion: %s"
+			% String(refreshed.get("reason", "unknown"))
+		)
+		return
+	if not grid.has_build_preview():
+		_fail("Expansion must not clear the active placement preview.")
+		return
+	if refreshed.get("origin", Vector2i.ZERO) != target:
+		_fail("Expansion must preserve the exact preview origin.")
+		return
+
+	var placed := grid.confirm_build_preview()
+	if placed.is_empty():
+		_fail("Expanded placement should still be confirmable.")
+		return
+	if placed.get("origin", Vector2i.ZERO) != target:
+		_fail("Confirmed building should remain at the previewed target.")
+		return
+
+	print(
+		"Placement expansion passed: locked parcel metadata, purchase, "
+		+ "preview preservation and immediate confirmation."
+	)
+	quit(0)
+
+
+func _fail(message: String) -> void:
+	push_error(message)
+	quit(1)

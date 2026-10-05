@@ -20,6 +20,10 @@ var service_connection_target := Vector2.ZERO
 var has_service_connection_target := false
 
 
+func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+
+
 func set_launch_delay(seconds: float) -> void:
 	launch_delay_remaining = maxf(seconds, 0.0)
 
@@ -108,13 +112,50 @@ func _follow_route(points: PackedVector2Array, delta: float) -> bool:
 func _draw() -> void:
 	_draw_shadow()
 
-	draw_rect(Rect2(Vector2(-13, -7), Vector2(24, 14)), Color("e5a83f"))
-	draw_rect(Rect2(Vector2(7, -6), Vector2(11, 12)), Color("e9ecec"))
-	draw_rect(Rect2(Vector2(10, -4), Vector2(5, 5)), Color("5f8798"))
-	draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(10, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
-	draw_circle(Vector2(10, 8), 3.0, Color("292f32"))
+	var atlas := GroundServiceVehicleArt.texture()
+	if atlas != null:
+		var draw_size := GroundServiceVehicleArt.world_size(
+			"fuel"
+		)
+		var source := GroundServiceVehicleArt.source_rect(
+			"fuel",
+			global_rotation
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			-global_rotation,
+			Vector2.ONE
+		)
+		draw_texture_rect_region(
+			atlas,
+			Rect2(
+				-draw_size * 0.5 + Vector2(0, -2),
+				draw_size
+			),
+			source
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+	else:
+		draw_rect(
+			Rect2(Vector2(-13, -7), Vector2(24, 14)),
+			Color("e5a83f")
+		)
+		draw_rect(
+			Rect2(Vector2(7, -6), Vector2(11, 12)),
+			Color("e9ecec")
+		)
+		draw_rect(
+			Rect2(Vector2(10, -4), Vector2(5, 5)),
+			Color("5f8798")
+		)
+		draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(10, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
+		draw_circle(Vector2(10, 8), 3.0, Color("292f32"))
 
 	if phase == "SERVICING":
 		draw_circle(Vector2(-1, -14), 4.0, Color("ffd166"))

@@ -26,6 +26,10 @@ var tow_start_vehicle_position := Vector2.ZERO
 var tow_initialized := false
 
 
+func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+
+
 func set_launch_delay(seconds: float) -> void:
 	launch_delay_remaining = maxf(seconds, 0.0)
 
@@ -177,60 +181,92 @@ func _follow_route(points: PackedVector2Array, delta: float) -> bool:
 func _draw() -> void:
 	_draw_shadow()
 
-	var body_color := _body_color()
-	draw_rect(
-		Rect2(Vector2(-12, -7), Vector2(24, 14)),
-		body_color
-	)
-	draw_rect(
-		Rect2(Vector2(5, -6), Vector2(10, 12)),
-		Color("e9ecec")
-	)
+	var atlas := GroundServiceVehicleArt.texture()
+	if atlas != null:
+		var draw_size := GroundServiceVehicleArt.world_size(
+			service_type
+		)
+		var source := GroundServiceVehicleArt.source_rect(
+			service_type,
+			global_rotation
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			-global_rotation,
+			Vector2.ONE
+		)
+		draw_texture_rect_region(
+			atlas,
+			Rect2(
+				-draw_size * 0.5 + Vector2(0, -2),
+				draw_size
+			),
+			source
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+	else:
+		var body_color := _body_color()
+		draw_rect(
+			Rect2(Vector2(-12, -7), Vector2(24, 14)),
+			body_color
+		)
+		draw_rect(
+			Rect2(Vector2(5, -6), Vector2(10, 12)),
+			Color("e9ecec")
+		)
 
-	match service_type:
-		"passenger":
-			draw_rect(
-				Rect2(Vector2(-8, -5), Vector2(4, 10)),
-				Color("dff4f7")
-			)
-			draw_rect(
-				Rect2(Vector2(-2, -5), Vector2(4, 10)),
-				Color("dff4f7")
-			)
-		"cargo":
-			draw_rect(
-				Rect2(Vector2(-17, -5), Vector2(7, 10)),
-				Color("8a775f")
-			)
-		"cleaning":
-			draw_circle(Vector2(-5, 0), 4.0, Color("d7f5ef"))
-		"catering":
-			draw_rect(
-				Rect2(Vector2(-10, -10), Vector2(12, 4)),
-				Color("f5ead8")
-			)
-		"pushback":
-			draw_rect(
-				Rect2(Vector2(12, -3), Vector2(10, 6)),
-				Color("d9b85f")
-			)
-			draw_line(
-				Vector2(18, -5),
-				Vector2(24, -7),
-				Color("e7cf8a"),
-				2.0
-			)
-			draw_line(
-				Vector2(18, 5),
-				Vector2(24, 7),
-				Color("e7cf8a"),
-				2.0
-			)
+		match service_type:
+			"passenger":
+				draw_rect(
+					Rect2(Vector2(-8, -5), Vector2(4, 10)),
+					Color("dff4f7")
+				)
+				draw_rect(
+					Rect2(Vector2(-2, -5), Vector2(4, 10)),
+					Color("dff4f7")
+				)
+			"cargo":
+				draw_rect(
+					Rect2(Vector2(-17, -5), Vector2(7, 10)),
+					Color("8a775f")
+				)
+			"cleaning":
+				draw_circle(
+					Vector2(-5, 0),
+					4.0,
+					Color("d7f5ef")
+				)
+			"catering":
+				draw_rect(
+					Rect2(Vector2(-10, -10), Vector2(12, 4)),
+					Color("f5ead8")
+				)
+			"pushback":
+				draw_rect(
+					Rect2(Vector2(12, -3), Vector2(10, 6)),
+					Color("d9b85f")
+				)
+				draw_line(
+					Vector2(18, -5),
+					Vector2(24, -7),
+					Color("e7cf8a"),
+					2.0
+				)
+				draw_line(
+					Vector2(18, 5),
+					Vector2(24, 7),
+					Color("e7cf8a"),
+					2.0
+				)
 
-	draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(9, -8), 3.0, Color("292f32"))
-	draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
-	draw_circle(Vector2(9, 8), 3.0, Color("292f32"))
+		draw_circle(Vector2(-7, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(9, -8), 3.0, Color("292f32"))
+		draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
+		draw_circle(Vector2(9, 8), 3.0, Color("292f32"))
 
 	if phase == "SERVICING":
 		draw_circle(Vector2(0, -15), 4.0, Color("ffd166"))

@@ -4442,6 +4442,15 @@ func _get_building_texture(path: String) -> Texture2D:
 	if building_textures.has(path):
 		return building_textures[path] as Texture2D
 
+	if CharterVisualPack.is_uri(path):
+		var charter_texture := CharterVisualPack.texture_from_uri(
+			path
+		)
+		if charter_texture != null:
+			building_textures[path] = charter_texture
+			return charter_texture
+		return null
+
 	var resource := load(path)
 	if resource is Texture2D:
 		building_textures[path] = resource

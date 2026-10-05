@@ -219,13 +219,15 @@ func _run() -> void:
 		)
 		return
 
+	hud.exit_building_mode()
+
 	hud.show_parcel(
 		{
 			"id": "north_west",
 			"owned": false,
 			"progression_state": "future",
-			"level": 35,
-			"cost": 2000000
+			"level": 30,
+			"cost": 1200000
 		},
 		40,
 		3000000
@@ -251,8 +253,8 @@ func _run() -> void:
 	if hud.purchase_button.disabled:
 		_fail("Connected affordable parcel should be purchasable.")
 		return
-	if hud.parcel_title.text != "NEXT EXPANSION":
-		_fail("Connected parcel should be labelled Next Expansion.")
+	if hud.parcel_title.text != "NORTH":
+		_fail("Legacy parcel data without a district name should still show its location.")
 		return
 
 	hud.show_move_preview(
@@ -262,8 +264,8 @@ func _run() -> void:
 			"reason": "Expand a neighboring parcel first.",
 			"locked_parcel_id": "north_west",
 			"locked_parcel_state": "future",
-			"locked_parcel_level": 35,
-			"locked_parcel_cost": 2000000
+			"locked_parcel_level": 30,
+			"locked_parcel_cost": 1200000
 		}
 	)
 	if not hud.expand_here_button.visible:

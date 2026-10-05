@@ -267,6 +267,26 @@ func _draw_world_sprite_overlay(
 			false,
 			2.0
 		)
+		var diamond := PackedVector2Array([
+			badge_center + Vector2(0, -3.5),
+			badge_center + Vector2(3.5, 0),
+			badge_center + Vector2(0, 3.5),
+			badge_center + Vector2(-3.5, 0)
+		])
+		draw_colored_polygon(
+			diamond,
+			Color("fff0bd")
+		)
+		if not event_marker_text.is_empty():
+			draw_string(
+				ThemeDB.fallback_font,
+				badge_center + Vector2(-14, -10),
+				event_marker_text,
+				HORIZONTAL_ALIGNMENT_CENTER,
+				28.0,
+				9,
+				Color("fff0bd")
+			)
 	elif (
 		social_visit
 		and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]
@@ -298,6 +318,15 @@ func _draw_world_sprite_overlay(
 			Color("eaf7ff"),
 			false,
 			2.0
+		)
+		draw_string(
+			ThemeDB.fallback_font,
+			badge_center + Vector2(-5, 4),
+			"A" if relationship == "alliance" else "F",
+			HORIZONTAL_ALIGNMENT_CENTER,
+			10.0,
+			10,
+			Color("ffffff")
 		)
 
 	var indicator_color := Color(0, 0, 0, 0)

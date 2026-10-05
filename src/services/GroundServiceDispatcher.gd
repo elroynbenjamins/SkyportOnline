@@ -139,6 +139,11 @@ func get_active_count() -> int:
 	return active_jobs
 
 
+func refresh_after_layout_change() -> void:
+	_try_dispatch()
+	_emit_queue_status()
+
+
 func is_station_active(station_uid: int) -> bool:
 	if station_uid < 0:
 		return false

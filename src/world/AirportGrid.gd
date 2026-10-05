@@ -1139,26 +1139,38 @@ func get_starter_apron_visual_snapshot() -> Dictionary:
 	var terminal_definition := BuildingCatalog.get_definition(
 		"small_terminal"
 	)
-	var terminal_center := _building_center_tile(
-		terminal,
+	var terminal_fp := _footprint_for(
 		terminal_definition,
-		_footprint_for(
-			terminal_definition,
-			int(terminal.get("rotation", 0))
-		)
+		int(terminal.get("rotation", 0))
+	)
+	var terminal_origin: Vector2i = terminal.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var terminal_center := Vector2(
+		float(terminal_origin.x)
+		+ float(terminal_fp.x - 1) * 0.5,
+		float(terminal_origin.y)
+		+ float(terminal_fp.y - 1) * 0.5
 	)
 	var nearby_stands: Array[Dictionary] = []
 	for stand in stands:
 		var stand_definition := BuildingCatalog.get_definition(
 			"small_stand"
 		)
-		var stand_center := _building_center_tile(
-			stand,
+		var stand_fp_for_center := _footprint_for(
 			stand_definition,
-			_footprint_for(
-				stand_definition,
-				int(stand.get("rotation", 0))
-			)
+			int(stand.get("rotation", 0))
+		)
+		var stand_origin_for_center: Vector2i = stand.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var stand_center := Vector2(
+			float(stand_origin_for_center.x)
+			+ float(stand_fp_for_center.x - 1) * 0.5,
+			float(stand_origin_for_center.y)
+			+ float(stand_fp_for_center.y - 1) * 0.5
 		)
 		if terminal_center.distance_to(stand_center) <= 7.5:
 			nearby_stands.append(stand)
@@ -1171,10 +1183,6 @@ func get_starter_apron_visual_snapshot() -> Dictionary:
 
 	var min_x := int(terminal.get("origin", Vector2i.ZERO).x)
 	var min_y := int(terminal.get("origin", Vector2i.ZERO).y)
-	var terminal_fp := _footprint_for(
-		terminal_definition,
-		int(terminal.get("rotation", 0))
-	)
 	var max_x := min_x + terminal_fp.x - 1
 	var max_y := min_y + terminal_fp.y - 1
 

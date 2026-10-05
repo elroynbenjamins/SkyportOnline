@@ -77,6 +77,14 @@ func _run() -> void:
 	if hud.catalog_filter_buttons.size() < 6:
 		_fail("Build Tray should expose category filter chips.")
 		return
+	if hud.social_nav_button == null:
+		_fail("Airport HUD should expose the Social network navigation button.")
+		return
+	hud.set_social_attention(true)
+	if not hud.social_nav_button.text.contains("•"):
+		_fail("Social nav should visibly flag active visiting traffic.")
+		return
+	hud.set_social_attention(false)
 
 	if world.route_card_label == null:
 		_fail("World Map should expose compact Route information card.")

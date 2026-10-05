@@ -244,8 +244,40 @@ func get_turnaround_snapshot(
 	var job: Dictionary = turnaround_jobs[job_id]
 	var pending: Dictionary = job.get("stage_pending", {})
 	var status: Dictionary = job.get("service_status", {})
+	var stage := String(job.get("stage", ""))
+	var metrics := _stage_progress_metrics(
+		job_id,
+		status
+	)
 	return {
-		"stage": String(job.get("stage", "")),
+		"stage": stage,
+		"stage_label": _stage_short_name(stage),
+		"stage_progress": float(
+			metrics.get("progress", 0.0)
+		),
+		"remaining_seconds": float(
+			metrics.get("remaining_seconds", 0.0)
+		),
+		"queued_count": int(
+			metrics.get("queued_count", 0)
+		),
+		"en_route_count": int(
+			metrics.get("en_route_count", 0)
+		),
+		"active_count": int(
+			metrics.get("active_count", 0)
+		),
+		"done_count": int(
+			metrics.get("done_count", 0)
+		),
+		"queue_positions": metrics.get(
+			"queue_positions",
+			{}
+		),
+		"blocking_reason": _turnaround_blocking_reason(
+			job,
+			metrics
+		),
 		"pending_services": pending.keys(),
 		"service_status": status.duplicate(true),
 		"pushback_remaining": float(
@@ -253,6 +285,23 @@ func get_turnaround_snapshot(
 		),
 		"is_returning": bool(job.get("is_returning", false))
 	}
+
+
+func get_turnaround_snapshots() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for job_variant in turnaround_jobs.values():
+		var job: Dictionary = job_variant
+		var aircraft := job.get("aircraft") as AircraftPrototype
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+		var snapshot := get_turnaround_snapshot(aircraft)
+		snapshot["aircraft"] = aircraft
+		snapshot["aircraft_id"] = aircraft.get_instance_id()
+		snapshot["label"] = String(
+			job.get("label", aircraft.name)
+		)
+		result.append(snapshot)
+	return result
 
 
 func _process(delta: float) -> void:
@@ -590,6 +639,14 @@ func _try_dispatch() -> void:
 			if station.is_empty():
 				continue
 
+			# Pushback physically moves the aircraft into the taxi corridor.
+			# Reserve that movement before dispatching a tug so taxiing traffic
+			# cannot cross the aircraft while it is being pushed back.
+			if service_type == "pushback":
+				var clearance := aircraft.reserve_pushback_path()
+				if not bool(clearance.get("allowed", false)):
+					continue
+
 			pending_requests.remove_at(index)
 			_dispatch_service(request, station)
 			made_progress = true
@@ -900,6 +957,9 @@ func _on_service_completed(
 		entry["state"] = "done"
 		entry["remaining"] = 0.0
 		service_status[service_key] = entry
+	if service_key == "pushback":
+		aircraft.release_pushback_path()
+
 	pending.erase(service_key)
 	job["stage_pending"] = pending
 	job["service_status"] = service_status
@@ -1083,6 +1143,124 @@ func _service_short_name(
 			return "Tow"
 		_:
 			return "Fuel"
+
+
+func _stage_progress_metrics(
+	job_id: int,
+	status: Dictionary
+) -> Dictionary:
+	var total := status.size()
+	var done := 0
+	var queued := 0
+	var en_route := 0
+	var active := 0
+	var progress_units := 0.0
+	var remaining_seconds := 0.0
+	var queue_positions := {}
+
+	for service_key_variant in status.keys():
+		var service_key := String(service_key_variant)
+		var entry: Dictionary = status[service_key_variant]
+		var state_value := String(entry.get("state", ""))
+		var duration := maxf(
+			float(entry.get("duration", 0.0)),
+			0.0
+		)
+		var remaining := maxf(
+			float(entry.get("remaining", duration)),
+			0.0
+		)
+		remaining_seconds = maxf(
+			remaining_seconds,
+			remaining
+		)
+
+		match state_value:
+			"done":
+				done += 1
+				progress_units += 1.0
+			"active":
+				active += 1
+				if duration > 0.001:
+					progress_units += clampf(
+						1.0 - remaining / duration,
+						0.0,
+						1.0
+					)
+			"en_route":
+				en_route += 1
+			"queued":
+				queued += 1
+				var service_type := String(
+					entry.get("service_type", "")
+				)
+				queue_positions[service_key] = (
+					_service_queue_position(
+						job_id,
+						service_key,
+						service_type
+					)
+				)
+
+	var progress := 1.0
+	if total > 0:
+		progress = clampf(
+			progress_units / float(total),
+			0.0,
+			1.0
+		)
+
+	return {
+		"progress": progress,
+		"remaining_seconds": remaining_seconds,
+		"queued_count": queued,
+		"en_route_count": en_route,
+		"active_count": active,
+		"done_count": done,
+		"total_count": total,
+		"queue_positions": queue_positions
+	}
+
+
+func _service_queue_position(
+	job_id: int,
+	service_key: String,
+	service_type: String
+) -> int:
+	var position := 0
+	for request_variant in pending_requests:
+		var request: Dictionary = request_variant
+		if String(
+			request.get("service_type", "")
+		) != service_type:
+			continue
+		position += 1
+		if (
+			int(request.get("job_id", -1)) == job_id
+			and String(
+				request.get("service_key", "")
+			) == service_key
+		):
+			return position
+	return 0
+
+
+func _turnaround_blocking_reason(
+	job: Dictionary,
+	metrics: Dictionary
+) -> String:
+	var stage := String(job.get("stage", ""))
+	match stage:
+		"WAITING_PASSENGERS":
+			return "Waiting for passenger stock"
+		"WAITING_DESTINATION":
+			return "Destination required"
+
+	if int(metrics.get("queued_count", 0)) > 0:
+		return "Waiting for ground-service capacity"
+	if int(metrics.get("en_route_count", 0)) > 0:
+		return "Ground vehicles en route"
+	return ""
 
 
 func _profile_for_aircraft(

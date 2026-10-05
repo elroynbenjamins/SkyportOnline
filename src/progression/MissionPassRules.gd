@@ -249,7 +249,7 @@ static func claim_all_available(state: Dictionary) -> Dictionary:
 			if track == "premium" and not premium:
 				continue
 			var next_pass: Dictionary = next.get("mission_pass", {})
-			var claim_key := "claimed_" + track
+			var claim_key: String = "claimed_" + String(track)
 			var claimed: Dictionary = next_pass.get(claim_key, {})
 			if bool(claimed.get(str(tier_number), false)):
 				continue

@@ -1761,23 +1761,7 @@ func _building_ground_color(
 	if id.contains("runway"):
 		return Color("596167", 0.80)
 	if id.contains("stand"):
-		return Color(
-			APRON_CONCRETE.r,
-			APRON_CONCRETE.g,
-			APRON_CONCRETE.b,
-			0.26
-		)
-	if id in [
-		"small_terminal",
-		"basic_fuel",
-		"ground_ops_depot"
-	]:
-		return Color(
-			APRON_CONCRETE.r,
-			APRON_CONCRETE.g,
-			APRON_CONCRETE.b,
-			0.20
-		)
+		return Color("d3ccc1", 0.66)
 
 	var category := String(
 		definition.get("category", "")
@@ -1795,6 +1779,53 @@ func _building_ground_color(
 			return Color("c7c1b7", 0.50)
 
 
+func _world_art_ground_fill(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i
+) -> Color:
+	var fill := _building_ground_color(definition)
+	var id := String(definition.get("id", ""))
+	if id not in [
+		"small_terminal",
+		"small_stand",
+		"basic_fuel",
+		"ground_ops_depot"
+	]:
+		return fill
+
+	var snapshot := get_starter_apron_visual_snapshot()
+	if not bool(snapshot.get("active", false)):
+		return fill
+	var apron_origin: Vector2i = snapshot.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var apron_footprint: Vector2i = snapshot.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var apron_max := apron_origin + apron_footprint - Vector2i.ONE
+	var building_max := origin + footprint - Vector2i.ONE
+	if (
+		origin.x < apron_origin.x
+		or origin.y < apron_origin.y
+		or building_max.x > apron_max.x
+		or building_max.y > apron_max.y
+	):
+		return fill
+
+	var alpha := 0.20
+	if id == "small_stand":
+		alpha = 0.26
+	return Color(
+		APRON_CONCRETE.r,
+		APRON_CONCRETE.g,
+		APRON_CONCRETE.b,
+		alpha
+	)
+
+
 func _draw_world_art_ground_pad(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -1807,8 +1838,10 @@ func _draw_world_art_ground_pad(
 	if polygon.size() < 4:
 		return
 
-	var fill := _building_ground_color(
-		definition
+	var fill := _world_art_ground_fill(
+		definition,
+		origin,
+		footprint
 	)
 	var shadow := PackedVector2Array()
 	for point_variant in polygon:

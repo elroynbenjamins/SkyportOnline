@@ -1136,6 +1136,24 @@ func _sprite_region_for_rotation(
 	return region
 
 
+func _sprite_offset_for_rotation(
+	definition: Dictionary,
+	rotation: int
+) -> Vector2:
+	var offsets: Array = definition.get(
+		"world_sprite_offsets",
+		[]
+	)
+	if not offsets.is_empty():
+		var value = offsets[rotation % offsets.size()]
+		if value is Vector2:
+			return value
+	return definition.get(
+		"world_sprite_offset",
+		Vector2.ZERO
+	)
+
+
 func _draw_building_sprite(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -1159,9 +1177,9 @@ func _draw_building_sprite(
 		"world_sprite_size",
 		Vector2(160, 120)
 	)
-	var offset: Vector2 = definition.get(
-		"world_sprite_offset",
-		Vector2.ZERO
+	var offset := _sprite_offset_for_rotation(
+		definition,
+		rotation
 	)
 	var center := _footprint_center_world(origin, footprint)
 	var rect := Rect2(

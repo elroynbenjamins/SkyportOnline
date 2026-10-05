@@ -3,6 +3,8 @@ extends RefCounted
 
 const ATLAS_PATH := "res://assets/production/ground_service_v1/skyport_ground_service_atlas.webp"
 const CELL_SIZE := 256.0
+const ISO_HEADING_ANGLE := 0.463647609
+const MAX_TURN_LEAN := 0.10
 
 const ROW_BY_SERVICE := {
 	"fuel": 0,
@@ -61,6 +63,35 @@ static func direction_for(angle: float) -> String:
 	if direction.x >= 0.0:
 		return "se" if direction.y >= 0.0 else "ne"
 	return "sw" if direction.y >= 0.0 else "nw"
+
+
+static func authored_heading(direction: String) -> float:
+	match direction:
+		"ne":
+			return -ISO_HEADING_ANGLE
+		"se":
+			return ISO_HEADING_ANGLE
+		"sw":
+			return PI - ISO_HEADING_ANGLE
+		"nw":
+			return -PI + ISO_HEADING_ANGLE
+		_:
+			return 0.0
+
+
+static func turn_lean(angle: float) -> float:
+	var direction := direction_for(angle)
+	var canonical := authored_heading(direction)
+	var difference := wrapf(
+		angle - canonical,
+		-PI,
+		PI
+	)
+	return clampf(
+		difference,
+		-MAX_TURN_LEAN,
+		MAX_TURN_LEAN
+	)
 
 
 static func source_rect(service_type: String, angle: float) -> Rect2:

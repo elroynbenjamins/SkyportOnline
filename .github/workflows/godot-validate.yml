@@ -102,6 +102,9 @@ jobs:
       - name: Test ground service visual motion
         run: timeout 20s godot --headless --path . --script res://tests/ground_service_visual_motion_test.gd
 
+      - name: Test polished turnaround visual integration
+        run: timeout 25s godot --headless --path . --script res://tests/turnaround_visual_integration_test.gd
+
 
       - name: Test physical pushback tug
         run: timeout 20s godot --headless --path . --script res://tests/pushback_service_test.gd

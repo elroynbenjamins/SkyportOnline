@@ -44,7 +44,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(1344, 0, 448, 448)
 			],
 			"world_sprite_size": Vector2(192, 192),
-			"world_sprite_offset": Vector2(0, -66)
+			"world_sprite_offsets": [
+				Vector2(0, -29),
+				Vector2(0, -34)
+			],
+			"world_sprite_offset": Vector2(0, -29)
 		},
 		{
 			"id": "taxiway",
@@ -96,7 +100,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(448, 0, 448, 448)
 			],
 			"world_sprite_size": Vector2(300, 300),
-			"world_sprite_offset": Vector2(0, -113)
+			"world_sprite_offsets": [
+				Vector2(0, -55),
+				Vector2(0, -60)
+			],
+			"world_sprite_offset": Vector2(0, -55)
 		},
 		{
 			"id": "shuttle_station",
@@ -120,7 +128,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(448, 1344, 448, 448)
 			],
 			"world_sprite_size": Vector2(280, 280),
-			"world_sprite_offset": Vector2(0, -93)
+			"world_sprite_offsets": [
+				Vector2(0, -56),
+				Vector2(0, -64)
+			],
+			"world_sprite_offset": Vector2(0, -56)
 		},
 		{
 			"id": "travel_office",
@@ -144,7 +156,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(1344, 896, 448, 448)
 			],
 			"world_sprite_size": Vector2(188, 188),
-			"world_sprite_offset": Vector2(0, -61)
+			"world_sprite_offsets": [
+				Vector2(0, -34),
+				Vector2(0, -46)
+			],
+			"world_sprite_offset": Vector2(0, -34)
 		},
 		{
 			"id": "ground_ops_depot",
@@ -167,7 +183,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(448, 896, 448, 448)
 			],
 			"world_sprite_size": Vector2(116, 116),
-			"world_sprite_offset": Vector2(0, -35),
+			"world_sprite_offsets": [
+				Vector2(0, -31),
+				Vector2(0, -29)
+			],
+			"world_sprite_offset": Vector2(0, -31),
 			"services": {
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},
@@ -216,7 +236,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(1344, 1344, 448, 448)
 			],
 			"world_sprite_size": Vector2(188, 188),
-			"world_sprite_offset": Vector2(0, -61),
+			"world_sprite_offsets": [
+				Vector2(0, -32),
+				Vector2(0, -33)
+			],
+			"world_sprite_offset": Vector2(0, -32),
 			"service": "passenger",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2
@@ -311,7 +335,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(448, 448, 448, 448)
 			],
 			"world_sprite_size": Vector2(292, 292),
-			"world_sprite_offset": Vector2(0, -88)
+			"world_sprite_offsets": [
+				Vector2(0, -66),
+				Vector2(0, -71)
+			],
+			"world_sprite_offset": Vector2(0, -66)
 		},
 		{
 			"id": "basic_fuel",
@@ -337,7 +365,11 @@ static func all() -> Array[Dictionary]:
 				Rect2(1344, 448, 448, 448)
 			],
 			"world_sprite_size": Vector2(188, 188),
-			"world_sprite_offset": Vector2(0, -61)
+			"world_sprite_offsets": [
+				Vector2(0, -35),
+				Vector2(0, -45)
+			],
+			"world_sprite_offset": Vector2(0, -35)
 		},
 		{
 			"id": "rapid_small_fuel",

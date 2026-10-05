@@ -4,6 +4,7 @@ extends CanvasLayer
 signal upgrade_requested(building_uid: int)
 
 var root: Control
+var building_image: TextureRect
 var title_label: Label
 var stats_label: Label
 var current_stats_label: Label
@@ -41,6 +42,7 @@ func open_building(
 		).to_upper(),
 		level
 	]
+	building_image.texture = _building_texture(definition)
 
 	current_stats_label.text = _stats_text(
 		building_id,
@@ -159,6 +161,70 @@ func _service_name(service_type: String) -> String:
 			return "Fuel"
 
 
+func _building_texture(
+	definition: Dictionary
+) -> Texture2D:
+	var atlas_path := String(
+		definition.get("world_sprite_atlas_path", "")
+	)
+	var regions: Array = definition.get(
+		"world_sprite_regions",
+		[]
+	)
+	if (
+		not atlas_path.is_empty()
+		and not regions.is_empty()
+		and ResourceLoader.exists(atlas_path)
+	):
+		var atlas_resource := load(atlas_path)
+		var first_region = regions[0]
+		if (
+			atlas_resource is Texture2D
+			and first_region is Rect2
+		):
+			var atlas_texture := AtlasTexture.new()
+			atlas_texture.atlas = atlas_resource as Texture2D
+			atlas_texture.region = first_region
+			return atlas_texture
+
+	var variants: PackedStringArray = definition.get(
+		"world_sprite_paths",
+		PackedStringArray()
+	)
+	if not variants.is_empty():
+		var world_path := String(variants[0])
+		if ResourceLoader.exists(world_path):
+			var world_resource := load(world_path)
+			if world_resource is Texture2D:
+				return world_resource as Texture2D
+
+	var single_world_path := String(
+		definition.get("world_sprite_path", "")
+	)
+	if (
+		not single_world_path.is_empty()
+		and ResourceLoader.exists(single_world_path)
+	):
+		var single_world_resource := load(
+			single_world_path
+		)
+		if single_world_resource is Texture2D:
+			return single_world_resource as Texture2D
+
+	var icon_path := String(
+		definition.get("icon_path", "")
+	)
+	if (
+		icon_path.is_empty()
+		or not ResourceLoader.exists(icon_path)
+	):
+		return null
+	var icon_resource := load(icon_path)
+	if icon_resource is Texture2D:
+		return icon_resource as Texture2D
+	return null
+
+
 func _build_ui() -> void:
 	root = Control.new()
 	root.set_anchors_and_offsets_preset(
@@ -172,9 +238,9 @@ func _build_ui() -> void:
 		Control.PRESET_CENTER_RIGHT
 	)
 	panel_node.offset_left = -430
-	panel_node.offset_top = -205
+	panel_node.offset_top = -225
 	panel_node.offset_right = -35
-	panel_node.offset_bottom = 205
+	panel_node.offset_bottom = 225
 	panel_node.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel_node)
 	GameUIStyle.apply_panel(panel_node, "raised")
@@ -191,7 +257,20 @@ func _build_ui() -> void:
 	margin.add_child(column)
 
 	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 10)
 	column.add_child(header)
+
+	var preview_card := PanelContainer.new()
+	preview_card.custom_minimum_size = Vector2(86, 70)
+	GameUIStyle.apply_panel(preview_card, "context_preview")
+	header.add_child(preview_card)
+
+	building_image = TextureRect.new()
+	building_image.custom_minimum_size = Vector2(82, 66)
+	building_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	building_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	building_image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	preview_card.add_child(building_image)
 
 	title_label = Label.new()
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL

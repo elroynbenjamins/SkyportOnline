@@ -1195,10 +1195,30 @@ func get_starter_apron_visual_snapshot() -> Dictionary:
 		max_x = maxi(max_x, stand_origin.x + stand_fp.x - 1)
 		max_y = maxi(max_y, stand_origin.y + stand_fp.y - 1)
 
-	min_x -= 1
-	min_y -= 1
-	max_x += 1
-	max_y += 1
+	if _apron_column_is_owned(
+		min_x - 1,
+		min_y,
+		max_y
+	):
+		min_x -= 1
+	if _apron_column_is_owned(
+		max_x + 1,
+		min_y,
+		max_y
+	):
+		max_x += 1
+	if _apron_row_is_owned(
+		min_y - 1,
+		min_x,
+		max_x
+	):
+		min_y -= 1
+	if _apron_row_is_owned(
+		max_y + 1,
+		min_x,
+		max_x
+	):
+		max_y += 1
 
 	var origin := Vector2i(min_x, min_y)
 	var footprint := Vector2i(
@@ -1210,18 +1230,6 @@ func get_starter_apron_visual_snapshot() -> Dictionary:
 			"active": false,
 			"stand_count": nearby_stands.size()
 		}
-
-	for y in range(origin.y, origin.y + footprint.y):
-		for x in range(origin.x, origin.x + footprint.x):
-			var parcel := _parcel_for_tile(Vector2i(x, y))
-			if (
-				parcel.is_empty()
-				or not bool(parcel.get("owned", false))
-			):
-				return {
-					"active": false,
-					"stand_count": nearby_stands.size()
-				}
 
 	return {
 		"active": true,
@@ -1236,6 +1244,36 @@ func get_starter_apron_visual_snapshot() -> Dictionary:
 		"floodlights": 4,
 		"service_bays": nearby_stands.size() * 2
 	}
+
+
+func _apron_column_is_owned(
+	x: int,
+	min_y: int,
+	max_y: int
+) -> bool:
+	for y in range(min_y, max_y + 1):
+		var parcel := _parcel_for_tile(Vector2i(x, y))
+		if (
+			parcel.is_empty()
+			or not bool(parcel.get("owned", false))
+		):
+			return false
+	return true
+
+
+func _apron_row_is_owned(
+	y: int,
+	min_x: int,
+	max_x: int
+) -> bool:
+	for x in range(min_x, max_x + 1):
+		var parcel := _parcel_for_tile(Vector2i(x, y))
+		if (
+			parcel.is_empty()
+			or not bool(parcel.get("owned", false))
+		):
+			return false
+	return true
 
 
 func _draw_starter_apron_surface() -> void:

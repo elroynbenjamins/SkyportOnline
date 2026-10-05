@@ -896,7 +896,7 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	build_action_panel.visible = true
 	build_title.text = String(definition["name"]).to_upper()
 	store_button.visible = false
-	_update_placement_expand_action(status)
+	_reset_expand_here_action()
 	rotate_button.visible = bool(definition.get("rotatable", false))
 
 	var required_level := int(definition["level"])
@@ -913,6 +913,8 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 		place_button.text = "🪙 %s" % _format_number(cost)
 		place_button.disabled = true
 		return
+
+	_update_placement_expand_action(status)
 
 	if status.is_empty():
 		build_status.text = "Tap owned land to preview • Cost 🪙 %s" % _format_number(cost)

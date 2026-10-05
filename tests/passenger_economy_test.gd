@@ -22,6 +22,32 @@ func _run() -> void:
 		_fail("Starter passenger generator should be the Travel Office.")
 		return
 
+	var passenger_upgrade_panel := PassengerUpgradePanel.new()
+	root.add_child(passenger_upgrade_panel)
+	await process_frame
+	passenger_upgrade_panel.open_building(
+		office,
+		{},
+		0
+	)
+	if not (
+		passenger_upgrade_panel.building_image.texture
+		is AtlasTexture
+	):
+		_fail(
+			"Travel Office upgrade panel should use production atlas art."
+		)
+		return
+	if (
+		passenger_upgrade_panel.building_image.texture_filter
+		!= CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	):
+		_fail(
+			"Passenger upgrade building art should use smooth filtering."
+		)
+		return
+	passenger_upgrade_panel.close_panel()
+
 	var economy := PassengerEconomy.new()
 	root.add_child(economy)
 	economy.configure(grid, 20.0)

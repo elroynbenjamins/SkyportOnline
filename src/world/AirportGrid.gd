@@ -75,6 +75,8 @@ const ENVIRONMENT_PARKING := "res://assets/pixel/airport_v1/environment_parking_
 const ENVIRONMENT_TREES := "res://assets/pixel/airport_v1/environment_tree_cluster.svg"
 const ENVIRONMENT_HEDGE := "res://assets/pixel/airport_v1/environment_hedge_strip.svg"
 const ENVIRONMENT_ENTRANCE := "res://assets/pixel/airport_v1/environment_entrance_sign.svg"
+const ENVIRONMENT_CONIFERS := "res://assets/pixel/airport_v1/environment_conifer_cluster.svg"
+const ENVIRONMENT_FIELDS := "res://assets/pixel/airport_v1/environment_distant_fields.svg"
 const PARCEL_UNLOCK_FX_DURATION := 0.9
 
 var parcels: Dictionary = {}
@@ -530,6 +532,30 @@ func get_landside_scenery_layout() -> Array[Dictionary]:
 			"path": ENVIRONMENT_HEDGE,
 			"position": Vector2(40, 758),
 			"size": Vector2(350, 120)
+		},
+		{
+			"id": "conifers_north_east",
+			"path": ENVIRONMENT_CONIFERS,
+			"position": Vector2(860, 205),
+			"size": Vector2(255, 214)
+		},
+		{
+			"id": "conifers_south_east",
+			"path": ENVIRONMENT_CONIFERS,
+			"position": Vector2(780, 790),
+			"size": Vector2(215, 180)
+		},
+		{
+			"id": "fields_far_west",
+			"path": ENVIRONMENT_FIELDS,
+			"position": Vector2(-1110, 265),
+			"size": Vector2(460, 239)
+		},
+		{
+			"id": "fields_far_east",
+			"path": ENVIRONMENT_FIELDS,
+			"position": Vector2(1090, 610),
+			"size": Vector2(430, 224)
 		}
 	]
 
@@ -1185,6 +1211,10 @@ func _draw_world_art_ground_pad(
 		polygon,
 		definition
 	)
+	_draw_runway_edge_detail(
+		polygon,
+		definition
+	)
 
 
 func _draw_hardscape_curb_and_drainage(
@@ -1234,6 +1264,63 @@ func _draw_hardscape_curb_and_drainage(
 				0.9,
 				Color("1f292c", 0.80)
 			)
+
+
+
+func _draw_runway_edge_detail(
+	polygon: PackedVector2Array,
+	definition: Dictionary
+) -> void:
+	if polygon.size() < 4:
+		return
+	var id := String(definition.get("id", ""))
+	if not id.contains("runway"):
+		return
+
+	var pairs := [
+		[polygon[0], polygon[1]],
+		[polygon[3], polygon[2]]
+	]
+	for pair_variant in pairs:
+		var pair: Array = pair_variant
+		var a: Vector2 = pair[0]
+		var b: Vector2 = pair[1]
+		var edge := b - a
+		var length := edge.length()
+		if length <= 1.0:
+			continue
+		var direction := edge.normalized()
+		var normal := Vector2(-direction.y, direction.x)
+
+		draw_line(
+			a + normal * 2.0,
+			b + normal * 2.0,
+			Color("c8d19d", 0.28),
+			3.0
+		)
+		draw_line(
+			a - normal * 2.0,
+			b - normal * 2.0,
+			Color("273237", 0.22),
+			2.0
+		)
+
+		var drain_count := maxi(int(length / 56.0), 2)
+		for index in range(1, drain_count):
+			var fraction := float(index) / float(drain_count)
+			var center := a.lerp(b, fraction)
+			draw_line(
+				center - direction * 5.0,
+				center + direction * 5.0,
+				Color("343e42", 0.68),
+				2.6
+			)
+			for slot in [-3.0, 0.0, 3.0]:
+				draw_circle(
+					center + direction * slot,
+					0.8,
+					Color("182226", 0.82)
+				)
 
 
 func _footprint_polygon(
@@ -2229,6 +2316,12 @@ func _draw_pavement_tile(
 		1.4
 	)
 
+	_draw_pavement_edge_detail(
+		origin,
+		kind,
+		points
+	)
+
 	var seed := absi(origin.x * 29 + origin.y * 43)
 	if seed % 2 == 0:
 		var seam_color := (
@@ -2242,6 +2335,55 @@ func _draw_pavement_tile(
 			seam_color,
 			1.0
 		)
+
+
+
+func _draw_pavement_edge_detail(
+	origin: Vector2i,
+	kind: String,
+	points: PackedVector2Array
+) -> void:
+	var directions := [
+		[Vector2i(0, -1), points[0], points[1]],
+		[Vector2i(1, 0), points[1], points[2]],
+		[Vector2i(0, 1), points[2], points[3]],
+		[Vector2i(-1, 0), points[3], points[0]]
+	]
+	for item_variant in directions:
+		var item: Array = item_variant
+		var direction: Vector2i = item[0]
+		var neighbor := origin + direction
+		var connected := false
+		if kind == "taxiway":
+			connected = _taxiway_visually_connects_to(neighbor)
+		else:
+			connected = _service_road_visually_connects_to(neighbor)
+		if connected:
+			continue
+
+		var a: Vector2 = item[1]
+		var b: Vector2 = item[2]
+		var seam_color := (
+			Color("9cb671", 0.30)
+			if kind == "taxiway"
+			else Color("b6aa8e", 0.28)
+		)
+		draw_line(
+			a.lerp(b, 0.08),
+			a.lerp(b, 0.92),
+			seam_color,
+			2.2
+		)
+		if kind == "service_road" and (
+			origin.x * 7 + origin.y * 11
+		) % 4 == 0:
+			var center := a.lerp(b, 0.5)
+			draw_line(
+				center + Vector2(-4, 1),
+				center + Vector2(4, -1),
+				Color("4a5355", 0.42),
+				1.4
+			)
 
 
 func _draw_service_road_detail(origin: Vector2i) -> void:
@@ -2378,12 +2520,77 @@ func _draw_airside_props() -> void:
 					+ Vector2(18, -8)
 				)
 		elif id == "service_road":
+			var road_connections := 0
+			for direction in [
+				Vector2i(1, 0),
+				Vector2i(-1, 0),
+				Vector2i(0, 1),
+				Vector2i(0, -1)
+			]:
+				if _service_road_visually_connects_to(
+					origin + direction
+				):
+					road_connections += 1
+
 			if (origin.x * 3 + origin.y) % 5 == 0:
 				var center := tile_to_world(
 					Vector2(origin.x, origin.y)
 				)
 				_draw_safety_cone(center + Vector2(11, 5))
 				_draw_safety_cone(center + Vector2(17, 2))
+			if (
+				road_connections <= 1
+				and (origin.x + origin.y) % 2 == 0
+			):
+				_draw_service_barrier(
+					tile_to_world(
+						Vector2(origin.x, origin.y)
+					) + Vector2(15, -3)
+				)
+
+
+
+func _draw_service_barrier(base: Vector2) -> void:
+	draw_line(
+		base + Vector2(-8, 5),
+		base + Vector2(-8, -9),
+		Color("555f62"),
+		2.4
+	)
+	draw_line(
+		base + Vector2(8, 5),
+		base + Vector2(8, -9),
+		Color("555f62"),
+		2.4
+	)
+	draw_line(
+		base + Vector2(-9, -7),
+		base + Vector2(9, -7),
+		Color("e6e2d8"),
+		4.0
+	)
+	draw_line(
+		base + Vector2(-7, -7),
+		base + Vector2(-2, -7),
+		Color("d95b3f"),
+		3.0
+	)
+	draw_line(
+		base + Vector2(3, -7),
+		base + Vector2(8, -7),
+		Color("d95b3f"),
+		3.0
+	)
+	draw_circle(
+		base + Vector2(0, -13),
+		3.0,
+		Color(0.04, 0.07, 0.07, 0.35)
+	)
+	draw_circle(
+		base + Vector2(0, -13),
+		1.6,
+		Color("f1c65c")
+	)
 
 
 func _draw_taxiway_sign(base: Vector2) -> void:

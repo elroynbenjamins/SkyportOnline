@@ -29,8 +29,14 @@ func _run() -> void:
 	if economy.get_capacity() != 40:
 		_fail("Travel Office Lv1 should provide 40 passenger storage.")
 		return
-	if absf(economy.get_production_per_minute() - 1.5) > 0.001:
-		_fail("Travel Office Lv1 should produce 1.5 passengers/min.")
+	if absf(economy.get_base_production_per_minute() - 1.5) > 0.001:
+		_fail("Travel Office Lv1 base production should remain 1.5 passengers/min.")
+		return
+	if absf(economy.get_production_per_minute() - 1.65) > 0.001:
+		_fail("Starter terminal synergy should raise Lv1 production to 1.65 passengers/min.")
+		return
+	if absf(economy.get_synergy_bonus_per_minute() - 0.15) > 0.001:
+		_fail("Passenger economy should expose the +0.15/min terminal synergy contribution.")
 		return
 
 	economy._process(60.0)
@@ -59,8 +65,11 @@ func _run() -> void:
 	if economy.get_capacity() != 55:
 		_fail("Travel Office Lv2 should provide 55 passenger storage.")
 		return
-	if absf(economy.get_production_per_minute() - 2.2) > 0.001:
-		_fail("Travel Office Lv2 should produce 2.2 passengers/min.")
+	if absf(economy.get_base_production_per_minute() - 2.2) > 0.001:
+		_fail("Travel Office Lv2 base production should remain 2.2 passengers/min.")
+		return
+	if absf(economy.get_production_per_minute() - 2.42) > 0.001:
+		_fail("Terminal synergy should raise Travel Office Lv2 production to 2.42 passengers/min.")
 		return
 
 	var profile := ProfileStore.create_guest_airport(
@@ -138,7 +147,7 @@ func _run() -> void:
 
 	_cleanup_profile()
 	print(
-		"Passenger economy passed: production/storage upgrades, "
+		"Passenger economy passed: production/storage upgrades, terminal synergy, "
 		+ "boarding consumption, and resource costs persisted."
 	)
 	quit(0)

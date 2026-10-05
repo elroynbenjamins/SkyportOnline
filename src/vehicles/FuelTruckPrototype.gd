@@ -18,6 +18,8 @@ var service_pose_rotation := 0.0
 var has_service_pose_rotation := false
 var service_connection_target := Vector2.ZERO
 var has_service_connection_target := false
+var motion_clock := 0.0
+var visual_motion_amount := 0.0
 
 
 func _ready() -> void:
@@ -58,6 +60,16 @@ func start_service(route: PackedVector2Array, duration: float) -> void:
 
 
 func _process(delta: float) -> void:
+	motion_clock += delta
+	var moving := phase in ["OUTBOUND", "RETURNING"]
+	visual_motion_amount = move_toward(
+		visual_motion_amount,
+		1.0 if moving else 0.0,
+		delta * 4.0
+	)
+	if moving or phase == "SERVICING":
+		queue_redraw()
+
 	match phase:
 		"WAITING_LAUNCH":
 			launch_delay_remaining = maxf(
@@ -98,13 +110,23 @@ func _follow_route(points: PackedVector2Array, delta: float) -> bool:
 	var distance := to_target.length()
 
 	if distance <= drive_speed * delta:
+		if distance > 0.001:
+			rotation = lerp_angle(
+				rotation,
+				to_target.angle(),
+				clampf(delta * 10.0, 0.0, 1.0)
+			)
 		position = target
 		route_index = target_index
 		return route_index >= points.size() - 1
 
 	var direction := to_target.normalized()
 	position += direction * drive_speed * delta
-	rotation = direction.angle()
+	rotation = lerp_angle(
+		rotation,
+		direction.angle(),
+		clampf(delta * 8.0, 0.0, 1.0)
+	)
 	queue_redraw()
 	return false
 
@@ -129,7 +151,11 @@ func _draw() -> void:
 		draw_texture_rect_region(
 			atlas,
 			Rect2(
-				-draw_size * 0.5 + Vector2(0, -2),
+				-draw_size * 0.5
+				+ Vector2(
+					0,
+					-2 + _motion_bob_y()
+				),
 				draw_size
 			),
 			source
@@ -157,36 +183,65 @@ func _draw() -> void:
 		draw_circle(Vector2(-7, 8), 3.0, Color("292f32"))
 		draw_circle(Vector2(10, 8), 3.0, Color("292f32"))
 
-	if phase == "SERVICING":
-		_draw_service_beacon()
+	if phase in ["OUTBOUND", "RETURNING"]:
+		_draw_service_beacon(0.55)
+	elif phase == "SERVICING":
+		_draw_service_beacon(1.0)
 		_draw_fuel_hose()
 
 
-func _draw_service_beacon() -> void:
+func _motion_bob_y() -> float:
+	if visual_motion_amount <= 0.001:
+		return 0.0
+	var amplitude := GroundServiceVehicleArt.motion_bob_amplitude(
+		"fuel"
+	)
+	return (
+		sin(motion_clock * 11.0)
+		* amplitude
+		* visual_motion_amount
+	)
+
+
+func _draw_service_beacon(
+	strength: float = 1.0
+) -> void:
 	var draw_size := GroundServiceVehicleArt.world_size(
 		"fuel"
 	)
 	var height := maxf(draw_size.y * 0.36, 15.0)
+	var pulse := (
+		0.5
+		+ 0.5 * sin(motion_clock * 8.0)
+	)
 	draw_set_transform(
 		Vector2.ZERO,
 		-global_rotation,
 		Vector2.ONE
 	)
-	var beacon_position := Vector2(0, -height)
+	var beacon_position := Vector2(
+		0,
+		-height + _motion_bob_y()
+	)
 	draw_circle(
 		beacon_position + Vector2(1, 2),
 		4.2,
-		Color(0.03, 0.06, 0.07, 0.32)
+		Color(0.03, 0.06, 0.07, 0.28 * strength)
 	)
 	draw_circle(
 		beacon_position,
-		3.6,
-		Color("ffd166")
+		5.0 + pulse * 1.2,
+		Color(1.0, 0.72, 0.18, (0.08 + pulse * 0.10) * strength)
+	)
+	draw_circle(
+		beacon_position,
+		3.3,
+		Color(1.0, 0.72 + pulse * 0.12, 0.22, 0.92 * strength)
 	)
 	draw_circle(
 		beacon_position + Vector2(-1, -1),
-		1.3,
-		Color("fff0b2")
+		1.2,
+		Color(1.0, 0.96, 0.72, 0.95 * strength)
 	)
 	draw_set_transform(
 		Vector2.ZERO,
@@ -228,6 +283,9 @@ func _draw_shadow() -> void:
 	var radius := GroundServiceVehicleArt.shadow_radius(
 		"fuel"
 	)
+	var aspect := GroundServiceVehicleArt.shadow_aspect(
+		"fuel"
+	)
 	var world_offset := Vector2(3, 5)
 	var local_offset := world_offset.rotated(
 		-global_rotation
@@ -235,12 +293,17 @@ func _draw_shadow() -> void:
 	draw_set_transform(
 		local_offset,
 		-global_rotation,
-		Vector2(1.0, 0.42)
+		Vector2(1.0, aspect)
 	)
 	draw_circle(
-		Vector2.ZERO,
-		radius,
-		Color(0, 0, 0, 0.20)
+		Vector2(-radius * 0.12, 0),
+		radius * 1.10,
+		Color(0, 0, 0, 0.10)
+	)
+	draw_circle(
+		Vector2(radius * 0.12, 0),
+		radius * 0.84,
+		Color(0, 0, 0, 0.16)
 	)
 	draw_set_transform(
 		Vector2.ZERO,

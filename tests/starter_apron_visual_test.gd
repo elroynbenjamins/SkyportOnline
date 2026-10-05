@@ -43,16 +43,44 @@ func _run() -> void:
 				_fail("Decorative starter apron must never spill onto unowned land.")
 				return
 
+	var starter_stand: Dictionary = {}
+	var starter_terminal: Dictionary = {}
+	for building in grid.placed_buildings:
+		var id := String(building.get("definition_id", ""))
+		if id == "small_stand" and starter_stand.is_empty():
+			starter_stand = building
+		elif id == "small_terminal":
+			starter_terminal = building
+
 	var stand_definition := BuildingCatalog.get_definition("small_stand")
-	var stand_pad := grid._building_ground_color(stand_definition)
+	var stand_footprint: Vector2i = stand_definition.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var stand_pad := grid._world_art_ground_fill(
+		stand_definition,
+		starter_stand.get("origin", Vector2i.ZERO),
+		stand_footprint
+	)
 	if stand_pad.a >= 0.40:
-		_fail("Small Stand ground pad should blend into the unified apron.")
+		_fail("Starter Small Stand pad should blend into the unified apron.")
+		return
+	if grid._building_ground_color(stand_definition).a < 0.60:
+		_fail("Standalone stands should retain their strong readable concrete base.")
 		return
 
 	var terminal_definition := BuildingCatalog.get_definition("small_terminal")
-	var terminal_pad := grid._building_ground_color(terminal_definition)
+	var terminal_footprint: Vector2i = terminal_definition.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var terminal_pad := grid._world_art_ground_fill(
+		terminal_definition,
+		starter_terminal.get("origin", Vector2i.ZERO),
+		terminal_footprint
+	)
 	if terminal_pad.a >= 0.30:
-		_fail("Small Terminal pad should not look like a separate concrete island.")
+		_fail("Starter Terminal pad should not look like a separate concrete island.")
 		return
 
 	var runway_definition := BuildingCatalog.get_definition("short_runway")

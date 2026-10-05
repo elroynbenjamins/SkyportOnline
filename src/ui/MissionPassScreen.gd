@@ -5,6 +5,7 @@ signal reroll_requested(mission_id: String, use_ad: bool)
 signal pass_reward_claim_requested(tier_number: int, track: String)
 signal claim_all_requested
 signal product_purchase_requested(product_id: String)
+signal booster_activate_requested(booster_id: String)
 signal closed
 
 var root: Control
@@ -279,15 +280,11 @@ func _pass(state: Dictionary) -> void:
 
 	var inventory := _card()
 	_text(inventory, "PASS REWARD INVENTORY", true)
-	var boosters: Dictionary = state.get("booster_inventory", {})
-	_text(inventory, "Ground Crew %d  •  Tailwind %d  •  Tourism %d  •  Gold %d  •  XP %d  •  Country crates %d" % [
-		int(boosters.get("booster_ground_crew", 0)),
-		int(boosters.get("booster_tailwind", 0)),
-		int(boosters.get("booster_passengers", 0)),
-		int(boosters.get("booster_gold", 0)),
-		int(boosters.get("booster_xp", 0)),
-		int(state.get("resource_choice_crates", 0))
-	])
+	_text(inventory, "Boosters last 2 hours. Using another copy while active adds 2 more hours instead of increasing the percentage.")
+	var now := float(data.get("unix_time", Time.get_unix_time_from_system()))
+	for booster_id in MissionBoosterRules.all_ids():
+		_booster_row(inventory, state, booster_id, now)
+	_text(inventory, "Country resource choice crates • %d" % int(state.get("resource_choice_crates", 0)))
 
 	var track_panel := PanelContainer.new()
 	track_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -380,6 +377,44 @@ func _reward_row(
 	GameUIStyle.apply_button(button, "gold" if unlocked and track_enabled and not claimed else "secondary", true)
 	section.add_child(button)
 
+func _booster_row(
+	parent: Node,
+	state: Dictionary,
+	booster_id: String,
+	unix_time: float
+) -> void:
+	var definition := MissionBoosterRules.definition(booster_id)
+	if definition.is_empty():
+		return
+	var inventory: Dictionary = state.get("booster_inventory", {})
+	var available := int(inventory.get(booster_id, 0))
+	var remaining := MissionBoosterRules.remaining_seconds(state, booster_id, unix_time)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+	var details := VBoxContainer.new()
+	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(details)
+	_text(details, String(definition.get("title", "Booster")), true)
+	var status := String(definition.get("description", ""))
+	if remaining > 0:
+		status += " • ACTIVE %s • %d spare" % [
+			MissionBoosterRules.format_remaining(remaining),
+			available
+		]
+	else:
+		status += " • %d available" % available
+	_text(details, status)
+	var use_button := Button.new()
+	use_button.custom_minimum_size = Vector2(145, 42)
+	use_button.text = "ADD 2H" if remaining > 0 else "USE • 2H"
+	use_button.disabled = available <= 0
+	GameUIStyle.apply_button(use_button, "gold" if available > 0 else "secondary", true)
+	if available > 0:
+		use_button.pressed.connect(_activate_booster.bind(booster_id))
+	row.add_child(use_button)
+
+
 func _card() -> VBoxContainer:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -424,3 +459,6 @@ func _claim_all() -> void:
 
 func _purchase(product_id: String) -> void:
 	product_purchase_requested.emit(product_id)
+
+func _activate_booster(booster_id: String) -> void:
+	booster_activate_requested.emit(booster_id)

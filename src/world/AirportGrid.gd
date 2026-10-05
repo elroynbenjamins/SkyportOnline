@@ -5,6 +5,8 @@ signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
 signal building_moved(data: Dictionary, previous: Dictionary)
+signal building_stored(data: Dictionary)
+signal building_restored(data: Dictionary)
 signal network_status_changed(data: Dictionary)
 signal building_selected_world(data: Dictionary)
 
@@ -39,6 +41,7 @@ var selected_id := ""
 var parcel_labels: Dictionary = {}
 
 var placed_buildings: Array[Dictionary] = []
+var stored_buildings: Array[Dictionary] = []
 var occupied_cells: Dictionary = {}
 var next_building_uid := 1
 var building_labels: Array[Label] = []
@@ -54,6 +57,7 @@ var preview_rotation := 0
 var preview_status: Dictionary = {}
 var preview_mode := "build"
 var preview_ignore_uid := -1
+var preview_stored_uid := -1
 
 
 func _ready() -> void:
@@ -1000,7 +1004,7 @@ func _draw_build_preview() -> void:
 		for x in range(footprint.x):
 			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
 
-	if preview_mode == "move":
+	if preview_mode in ["move", "stored"]:
 		var shadow_center := (
 			_footprint_center_world(preview_origin, footprint)
 			+ Vector2(0, 10)
@@ -1018,7 +1022,7 @@ func _draw_build_preview() -> void:
 			else Color(1.0, 0.62, 0.62, 0.86)
 		)
 		var lift := Vector2.ZERO
-		if preview_mode == "move":
+		if preview_mode in ["move", "stored"]:
 			lift = Vector2(0, -10)
 		_draw_building_sprite(
 			definition,
@@ -1129,6 +1133,7 @@ func set_build_preview(
 ) -> Dictionary:
 	preview_mode = "build"
 	preview_ignore_uid = -1
+	preview_stored_uid = -1
 	preview_building_id = building_id
 	preview_origin = world_to_tile(world_position)
 	preview_rotation = rotation % 2
@@ -1164,6 +1169,7 @@ func begin_move_preview(uid: int) -> Dictionary:
 
 	preview_mode = "move"
 	preview_ignore_uid = uid
+	preview_stored_uid = -1
 	preview_building_id = String(
 		building.get("definition_id", "")
 	)
@@ -1210,6 +1216,54 @@ func set_move_preview(
 	return preview_status.duplicate(true)
 
 
+func begin_stored_building_preview(uid: int) -> Dictionary:
+	var building := get_stored_building(uid)
+	if building.is_empty():
+		return {
+			"valid": false,
+			"reason": "Stored building not found."
+		}
+
+	preview_mode = "stored"
+	preview_ignore_uid = -1
+	preview_stored_uid = uid
+	preview_building_id = String(
+		building.get("definition_id", "")
+	)
+	preview_origin = Vector2i(-1, -1)
+	preview_rotation = int(
+		building.get("rotation", 0)
+	) % 2
+	preview_status = {}
+	queue_redraw()
+	return {
+		"valid": true,
+		"mode": "stored",
+		"building_uid": uid
+	}
+
+
+func set_stored_building_preview(
+	world_position: Vector2,
+	rotation: int
+) -> Dictionary:
+	if preview_mode != "stored" or preview_stored_uid < 0:
+		return {}
+
+	preview_origin = world_to_tile(world_position)
+	preview_rotation = rotation % 2
+	preview_status = _get_placement_status(
+		preview_building_id,
+		preview_origin,
+		preview_rotation
+	)
+	preview_status["mode"] = "stored"
+	preview_status["building_uid"] = preview_stored_uid
+	queue_redraw()
+	build_preview_changed.emit(preview_status.duplicate(true))
+	return preview_status.duplicate(true)
+
+
 func refresh_build_preview(rotation: int) -> Dictionary:
 	if preview_building_id.is_empty():
 		return {}
@@ -1223,6 +1277,9 @@ func refresh_build_preview(rotation: int) -> Dictionary:
 	if preview_mode == "move":
 		preview_status["mode"] = "move"
 		preview_status["building_uid"] = preview_ignore_uid
+	elif preview_mode == "stored":
+		preview_status["mode"] = "stored"
+		preview_status["building_uid"] = preview_stored_uid
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -1244,6 +1301,7 @@ func clear_build_preview() -> void:
 	preview_status = {}
 	preview_mode = "build"
 	preview_ignore_uid = -1
+	preview_stored_uid = -1
 	if was_move:
 		_refresh_building_labels()
 	queue_redraw()
@@ -1267,6 +1325,37 @@ func confirm_build_preview() -> Dictionary:
 	queue_redraw()
 	building_placed.emit(placed.duplicate(true))
 	return placed
+
+
+func confirm_stored_building_preview() -> Dictionary:
+	if (
+		preview_mode != "stored"
+		or preview_stored_uid < 0
+		or not bool(preview_status.get("valid", false))
+	):
+		return {}
+
+	for index in range(stored_buildings.size()):
+		if int(
+			stored_buildings[index].get("uid", -1)
+		) != preview_stored_uid:
+			continue
+
+		var restored := stored_buildings[index].duplicate(true)
+		restored["origin"] = preview_origin
+		restored["rotation"] = preview_rotation
+		stored_buildings.remove_at(index)
+		placed_buildings.append(restored)
+
+		_rebuild_occupied_cells()
+		_recalculate_airside_network()
+		clear_build_preview()
+		_refresh_building_labels()
+		queue_redraw()
+		building_restored.emit(restored.duplicate(true))
+		return restored
+
+	return {}
 
 
 func confirm_move_preview() -> Dictionary:
@@ -1378,6 +1467,89 @@ func restore_building_position(
 		"valid": false,
 		"reason": "Building could not be restored."
 	}
+
+
+func get_storage_eligibility(uid: int) -> Dictionary:
+	var move_state := get_move_eligibility(uid)
+	if not bool(move_state.get("movable", false)):
+		return {
+			"storable": false,
+			"reason": String(
+				move_state.get(
+					"reason",
+					"This building cannot be stored."
+				)
+			)
+		}
+	return {
+		"storable": true,
+		"reason": "Stored buildings pause all airport effects."
+	}
+
+
+func store_building(uid: int) -> Dictionary:
+	var eligibility := get_storage_eligibility(uid)
+	if not bool(eligibility.get("storable", false)):
+		return {
+			"valid": false,
+			"reason": String(
+				eligibility.get(
+					"reason",
+					"This building cannot be stored."
+				)
+			)
+		}
+
+	for index in range(placed_buildings.size()):
+		if int(
+			placed_buildings[index].get("uid", -1)
+		) != uid:
+			continue
+
+		if preview_mode == "move" and preview_ignore_uid == uid:
+			clear_build_preview()
+
+		var stored := placed_buildings[index].duplicate(true)
+		stored["stored_at_unix"] = int(
+			Time.get_unix_time_from_system()
+		)
+		placed_buildings.remove_at(index)
+		stored_buildings.append(stored)
+
+		_rebuild_occupied_cells()
+		_recalculate_airside_network()
+		_refresh_building_labels()
+		queue_redraw()
+		building_stored.emit(stored.duplicate(true))
+		return {
+			"valid": true,
+			"building": stored
+		}
+
+	return {
+		"valid": false,
+		"reason": "Building not found."
+	}
+
+
+func get_stored_building(uid: int) -> Dictionary:
+	for building in stored_buildings:
+		if int(building.get("uid", -1)) == uid:
+			return building.duplicate(true)
+	return {}
+
+
+func get_stored_buildings() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in stored_buildings:
+		result.append(building.duplicate(true))
+	result.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return int(a.get("uid", -1)) < int(
+				b.get("uid", -1)
+			)
+	)
+	return result
 
 
 func get_move_eligibility(uid: int) -> Dictionary:
@@ -2682,6 +2854,34 @@ func get_building(uid: int) -> Dictionary:
 	return {}
 
 
+func export_airport_storage() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in stored_buildings:
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i(-1, -1)
+		)
+		result.append({
+			"uid": int(building.get("uid", -1)),
+			"definition_id": String(
+				building.get("definition_id", "")
+			),
+			"x": origin.x,
+			"y": origin.y,
+			"rotation": int(
+				building.get("rotation", 0)
+			) % 2,
+			"upgrade_level": maxi(
+				int(building.get("upgrade_level", 1)),
+				1
+			),
+			"stored_at_unix": int(
+				building.get("stored_at_unix", 0)
+			)
+		})
+	return result
+
+
 func export_airport_layout() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for building in placed_buildings:
@@ -2723,7 +2923,8 @@ func export_owned_parcels() -> Array[String]:
 
 func apply_saved_airport_layout(
 	saved_layout: Array,
-	saved_owned_parcels: Array
+	saved_owned_parcels: Array,
+	saved_storage: Array = []
 ) -> bool:
 	var owned: Dictionary = {"home": true}
 	for parcel_id_variant in saved_owned_parcels:
@@ -2732,6 +2933,7 @@ func apply_saved_airport_layout(
 			owned[parcel_id] = true
 
 	var restored: Array[Dictionary] = []
+	var restored_storage: Array[Dictionary] = []
 	var restored_cells: Dictionary = {}
 	var seen_uids: Dictionary = {}
 	var max_uid := 0
@@ -2791,6 +2993,46 @@ func apply_saved_airport_layout(
 				)
 			})
 
+	if not saved_storage.is_empty():
+		for item_variant in saved_storage:
+			if not (item_variant is Dictionary):
+				return false
+			var item: Dictionary = item_variant
+			var definition_id := String(
+				item.get("definition_id", "")
+			)
+			var definition := BuildingCatalog.get_definition(
+				definition_id
+			)
+			var uid := int(item.get("uid", -1))
+			if (
+				definition.is_empty()
+				or uid <= 0
+				or seen_uids.has(uid)
+			):
+				return false
+
+			seen_uids[uid] = true
+			max_uid = maxi(max_uid, uid)
+			restored_storage.append({
+				"uid": uid,
+				"definition_id": definition_id,
+				"origin": Vector2i(
+					int(item.get("x", -1)),
+					int(item.get("y", -1))
+				),
+				"rotation": int(
+					item.get("rotation", 0)
+				) % 2,
+				"upgrade_level": maxi(
+					int(item.get("upgrade_level", 1)),
+					1
+				),
+				"stored_at_unix": int(
+					item.get("stored_at_unix", 0)
+				)
+			})
+
 	for parcel_id in parcels.keys():
 		parcels[parcel_id]["owned"] = (
 			String(parcel_id) == "home"
@@ -2798,8 +3040,12 @@ func apply_saved_airport_layout(
 		)
 		_update_parcel_label(String(parcel_id))
 
-	if not saved_layout.is_empty():
+	if (
+		not saved_layout.is_empty()
+		or not saved_storage.is_empty()
+	):
 		placed_buildings = restored
+		stored_buildings = restored_storage
 		next_building_uid = max_uid + 1
 
 	_rebuild_occupied_cells()

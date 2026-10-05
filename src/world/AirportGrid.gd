@@ -102,15 +102,18 @@ func _process(delta: float) -> void:
 
 
 func _initialize_parcels() -> void:
-	_add_parcel("north_west", 0, 0, 35, 2000000, false)
-	_add_parcel("north", 1, 0, 5, 25000, false)
-	_add_parcel("north_east", 2, 0, 30, 1200000, false)
-	_add_parcel("west", 0, 1, 12, 120000, false)
-	_add_parcel("home", 1, 1, 1, 0, true)
-	_add_parcel("east", 2, 1, 8, 50000, false)
-	_add_parcel("south_west", 0, 2, 25, 800000, false)
-	_add_parcel("south", 1, 2, 16, 250000, false)
-	_add_parcel("south_east", 2, 2, 20, 500000, false)
+	for zone in AirportExpansionCatalog.all():
+		var zone_id := String(zone.get("id", ""))
+		if zone_id.is_empty():
+			continue
+		_add_parcel(
+			zone_id,
+			int(zone.get("px", 0)),
+			int(zone.get("py", 0)),
+			int(zone.get("level", 1)),
+			int(zone.get("cost", 0)),
+			zone_id == "home"
+		)
 
 
 func _initialize_starter_airport() -> void:
@@ -158,6 +161,7 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
+	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
 	_draw_event_theme_overlay()
@@ -195,6 +199,149 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 					line = LOCKED_GRID_LINE
 			draw_colored_polygon(points, fill)
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
+
+
+func _draw_expansion_boundary_visuals() -> void:
+	for parcel_id_variant in parcels.keys():
+		var parcel_id := String(parcel_id_variant)
+		var parcel := _parcel_progression_data(parcel_id)
+		if parcel.is_empty() or bool(parcel.get("owned", false)):
+			continue
+		_draw_expansion_perimeter(parcel)
+		_draw_expansion_marker(parcel)
+
+
+func _draw_expansion_perimeter(parcel: Dictionary) -> void:
+	var state := String(parcel.get("progression_state", "future"))
+	var accent: Color = parcel.get(
+		"accent",
+		AVAILABLE_GRID_LINE if state == "available" else LOCKED_GRID_LINE
+	)
+	if state != "available":
+		accent = accent.lerp(Color("7f918a"), 0.64)
+		accent.a = 0.62
+	else:
+		accent.a = 0.92
+
+	var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
+	var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
+	var ex := sx + PARCEL_SIZE - 1
+	var ey := sy + PARCEL_SIZE - 1
+	var line_width := 2.6 if state == "available" else 1.7
+	var dash := 11.0 if state == "available" else 7.0
+
+	for y in range(sy, ey + 1):
+		for x in range(sx, ex + 1):
+			if not (x == sx or x == ex or y == sy or y == ey):
+				continue
+			var points := _tile_points(
+				tile_to_world(Vector2(x, y))
+			)
+			if x == sx:
+				draw_dashed_line(points[0], points[3], accent, line_width, dash)
+			if x == ex:
+				draw_dashed_line(points[1], points[2], accent, line_width, dash)
+			if y == sy:
+				draw_dashed_line(points[0], points[1], accent, line_width, dash)
+			if y == ey:
+				draw_dashed_line(points[3], points[2], accent, line_width, dash)
+
+	# Construction/fence posts make unowned land read as a physical airport
+	# boundary rather than merely a differently colored grid.
+	var post_color := accent.lightened(0.16)
+	for corner_tile in [
+		Vector2i(sx, sy),
+		Vector2i(ex, sy),
+		Vector2i(ex, ey),
+		Vector2i(sx, ey)
+	]:
+		var center := tile_to_world(
+			Vector2(corner_tile.x, corner_tile.y)
+		)
+		draw_line(
+			center + Vector2(0, -18),
+			center + Vector2(0, 3),
+			post_color,
+			3.0
+		)
+		draw_circle(
+			center + Vector2(0, -19),
+			3.2,
+			post_color
+		)
+
+
+func _draw_expansion_marker(parcel: Dictionary) -> void:
+	var center := get_parcel_world_center(
+		String(parcel.get("id", ""))
+	)
+	var state := String(parcel.get("progression_state", "future"))
+	var accent: Color = parcel.get("accent", Color("e0b95b"))
+	if state != "available":
+		accent = accent.lerp(Color("75837d"), 0.58)
+
+	var sign_center := center + Vector2(0, 27)
+	var shadow_rect := Rect2(
+		sign_center + Vector2(-28, -11),
+		Vector2(56, 22)
+	)
+	draw_rect(shadow_rect.grow(3.0), Color(0.02, 0.05, 0.06, 0.38), true)
+	draw_rect(shadow_rect, Color("27383a", 0.94), true)
+	draw_rect(shadow_rect, accent, false, 2.0)
+	draw_line(
+		sign_center + Vector2(-20, 12),
+		sign_center + Vector2(-20, 25),
+		Color("a7b2aa"),
+		3.0
+	)
+	draw_line(
+		sign_center + Vector2(20, 12),
+		sign_center + Vector2(20, 25),
+		Color("a7b2aa"),
+		3.0
+	)
+
+	if state == "available":
+		# Small construction chevrons: immediately readable as purchasable land.
+		for index in range(3):
+			var x := -15.0 + float(index) * 15.0
+			var chevron := PackedVector2Array([
+				sign_center + Vector2(x - 5, -3),
+				sign_center + Vector2(x, 3),
+				sign_center + Vector2(x + 5, -3)
+			])
+			draw_polyline(chevron, accent.lightened(0.18), 2.0)
+	else:
+		# Pixel-style padlock silhouette for later expansion districts.
+		draw_arc(
+			sign_center + Vector2(0, -3),
+			6.0,
+			PI,
+			TAU,
+			8,
+			Color("aeb8b3"),
+			2.0
+		)
+		draw_rect(
+			Rect2(sign_center + Vector2(-7, -3), Vector2(14, 10)),
+			Color("aeb8b3"),
+			true
+		)
+
+
+func get_parcel_visual_state(parcel_id: String) -> Dictionary:
+	var parcel := _parcel_progression_data(parcel_id)
+	if parcel.is_empty():
+		return {}
+	var state := String(parcel.get("progression_state", "future"))
+	return {
+		"state": state,
+		"zone_name": String(parcel.get("name", "")),
+		"accent": parcel.get("accent", Color.WHITE),
+		"show_boundary": not bool(parcel.get("owned", false)),
+		"show_construction_marker": state == "available",
+		"show_lock_marker": state == "future"
+	}
 
 
 func _draw_parcel_unlock_fx() -> void:
@@ -2065,19 +2212,32 @@ func _parcel_progression_data(
 	var result: Dictionary = (
 		parcels[parcel_id] as Dictionary
 	).duplicate(true)
-	var owned := bool(result.get("owned", false))
+	var zone := AirportExpansionCatalog.get_zone(parcel_id)
+	for key_variant in zone.keys():
+		var key := String(key_variant)
+		result[key] = zone[key_variant]
+
+	var owned := bool(
+		(parcels[parcel_id] as Dictionary).get("owned", false)
+	)
 	var owned_neighbors := _owned_neighbor_ids(parcel_id)
+	var all_neighbors := _parcel_neighbor_ids(parcel_id)
 	var state := "future"
 	if owned:
 		state = "owned"
 	elif not owned_neighbors.is_empty():
 		state = "available"
 
+	result["owned"] = owned
 	result["progression_state"] = state
 	result["adjacent_to_owned"] = (
 		not owned_neighbors.is_empty()
 	)
 	result["owned_neighbor_ids"] = owned_neighbors
+	result["neighbor_ids"] = all_neighbors
+	result["unlock_names"] = AirportExpansionCatalog.get_unlock_names(
+		parcel_id
+	)
 	return result
 
 
@@ -2130,17 +2290,28 @@ func _update_parcel_label(id: String) -> void:
 	var state := String(
 		parcel.get("progression_state", "future")
 	)
+	var zone_name := String(
+		parcel.get(
+			"name",
+			id.replace("_", " ").capitalize()
+		)
+	)
+	label.visible = true
 	match state:
 		"owned":
-			label.text = "OWNED"
 			if id == "home":
-				label.text = "YOUR AIRPORT"
-			label.add_theme_color_override(
-				"font_color",
-				Color("f5f7f6")
-			)
+				label.text = "YOUR AIRPORT\n%s" % zone_name.to_upper()
+				label.add_theme_color_override(
+					"font_color",
+					Color("f5f7f6")
+				)
+			else:
+				# Once purchased the district becomes part of the airport; hide the
+				# large land-sale label to keep the operational view uncluttered.
+				label.visible = false
 		"available":
-			label.text = "NEXT EXPANSION\nLv %d • %s coins" % [
+			label.text = "%s\nLv %d • %s coins" % [
+				zone_name.to_upper(),
 				int(parcel.get("level", 1)),
 				_format_number(
 					int(parcel.get("cost", 0))
@@ -2151,7 +2322,7 @@ func _update_parcel_label(id: String) -> void:
 				Color("ffe19a")
 			)
 		_:
-			label.text = "🔒 FUTURE LAND\nExpand adjacent parcel"
+			label.text = "🔒 %s\nConnect adjacent land" % zone_name.to_upper()
 			label.add_theme_color_override(
 				"font_color",
 				Color("aab8b2")

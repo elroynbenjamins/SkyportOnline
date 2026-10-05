@@ -296,7 +296,7 @@ func _build_expansion_banner(root: Control) -> void:
 	expansion_banner.offset_left = 360
 	expansion_banner.offset_top = 82
 	expansion_banner.offset_right = -360
-	expansion_banner.offset_bottom = 142
+	expansion_banner.offset_bottom = 158
 	expansion_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner.visible = false
 	root.add_child(expansion_banner)
@@ -341,6 +341,8 @@ func _build_expansion_banner(root: Control) -> void:
 	expansion_banner_detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner_detail.text = "New land unlocked"
 	expansion_banner_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	expansion_banner_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	expansion_banner_detail.max_lines_visible = 2
 	expansion_banner_detail.add_theme_font_size_override(
 		"font_size",
 		12
@@ -353,7 +355,7 @@ func _build_context_panel(root: Control) -> void:
 	parcel_panel = PanelContainer.new()
 	parcel_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	parcel_panel.offset_left = 12
-	parcel_panel.offset_top = -154
+	parcel_panel.offset_top = -180
 	parcel_panel.offset_right = -450
 	parcel_panel.offset_bottom = -82
 	root.add_child(parcel_panel)
@@ -374,11 +376,13 @@ func _build_context_panel(root: Control) -> void:
 
 	parcel_requirements = Label.new()
 	parcel_requirements.text = "Select an expansion parcel"
-	parcel_requirements.add_theme_font_size_override("font_size", 16)
+	parcel_requirements.add_theme_font_size_override("font_size", 13)
+	parcel_requirements.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parcel_requirements.max_lines_visible = 3
 	parcel_text.add_child(parcel_requirements)
 
 	purchase_button = Button.new()
-	purchase_button.custom_minimum_size = Vector2(210, 74)
+	purchase_button.custom_minimum_size = Vector2(210, 92)
 	purchase_button.text = "SELECT LAND"
 	purchase_button.disabled = true
 	purchase_button.pressed.connect(_on_purchase_pressed)
@@ -889,38 +893,67 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 	build_action_panel.visible = false
 
 	if parcel.is_empty():
-		parcel_title.text = "EXPAND LAND"
-		parcel_requirements.text = "Select a parcel"
+		parcel_title.text = "EXPAND AIRPORT"
+		parcel_requirements.text = "Select a connected expansion district."
 		purchase_button.text = "SELECT LAND"
 		purchase_button.disabled = true
 		return
 
-	if parcel.get("owned", false):
-		parcel_title.text = "YOUR AIRPORT"
-		parcel_requirements.text = "Owned land • ready for airport buildings."
-		purchase_button.text = "OWNED"
-		purchase_button.disabled = true
-		return
-
-	var progression_state := String(
-		parcel.get("progression_state", "future")
-	)
-	if progression_state == "future":
-		parcel_title.text = "FUTURE EXPANSION"
-		parcel_requirements.text = (
-			"Expand a neighboring parcel first to connect this land."
+	var zone_name := String(
+		parcel.get(
+			"name",
+			String(parcel.get("id", "land")).replace("_", " ").capitalize()
 		)
-		purchase_button.text = "NOT CONNECTED"
+	)
+	var zone_tag := String(parcel.get("tag", "EXPANSION"))
+	var purpose := String(
+		parcel.get(
+			"purpose",
+			"Additional airport building space."
+		)
+	)
+	var unlock_names_value = parcel.get("unlock_names", [])
+	var unlock_names := PackedStringArray()
+	if unlock_names_value is Array:
+		for name_variant in unlock_names_value:
+			unlock_names.append(String(name_variant))
+
+	if parcel.get("owned", false):
+		parcel_title.text = zone_name.to_upper()
+		parcel_requirements.text = "OWNED • %s\n%s" % [
+			zone_tag,
+			purpose
+		]
+		purchase_button.text = "OWNED"
 		purchase_button.disabled = true
 		return
 
 	var required_level := int(parcel.get("level", 1))
 	var cost := int(parcel.get("cost", 0))
-	parcel_title.text = "NEXT EXPANSION"
-	parcel_requirements.text = "Unlock: Lv %d   •   Cost: 🪙 %s" % [
+	var progression_state := String(
+		parcel.get("progression_state", "future")
+	)
+
+	parcel_title.text = zone_name.to_upper()
+	if progression_state == "future":
+		parcel_requirements.text = "%s • %s\nConnect adjacent airport land • Lv %d" % [
+			zone_tag,
+			purpose,
+			required_level
+		]
+		purchase_button.text = "NOT CONNECTED"
+		purchase_button.disabled = true
+		return
+
+	var detail := "%s • %s\nLv %d • 🪙 %s" % [
+		zone_tag,
+		purpose,
 		required_level,
 		_format_number(cost)
 	]
+	if not unlock_names.is_empty():
+		detail += " • Best for: %s" % " / ".join(unlock_names)
+	parcel_requirements.text = detail
 
 	if player_level < required_level:
 		purchase_button.text = "REQUIRES LV %d" % required_level
@@ -1372,7 +1405,8 @@ func set_airport_edit_undo_available(
 
 func show_airport_expanded(
 	parcel_name: String,
-	tile_count: int = 64
+	tile_count: int = 64,
+	milestone: String = ""
 ) -> void:
 	if expansion_banner == null:
 		return
@@ -1388,6 +1422,8 @@ func show_airport_expanded(
 		parcel_name.to_upper(),
 		tile_count
 	]
+	if not milestone.is_empty():
+		expansion_banner_detail.text += "\n" + milestone
 	expansion_banner.visible = true
 	expansion_banner.modulate = Color(
 		1.0,

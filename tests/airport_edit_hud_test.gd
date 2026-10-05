@@ -4,6 +4,8 @@ extends SceneTree
 var edit_emitted := false
 var undo_emitted := false
 var done_emitted := false
+var store_emitted := false
+var stored_uid := -1
 
 
 func _init() -> void:
@@ -27,6 +29,12 @@ func _run() -> void:
 	)
 	hud.done_airport_edit_requested.connect(
 		_on_done_requested
+	)
+	hud.store_building_requested.connect(
+		_on_store_requested
+	)
+	hud.stored_building_selected.connect(
+		_on_stored_building_selected
 	)
 
 	hud._on_airport_edit_pressed()
@@ -61,6 +69,58 @@ func _run() -> void:
 		_fail("Enabled Undo should emit an undo request.")
 		return
 
+	var definition := BuildingCatalog.get_definition(
+		"basic_fuel"
+	)
+	hud.set_stored_buildings([
+		{
+			"uid": 77,
+			"definition_id": "basic_fuel",
+			"rotation": 0,
+			"upgrade_level": 2
+		}
+	])
+	if not hud.storage_button.text.contains("1"):
+		_fail("Storage toolbar should show stored building count.")
+		return
+
+	hud._on_storage_pressed()
+	if not hud.storage_panel.visible:
+		_fail("Storage button should open the storage drawer.")
+		return
+
+	hud._on_stored_building_pressed(77)
+	if stored_uid != 77:
+		_fail("Storage item should emit the selected building UID.")
+		return
+	if hud.storage_panel.visible:
+		_fail("Selecting a stored building should close the drawer.")
+		return
+
+	hud.enter_move_mode(definition)
+	if not hud.store_button.visible:
+		_fail("Moving a building should expose the Store action.")
+		return
+	hud._on_store_building_pressed()
+	if not store_emitted:
+		_fail("Store action should emit a storage request.")
+		return
+
+	hud.enter_stored_building_mode(
+		definition,
+		{
+			"uid": 77,
+			"definition_id": "basic_fuel",
+			"upgrade_level": 2
+		}
+	)
+	if hud.store_button.visible:
+		_fail("Stored placement should not show Store again.")
+		return
+	if hud.place_button.text != "TAP LAND":
+		_fail("Stored placement should wait for a placement preview.")
+		return
+
 	hud._on_done_airport_edit_pressed()
 	if not done_emitted:
 		_fail("Done should emit an edit completion request.")
@@ -90,6 +150,14 @@ func _on_undo_requested() -> void:
 
 func _on_done_requested() -> void:
 	done_emitted = true
+
+
+func _on_store_requested() -> void:
+	store_emitted = true
+
+
+func _on_stored_building_selected(uid: int) -> void:
+	stored_uid = uid
 
 
 func _fail(message: String) -> void:

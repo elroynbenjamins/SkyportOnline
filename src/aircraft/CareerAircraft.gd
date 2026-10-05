@@ -3,6 +3,7 @@ extends AircraftPrototype
 
 var direction_textures: Dictionary = {}
 var last_direction := ""
+var last_heading := INF
 
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
@@ -23,8 +24,9 @@ static func direction_for(angle: float) -> String:
 func _process(delta: float) -> void:
 	super._process(delta)
 	var direction := direction_for(global_rotation)
-	if direction != last_direction:
+	if direction != last_direction or absf(global_rotation - last_heading) > 0.001:
 		last_direction = direction
+		last_heading = global_rotation
 		queue_redraw()
 
 func _draw() -> void:

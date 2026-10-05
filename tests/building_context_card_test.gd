@@ -109,6 +109,36 @@ func _run() -> void:
 			"Building context art should use smooth mipmapped filtering."
 		)
 		return
+
+	var fuel_definition := BuildingCatalog.get_definition(
+		"basic_fuel"
+	)
+	var fuel_regions: Array = fuel_definition.get(
+		"world_sprite_regions",
+		[]
+	)
+	if fuel_regions.size() < 2:
+		_fail(
+			"Basic Fuel should expose two production atlas orientations."
+		)
+		return
+	var rotation_b_texture := card._building_texture(
+		fuel_definition,
+		1
+	)
+	if not (rotation_b_texture is AtlasTexture):
+		_fail(
+			"Rotated Basic Fuel context preview should still use production atlas art."
+		)
+		return
+	if (
+		(rotation_b_texture as AtlasTexture).region
+		!= fuel_regions[1]
+	):
+		_fail(
+			"Building context preview should use the atlas region matching placed rotation."
+		)
+		return
 	if not card.stat_one_label.text.contains("x1.00"):
 		_fail("Building card should show service speed stat.")
 		return

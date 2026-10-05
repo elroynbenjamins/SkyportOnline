@@ -541,14 +541,13 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(195, 74)
+		button.custom_minimum_size = Vector2(195, 84)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 12)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		button.tooltip_text = String(definition.get("description", ""))
 		GameUIStyle.apply_button(button, "secondary", true)
 		var icon := _catalog_icon_for(definition)
 		if icon != null:
@@ -587,6 +586,8 @@ func _apply_catalog_filter() -> void:
 			selected_catalog_category == "ALL"
 			or category == selected_catalog_category
 		)
+
+	_refresh_catalog_summary()
 
 
 func _catalog_icon_for(definition: Dictionary) -> Texture2D:
@@ -1340,29 +1341,84 @@ func _update_catalog_buttons() -> void:
 		var id := String(definition["id"])
 		if not catalog_buttons.has(id):
 			continue
-		var button: Button = catalog_buttons[id]
-		var required_level := int(definition["level"])
-		var cost := int(definition["cost"])
 
-		if current_level < required_level:
-			GameUIStyle.apply_button(button, "secondary", true)
-			button.text = "%s\n🔒 LV %d" % [
-				String(definition["menu_name"]),
-				required_level
-			]
-			button.disabled = true
-		else:
-			GameUIStyle.apply_button(
-				button,
-				"selected" if id == active_building_id else "secondary",
-				true
+		var button: Button = catalog_buttons[id]
+		var state := BuildCatalogPresentation.availability(
+			definition,
+			current_level,
+			current_coins,
+			active_building_id
+		)
+		var selected := bool(state.get("selected", false))
+		var status := String(state.get("status", "ready"))
+		var kind := "selected" if selected else "secondary"
+		if status == "locked" and not selected:
+			kind = "nav"
+
+		GameUIStyle.apply_button(button, kind, true)
+		button.text = BuildCatalogPresentation.card_text(
+			definition,
+			current_level,
+			current_coins,
+			active_building_id
+		)
+		button.tooltip_text = BuildCatalogPresentation.detail_text(
+			definition,
+			current_level,
+			current_coins
+		)
+
+		# Locked and unaffordable cards remain tappable so players can
+		# inspect future buildings instead of seeing a dead catalog.
+		button.disabled = false
+
+		if status == "locked":
+			button.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_MUTED
 			)
-			button.text = "%s\n🪙 %s • %s" % [
-				String(definition["menu_name"]),
-				_format_number(cost),
-				_size_text(definition)
-			]
-			button.disabled = false
+		elif status == "shortfall":
+			button.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_WARNING
+			)
+		elif selected:
+			button.add_theme_color_override(
+				"font_color",
+				Color.WHITE
+			)
+		else:
+			button.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_TEXT
+			)
+
+	_refresh_catalog_summary()
+
+
+func _refresh_catalog_summary() -> void:
+	if catalog_summary_label == null:
+		return
+
+	var summary := BuildCatalogPresentation.visible_summary(
+		catalog_definitions,
+		selected_catalog_category,
+		current_level,
+		current_coins
+	)
+	var visible := int(summary.get("visible", 0))
+	var ready := int(summary.get("ready", 0))
+	var locked := int(summary.get("locked", 0))
+	var shortfall := int(summary.get("shortfall", 0))
+
+	catalog_summary_label.text = "%d shown  •  %d ready" % [
+		visible,
+		ready
+	]
+	if shortfall > 0:
+		catalog_summary_label.text += "  •  %d need coins" % shortfall
+	if locked > 0:
+		catalog_summary_label.text += "  •  %d locked" % locked
 
 
 func _service_text(definition: Dictionary) -> String:

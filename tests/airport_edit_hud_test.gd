@@ -19,7 +19,15 @@ func _run() -> void:
 	await process_frame
 
 	if hud.edit_airport_button == null:
-		_fail("Build tray should expose an Edit Airport button.")
+		_fail("Build drawer should expose an Edit Airport button.")
+		return
+	hud._on_catalog_close_pressed()
+	if hud.catalog_panel.visible:
+		_fail("Construction drawer should close on request.")
+		return
+	hud._on_build_navigation_pressed()
+	if not hud.catalog_panel.visible:
+		_fail("BUILD dock action should reopen the construction drawer.")
 		return
 
 	hud.airport_edit_requested.connect(
@@ -181,6 +189,9 @@ func _run() -> void:
 		return
 
 	hud.enter_building_mode(definition)
+	if hud.catalog_panel.visible:
+		_fail("Choosing a building should hide the drawer during placement.")
+		return
 	hud.set_player_data(5, 30000, 0)
 	hud.show_build_preview(
 		definition,
@@ -292,7 +303,7 @@ func _run() -> void:
 		return
 
 	print(
-		"Airport edit HUD passed: enter, guidance, undo, done and tray restore."
+		"Airport edit HUD passed: construction drawer, placement focus, edit guidance, undo, done and drawer restore."
 	)
 	quit(0)
 

@@ -359,6 +359,18 @@ static func _advance_missions(
 			"passive_passengers":
 				if event_kind == "passive_passengers":
 					increment = maxi(int(payload.get("amount", 0)), 0)
+			"flight_minutes":
+				if event_kind == "flight":
+					increment = maxi(int(payload.get("flight_minutes", 0)), 0)
+			"flight_distance":
+				if event_kind == "flight":
+					increment = maxi(int(payload.get("distance_km", 0)), 0)
+			"mastery_minutes":
+				if event_kind == "flight":
+					increment = maxi(int(payload.get("mastery_minutes", 0)), 0)
+			"resources":
+				if event_kind == "flight":
+					increment = maxi(int(payload.get("resources", 0)), 0)
 			"unique_countries":
 				if event_kind == "flight":
 					var country := String(payload.get("country", ""))

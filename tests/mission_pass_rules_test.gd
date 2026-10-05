@@ -45,6 +45,10 @@ func _run() -> void:
 			"passengers": 1000,
 			"coins": 10000,
 			"xp": 1000,
+			"flight_minutes": 1000,
+			"distance_km": 10000,
+			"mastery_minutes": 1000,
+			"resources": 10,
 			"country": "C%02d" % index
 		}, OCT_05, 1)
 	MissionPassRules.record_event(state, "passive_passengers", {"amount": 1000}, OCT_05, 1)
@@ -55,6 +59,30 @@ func _run() -> void:
 	check(bool(pass_state.get("daily_bonus_awarded", false)), "Daily completion bonus should award automatically.")
 	var weekly_bonus: Dictionary = pass_state.get("weekly_bonus_awarded", {})
 	check(weekly_bonus.values().has(true), "Weekly completion bonus should award automatically.")
+
+
+	var variety_state := AirportProgressionRules.new_state("mission-variety-test", 2)
+	MissionPassRules.ensure_state(variety_state, OCT_05, 2)
+	var variety_pass: Dictionary = variety_state.get("mission_pass", {})
+	variety_pass["daily"] = [
+		{"id": "variety-airtime", "metric": "flight_minutes", "target": 12, "progress": 0, "completed": false, "awarded": false},
+		{"id": "variety-distance", "metric": "flight_distance", "target": 800, "progress": 0, "completed": false, "awarded": false},
+		{"id": "variety-mastery", "metric": "mastery_minutes", "target": 120, "progress": 0, "completed": false, "awarded": false},
+		{"id": "variety-resources", "metric": "resources", "target": 2, "progress": 0, "completed": false, "awarded": false}
+	]
+	variety_pass["daily_bonus_awarded"] = false
+	variety_state["mission_pass"] = variety_pass
+	MissionPassRules.record_event(variety_state, "flight", {
+		"flight_minutes": 15,
+		"distance_km": 900,
+		"mastery_minutes": 150,
+		"resources": 2,
+		"country": "BE"
+	}, OCT_05, 2)
+	check(MissionPassRules.completed_daily_count(variety_state) == 4, "Flight telemetry should advance airtime, distance, mastery and resource missions.")
+	check(bool((variety_state.get("mission_pass", {}) as Dictionary).get("daily_bonus_awarded", false)), "Variety missions should still trigger the daily completion bonus.")
+	check(MissionPassCatalog.daily_templates().size() >= 10, "Daily mission catalog should include the expanded variety set.")
+	check(MissionPassCatalog.weekly_templates().size() >= 11, "Weekly mission catalog should include the expanded variety set.")
 
 	var claimed_free := MissionPassRules.claim_pass_reward(state, 1, "free")
 	check(not claimed_free.is_empty(), "Unlocked free tier should be claimable.")
@@ -137,7 +165,7 @@ func _run() -> void:
 			push_error(error)
 		quit(1)
 		return
-	print("MISSION_PASS_TEST_OK: daily, weekly catch-up, monthly pass, Aero wallet, rerolls, products and UI")
+	print("MISSION_PASS_TEST_OK: daily, weekly catch-up, varied flight telemetry, monthly pass, Aero wallet, rerolls, products and UI")
 	quit(0)
 
 func _on_action_reward(action_id: String) -> void:

@@ -16,7 +16,10 @@ static func daily_templates() -> Array[Dictionary]:
 		{"id": "daily_coins", "metric": "coins", "title": "Profitable Routes", "base_target": 600, "per_level": 150, "min_level": 1},
 		{"id": "daily_xp", "metric": "xp", "title": "Airport Experience", "base_target": 30, "per_level": 10, "min_level": 1},
 		{"id": "daily_passive_passengers", "metric": "passive_passengers", "title": "Fill the Terminal", "base_target": 10, "per_level": 2, "min_level": 1},
-		{"id": "daily_npc", "metric": "npc_services", "title": "Welcome a Visitor", "base_target": 1, "min_level": 2}
+		{"id": "daily_npc", "metric": "npc_services", "title": "Welcome a Visitor", "base_target": 1, "min_level": 2},
+		{"id": "daily_airtime", "metric": "flight_minutes", "title": "Time in the Air", "base_target": 10, "per_level": 1, "min_level": 1},
+		{"id": "daily_distance", "metric": "flight_distance", "title": "Cover Some Ground", "base_target": 700, "per_level": 25, "min_level": 1},
+		{"id": "daily_mastery", "metric": "mastery_minutes", "title": "Build Aircraft Mastery", "base_target": 120, "per_level": 10, "min_level": 2}
 	]
 
 static func weekly_templates() -> Array[Dictionary]:
@@ -27,7 +30,11 @@ static func weekly_templates() -> Array[Dictionary]:
 		{"id": "weekly_coins", "metric": "coins", "title": "Weekly Revenue", "base_target": 4500, "per_level": 900, "min_level": 1},
 		{"id": "weekly_xp", "metric": "xp", "title": "Grow the Airport", "base_target": 300, "per_level": 60, "min_level": 1},
 		{"id": "weekly_passive_passengers", "metric": "passive_passengers", "title": "Terminal Traffic", "base_target": 120, "per_level": 15, "min_level": 1},
-		{"id": "weekly_npc", "metric": "npc_services", "title": "Visitor Week", "base_target": 5, "min_level": 2}
+		{"id": "weekly_npc", "metric": "npc_services", "title": "Visitor Week", "base_target": 5, "min_level": 2},
+		{"id": "weekly_airtime", "metric": "flight_minutes", "title": "Flight-Hour Week", "base_target": 90, "per_level": 5, "min_level": 1},
+		{"id": "weekly_distance", "metric": "flight_distance", "title": "Across the Network", "base_target": 5000, "per_level": 100, "min_level": 1},
+		{"id": "weekly_mastery", "metric": "mastery_minutes", "title": "Fleet Familiarity", "base_target": 900, "per_level": 30, "min_level": 2},
+		{"id": "weekly_resources", "metric": "resources", "title": "Import Run", "base_target": 6, "min_level": 2}
 	]
 
 static func target_for(template: Dictionary, level: int) -> int:
@@ -53,6 +60,14 @@ static func mission_text(metric: String, target: int) -> String:
 			return "Successfully service %d NPC visitor%s" % [target, "" if target == 1 else "s"]
 		"passive_passengers":
 			return "Generate %d passengers from airport buildings" % target
+		"flight_minutes":
+			return "Complete %d minutes of scheduled flight time" % target
+		"flight_distance":
+			return "Fly a combined %d km" % target
+		"mastery_minutes":
+			return "Earn %d minutes toward aircraft Mastery" % target
+		"resources":
+			return "Bring home %d country resources from flights" % target
 		_:
 			return "Make progress: %d" % target
 

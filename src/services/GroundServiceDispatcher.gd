@@ -139,6 +139,21 @@ func get_active_count() -> int:
 	return active_jobs
 
 
+func is_station_active(station_uid: int) -> bool:
+	if station_uid < 0:
+		return false
+
+	var prefix := "%d:" % station_uid
+	for key_variant in station_active.keys():
+		var key := String(key_variant)
+		if (
+			key.begins_with(prefix)
+			and int(station_active.get(key_variant, 0)) > 0
+		):
+			return true
+	return false
+
+
 func get_waiting_by_service() -> Dictionary:
 	var result := {}
 	for request in pending_requests:

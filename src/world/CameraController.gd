@@ -1,6 +1,7 @@
 extends Camera2D
 
 signal world_tapped(world_position: Vector2)
+signal world_dragged(world_position: Vector2)
 
 const MIN_ZOOM := 0.52
 const MAX_ZOOM := 1.45
@@ -12,6 +13,7 @@ var last_pinch_distance := 0.0
 var multi_touch_active := false
 var mouse_left_down := false
 var mouse_left_start := Vector2.ZERO
+var placement_drag_enabled := false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -51,7 +53,12 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 	touches[event.index] = event.position
 
 	if touches.size() == 1:
-		position -= event.relative / zoom.x
+		if placement_drag_enabled:
+			world_dragged.emit(
+				_screen_to_world(event.position)
+			)
+		else:
+			position -= event.relative / zoom.x
 	elif touches.size() == 2:
 		var current_distance := _current_pinch_distance()
 		if last_pinch_distance > 0.0 and current_distance > 0.0:
@@ -80,9 +87,21 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
-	if event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
+	if (
+		placement_drag_enabled
+		and event.button_mask & MOUSE_BUTTON_MASK_LEFT
+	):
+		world_dragged.emit(
+			_screen_to_world(event.position)
+		)
+		get_viewport().set_input_as_handled()
+	elif event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 		position -= event.relative / zoom.x
 		get_viewport().set_input_as_handled()
+
+
+func set_placement_drag_enabled(value: bool) -> void:
+	placement_drag_enabled = value
 
 
 func _set_zoom_clamped(value: float) -> void:

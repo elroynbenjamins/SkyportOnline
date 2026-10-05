@@ -2,6 +2,7 @@ class_name BuildingContextCard
 extends CanvasLayer
 
 signal primary_action_requested(building: Dictionary)
+signal move_requested(building: Dictionary)
 signal details_requested(building: Dictionary)
 
 var root: Control
@@ -14,6 +15,7 @@ var stat_one_label: Label
 var stat_two_label: Label
 var description_label: Label
 var primary_button: Button
+var move_button: Button
 var details_button: Button
 
 var selected_building: Dictionary = {}
@@ -159,6 +161,13 @@ func _build_ui() -> void:
 	primary_button.pressed.connect(_on_primary_pressed)
 	actions.add_child(primary_button)
 
+	move_button = Button.new()
+	move_button.text = "MOVE"
+	move_button.custom_minimum_size = Vector2(94, 46)
+	GameUIStyle.apply_button(move_button, "secondary", true)
+	move_button.pressed.connect(_on_move_pressed)
+	actions.add_child(move_button)
+
 	details_button = Button.new()
 	details_button.text = "DETAILS"
 	details_button.custom_minimum_size = Vector2(100, 46)
@@ -221,6 +230,23 @@ func _refresh() -> void:
 					"primary"
 				)
 			)
+		)
+
+	var show_move := bool(
+		current_summary.get("show_move", false)
+	)
+	move_button.visible = show_move
+	move_button.disabled = not bool(
+		current_summary.get("move_enabled", true)
+	)
+	move_button.tooltip_text = String(
+		current_summary.get("move_reason", "")
+	)
+	if show_move:
+		GameUIStyle.apply_button(
+			move_button,
+			"secondary",
+			true
 		)
 
 	var show_details := bool(
@@ -295,6 +321,17 @@ func _building_texture(
 func _on_primary_pressed() -> void:
 	if not selected_building.is_empty():
 		primary_action_requested.emit(
+			selected_building.duplicate(true)
+		)
+
+
+func _on_move_pressed() -> void:
+	if (
+		not selected_building.is_empty()
+		and move_button != null
+		and not move_button.disabled
+	):
+		move_requested.emit(
 			selected_building.duplicate(true)
 		)
 

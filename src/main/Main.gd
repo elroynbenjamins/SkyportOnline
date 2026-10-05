@@ -14,6 +14,7 @@ var reward_rng := RandomNumberGenerator.new()
 
 var selected_building_id := ""
 var selected_building_rotation := 0
+var moving_building_uid := -1
 var aircraft_demos: Array[AircraftPrototype] = []
 var ground_services: GroundServiceDispatcher
 var runway_dispatcher: RunwayDispatcher
@@ -55,6 +56,7 @@ func _process(delta: float) -> void:
 
 func _ready() -> void:
 	camera_controller.world_tapped.connect(_on_world_tapped)
+	camera_controller.world_dragged.connect(_on_world_dragged)
 	airport_grid.parcel_selected.connect(_on_parcel_selected)
 	airport_grid.network_status_changed.connect(_on_network_status_changed)
 	airport_grid.building_selected_world.connect(_on_building_selected_world)
@@ -114,6 +116,11 @@ func _start_gameplay() -> void:
 		String(current_profile.get("airport_code", "APT")),
 		country_name,
 		String(current_profile.get("account_type", "guest"))
+	)
+
+	airport_grid.apply_saved_airport_layout(
+		current_profile.get("airport_layout", []),
+		current_profile.get("owned_parcels", [])
 	)
 
 	_setup_ground_services()
@@ -211,6 +218,9 @@ func _setup_building_context_card() -> void:
 	building_context_card = BuildingContextCard.new()
 	building_context_card.primary_action_requested.connect(
 		_on_building_context_primary_action_requested
+	)
+	building_context_card.move_requested.connect(
+		_on_building_context_move_requested
 	)
 	add_child(building_context_card)
 
@@ -1151,6 +1161,9 @@ func _process_priority_contract_return(
 
 
 func _on_navigation_requested(tab: String) -> void:
+	if moving_building_uid >= 0:
+		_cancel_building_move(false)
+
 	if aircraft_context_card != null:
 		aircraft_context_card.close_card()
 	if building_context_card != null:
@@ -1511,20 +1524,30 @@ func _on_world_map_flight_assignment_requested(
 
 func _on_world_tapped(world_position: Vector2) -> void:
 	if not selected_building_id.is_empty():
-		var status: Dictionary = airport_grid.set_build_preview(
-			selected_building_id,
-			world_position,
-			selected_building_rotation
-		)
 		var definition: Dictionary = BuildingCatalog.get_definition(
 			selected_building_id
 		)
-		hud.show_build_preview(
-			definition,
-			status,
-			player_level,
-			coins
-		)
+		if moving_building_uid >= 0:
+			var move_status := airport_grid.set_move_preview(
+				world_position,
+				selected_building_rotation
+			)
+			hud.show_move_preview(
+				definition,
+				move_status
+			)
+		else:
+			var status: Dictionary = airport_grid.set_build_preview(
+				selected_building_id,
+				world_position,
+				selected_building_rotation
+			)
+			hud.show_build_preview(
+				definition,
+				status,
+				player_level,
+				coins
+			)
 		return
 
 	var tapped_aircraft := _aircraft_at_world_position(
@@ -1539,6 +1562,29 @@ func _on_world_tapped(world_position: Vector2) -> void:
 	if building_context_card != null:
 		building_context_card.close_card()
 	airport_grid.select_world_position(world_position)
+
+
+func _on_world_dragged(world_position: Vector2) -> void:
+	if (
+		moving_building_uid < 0
+		or selected_building_id.is_empty()
+	):
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		selected_building_id
+	)
+	if definition.is_empty():
+		return
+
+	var status := airport_grid.set_move_preview(
+		world_position,
+		selected_building_rotation
+	)
+	hud.show_move_preview(
+		definition,
+		status
+	)
 
 
 func _aircraft_at_world_position(
@@ -1863,6 +1909,67 @@ func _on_building_context_primary_action_requested(
 	_open_building_management(building)
 
 
+func _on_building_context_move_requested(
+	building: Dictionary
+) -> void:
+	var move_state := _building_move_state(building)
+	if not bool(move_state.get("move_enabled", false)):
+		hud.set_operation_status(
+			String(
+				move_state.get(
+					"move_reason",
+					"This building cannot be moved right now."
+				)
+			),
+			"warning"
+		)
+		return
+
+	var uid := int(building.get("uid", -1))
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if uid < 0 or definition.is_empty():
+		return
+
+	if building_context_card != null:
+		building_context_card.close_card()
+	if aircraft_context_card != null:
+		aircraft_context_card.close_card()
+	_close_building_management_panels()
+
+	var status := airport_grid.begin_move_preview(uid)
+	if not bool(status.get("valid", false)):
+		hud.set_operation_status(
+			String(
+				status.get(
+					"reason",
+					"Unable to move this building."
+				)
+			),
+			"warning"
+		)
+		return
+
+	moving_building_uid = uid
+	selected_building_id = String(
+		building.get("definition_id", "")
+	)
+	selected_building_rotation = int(
+		building.get("rotation", 0)
+	) % 2
+	airport_grid.clear_parcel_selection()
+	camera_controller.set_placement_drag_enabled(true)
+	hud.enter_move_mode(definition)
+	hud.show_move_preview(definition, status)
+	hud.set_operation_status(
+		"Move %s • drag or tap a position • FREE" % String(
+			definition.get("name", "building")
+		),
+		"success"
+	)
+
+
 func _open_building_management(
 	building: Dictionary
 ) -> void:
@@ -1989,6 +2096,17 @@ func _building_context_summary(
 		"show_details": false
 	}
 
+	var move_state := _building_move_state(building)
+	summary["show_move"] = bool(
+		move_state.get("show_move", false)
+	)
+	summary["move_enabled"] = bool(
+		move_state.get("move_enabled", false)
+	)
+	summary["move_reason"] = String(
+		move_state.get("move_reason", "")
+	)
+
 	if building_id.contains("runway"):
 		return _runway_context_summary(
 			building,
@@ -2047,6 +2165,58 @@ func _building_context_summary(
 		)
 
 	return summary
+
+
+func _building_move_state(
+	building: Dictionary
+) -> Dictionary:
+	var uid := int(building.get("uid", -1))
+	var eligibility := airport_grid.get_move_eligibility(uid)
+	var movable := bool(
+		eligibility.get("movable", false)
+	)
+	if not movable:
+		return {
+			"show_move": false,
+			"move_enabled": false,
+			"move_reason": String(
+				eligibility.get(
+					"reason",
+					"Fixed airport infrastructure."
+				)
+			)
+		}
+
+	var building_id := String(
+		building.get("definition_id", "")
+	)
+	if (
+		building_id.contains("stand")
+		and stand_occupancy.has(uid)
+	):
+		return {
+			"show_move": true,
+			"move_enabled": false,
+			"move_reason": "Plane currently using this stand."
+		}
+
+	if (
+		ground_services != null
+		and ground_services.is_station_active(uid)
+	):
+		return {
+			"show_move": true,
+			"move_enabled": false,
+			"move_reason": (
+				"Ground-service vehicle currently using this building."
+			)
+		}
+
+	return {
+		"show_move": true,
+		"move_enabled": true,
+		"move_reason": "Move is free."
+	}
 
 
 func _passenger_building_context_summary(
@@ -2594,11 +2764,15 @@ func _on_purchase_expansion_requested() -> void:
 
 	coins -= cost
 	airport_grid.purchase_selected()
+	_persist_airport_layout()
 	hud.set_player_data(player_level, coins, gems)
 	hud.show_parcel(airport_grid.get_selected_parcel(), player_level, coins)
 
 
 func _on_building_selected(building_id: String) -> void:
+	if moving_building_uid >= 0:
+		_cancel_building_move(false)
+
 	if aircraft_context_card != null:
 		aircraft_context_card.close_card()
 	if building_context_card != null:
@@ -2627,12 +2801,27 @@ func _on_rotate_building_requested() -> void:
 	selected_building_rotation = (selected_building_rotation + 1) % 2
 	var status: Dictionary = {}
 	if airport_grid.has_build_preview():
-		status = airport_grid.refresh_build_preview(selected_building_rotation)
-	hud.show_build_preview(definition, status, player_level, coins)
+		status = airport_grid.refresh_build_preview(
+			selected_building_rotation
+		)
+
+	if moving_building_uid >= 0:
+		hud.show_move_preview(definition, status)
+	else:
+		hud.show_build_preview(
+			definition,
+			status,
+			player_level,
+			coins
+		)
 
 
 func _on_confirm_building_requested() -> void:
 	if selected_building_id.is_empty():
+		return
+
+	if moving_building_uid >= 0:
+		_confirm_building_move()
 		return
 
 	var definition := BuildingCatalog.get_definition(selected_building_id)
@@ -2656,6 +2845,7 @@ func _on_confirm_building_requested() -> void:
 		return
 
 	coins -= cost
+	_persist_airport_layout()
 	if event_manager != null:
 		event_manager.record_metric("buildings_placed", 1)
 	if (
@@ -2680,8 +2870,77 @@ func _on_confirm_building_requested() -> void:
 	hud.show_build_preview(definition, {}, player_level, coins)
 
 
+func _confirm_building_move() -> void:
+	var definition := BuildingCatalog.get_definition(
+		selected_building_id
+	)
+	var status := airport_grid.get_build_preview_status()
+	if not bool(status.get("valid", false)):
+		hud.show_move_preview(definition, status)
+		return
+
+	var result := airport_grid.confirm_move_preview()
+	if result.is_empty():
+		hud.show_move_preview(
+			definition,
+			airport_grid.get_build_preview_status()
+		)
+		return
+
+	var moved: Dictionary = result.get("building", {})
+	moving_building_uid = -1
+	selected_building_id = ""
+	selected_building_rotation = 0
+	camera_controller.set_placement_drag_enabled(false)
+	_persist_airport_layout()
+	hud.exit_building_mode()
+	_refresh_operations_analytics()
+
+	hud.set_operation_status(
+		"%s moved • FREE" % String(
+			definition.get("name", "Building")
+		),
+		"success"
+	)
+
+	if (
+		building_context_card != null
+		and not moved.is_empty()
+	):
+		building_context_card.close_card()
+
+
+func _cancel_building_move(
+	show_status: bool = true
+) -> void:
+	airport_grid.clear_build_preview()
+	moving_building_uid = -1
+	selected_building_id = ""
+	selected_building_rotation = 0
+	camera_controller.set_placement_drag_enabled(false)
+	hud.exit_building_mode()
+	if show_status:
+		hud.set_operation_status(
+			"Building move cancelled."
+		)
+
+
+func _persist_airport_layout() -> void:
+	var updated := ProfileStore.save_airport_layout(
+		airport_grid.export_airport_layout(),
+		airport_grid.export_owned_parcels()
+	)
+	if not updated.is_empty():
+		current_profile = updated
+
+
 func _on_cancel_building_requested() -> void:
+	if moving_building_uid >= 0:
+		_cancel_building_move()
+		return
+
 	selected_building_id = ""
 	selected_building_rotation = 0
 	airport_grid.clear_build_preview()
+	camera_controller.set_placement_drag_enabled(false)
 	hud.exit_building_mode()

@@ -1,0 +1,142 @@
+extends SceneTree
+
+
+func _init() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var grid := AirportGrid.new()
+	root.add_child(grid)
+	await process_frame
+
+	var fuel := _find_building(grid, "basic_fuel")
+	var runway := _find_building(grid, "short_runway")
+	if fuel.is_empty() or runway.is_empty():
+		_fail("Starter airport should contain fuel and runway buildings.")
+		return
+
+	var fuel_uid := int(fuel.get("uid", -1))
+	var runway_uid := int(runway.get("uid", -1))
+	if not bool(
+		grid.get_move_eligibility(fuel_uid).get("movable", false)
+	):
+		_fail("Basic Fuel Station should be movable.")
+		return
+	if bool(
+		grid.get_move_eligibility(runway_uid).get("movable", true)
+	):
+		_fail("Runways should remain fixed infrastructure.")
+		return
+
+	grid.set_building_upgrade_level(fuel_uid, 3)
+	var original := grid.get_building(fuel_uid)
+	var original_origin: Vector2i = original.get(
+		"origin",
+		Vector2i(-1, -1)
+	)
+
+	var start_status := grid.begin_move_preview(fuel_uid)
+	if not bool(start_status.get("valid", false)):
+		_fail(
+			"Move preview must ignore the selected building's own occupied cells."
+		)
+		return
+
+	var blocked := grid.set_move_preview(
+		grid.tile_to_world(Vector2(8, 8)),
+		0
+	)
+	if bool(blocked.get("valid", false)):
+		_fail("Move preview should reject overlap with the runway.")
+		return
+
+	grid.clear_build_preview()
+	var after_cancel := grid.get_building(fuel_uid)
+	if after_cancel.get("origin", Vector2i.ZERO) != original_origin:
+		_fail("Cancel should restore the exact original building position.")
+		return
+	if int(after_cancel.get("upgrade_level", 1)) != 3:
+		_fail("Cancel should preserve building upgrade state.")
+		return
+
+	grid.select_parcel("north")
+	grid.purchase_selected()
+
+	start_status = grid.begin_move_preview(fuel_uid)
+	if not bool(start_status.get("valid", false)):
+		_fail("Movable building should re-enter move mode after cancel.")
+		return
+
+	var target := Vector2i(10, 3)
+	var target_status := grid.set_move_preview(
+		grid.tile_to_world(Vector2(target.x, target.y)),
+		0
+	)
+	if not bool(target_status.get("valid", false)):
+		_fail(
+			"Unlocked empty land should accept the building move: %s"
+			% String(target_status.get("reason", "unknown"))
+		)
+		return
+
+	var moved_result := grid.confirm_move_preview()
+	if moved_result.is_empty():
+		_fail("Confirm should commit a valid building move.")
+		return
+
+	var moved := grid.get_building(fuel_uid)
+	if moved.get("origin", Vector2i.ZERO) != target:
+		_fail("Confirmed building should use the new grid origin.")
+		return
+	if int(moved.get("upgrade_level", 1)) != 3:
+		_fail("Moving a building must preserve its upgrade level.")
+		return
+
+	var saved_layout := grid.export_airport_layout()
+	var saved_parcels := grid.export_owned_parcels()
+	if not saved_parcels.has("north"):
+		_fail("Owned parcel state should be exported with the layout.")
+		return
+
+	var restored_grid := AirportGrid.new()
+	root.add_child(restored_grid)
+	await process_frame
+	if not restored_grid.apply_saved_airport_layout(
+		saved_layout,
+		saved_parcels
+	):
+		_fail("Saved airport layout should restore cleanly.")
+		return
+
+	var restored := restored_grid.get_building(fuel_uid)
+	if restored.get("origin", Vector2i.ZERO) != target:
+		_fail("Restored layout should keep the moved building position.")
+		return
+	if int(restored.get("upgrade_level", 1)) != 3:
+		_fail("Restored layout should keep the moved building upgrade level.")
+		return
+
+	print(
+		"Building move mode passed: eligibility, self-overlap, collision, "
+		+ "cancel, confirm, upgrade preservation and layout restore."
+	)
+	quit(0)
+
+
+func _find_building(
+	grid: AirportGrid,
+	definition_id: String
+) -> Dictionary:
+	for uid in range(1, 80):
+		var building := grid.get_building(uid)
+		if String(
+			building.get("definition_id", "")
+		) == definition_id:
+			return building
+	return {}
+
+
+func _fail(message: String) -> void:
+	push_error(message)
+	quit(1)

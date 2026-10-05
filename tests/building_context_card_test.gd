@@ -3,6 +3,7 @@ extends SceneTree
 
 var selected_building: Dictionary = {}
 var primary_emitted := false
+var move_emitted := false
 
 
 func _init() -> void:
@@ -41,7 +42,10 @@ func _run() -> void:
 			"stat_one": "SERVICE SPEED\nx1.00",
 			"stat_two": "VEHICLES\n1",
 			"primary_label": "UPGRADE",
-			"primary_kind": "primary"
+			"primary_kind": "primary",
+			"show_move": true,
+			"move_enabled": true,
+			"move_reason": "Move is free."
 		}
 	)
 
@@ -73,6 +77,17 @@ func _run() -> void:
 	card._on_primary_pressed()
 	if not primary_emitted:
 		_fail("Building card primary action should emit selected building.")
+		return
+
+	if not card.move_button.visible or card.move_button.disabled:
+		_fail("Movable building should expose an enabled Move action.")
+		return
+	card.move_requested.connect(
+		_on_move_requested
+	)
+	card._on_move_pressed()
+	if not move_emitted:
+		_fail("Building card Move action should emit selected building.")
 		return
 
 	var stand := grid.get_building(5)
@@ -126,6 +141,12 @@ func _on_primary_action_requested(
 	_building: Dictionary
 ) -> void:
 	primary_emitted = true
+
+
+func _on_move_requested(
+	_building: Dictionary
+) -> void:
+	move_emitted = true
 
 
 func _fail(message: String) -> void:

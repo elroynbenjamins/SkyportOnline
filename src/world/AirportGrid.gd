@@ -526,6 +526,22 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 			Color("f0c95d")
 		)
 
+	elif id in [
+		"travel_office",
+		"shuttle_station",
+		"ground_ops_depot",
+		"cleaning_center",
+		"passenger_service_hub",
+		"baggage_depot",
+		"catering_kitchen",
+		"tow_operations"
+	]:
+		_draw_synergy_facility_detail(
+			id,
+			_footprint_center_world(origin, footprint),
+			footprint
+		)
+
 	elif id == "autumn_event_flag":
 		_draw_autumn_event_flag(origin)
 
@@ -537,6 +553,166 @@ func _draw_building_detail(building: Dictionary, definition: Dictionary, footpri
 
 	elif id == "winter_snow_globe_garden":
 		_draw_winter_snow_globe_garden(origin, footprint)
+
+
+func _draw_synergy_facility_detail(
+	building_id: String,
+	center: Vector2,
+	footprint: Vector2i
+) -> void:
+	var width := clampf(
+		float(footprint.x + footprint.y) * 13.0,
+		38.0,
+		76.0
+	)
+	var body_color := Color("5f7f8a")
+	var accent := Color("d8c166")
+	match building_id:
+		"travel_office":
+			body_color = Color("4d8f8e")
+			accent = Color("bde8df")
+		"shuttle_station":
+			body_color = Color("4f7f9d")
+			accent = Color("b8e1f2")
+		"cleaning_center":
+			body_color = Color("70a5a0")
+			accent = Color("d3f0eb")
+		"passenger_service_hub":
+			body_color = Color("538eb0")
+			accent = Color("b8e1f2")
+		"baggage_depot":
+			body_color = Color("8b765c")
+			accent = Color("d6b77a")
+		"catering_kitchen":
+			body_color = Color("b98662")
+			accent = Color("f1d8bd")
+		"tow_operations":
+			body_color = Color("667482")
+			accent = Color("d9bd5b")
+
+	var body := Rect2(
+		center + Vector2(-width * 0.5, -44),
+		Vector2(width, 42)
+	)
+	draw_rect(
+		body.grow(4.0),
+		Color(0.03, 0.07, 0.08, 0.34),
+		true
+	)
+	draw_rect(body, body_color, true)
+	draw_rect(body, body_color.lightened(0.20), false, 2.0)
+	var door_width := maxf(width * 0.28, 14.0)
+	draw_rect(
+		Rect2(
+			center + Vector2(-door_width * 0.5, -26),
+			Vector2(door_width, 24)
+		),
+		body_color.darkened(0.34),
+		true
+	)
+
+	match building_id:
+		"travel_office":
+			for x in [-20.0, 20.0]:
+				draw_rect(
+					Rect2(
+						center + Vector2(x - 7, -37),
+						Vector2(14, 9)
+					),
+					accent,
+					true
+				)
+		"shuttle_station", "passenger_service_hub":
+			draw_rect(
+				Rect2(
+					center + Vector2(-22, -36),
+					Vector2(44, 11)
+				),
+				accent,
+				true
+			)
+			draw_circle(
+				center + Vector2(-17, -3),
+				5.0,
+				Color("26363d")
+			)
+			draw_circle(
+				center + Vector2(17, -3),
+				5.0,
+				Color("26363d")
+			)
+		"cleaning_center":
+			for offset in [
+				Vector2(-14, -34),
+				Vector2(0, -26),
+				Vector2(16, -37)
+			]:
+				draw_circle(center + offset, 3.2, accent)
+		"baggage_depot":
+			for index in range(3):
+				draw_rect(
+					Rect2(
+						center + Vector2(
+							-25 + index * 18,
+							-35
+						),
+						Vector2(13, 13)
+					),
+					accent.darkened(
+						float(index) * 0.08
+					),
+					true
+				)
+		"catering_kitchen":
+			draw_rect(
+				Rect2(
+					center + Vector2(-20, -55),
+					Vector2(8, 13)
+				),
+				Color("9eabb0"),
+				true
+			)
+			draw_rect(
+				Rect2(
+					center + Vector2(13, -59),
+					Vector2(9, 17)
+				),
+				Color("9eabb0"),
+				true
+			)
+			draw_circle(
+				center + Vector2(0, -33),
+				5.0,
+				accent
+			)
+		"tow_operations":
+			draw_rect(
+				Rect2(
+					center + Vector2(-21, -34),
+					Vector2(42, 10)
+				),
+				accent,
+				true
+			)
+			draw_circle(
+				center + Vector2(-18, -3),
+				5.0,
+				Color("263238")
+			)
+			draw_circle(
+				center + Vector2(18, -3),
+				5.0,
+				Color("263238")
+			)
+		_:
+			draw_rect(
+				Rect2(
+					center + Vector2(-17, -36),
+					Vector2(34, 9)
+				),
+				accent,
+				true
+			)
 
 
 func set_event_visual_state(

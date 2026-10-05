@@ -12,7 +12,7 @@ static func daily_templates() -> Array[Dictionary]:
 	return [
 		{"id": "daily_flights", "metric": "flights", "title": "Keep Them Flying", "base_target": 3, "min_level": 1},
 		{"id": "daily_passengers", "metric": "passengers", "title": "Passenger Push", "base_target": 30, "per_level": 5, "min_level": 1},
-		{"id": "daily_countries", "metric": "unique_countries", "title": "International Hop", "base_target": 2, "min_level": 1},
+		{"id": "daily_countries", "metric": "unique_countries", "title": "International Hop", "base_target": 2, "min_level": 2},
 		{"id": "daily_coins", "metric": "coins", "title": "Profitable Routes", "base_target": 600, "per_level": 150, "min_level": 1},
 		{"id": "daily_xp", "metric": "xp", "title": "Airport Experience", "base_target": 30, "per_level": 10, "min_level": 1},
 		{"id": "daily_passive_passengers", "metric": "passive_passengers", "title": "Fill the Terminal", "base_target": 10, "per_level": 2, "min_level": 1},
@@ -23,7 +23,7 @@ static func weekly_templates() -> Array[Dictionary]:
 	return [
 		{"id": "weekly_flights", "metric": "flights", "title": "Busy Flight Board", "base_target": 25, "min_level": 1},
 		{"id": "weekly_passengers", "metric": "passengers", "title": "Move the Crowds", "base_target": 250, "per_level": 35, "min_level": 1},
-		{"id": "weekly_countries", "metric": "unique_countries", "title": "Route Explorer", "base_target": 6, "min_level": 1},
+		{"id": "weekly_countries", "metric": "unique_countries", "title": "Route Explorer", "base_target": 4, "min_level": 2},
 		{"id": "weekly_coins", "metric": "coins", "title": "Weekly Revenue", "base_target": 4500, "per_level": 900, "min_level": 1},
 		{"id": "weekly_xp", "metric": "xp", "title": "Grow the Airport", "base_target": 300, "per_level": 60, "min_level": 1},
 		{"id": "weekly_passive_passengers", "metric": "passive_passengers", "title": "Terminal Traffic", "base_target": 120, "per_level": 15, "min_level": 1},

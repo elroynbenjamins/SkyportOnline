@@ -63,3 +63,8 @@ static func world_size(service_type: String) -> Vector2:
 		service_type,
 		Vector2(54, 54)
 	)
+
+
+static func shadow_radius(service_type: String) -> float:
+	var size := world_size(service_type)
+	return clampf(size.x * 0.31, 13.0, 19.0)

@@ -176,6 +176,7 @@ func _draw() -> void:
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
+	_draw_airside_props()
 	_draw_synergy_overlay()
 	_draw_event_theme_overlay()
 	_draw_runway_hold_short_markings()
@@ -1530,8 +1531,39 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 		var neighbor: Vector2i = origin + direction
 		if not _taxiway_visually_connects_to(neighbor):
 			continue
-		var edge_tile := Vector2(origin.x, origin.y) + Vector2(direction.x, direction.y) * 0.48
-		draw_line(center, tile_to_world(edge_tile), Color("f0c94c"), 3.0)
+		var edge_tile := (
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.48
+		)
+		var edge_world := tile_to_world(edge_tile)
+		draw_line(
+			center,
+			edge_world,
+			Color("f0c94c"),
+			3.2
+		)
+
+		# Blue edge reflectors add airport character without changing
+		# the actual taxi network.
+		var dir_world := (edge_world - center).normalized()
+		if dir_world != Vector2.ZERO:
+			var normal := Vector2(-dir_world.y, dir_world.x)
+			for side in [-1.0, 1.0]:
+				var light_pos := (
+					center
+					+ dir_world * 18.0
+					+ normal * 8.0 * float(side)
+				)
+				draw_circle(
+					light_pos,
+					2.5,
+					Color(0.03, 0.08, 0.10, 0.72)
+				)
+				draw_circle(
+					light_pos,
+					1.4,
+					Color("68c7f0")
+				)
 
 	if connections == 0:
 		draw_line(
@@ -1550,22 +1582,84 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 			false,
 			1.5
 		)
-		for direction in directions:
-			var neighbor: Vector2i = origin + direction
-			if not _taxiway_visually_connects_to(neighbor):
-				continue
-			var dir_world := (
-				tile_to_world(
-					Vector2(neighbor.x, neighbor.y)
-				) - center
-			).normalized()
-			if dir_world == Vector2.ZERO:
-				continue
-			draw_circle(
-				center + dir_world * 9.5,
-				1.7,
-				Color("ffe78c")
-			)
+
+
+func _draw_airside_props() -> void:
+	for building in placed_buildings:
+		var id := String(building.get("definition_id", ""))
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		if id == "taxiway":
+			var connections := get_taxiway_connection_count(origin)
+			if (
+				connections >= 2
+				and (origin.x + origin.y) % 3 == 0
+			):
+				_draw_taxiway_sign(
+					tile_to_world(Vector2(origin.x, origin.y))
+					+ Vector2(18, -8)
+				)
+		elif id == "service_road":
+			if (origin.x * 3 + origin.y) % 5 == 0:
+				var center := tile_to_world(
+					Vector2(origin.x, origin.y)
+				)
+				_draw_safety_cone(center + Vector2(11, 5))
+				_draw_safety_cone(center + Vector2(17, 2))
+
+
+func _draw_taxiway_sign(base: Vector2) -> void:
+	draw_line(
+		base + Vector2(0, 4),
+		base + Vector2(0, -9),
+		Color("536168"),
+		2.0
+	)
+	var sign_rect := Rect2(
+		base + Vector2(-12, -18),
+		Vector2(24, 10)
+	)
+	draw_rect(
+		sign_rect.grow(2.0),
+		Color(0.02, 0.05, 0.06, 0.32),
+		true
+	)
+	draw_rect(sign_rect, Color("173d58"), true)
+	draw_rect(sign_rect, Color("f0c94c"), false, 1.5)
+	draw_line(
+		base + Vector2(-7, -13),
+		base + Vector2(7, -13),
+		Color("f4dc6b"),
+		2.0
+	)
+
+
+func _draw_safety_cone(base: Vector2) -> void:
+	draw_circle(
+		base + Vector2(1, 2),
+		3.3,
+		Color(0.02, 0.05, 0.05, 0.20)
+	)
+	var cone := PackedVector2Array([
+		base + Vector2(0, -7),
+		base + Vector2(-3, 1),
+		base + Vector2(3, 1)
+	])
+	draw_colored_polygon(cone, Color("ef7f32"))
+	draw_line(
+		base + Vector2(-2, -2),
+		base + Vector2(2, -2),
+		Color("f9f4e9"),
+		1.5
+	)
+	draw_line(
+		base + Vector2(-4, 2),
+		base + Vector2(4, 2),
+		Color("bb4e20"),
+		2.0
+	)
 
 
 func _draw_runway_hold_short_markings() -> void:

@@ -67,7 +67,11 @@ func _run() -> void:
 		"entrance_south_west",
 		"trees_east",
 		"trees_west",
-		"hedge_south"
+		"hedge_south",
+		"conifers_north_east",
+		"conifers_south_east",
+		"fields_far_west",
+		"fields_far_east"
 	]:
 		if not ids.has(required_id):
 			_fail("Missing required landside scenery: %s" % required_id)

@@ -25,6 +25,12 @@ static func ensure_state(state: Dictionary, unix_time: float, level: int) -> boo
 	if not state.has("resource_choice_crates"):
 		state["resource_choice_crates"] = 0
 		changed = true
+	if not state.has("pending_resource_grants"):
+		state["pending_resource_grants"] = []
+		changed = true
+	if not state.has("resource_choice_serial"):
+		state["resource_choice_serial"] = 0
+		changed = true
 	if not state.has("pass_cosmetics"):
 		state["pass_cosmetics"] = {}
 		changed = true
@@ -261,6 +267,54 @@ static func claim_all_available(state: Dictionary) -> Dictionary:
 	if not changed:
 		return {}
 	_sync_aero_wallet(next)
+	return next
+
+
+static func reserve_resource_choice(
+	state: Dictionary,
+	resource_id: String,
+	amount: int = 1
+) -> Dictionary:
+	var resource := CountryResourceCatalog.get_resource(resource_id)
+	var crates := int(state.get("resource_choice_crates", 0))
+	if resource.is_empty() or crates <= 0 or amount <= 0:
+		return {}
+	var next := state.duplicate(true)
+	var serial := int(next.get("resource_choice_serial", 0)) + 1
+	var grant_id := "%s:resource-choice:%d" % [
+		String(next.get("airport_id", "airport")),
+		serial
+	]
+	var pending: Array = next.get("pending_resource_grants", []).duplicate(true)
+	pending.append({
+		"id": grant_id,
+		"resource_id": resource_id,
+		"amount": maxi(amount, 1)
+	})
+	next["pending_resource_grants"] = pending
+	next["resource_choice_serial"] = serial
+	next["resource_choice_crates"] = crates - 1
+	return next
+
+static func complete_resource_grant(
+	state: Dictionary,
+	grant_id: String
+) -> Dictionary:
+	if grant_id.is_empty():
+		return {}
+	var pending: Array = state.get("pending_resource_grants", [])
+	var next_pending: Array = []
+	var found := false
+	for grant_variant in pending:
+		var grant: Dictionary = grant_variant
+		if String(grant.get("id", "")) == grant_id:
+			found = true
+			continue
+		next_pending.append(grant.duplicate(true))
+	if not found:
+		return {}
+	var next := state.duplicate(true)
+	next["pending_resource_grants"] = next_pending
 	return next
 
 static func grant_verified_product(state: Dictionary, product_id: String) -> Dictionary:

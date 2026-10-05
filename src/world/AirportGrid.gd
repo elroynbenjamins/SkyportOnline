@@ -2267,6 +2267,71 @@ func _draw_building_sprite(
 		draw_texture_rect(texture, rect, false, modulate)
 
 
+
+func get_airfield_detail_snapshot() -> Dictionary:
+	var runway_count := 0
+	var taxiway_tiles := 0
+	var taxiway_open_edges := 0
+	var service_road_tiles := 0
+	var service_road_open_edges := 0
+	var service_barrier_candidates := 0
+
+	var directions: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
+
+	for building in placed_buildings:
+		var id := String(
+			building.get("definition_id", "")
+		)
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+
+		if id.contains("runway"):
+			runway_count += 1
+			continue
+
+		if id == "taxiway":
+			taxiway_tiles += 1
+			for direction in directions:
+				if not _taxiway_visually_connects_to(
+					origin + direction
+				):
+					taxiway_open_edges += 1
+			continue
+
+		if id == "service_road":
+			service_road_tiles += 1
+			var connections := 0
+			for direction in directions:
+				if _service_road_visually_connects_to(
+					origin + direction
+				):
+					connections += 1
+				else:
+					service_road_open_edges += 1
+			if (
+				connections <= 1
+				and (origin.x + origin.y) % 2 == 0
+			):
+				service_barrier_candidates += 1
+
+	return {
+		"runways": runway_count,
+		"taxiway_tiles": taxiway_tiles,
+		"taxiway_open_edges": taxiway_open_edges,
+		"service_road_tiles": service_road_tiles,
+		"service_road_open_edges": service_road_open_edges,
+		"service_barrier_candidates": service_barrier_candidates,
+		"landside_scenery": get_landside_scenery_layout().size()
+	}
+
+
 func _draw_pavement_tile(
 	origin: Vector2i,
 	kind: String

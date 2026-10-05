@@ -15,6 +15,7 @@ var reward_rng := RandomNumberGenerator.new()
 var selected_building_id := ""
 var selected_building_rotation := 0
 var moving_building_uid := -1
+var placing_stored_building_uid := -1
 var airport_edit_mode := false
 var last_move_undo: Dictionary = {}
 var aircraft_demos: Array[AircraftPrototype] = []
@@ -68,6 +69,10 @@ func _ready() -> void:
 	hud.rotate_building_requested.connect(_on_rotate_building_requested)
 	hud.confirm_building_requested.connect(_on_confirm_building_requested)
 	hud.cancel_building_requested.connect(_on_cancel_building_requested)
+	hud.store_building_requested.connect(_on_store_building_requested)
+	hud.stored_building_selected.connect(
+		_on_stored_building_selected
+	)
 	hud.airport_edit_requested.connect(_on_airport_edit_requested)
 	hud.undo_airport_edit_requested.connect(
 		_on_undo_airport_edit_requested
@@ -129,7 +134,11 @@ func _start_gameplay() -> void:
 
 	airport_grid.apply_saved_airport_layout(
 		current_profile.get("airport_layout", []),
-		current_profile.get("owned_parcels", [])
+		current_profile.get("owned_parcels", []),
+		current_profile.get("airport_storage", [])
+	)
+	hud.set_stored_buildings(
+		airport_grid.get_stored_buildings()
 	)
 
 	_setup_ground_services()
@@ -1547,6 +1556,17 @@ func _on_world_tapped(world_position: Vector2) -> void:
 				definition,
 				move_status
 			)
+		elif placing_stored_building_uid >= 0:
+			var stored_status := (
+				airport_grid.set_stored_building_preview(
+					world_position,
+					selected_building_rotation
+				)
+			)
+			hud.show_stored_building_preview(
+				definition,
+				stored_status
+			)
 		else:
 			var status: Dictionary = airport_grid.set_build_preview(
 				selected_building_id,
@@ -1584,9 +1604,11 @@ func _on_world_tapped(world_position: Vector2) -> void:
 
 
 func _on_world_dragged(world_position: Vector2) -> void:
+	if selected_building_id.is_empty():
+		return
 	if (
 		moving_building_uid < 0
-		or selected_building_id.is_empty()
+		and placing_stored_building_uid < 0
 	):
 		return
 
@@ -1596,14 +1618,26 @@ func _on_world_dragged(world_position: Vector2) -> void:
 	if definition.is_empty():
 		return
 
-	var status := airport_grid.set_move_preview(
-		world_position,
-		selected_building_rotation
-	)
-	hud.show_move_preview(
-		definition,
-		status
-	)
+	if moving_building_uid >= 0:
+		var status := airport_grid.set_move_preview(
+			world_position,
+			selected_building_rotation
+		)
+		hud.show_move_preview(
+			definition,
+			status
+		)
+	elif placing_stored_building_uid >= 0:
+		var stored_status := (
+			airport_grid.set_stored_building_preview(
+				world_position,
+				selected_building_rotation
+			)
+		)
+		hud.show_stored_building_preview(
+			definition,
+			stored_status
+		)
 
 
 func _aircraft_at_world_position(
@@ -2848,6 +2882,11 @@ func _on_rotate_building_requested() -> void:
 
 	if moving_building_uid >= 0:
 		hud.show_move_preview(definition, status)
+	elif placing_stored_building_uid >= 0:
+		hud.show_stored_building_preview(
+			definition,
+			status
+		)
 	else:
 		hud.show_build_preview(
 			definition,
@@ -2863,6 +2902,9 @@ func _on_confirm_building_requested() -> void:
 
 	if moving_building_uid >= 0:
 		_confirm_building_move()
+		return
+	if placing_stored_building_uid >= 0:
+		_confirm_stored_building_placement()
 		return
 
 	var definition := BuildingCatalog.get_definition(selected_building_id)
@@ -2887,6 +2929,7 @@ func _on_confirm_building_requested() -> void:
 
 	coins -= cost
 	_persist_airport_layout()
+	_refresh_layout_dependent_systems()
 	if event_manager != null:
 		event_manager.record_metric("buildings_placed", 1)
 	if (
@@ -2936,7 +2979,7 @@ func _confirm_building_move() -> void:
 	selected_building_rotation = 0
 	camera_controller.set_placement_drag_enabled(false)
 	_persist_airport_layout()
-	_refresh_operations_analytics()
+	_refresh_layout_dependent_systems()
 
 	var moved_name := String(
 		definition.get("name", "Building")
@@ -2956,6 +2999,185 @@ func _confirm_building_move() -> void:
 		and not moved.is_empty()
 	):
 		building_context_card.close_card()
+
+
+func _on_store_building_requested() -> void:
+	if moving_building_uid < 0:
+		return
+
+	var building := airport_grid.get_building(
+		moving_building_uid
+	)
+	if building.is_empty():
+		return
+
+	var move_state := _building_move_state(building)
+	if not bool(move_state.get("move_enabled", false)):
+		var reason := String(
+			move_state.get(
+				"move_reason",
+				"This building cannot be stored right now."
+			)
+		)
+		hud.set_operation_status(reason, "warning")
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	var uid := moving_building_uid
+	var result := airport_grid.store_building(uid)
+	if not bool(result.get("valid", false)):
+		hud.set_operation_status(
+			String(
+				result.get(
+					"reason",
+					"Unable to store this building."
+				)
+			),
+			"warning"
+		)
+		return
+
+	if int(last_move_undo.get("uid", -2)) == uid:
+		last_move_undo = {}
+
+	moving_building_uid = -1
+	selected_building_id = ""
+	selected_building_rotation = 0
+	camera_controller.set_placement_drag_enabled(false)
+	_persist_airport_layout()
+	_refresh_layout_dependent_systems()
+	hud.set_stored_buildings(
+		airport_grid.get_stored_buildings()
+	)
+
+	var building_name := String(
+		definition.get("name", "Building")
+	)
+	hud.show_airport_edit_mode(
+		true,
+		not last_move_undo.is_empty(),
+		"%s stored • airport effects paused" % building_name
+	)
+	hud.set_operation_status(
+		"%s moved to storage • effects paused" % building_name,
+		"success"
+	)
+
+
+func _on_stored_building_selected(uid: int) -> void:
+	if not airport_edit_mode:
+		return
+	if moving_building_uid >= 0:
+		_cancel_building_move(false)
+	if placing_stored_building_uid >= 0:
+		_cancel_stored_building_placement(false)
+
+	var building := airport_grid.get_stored_building(uid)
+	if building.is_empty():
+		hud.set_operation_status(
+			"Stored building is no longer available.",
+			"warning"
+		)
+		hud.set_stored_buildings(
+			airport_grid.get_stored_buildings()
+		)
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return
+
+	var state := airport_grid.begin_stored_building_preview(uid)
+	if not bool(state.get("valid", false)):
+		hud.set_operation_status(
+			String(state.get("reason", "Unable to place stored building.")),
+			"warning"
+		)
+		return
+
+	placing_stored_building_uid = uid
+	selected_building_id = String(
+		building.get("definition_id", "")
+	)
+	selected_building_rotation = int(
+		building.get("rotation", 0)
+	) % 2
+	camera_controller.set_placement_drag_enabled(true)
+	hud.enter_stored_building_mode(
+		definition,
+		building
+	)
+	hud.set_operation_status(
+		"Place %s from storage • FREE" % String(
+			definition.get("name", "building")
+		)
+	)
+
+
+func _confirm_stored_building_placement() -> void:
+	var definition := BuildingCatalog.get_definition(
+		selected_building_id
+	)
+	var status := airport_grid.get_build_preview_status()
+	if not bool(status.get("valid", false)):
+		hud.show_stored_building_preview(
+			definition,
+			status
+		)
+		return
+
+	var restored := airport_grid.confirm_stored_building_preview()
+	if restored.is_empty():
+		return
+
+	placing_stored_building_uid = -1
+	selected_building_id = ""
+	selected_building_rotation = 0
+	camera_controller.set_placement_drag_enabled(false)
+	_persist_airport_layout()
+	_refresh_layout_dependent_systems()
+	hud.set_stored_buildings(
+		airport_grid.get_stored_buildings()
+	)
+
+	var building_name := String(
+		definition.get("name", "Building")
+	)
+	hud.show_airport_edit_mode(
+		true,
+		not last_move_undo.is_empty(),
+		"%s placed • tap another building" % building_name
+	)
+	hud.set_operation_status(
+		"%s placed from storage • FREE" % building_name,
+		"success"
+	)
+
+
+func _cancel_stored_building_placement(
+	show_status: bool = true
+) -> void:
+	airport_grid.clear_build_preview()
+	placing_stored_building_uid = -1
+	selected_building_id = ""
+	selected_building_rotation = 0
+	camera_controller.set_placement_drag_enabled(false)
+	if airport_edit_mode:
+		hud.show_airport_edit_mode(
+			true,
+			not last_move_undo.is_empty(),
+			"Placement cancelled • building remains stored"
+		)
+	else:
+		hud.exit_building_mode()
+	if show_status:
+		hud.set_operation_status(
+			"Stored building placement cancelled."
+		)
 
 
 func _cancel_building_move(
@@ -2983,6 +3205,8 @@ func _cancel_building_move(
 func _on_airport_edit_requested() -> void:
 	if moving_building_uid >= 0:
 		_cancel_building_move(false)
+	elif placing_stored_building_uid >= 0:
+		_cancel_stored_building_placement(false)
 	elif not selected_building_id.is_empty():
 		selected_building_id = ""
 		selected_building_rotation = 0
@@ -2990,6 +3214,7 @@ func _on_airport_edit_requested() -> void:
 
 	airport_edit_mode = true
 	last_move_undo = {}
+	placing_stored_building_uid = -1
 	camera_controller.set_placement_drag_enabled(false)
 	if aircraft_context_card != null:
 		aircraft_context_card.close_card()
@@ -3071,7 +3296,7 @@ func _on_undo_airport_edit_requested() -> void:
 
 	last_move_undo = {}
 	_persist_airport_layout()
-	_refresh_operations_analytics()
+	_refresh_layout_dependent_systems()
 	var building_name := String(
 		definition.get("name", "Building")
 	)
@@ -3095,11 +3320,14 @@ func _exit_airport_edit_mode(
 ) -> void:
 	if moving_building_uid >= 0:
 		_cancel_building_move(false)
+	if placing_stored_building_uid >= 0:
+		_cancel_stored_building_placement(false)
 
 	airport_edit_mode = false
 	last_move_undo = {}
 	selected_building_id = ""
 	selected_building_rotation = 0
+	placing_stored_building_uid = -1
 	airport_grid.clear_build_preview()
 	camera_controller.set_placement_drag_enabled(false)
 	hud.show_airport_edit_mode(false)
@@ -3110,10 +3338,25 @@ func _exit_airport_edit_mode(
 		)
 
 
+func _refresh_layout_dependent_systems() -> void:
+	if passenger_economy != null:
+		passenger_economy.refresh_building_stats()
+	if runway_dispatcher != null:
+		runway_dispatcher.refresh_air_traffic_control()
+		runway_dispatcher.set_runway_strategies(
+			current_profile.get(
+				"runway_strategies",
+				{}
+			)
+		)
+	_refresh_operations_analytics()
+
+
 func _persist_airport_layout() -> void:
 	var updated := ProfileStore.save_airport_layout(
 		airport_grid.export_airport_layout(),
-		airport_grid.export_owned_parcels()
+		airport_grid.export_owned_parcels(),
+		airport_grid.export_airport_storage()
 	)
 	if not updated.is_empty():
 		current_profile = updated
@@ -3122,6 +3365,9 @@ func _persist_airport_layout() -> void:
 func _on_cancel_building_requested() -> void:
 	if moving_building_uid >= 0:
 		_cancel_building_move()
+		return
+	if placing_stored_building_uid >= 0:
+		_cancel_stored_building_placement()
 		return
 
 	selected_building_id = ""

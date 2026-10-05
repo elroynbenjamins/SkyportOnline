@@ -20,16 +20,13 @@ func _run() -> void:
 		return
 
 	hud.airport_edit_requested.connect(
-		func() -> void:
-			edit_emitted = true
+		_on_edit_requested
 	)
 	hud.undo_airport_edit_requested.connect(
-		func() -> void:
-			undo_emitted = true
+		_on_undo_requested
 	)
 	hud.done_airport_edit_requested.connect(
-		func() -> void:
-			done_emitted = true
+		_on_done_requested
 	)
 
 	hud._on_airport_edit_pressed()
@@ -81,6 +78,18 @@ func _run() -> void:
 		"Airport edit HUD passed: enter, guidance, undo, done and tray restore."
 	)
 	quit(0)
+
+
+func _on_edit_requested() -> void:
+	edit_emitted = true
+
+
+func _on_undo_requested() -> void:
+	undo_emitted = true
+
+
+func _on_done_requested() -> void:
+	done_emitted = true
 
 
 func _fail(message: String) -> void:

@@ -23,13 +23,13 @@ static func structure_items() -> Array[Dictionary]:
 			"id": "cargo_charter_office",
 			"origin": Vector2i(6, 4),
 			"rotation": 1,
-			"layer": 32
+			"layer": 30
 		},
 		{
 			"id": "logistics_gate_checkpoint",
 			"origin": Vector2i(6, 0),
 			"rotation": 0,
-			"layer": 34
+			"layer": 30
 		}
 	]
 
@@ -100,9 +100,38 @@ static func all_visual_items() -> Array[Dictionary]:
 	result.append_array(structure_items())
 	result.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			return int(a.get("layer", 0)) < int(
-				b.get("layer", 0)
+			var a_layer := int(a.get("layer", 0))
+			var b_layer := int(b.get("layer", 0))
+			if a_layer != b_layer:
+				return a_layer < b_layer
+
+			var a_origin: Vector2i = a.get(
+				"origin",
+				Vector2i.ZERO
 			)
+			var b_origin: Vector2i = b.get(
+				"origin",
+				Vector2i.ZERO
+			)
+			var a_footprint := footprint_for_item(a)
+			var b_footprint := footprint_for_item(b)
+			var a_depth := (
+				a_origin.x
+				+ a_origin.y
+				+ a_footprint.x
+				+ a_footprint.y
+			)
+			var b_depth := (
+				b_origin.x
+				+ b_origin.y
+				+ b_footprint.x
+				+ b_footprint.y
+			)
+			if a_depth != b_depth:
+				return a_depth < b_depth
+			if a_origin.y != b_origin.y:
+				return a_origin.y < b_origin.y
+			return a_origin.x < b_origin.x
 	)
 	return result
 
@@ -172,6 +201,83 @@ static func future_relative_cells() -> Array[Vector2i]:
 					origin + Vector2i(x, y)
 				)
 	return result
+
+
+static func placement_status(
+	visual_id: String,
+	relative_origin: Vector2i,
+	rotation: int = 0
+) -> Dictionary:
+	var definition := CharterVisualCatalog.visual_for(
+		visual_id
+	)
+	if definition.is_empty():
+		return {
+			"valid": false,
+			"reason": "Unknown Charter visual."
+		}
+
+	var default_item: Dictionary = {}
+	for item in structure_items():
+		if String(item.get("id", "")) == visual_id:
+			default_item = item
+			break
+	if default_item.is_empty():
+		return {
+			"valid": false,
+			"reason": "Only Charter district structures can be repositioned."
+		}
+
+	if visual_id == "cargo_aircraft_stand":
+		var default_origin: Vector2i = default_item.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		if relative_origin != default_origin:
+			return {
+				"valid": false,
+				"reason": "Cargo aircraft stand is fixed.",
+				"fixed": true
+			}
+
+	var preview_item := default_item.duplicate(true)
+	preview_item["origin"] = relative_origin
+	preview_item["rotation"] = rotation % 2
+	var footprint := footprint_for_item(preview_item)
+	var future_keys: Dictionary = {}
+	for cell in future_relative_cells():
+		future_keys[
+			"%d:%d" % [cell.x, cell.y]
+		] = true
+
+	for y in range(footprint.y):
+		for x in range(footprint.x):
+			var cell := relative_origin + Vector2i(x, y)
+			if (
+				cell.x < 0
+				or cell.y < 0
+				or cell.x >= PARCEL_SIZE
+				or cell.y >= PARCEL_SIZE
+			):
+				return {
+					"valid": false,
+					"reason": "Charter structures must stay inside the Logistics District.",
+					"logistics_only": true
+				}
+			var key := "%d:%d" % [cell.x, cell.y]
+			if future_keys.has(key):
+				return {
+					"valid": false,
+					"reason": "Reserved for future Charter logistics buildings.",
+					"future_reserved": true
+				}
+
+	return {
+		"valid": true,
+		"reason": "Valid Logistics District placement.",
+		"footprint": footprint,
+		"logistics_only": true
+	}
 
 
 static func layout_validation() -> Dictionary:

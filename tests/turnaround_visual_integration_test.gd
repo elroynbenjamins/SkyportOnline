@@ -99,8 +99,12 @@ func _run() -> void:
 	])
 	for service_type_variant in services:
 		var service_type := String(service_type_variant)
-		var route := dispatcher._route_to_aircraft_service_anchor(
+		var lane_route := ApronTrafficRules.offset_route(
 			base_route,
+			service_type
+		)
+		var route := dispatcher._route_to_aircraft_service_anchor(
+			lane_route,
 			plane,
 			service_type,
 			service_type

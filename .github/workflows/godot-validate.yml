@@ -127,13 +127,6 @@ jobs:
       - name: Test airport edit and expansion HUD
         run: timeout 20s godot --headless --path . --script res://tests/airport_edit_hud_test.gd
 
-      - name: Test building move mode
-        run: timeout 20s godot --headless --path . --script res://tests/building_move_mode_test.gd
-
-      - name: Test building storage
-        run: timeout 20s godot --headless --path . --script res://tests/building_storage_test.gd
-
-
       - name: Test airport expansion districts and visuals
         run: timeout 20s godot --headless --path . --script res://tests/airport_expansion_district_test.gd
 

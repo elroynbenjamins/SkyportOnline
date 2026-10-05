@@ -3164,10 +3164,15 @@ func _celebrate_parcel_expansion(
 	if parcel.is_empty():
 		return
 
-	var display_name := parcel_id.replace(
-		"_",
-		" "
-	).capitalize()
+	var display_name := String(
+		parcel.get(
+			"name",
+			parcel_id.replace("_", " ").capitalize()
+		)
+	)
+	var milestone := String(
+		parcel.get("milestone", "")
+	)
 	camera_controller.focus_world_position(
 		airport_grid.get_parcel_world_center(
 			parcel_id
@@ -3179,7 +3184,15 @@ func _celebrate_parcel_expansion(
 		display_name,
 		airport_grid.get_parcel_tile_count(
 			parcel_id
-		)
+		),
+		milestone
+	)
+	hud.set_operation_status(
+		"%s unlocked • %s" % [
+			display_name,
+			milestone if not milestone.is_empty() else "new airport land available"
+		],
+		"success"
 	)
 
 

@@ -15,6 +15,7 @@ func _init() -> void:
 
 func _run() -> void:
 	for definition in BuildingCatalog.all():
+		_validate_art_coverage(definition)
 		var atlas_path := String(
 			definition.get("world_sprite_atlas_path", "")
 		)
@@ -128,10 +129,41 @@ func _run() -> void:
 		return
 
 	print(
-		"BUILDING_ART_ALIGNMENT_DIAGNOSTIC_OK atlas=%d paths=%d total=%d"
+		"BUILDING_ART_ALIGNMENT_DIAGNOSTIC_OK coverage=complete atlas=%d paths=%d total=%d"
 		% [checked_atlas, checked_paths, checked]
 	)
 	quit(0)
+
+
+
+func _validate_art_coverage(
+	definition: Dictionary
+) -> void:
+	var id := String(definition.get("id", ""))
+	if bool(definition.get("event_decoration", false)):
+		return
+	if id in ["taxiway", "service_road"]:
+		return
+
+	var atlas_path := String(
+		definition.get("world_sprite_atlas_path", "")
+	)
+	var paths: PackedStringArray = definition.get(
+		"world_sprite_paths",
+		PackedStringArray()
+	)
+	var single_path := String(
+		definition.get("world_sprite_path", "")
+	)
+	if (
+		atlas_path.is_empty()
+		and paths.is_empty()
+		and single_path.is_empty()
+	):
+		_fail(
+			"%s has no dedicated world building art."
+			% id
+		)
 
 
 func _check_atlas_definition(

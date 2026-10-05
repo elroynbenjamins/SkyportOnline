@@ -28,6 +28,25 @@ func _run() -> void:
 		await process_frame
 		plane.configure_aircraft_type(aircraft_id)
 
+		if not plane.has_world_sprite_set():
+			_fail("%s should have all four production world sprites." % aircraft_id)
+			return
+		for direction in ["ne", "nw", "se", "sw"]:
+			var sprite_path := plane.get_world_sprite_path(direction)
+			if sprite_path.is_empty() or not ResourceLoader.exists(sprite_path):
+				_fail(
+					"%s missing %s production sprite."
+					% [aircraft_id, direction]
+				)
+				return
+			var resource = load(sprite_path)
+			if not (resource is Texture2D):
+				_fail(
+					"%s %s sprite should load as Texture2D."
+					% [aircraft_id, direction]
+				)
+				return
+
 		var design := plane.get_visual_design()
 		var family := String(design.get("family", ""))
 		if family != String(expected_families[aircraft_id]):
@@ -139,6 +158,31 @@ func _run() -> void:
 	var horizon_design := horizon.get_visual_design()
 	if String(horizon_design.get("engine_style", "")) != "jet":
 		_fail("Horizon H88 should retain jet-engine treatment.")
+		return
+
+	var heading_probe := AircraftPrototype.new()
+	root.add_child(heading_probe)
+	await process_frame
+	heading_probe.configure_aircraft_type("horizon_h88")
+	if heading_probe.get_world_sprite_direction(-AircraftPrototype.ISO_HEADING_ANGLE) != "ne":
+		_fail("NE isometric heading should resolve to the NE sprite.")
+		return
+	if heading_probe.get_world_sprite_direction(AircraftPrototype.ISO_HEADING_ANGLE) != "se":
+		_fail("SE isometric heading should resolve to the SE sprite.")
+		return
+	if heading_probe.get_world_sprite_direction(PI - AircraftPrototype.ISO_HEADING_ANGLE) != "sw":
+		_fail("SW isometric heading should resolve to the SW sprite.")
+		return
+	if heading_probe.get_world_sprite_direction(-PI + AircraftPrototype.ISO_HEADING_ANGLE) != "nw":
+		_fail("NW isometric heading should resolve to the NW sprite.")
+		return
+
+	var world_size := heading_probe.get_world_sprite_draw_size()
+	if world_size.x < 110.0 or world_size.y < 110.0:
+		_fail("Horizon production sprite should read substantially larger at world scale.")
+		return
+	if world_size.x > 150.0 or world_size.y > 150.0:
+		_fail("Horizon production sprite should remain appropriate for a medium stand.")
 		return
 
 	print(

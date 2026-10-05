@@ -348,8 +348,30 @@ func set_turnaround_status(
 ) -> void:
 	if turnaround_panel == null:
 		return
-	turnaround_label.text = text
-	turnaround_panel.visible = not text.is_empty()
+	var compact_text := text.replace("\n", " • ").strip_edges()
+	if compact_text.length() > 28:
+		var priority_suffix := ""
+		for segment_variant in compact_text.split(" • "):
+			var segment := String(segment_variant)
+			if segment.contains("WAIT"):
+				priority_suffix = " • " + segment
+				break
+		if priority_suffix.is_empty():
+			for keyword in ["READY", "RUNWAY"]:
+				if compact_text.contains(keyword):
+					priority_suffix = " • " + keyword
+					break
+		var prefix_limit := maxi(
+			27 - priority_suffix.length(),
+			12
+		)
+		compact_text = (
+			compact_text.substr(0, prefix_limit).strip_edges()
+			+ "…"
+			+ priority_suffix
+		)
+	turnaround_label.text = compact_text
+	turnaround_panel.visible = not compact_text.is_empty()
 	match tone:
 		"warning":
 			turnaround_label.add_theme_color_override(
@@ -376,20 +398,27 @@ func clear_turnaround_status() -> void:
 
 func _build_turnaround_status() -> void:
 	turnaround_panel = PanelContainer.new()
-	turnaround_panel.custom_minimum_size = Vector2(156, 42)
+	turnaround_panel.custom_minimum_size = Vector2(118, 30)
 	turnaround_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	turnaround_panel.z_index = 160
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.035, 0.10, 0.14, 0.92)
-	style.border_color = Color("5f8798")
+	style.bg_color = Color("062a40", 0.94)
+	style.border_color = Color("27b8e5")
 	style.border_width_left = 1
 	style.border_width_top = 1
 	style.border_width_right = 1
 	style.border_width_bottom = 1
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.corner_radius_bottom_left = 4
-	style.corner_radius_bottom_right = 4
+	style.corner_radius_top_left = 9
+	style.corner_radius_top_right = 9
+	style.corner_radius_bottom_left = 9
+	style.corner_radius_bottom_right = 9
+	style.content_margin_left = 8.0
+	style.content_margin_right = 8.0
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
+	style.shadow_color = Color(0, 0, 0, 0.30)
+	style.shadow_size = 5
+	style.shadow_offset = Vector2(0, 2)
 	turnaround_panel.add_theme_stylebox_override(
 		"panel",
 		style
@@ -403,12 +432,11 @@ func _build_turnaround_status() -> void:
 	turnaround_label.vertical_alignment = (
 		VERTICAL_ALIGNMENT_CENTER
 	)
-	turnaround_label.autowrap_mode = (
-		TextServer.AUTOWRAP_WORD_SMART
-	)
+	turnaround_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	turnaround_label.clip_text = true
 	turnaround_label.add_theme_font_size_override(
 		"font_size",
-		11
+		10
 	)
 	turnaround_label.add_theme_color_override(
 		"font_color",
@@ -422,7 +450,7 @@ func _build_turnaround_status() -> void:
 func _sync_turnaround_status_transform() -> void:
 	if turnaround_panel == null:
 		return
-	var anchor := Vector2(-78, -72).rotated(-rotation)
+	var anchor := Vector2(-59, -58).rotated(-rotation)
 	turnaround_panel.position = anchor
 	turnaround_panel.rotation = -rotation
 

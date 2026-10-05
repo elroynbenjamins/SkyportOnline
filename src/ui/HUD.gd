@@ -105,10 +105,10 @@ func _build_interface() -> void:
 
 	var top_panel := PanelContainer.new()
 	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_panel.offset_left = 12
-	top_panel.offset_top = 10
-	top_panel.offset_right = -12
-	top_panel.offset_bottom = 92
+	top_panel.offset_left = 16
+	top_panel.offset_top = 8
+	top_panel.offset_right = -16
+	top_panel.offset_bottom = 78
 	root.add_child(top_panel)
 	GameUIStyle.apply_panel(top_panel, "hud_top")
 
@@ -124,7 +124,7 @@ func _build_interface() -> void:
 	top_margin.add_child(top_row)
 
 	var level_card := PanelContainer.new()
-	level_card.custom_minimum_size = Vector2(126, 0)
+	level_card.custom_minimum_size = Vector2(112, 0)
 	GameUIStyle.apply_panel(level_card, "hud_level")
 	top_row.add_child(level_card)
 	var level_box := VBoxContainer.new()
@@ -135,7 +135,7 @@ func _build_interface() -> void:
 	level_label = Label.new()
 	level_label.text = "LV 1"
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level_label.add_theme_font_size_override("font_size", 18)
+	level_label.add_theme_font_size_override("font_size", 20)
 	level_label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
 	level_box.add_child(level_label)
 
@@ -163,53 +163,53 @@ func _build_interface() -> void:
 
 	title_label = Label.new()
 	title_label.text = "SKYPORT"
-	title_label.add_theme_font_size_override("font_size", 21)
+	title_label.add_theme_font_size_override("font_size", 19)
 	title_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	identity_box.add_child(title_label)
 
 	airport_meta_label = Label.new()
 	airport_meta_label.text = "✈ APT  •  AIRPORT OPERATIONS"
-	airport_meta_label.add_theme_font_size_override("font_size", 11)
+	airport_meta_label.add_theme_font_size_override("font_size", 10)
 	GameUIStyle.muted(airport_meta_label)
 	identity_box.add_child(airport_meta_label)
 
 	var passenger_chip := _build_hud_resource_chip(
 		top_row,
-		"👥  PASSENGERS",
+		"PASSENGERS",
 		"0 / 0",
 		"+0.0 / MIN",
 		"hud_passenger",
-		190
+		168
 	)
 	passenger_label = passenger_chip["value"] as Label
 	passenger_rate_label = passenger_chip["detail"] as Label
 
 	var coin_chip := _build_hud_resource_chip(
 		top_row,
-		"🪙  COINS",
+		"COINS",
 		"0",
 		"AIRPORT FUNDS",
 		"hud_coin",
-		145
+		126
 	)
 	coins_label = coin_chip["value"] as Label
 
 	var aero_chip := _build_hud_resource_chip(
 		top_row,
-		"✦  AERO",
+		"AERO",
 		"0",
 		"PREMIUM",
 		"hud_premium",
-		145
+		118
 	)
 	gems_label = aero_chip["value"] as Label
 
 	var objective_panel := PanelContainer.new()
 	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	objective_panel.offset_left = -320
-	objective_panel.offset_top = 100
-	objective_panel.offset_right = -12
-	objective_panel.offset_bottom = 166
+	objective_panel.offset_left = -402
+	objective_panel.offset_top = 86
+	objective_panel.offset_right = -16
+	objective_panel.offset_bottom = 148
 	root.add_child(objective_panel)
 	GameUIStyle.apply_panel(objective_panel, "raised")
 
@@ -222,16 +222,16 @@ func _build_interface() -> void:
 
 	var status_strip := HBoxContainer.new()
 	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	status_strip.offset_left = 12
-	status_strip.offset_top = 100
-	status_strip.offset_right = 660
-	status_strip.offset_bottom = 146
+	status_strip.offset_left = 16
+	status_strip.offset_top = 86
+	status_strip.offset_right = 650
+	status_strip.offset_bottom = 142
 	status_strip.add_theme_constant_override("separation", 6)
 	root.add_child(status_strip)
 
 	airside_status_chip = Button.new()
-	airside_status_chip.text = "🛬 AIRFIELD\nCHECKING..."
-	airside_status_chip.custom_minimum_size = Vector2(190, 44)
+	airside_status_chip.text = "AIRFIELD\nCHECKING..."
+	airside_status_chip.custom_minimum_size = Vector2(168, 50)
 	GameUIStyle.apply_button(airside_status_chip, "nav", true)
 	airside_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("airside")
@@ -239,8 +239,8 @@ func _build_interface() -> void:
 	status_strip.add_child(airside_status_chip)
 
 	operation_status_chip = Button.new()
-	operation_status_chip.text = "🧰 GROUND OPS\nPREPARING..."
-	operation_status_chip.custom_minimum_size = Vector2(210, 44)
+	operation_status_chip.text = "GROUND OPS\nPREPARING..."
+	operation_status_chip.custom_minimum_size = Vector2(188, 50)
 	GameUIStyle.apply_button(operation_status_chip, "nav", true)
 	operation_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("operations")
@@ -248,8 +248,8 @@ func _build_interface() -> void:
 	status_strip.add_child(operation_status_chip)
 
 	atc_status_chip = Button.new()
-	atc_status_chip.text = "🗼 ATC\nCLEAR"
-	atc_status_chip.custom_minimum_size = Vector2(230, 44)
+	atc_status_chip.text = "ATC\nCLEAR"
+	atc_status_chip.custom_minimum_size = Vector2(188, 50)
 	GameUIStyle.apply_button(atc_status_chip, "nav", true)
 	atc_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("atc")
@@ -261,10 +261,10 @@ func _build_interface() -> void:
 
 	status_detail_panel = PanelContainer.new()
 	status_detail_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	status_detail_panel.offset_left = 12
-	status_detail_panel.offset_top = 152
-	status_detail_panel.offset_right = 660
-	status_detail_panel.offset_bottom = 236
+	status_detail_panel.offset_left = 16
+	status_detail_panel.offset_top = 148
+	status_detail_panel.offset_right = 650
+	status_detail_panel.offset_bottom = 230
 	status_detail_panel.visible = false
 	root.add_child(status_detail_panel)
 	GameUIStyle.apply_panel(status_detail_panel, "raised")
@@ -328,13 +328,14 @@ func _build_interface() -> void:
 	build_hint.offset_top = -192
 	build_hint.offset_right = 760
 	build_hint.offset_bottom = -160
-	build_hint.text = "AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
+	build_hint.text = "Tap BUILD for construction tools"
 	build_hint.add_theme_font_size_override("font_size", 14)
 	build_hint.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_MUTED
 	)
 	root.add_child(build_hint)
+	build_hint.visible = false
 
 	_build_context_panel(root)
 	_build_airport_edit_panel(root)
@@ -763,10 +764,10 @@ func _build_storage_panel(root: Control) -> void:
 func _build_catalog_panel(root: Control) -> void:
 	catalog_panel = PanelContainer.new()
 	catalog_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	catalog_panel.offset_left = -468
-	catalog_panel.offset_top = 168
-	catalog_panel.offset_right = -10
-	catalog_panel.offset_bottom = -92
+	catalog_panel.offset_left = -422
+	catalog_panel.offset_top = 158
+	catalog_panel.offset_right = -12
+	catalog_panel.offset_bottom = -86
 	root.add_child(catalog_panel)
 	GameUIStyle.apply_panel(catalog_panel, "context")
 
@@ -779,7 +780,7 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_wrapper.add_child(catalog_header_row)
 
 	var catalog_header := Label.new()
-	catalog_header.text = "🔨  BUILD AIRPORT"
+	catalog_header.text = "BUILD TRAY"
 	catalog_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	catalog_header.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(catalog_header, 17)
@@ -794,8 +795,8 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_header_row.add_child(catalog_count_label)
 
 	edit_airport_button = Button.new()
-	edit_airport_button.text = "✥ EDIT"
-	edit_airport_button.custom_minimum_size = Vector2(92, 36)
+	edit_airport_button.text = "EDIT AIRPORT"
+	edit_airport_button.custom_minimum_size = Vector2(118, 36)
 	GameUIStyle.apply_button(edit_airport_button, "gold", true)
 	edit_airport_button.pressed.connect(_on_airport_edit_pressed)
 	catalog_header_row.add_child(edit_airport_button)
@@ -808,30 +809,31 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_header_row.add_child(catalog_close_button)
 
 	catalog_help_label = Label.new()
-	catalog_help_label.text = "Choose a building • the drawer closes for placement • BUILD reopens it"
+	catalog_help_label.text = "Tap a building to place it"
 	catalog_help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	catalog_help_label.add_theme_font_size_override("font_size", 11)
 	GameUIStyle.muted(catalog_help_label)
 	catalog_wrapper.add_child(catalog_help_label)
+	catalog_help_label.visible = false
 
 	var filters := GridContainer.new()
-	filters.columns = 3
+	filters.columns = 6
 	filters.add_theme_constant_override("h_separation", 4)
 	filters.add_theme_constant_override("v_separation", 4)
 	catalog_wrapper.add_child(filters)
 
 	for filter_data in [
 		["ALL", "ALL"],
-		["AIRFIELD", "Infrastructure"],
+		["INFRA", "Infrastructure"],
 		["PAX", "Passenger"],
-		["SERVICE", "Services"],
+		["SERV", "Services"],
 		["OPS", "Operations"],
 		["DECOR", "Decorations"]
 	]:
 		var chip := Button.new()
 		chip.text = String(filter_data[0])
 		chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		chip.custom_minimum_size = Vector2(0, 34)
+		chip.custom_minimum_size = Vector2(0, 38)
 		var category := String(filter_data[1])
 		GameUIStyle.apply_button(
 			chip,
@@ -860,10 +862,10 @@ func _build_catalog_panel(root: Control) -> void:
 func _build_bottom_navigation(root: Control) -> void:
 	bottom_nav_panel = PanelContainer.new()
 	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_nav_panel.offset_left = 92
-	bottom_nav_panel.offset_top = -82
-	bottom_nav_panel.offset_right = -92
-	bottom_nav_panel.offset_bottom = -10
+	bottom_nav_panel.offset_left = 16
+	bottom_nav_panel.offset_top = -78
+	bottom_nav_panel.offset_right = -16
+	bottom_nav_panel.offset_bottom = -8
 	root.add_child(bottom_nav_panel)
 	GameUIStyle.apply_panel(bottom_nav_panel, "dock")
 
@@ -871,15 +873,14 @@ func _build_bottom_navigation(root: Control) -> void:
 	nav_row.add_theme_constant_override("separation", 6)
 	bottom_nav_panel.add_child(nav_row)
 
-	for item in ["🔨\nBUILD", "✈\nFLEET", "🌍\nWORLD", "🎉\nEVENT", "👥\nSOCIAL", "☰\nMORE"]:
+	for item in ["BUILD", "FLEET", "WORLD", "EVENT", "SOCIAL", "MORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0, 60)
+		button.custom_minimum_size = Vector2(0, 58)
 		button.add_theme_font_size_override("font_size", 15)
 
-		var parts: PackedStringArray = item.split("\n")
-		var tab: String = String(parts[1]).to_lower()
+		var tab: String = item.to_lower()
 		GameUIStyle.apply_button(
 			button,
 			"dock_selected" if tab == "build" else "dock",
@@ -918,10 +919,10 @@ func set_event_attention(claimable: bool) -> void:
 	if event_nav_button == null:
 		return
 	if claimable:
-		event_nav_button.text = "🎉 •\nEVENT"
+		event_nav_button.text = "EVENT •"
 		GameUIStyle.apply_button(event_nav_button, "event", true)
 	else:
-		event_nav_button.text = "🎉\nEVENT"
+		event_nav_button.text = "EVENT"
 		GameUIStyle.apply_button(event_nav_button, "dock", true)
 
 
@@ -929,14 +930,14 @@ func set_social_attention(active: bool) -> void:
 	if social_nav_button == null:
 		return
 	if active:
-		social_nav_button.text = "👥 •\nSOCIAL"
+		social_nav_button.text = "SOCIAL •"
 		GameUIStyle.apply_button(
 			social_nav_button,
 			"gold",
 			true
 		)
 	else:
-		social_nav_button.text = "👥\nSOCIAL"
+		social_nav_button.text = "SOCIAL"
 		GameUIStyle.apply_button(
 			social_nav_button,
 			"dock",
@@ -986,7 +987,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(205, 88)
+		button.custom_minimum_size = Vector2(188, 78)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 12)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -2300,11 +2301,11 @@ func _set_status_chip(
 func _status_icon(key: String) -> String:
 	match key:
 		"airside":
-			return "🛬 AIRFIELD"
+			return "AIRFIELD"
 		"operations":
-			return "🧰 GROUND OPS"
+			return "GROUND OPS"
 		_:
-			return "🗼 ATC"
+			return "ATC"
 
 
 func _status_button_kind(
@@ -2438,7 +2439,7 @@ func _update_catalog_buttons() -> void:
 
 		if current_level < required_level:
 			GameUIStyle.apply_button(button, "build_card_locked", true)
-			button.text = "%s\n🔒 UNLOCK LV %d" % [
+			button.text = "%s\nLOCKED • LV %d" % [
 				String(definition["menu_name"]),
 				required_level
 			]
@@ -2450,8 +2451,8 @@ func _update_catalog_buttons() -> void:
 				"build_card_selected" if selected else "build_card",
 				true
 			)
-			button.text = "%s%s\n🪙 %s  •  LV %d  •  %s" % [
-				"✓ " if selected else "",
+			button.text = "%s%s\n%s COINS • LV %d • %s" % [
+				"SELECTED • " if selected else "",
 				String(definition["menu_name"]),
 				_format_number(cost),
 				required_level,

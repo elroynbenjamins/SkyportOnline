@@ -102,6 +102,9 @@ jobs:
       - name: Test ground service visual motion
         run: timeout 20s godot --headless --path . --script res://tests/ground_service_visual_motion_test.gd
 
+      - name: Test Cargo Charter visual pack
+        run: timeout 30s godot --headless --path . --script res://tests/charter_visual_pack_test.gd
+
       - name: Test airport ambient life
         run: timeout 20s godot --headless --path . --script res://tests/airport_ambient_life_test.gd
 

@@ -13,6 +13,8 @@ var provider_connected := false
 var local_simulation_enabled := true
 var sequence := 0
 
+const MAX_ACTIVE_VISITS := 3
+
 
 func configure(
 	enable_local_simulation: bool = true
@@ -44,6 +46,13 @@ func request_visit(contact_id: String) -> Dictionary:
 	var contact := get_contact(contact_id)
 	if contact.is_empty():
 		return {}
+	if active_visits.size() >= MAX_ACTIVE_VISITS:
+		return {}
+	for entry_variant in active_visits.values():
+		var entry: Dictionary = entry_variant
+		var request: Dictionary = entry.get("request", {})
+		if String(request.get("contact_id", "")) == contact_id:
+			return {}
 	sequence += 1
 	var request := SocialFlightRules.create_visit_request(
 		contact,
@@ -193,7 +202,8 @@ func get_snapshot() -> Dictionary:
 		"provider_connected": provider_connected,
 		"local_simulation": local_simulation_enabled,
 		"incoming_gift_status": incoming_gift_status,
-		"social_state": ProfileStore.get_social_state()
+		"social_state": ProfileStore.get_social_state(),
+		"max_active_visits": MAX_ACTIVE_VISITS
 	}
 
 

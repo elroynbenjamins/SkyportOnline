@@ -210,7 +210,7 @@ static func claim_pass_reward(
 		return {}
 	if track == "premium" and not bool(pass_state.get("premium", false)):
 		return {}
-	var claim_key := "claimed_" + track
+	var claim_key: String = "claimed_" + String(track)
 	var claimed: Dictionary = pass_state.get(claim_key, {})
 	if bool(claimed.get(str(tier_number), false)):
 		return {}

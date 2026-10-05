@@ -2,11 +2,15 @@ class_name FlightReturnSummary
 extends CanvasLayer
 
 var root: Control
+var reward_panel: PanelContainer
+var result_badge_label: Label
 var title_label: Label
 var coin_tile_label: Label
 var xp_tile_label: Label
 var mastery_tile_label: Label
 var body_label: Label
+var collect_button: Button
+var reveal_tween: Tween
 var queue: Array[Dictionary] = []
 
 
@@ -36,19 +40,32 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -260
-	panel.offset_top = -215
-	panel.offset_right = 280
-	panel.offset_bottom = 215
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(panel)
-	GameUIStyle.apply_panel(panel, "gold")
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color("020b10", 0.68)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(backdrop)
+
+	reward_panel = PanelContainer.new()
+	reward_panel.set_anchors_preset(Control.PRESET_CENTER)
+	reward_panel.offset_left = -270
+	reward_panel.offset_top = -225
+	reward_panel.offset_right = 290
+	reward_panel.offset_bottom = 225
+	reward_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(reward_panel)
+	GameUIStyle.apply_panel(reward_panel, "gold")
 
 	var wrapper := VBoxContainer.new()
-	wrapper.add_theme_constant_override("separation", 12)
-	panel.add_child(wrapper)
+	wrapper.add_theme_constant_override("separation", 10)
+	reward_panel.add_child(wrapper)
+
+	result_badge_label = Label.new()
+	result_badge_label.text = "✓  FLIGHT COMPLETE"
+	result_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_badge_label.add_theme_font_size_override("font_size", 13)
+	result_badge_label.add_theme_color_override("font_color", GameUIStyle.COLOR_SUCCESS)
+	wrapper.add_child(result_badge_label)
 
 	title_label = Label.new()
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -89,13 +106,13 @@ func _build_ui() -> void:
 	)
 	wrapper.add_child(body_label)
 
-	var close_button := Button.new()
-	close_button.text = "COLLECT"
-	close_button.custom_minimum_size = Vector2(0, 52)
-	close_button.add_theme_font_size_override("font_size", 17)
-	close_button.pressed.connect(_on_close_pressed)
-	GameUIStyle.apply_button(close_button, "gold")
-	wrapper.add_child(close_button)
+	collect_button = Button.new()
+	collect_button.text = "COLLECT & CONTINUE"
+	collect_button.custom_minimum_size = Vector2(0, 54)
+	collect_button.add_theme_font_size_override("font_size", 17)
+	collect_button.pressed.connect(_on_close_pressed)
+	GameUIStyle.apply_button(collect_button, "gold")
+	wrapper.add_child(collect_button)
 
 
 func _show_next() -> void:
@@ -156,6 +173,15 @@ func _show_next() -> void:
 		{}
 	)
 	if not contract_bonus.is_empty():
+		result_badge_label.text = "★  PRIORITY CONTRACT COMPLETE"
+		result_badge_label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+	elif bool(reward.get("mastery_star_up", false)):
+		result_badge_label.text = "★  MASTERY STAR EARNED"
+		result_badge_label.add_theme_color_override("font_color", Color("d8b9ff"))
+	else:
+		result_badge_label.text = "✓  FLIGHT COMPLETE"
+		result_badge_label.add_theme_color_override("font_color", GameUIStyle.COLOR_SUCCESS)
+	if not contract_bonus.is_empty():
 		text += "★ PRIORITY CONTRACT COMPLETE!\n"
 		text += "Bonus: 🪙 +%d    XP +%d\n" % [
 			int(contract_bonus.get("coins", 0)),
@@ -191,7 +217,39 @@ func _show_next() -> void:
 		text += "No regional resources configured for this destination.\n"
 
 	body_label.text = text
+	if collect_button != null:
+		collect_button.text = (
+			"COLLECT & NEXT  •  %d QUEUED" % queue.size()
+			if not queue.is_empty()
+			else "COLLECT & CONTINUE"
+		)
 	root.visible = true
+	_animate_reward_panel()
+
+
+
+func _animate_reward_panel() -> void:
+	if reward_panel == null:
+		return
+	if reveal_tween != null and reveal_tween.is_valid():
+		reveal_tween.kill()
+	reward_panel.pivot_offset = reward_panel.size * 0.5
+	reward_panel.scale = Vector2(0.94, 0.94)
+	reward_panel.modulate.a = 0.0
+	reveal_tween = create_tween()
+	reveal_tween.set_parallel(true)
+	reveal_tween.tween_property(
+		reward_panel,
+		"scale",
+		Vector2.ONE,
+		0.18
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	reveal_tween.tween_property(
+		reward_panel,
+		"modulate:a",
+		1.0,
+		0.12
+	)
 
 
 func _make_reward_tile(
@@ -202,7 +260,7 @@ func _make_reward_tile(
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.custom_minimum_size = Vector2(0, 68)
-	GameUIStyle.apply_panel(card, "dark")
+	GameUIStyle.apply_panel(card, "reward_tile")
 	parent.add_child(card)
 
 	var label := Label.new()

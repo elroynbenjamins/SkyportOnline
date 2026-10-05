@@ -4,6 +4,7 @@ extends Node2D
 signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
+signal building_moved(data: Dictionary, previous: Dictionary)
 signal network_status_changed(data: Dictionary)
 signal building_selected_world(data: Dictionary)
 
@@ -51,6 +52,8 @@ var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
 var preview_rotation := 0
 var preview_status: Dictionary = {}
+var preview_mode := "build"
+var preview_ignore_uid := -1
 
 
 func _ready() -> void:
@@ -152,6 +155,12 @@ func _draw_buildings() -> void:
 	buildings_to_draw.sort_custom(Callable(self, "_sort_buildings_by_depth"))
 
 	for building in buildings_to_draw:
+		if (
+			preview_mode == "move"
+			and int(building.get("uid", -1)) == preview_ignore_uid
+		):
+			continue
+
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty():
 			continue
@@ -622,7 +631,8 @@ func _draw_building_sprite(
 	origin: Vector2i,
 	footprint: Vector2i,
 	rotation: int,
-	modulate: Color = Color.WHITE
+	modulate: Color = Color.WHITE,
+	extra_offset: Vector2 = Vector2.ZERO
 ) -> void:
 	var sprite_path := _sprite_path_for_rotation(definition, rotation)
 	if sprite_path.is_empty():
@@ -635,7 +645,10 @@ func _draw_building_sprite(
 	var draw_size: Vector2 = definition.get("world_sprite_size", Vector2(160, 120))
 	var offset: Vector2 = definition.get("world_sprite_offset", Vector2.ZERO)
 	var center := _footprint_center_world(origin, footprint)
-	var rect := Rect2(center - draw_size * 0.5 + offset, draw_size)
+	var rect := Rect2(
+		center - draw_size * 0.5 + offset + extra_offset,
+		draw_size
+	)
 	draw_texture_rect(texture, rect, false, modulate)
 
 
@@ -987,9 +1000,34 @@ func _draw_build_preview() -> void:
 		for x in range(footprint.x):
 			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
 
+	if preview_mode == "move":
+		var shadow_center := (
+			_footprint_center_world(preview_origin, footprint)
+			+ Vector2(0, 10)
+		)
+		draw_circle(
+			shadow_center,
+			maxf(18.0, float(footprint.x + footprint.y) * 7.0),
+			Color(0.02, 0.05, 0.06, 0.30)
+		)
+
 	if _definition_has_world_sprite(definition):
-		var ghost := Color(0.72, 1.0, 0.78, 0.72) if valid else Color(1.0, 0.65, 0.65, 0.72)
-		_draw_building_sprite(definition, preview_origin, footprint, preview_rotation, ghost)
+		var ghost := (
+			Color(0.88, 1.0, 0.90, 0.92)
+			if valid
+			else Color(1.0, 0.62, 0.62, 0.86)
+		)
+		var lift := Vector2.ZERO
+		if preview_mode == "move":
+			lift = Vector2(0, -10)
+		_draw_building_sprite(
+			definition,
+			preview_origin,
+			footprint,
+			preview_rotation,
+			ghost,
+			lift
+		)
 
 
 func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:
@@ -1084,11 +1122,89 @@ func purchase_selected() -> void:
 	parcel_selected.emit(selected_id, parcels[selected_id].duplicate(true))
 
 
-func set_build_preview(building_id: String, world_position: Vector2, rotation: int) -> Dictionary:
+func set_build_preview(
+	building_id: String,
+	world_position: Vector2,
+	rotation: int
+) -> Dictionary:
+	preview_mode = "build"
+	preview_ignore_uid = -1
 	preview_building_id = building_id
 	preview_origin = world_to_tile(world_position)
 	preview_rotation = rotation % 2
-	preview_status = _get_placement_status(building_id, preview_origin, preview_rotation)
+	preview_status = _get_placement_status(
+		building_id,
+		preview_origin,
+		preview_rotation
+	)
+	queue_redraw()
+	build_preview_changed.emit(preview_status.duplicate(true))
+	return preview_status.duplicate(true)
+
+
+func begin_move_preview(uid: int) -> Dictionary:
+	var eligibility := get_move_eligibility(uid)
+	if not bool(eligibility.get("movable", false)):
+		return {
+			"valid": false,
+			"reason": String(
+				eligibility.get(
+					"reason",
+					"This building cannot be moved."
+				)
+			)
+		}
+
+	var building := _building_by_uid(uid)
+	if building.is_empty():
+		return {
+			"valid": false,
+			"reason": "Building not found."
+		}
+
+	preview_mode = "move"
+	preview_ignore_uid = uid
+	preview_building_id = String(
+		building.get("definition_id", "")
+	)
+	preview_origin = building.get(
+		"origin",
+		Vector2i(-1, -1)
+	)
+	preview_rotation = int(
+		building.get("rotation", 0)
+	) % 2
+	preview_status = _get_placement_status(
+		preview_building_id,
+		preview_origin,
+		preview_rotation,
+		preview_ignore_uid
+	)
+	preview_status["mode"] = "move"
+	preview_status["building_uid"] = uid
+	_refresh_building_labels()
+	queue_redraw()
+	build_preview_changed.emit(preview_status.duplicate(true))
+	return preview_status.duplicate(true)
+
+
+func set_move_preview(
+	world_position: Vector2,
+	rotation: int
+) -> Dictionary:
+	if preview_mode != "move" or preview_ignore_uid < 0:
+		return {}
+
+	preview_origin = world_to_tile(world_position)
+	preview_rotation = rotation % 2
+	preview_status = _get_placement_status(
+		preview_building_id,
+		preview_origin,
+		preview_rotation,
+		preview_ignore_uid
+	)
+	preview_status["mode"] = "move"
+	preview_status["building_uid"] = preview_ignore_uid
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -1098,7 +1214,15 @@ func refresh_build_preview(rotation: int) -> Dictionary:
 	if preview_building_id.is_empty():
 		return {}
 	preview_rotation = rotation % 2
-	preview_status = _get_placement_status(preview_building_id, preview_origin, preview_rotation)
+	preview_status = _get_placement_status(
+		preview_building_id,
+		preview_origin,
+		preview_rotation,
+		preview_ignore_uid
+	)
+	if preview_mode == "move":
+		preview_status["mode"] = "move"
+		preview_status["building_uid"] = preview_ignore_uid
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -1113,18 +1237,29 @@ func has_build_preview() -> bool:
 
 
 func clear_build_preview() -> void:
+	var was_move := preview_mode == "move"
 	preview_building_id = ""
 	preview_origin = Vector2i(-1, -1)
 	preview_rotation = 0
 	preview_status = {}
+	preview_mode = "build"
+	preview_ignore_uid = -1
+	if was_move:
+		_refresh_building_labels()
 	queue_redraw()
 
 
 func confirm_build_preview() -> Dictionary:
+	if preview_mode != "build":
+		return {}
 	if not bool(preview_status.get("valid", false)):
 		return {}
 
-	var placed := _place_building_internal(preview_building_id, preview_origin, preview_rotation)
+	var placed := _place_building_internal(
+		preview_building_id,
+		preview_origin,
+		preview_rotation
+	)
 	_rebuild_occupied_cells()
 	_recalculate_airside_network()
 	_refresh_building_labels()
@@ -1134,7 +1269,85 @@ func confirm_build_preview() -> Dictionary:
 	return placed
 
 
-func _get_placement_status(building_id: String, origin: Vector2i, rotation: int) -> Dictionary:
+func confirm_move_preview() -> Dictionary:
+	if (
+		preview_mode != "move"
+		or preview_ignore_uid < 0
+		or not bool(preview_status.get("valid", false))
+	):
+		return {}
+
+	for index in range(placed_buildings.size()):
+		if int(
+			placed_buildings[index].get("uid", -1)
+		) != preview_ignore_uid:
+			continue
+
+		var previous := placed_buildings[index].duplicate(true)
+		placed_buildings[index]["origin"] = preview_origin
+		placed_buildings[index]["rotation"] = preview_rotation
+		var moved := placed_buildings[index].duplicate(true)
+
+		_rebuild_occupied_cells()
+		_recalculate_airside_network()
+		clear_build_preview()
+		_refresh_building_labels()
+		queue_redraw()
+		building_moved.emit(
+			moved.duplicate(true),
+			previous.duplicate(true)
+		)
+		return {
+			"building": moved,
+			"previous": previous
+		}
+
+	return {}
+
+
+func get_move_eligibility(uid: int) -> Dictionary:
+	var building := _building_by_uid(uid)
+	if building.is_empty():
+		return {
+			"movable": false,
+			"reason": "Building not found."
+		}
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return {
+			"movable": false,
+			"reason": "Building definition is unavailable."
+		}
+
+	var building_id := String(
+		definition.get("id", "")
+	)
+	if (
+		not bool(definition.get("movable", true))
+		or building_id.contains("runway")
+		or building_id == "taxiway"
+		or building_id == "service_road"
+	):
+		return {
+			"movable": false,
+			"reason": "Airport infrastructure is fixed in place."
+		}
+
+	return {
+		"movable": true,
+		"reason": "Move is free."
+	}
+
+
+func _get_placement_status(
+	building_id: String,
+	origin: Vector2i,
+	rotation: int,
+	ignore_uid: int = -1
+) -> Dictionary:
 	var definition := BuildingCatalog.get_definition(building_id)
 	if definition.is_empty():
 		return {
@@ -1160,13 +1373,16 @@ func _get_placement_status(building_id: String, origin: Vector2i, rotation: int)
 				"origin": origin,
 				"footprint": footprint
 			}
-		if occupied_cells.has(_cell_key(cell)):
-			return {
-				"valid": false,
-				"reason": "Another airport building already occupies this space.",
-				"origin": origin,
-				"footprint": footprint
-			}
+		var cell_key := _cell_key(cell)
+		if occupied_cells.has(cell_key):
+			var occupying_uid := int(occupied_cells[cell_key])
+			if occupying_uid != ignore_uid:
+				return {
+					"valid": false,
+					"reason": "Another airport building already occupies this space.",
+					"origin": origin,
+					"footprint": footprint
+				}
 
 	var result := {
 		"valid": true,
@@ -1310,6 +1526,12 @@ func _refresh_building_labels() -> void:
 	building_labels.clear()
 
 	for building in placed_buildings:
+		if (
+			preview_mode == "move"
+			and int(building.get("uid", -1)) == preview_ignore_uid
+		):
+			continue
+
 		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
 		if definition.is_empty() or String(definition["id"]) == "taxiway":
 			continue
@@ -2383,6 +2605,133 @@ func get_building(uid: int) -> Dictionary:
 		if int(building.get("uid", -1)) == uid:
 			return building.duplicate(true)
 	return {}
+
+
+func export_airport_layout() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in placed_buildings:
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		result.append({
+			"uid": int(building.get("uid", -1)),
+			"definition_id": String(
+				building.get("definition_id", "")
+			),
+			"x": origin.x,
+			"y": origin.y,
+			"rotation": int(
+				building.get("rotation", 0)
+			) % 2,
+			"upgrade_level": maxi(
+				int(building.get("upgrade_level", 1)),
+				1
+			)
+		})
+	return result
+
+
+func export_owned_parcels() -> Array[String]:
+	var result: Array[String] = []
+	for parcel_id in parcels.keys():
+		if bool(
+			(parcels[parcel_id] as Dictionary).get(
+				"owned",
+				false
+			)
+		):
+			result.append(String(parcel_id))
+	result.sort()
+	return result
+
+
+func apply_saved_airport_layout(
+	saved_layout: Array,
+	saved_owned_parcels: Array
+) -> bool:
+	var owned: Dictionary = {"home": true}
+	for parcel_id_variant in saved_owned_parcels:
+		var parcel_id := String(parcel_id_variant)
+		if parcels.has(parcel_id):
+			owned[parcel_id] = true
+
+	var restored: Array[Dictionary] = []
+	var restored_cells: Dictionary = {}
+	var seen_uids: Dictionary = {}
+	var max_uid := 0
+
+	if not saved_layout.is_empty():
+		for item_variant in saved_layout:
+			if not item_variant is Dictionary:
+				return false
+			var item: Dictionary = item_variant
+			var definition_id := String(
+				item.get("definition_id", "")
+			)
+			var definition := BuildingCatalog.get_definition(
+				definition_id
+			)
+			var uid := int(item.get("uid", -1))
+			if definition.is_empty() or uid <= 0 or seen_uids.has(uid):
+				return false
+
+			var origin := Vector2i(
+				int(item.get("x", -1)),
+				int(item.get("y", -1))
+			)
+			var rotation := int(
+				item.get("rotation", 0)
+			) % 2
+			var footprint := _footprint_for(
+				definition,
+				rotation
+			)
+			for cell in _cells_for(origin, footprint):
+				if not _tile_in_world(cell):
+					return false
+				var parcel := _parcel_for_tile(cell)
+				if (
+					parcel.is_empty()
+					or not owned.has(
+						String(parcel.get("id", ""))
+					)
+				):
+					return false
+				var key := _cell_key(cell)
+				if restored_cells.has(key):
+					return false
+				restored_cells[key] = uid
+
+			seen_uids[uid] = true
+			max_uid = maxi(max_uid, uid)
+			restored.append({
+				"uid": uid,
+				"definition_id": definition_id,
+				"origin": origin,
+				"rotation": rotation,
+				"upgrade_level": maxi(
+					int(item.get("upgrade_level", 1)),
+					1
+				)
+			})
+
+	for parcel_id in parcels.keys():
+		parcels[parcel_id]["owned"] = (
+			String(parcel_id) == "home"
+			or owned.has(String(parcel_id))
+		)
+		_update_parcel_label(String(parcel_id))
+
+	if not saved_layout.is_empty():
+		placed_buildings = restored
+		next_building_uid = max_uid + 1
+
+	_rebuild_occupied_cells()
+	_recalculate_airside_network()
+	_refresh_building_labels()
+	queue_redraw()
+	return true
 
 
 func get_building_key(building: Dictionary) -> String:

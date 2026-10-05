@@ -88,6 +88,10 @@ func _run() -> void:
 	check((pass_state.get("weekly", []) as Array).size() == 5, "New month should start with only the current weekly set.")
 	check((pass_state.get("daily", []) as Array).size() == 4, "New month should still create four daily missions.")
 
+	check(MissionPassRules.aero_tokens_for_level_range(1, 5) == 6, "Levels 2-5 should grant four normal Aero tokens plus the +2 level-5 bonus.")
+	check(MissionPassRules.aero_tokens_for_level_range(4, 5) == 3, "Every fifth level should grant 1 normal + 2 bonus Aero Tokens.")
+	check(MissionPassRules.aero_tokens_for_level_range(5, 5) == 0, "No level gain should grant no Aero Tokens.")
+
 	var booster_state := AirportProgressionRules.new_state("booster-test", 1)
 	booster_state["booster_inventory"] = {"booster_tailwind": 2, "booster_gold": 1}
 	check(MissionBoosterRules.activate(booster_state, "booster_tailwind", OCT_05), "Owned Tailwind booster should activate.")

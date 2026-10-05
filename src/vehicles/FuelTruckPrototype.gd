@@ -20,6 +20,7 @@ var service_connection_target := Vector2.ZERO
 var has_service_connection_target := false
 var motion_clock := 0.0
 var visual_motion_amount := 0.0
+var service_pose_error := 0.0
 
 
 func _ready() -> void:
@@ -83,10 +84,35 @@ func _process(delta: float) -> void:
 			if _follow_route(outbound_route, delta):
 				phase = "SERVICING"
 				if has_service_pose_rotation:
-					rotation = service_pose_rotation
+					service_pose_error = absf(
+						wrapf(
+							service_pose_rotation - rotation,
+							-PI,
+							PI
+						)
+					)
 				service_started.emit()
 				queue_redraw()
 		"SERVICING":
+			if has_service_pose_rotation:
+				var align_rate := GroundServiceVehicleArt.service_align_rate(
+					"fuel"
+				)
+				rotation = lerp_angle(
+					rotation,
+					service_pose_rotation,
+					clampf(delta * align_rate, 0.0, 1.0)
+				)
+				service_pose_error = absf(
+					wrapf(
+						service_pose_rotation - rotation,
+						-PI,
+						PI
+					)
+				)
+				if service_pose_error < 0.004:
+					rotation = service_pose_rotation
+					service_pose_error = 0.0
 			service_remaining -= delta
 			if service_remaining <= 0.0:
 				phase = "RETURNING"
@@ -266,22 +292,51 @@ func _draw_fuel_hose() -> void:
 
 	var hose_end := target.normalized() * minf(
 		target.length(),
-		38.0
+		GroundServiceVehicleArt.attachment_reach(
+			"fuel"
+		)
 	)
-	var mid := hose_end * 0.55 + Vector2(0, 7)
+	var direction := hose_end.normalized()
+	var normal := Vector2(-direction.y, direction.x)
+	var reel := direction * 5.0 - normal * 2.0
+	var mid_a := (
+		hose_end * 0.34
+		+ normal * 8.0
+	)
+	var mid_b := (
+		hose_end * 0.70
+		+ normal * 5.0
+	)
+	draw_circle(
+		reel,
+		5.2,
+		Color("445057")
+	)
+	draw_circle(
+		reel,
+		2.8,
+		Color("20282c")
+	)
 	draw_polyline(
 		PackedVector2Array([
-			Vector2(-6, 5),
-			mid,
+			reel,
+			mid_a,
+			mid_b,
 			hose_end
 		]),
-		Color("2d3438"),
-		3.0
+		Color("20272a"),
+		3.2
 	)
 	draw_circle(
 		hose_end,
-		2.5,
+		3.0,
 		Color("e6b84c")
+	)
+	draw_line(
+		hose_end - direction * 4.0,
+		hose_end + direction * 2.0,
+		Color("f1cf76"),
+		2.2
 	)
 
 

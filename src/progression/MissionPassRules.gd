@@ -164,7 +164,6 @@ static func reroll_daily(
 	if target_index < 0:
 		return false
 
-	used_templates.erase(String((daily[target_index] as Dictionary).get("template_id", "")))
 	var eligible: Array[Dictionary] = []
 	for template in MissionPassCatalog.daily_templates():
 		if level < int(template.get("min_level", 1)):
@@ -273,7 +272,10 @@ static func grant_verified_product(state: Dictionary, product_id: String) -> Dic
 
 static func pass_level(state: Dictionary) -> int:
 	var pass_state: Dictionary = state.get("mission_pass", {})
-	return mini(int(pass_state.get("points", 0)) / MissionPassCatalog.POINTS_PER_TIER, MissionPassCatalog.TIERS)
+	return mini(
+		int(floor(float(pass_state.get("points", 0)) / float(MissionPassCatalog.POINTS_PER_TIER))),
+		MissionPassCatalog.TIERS
+	)
 
 static func claimable_count(state: Dictionary) -> int:
 	var pass_state: Dictionary = state.get("mission_pass", {})
@@ -350,6 +352,7 @@ static func _advance_missions(
 			continue
 		var target := maxi(int(mission.get("target", 1)), 1)
 		mission["progress"] = mini(int(mission.get("progress", 0)) + increment, target)
+		missions[index] = mission
 		result["changed"] = true
 		if int(mission["progress"]) >= target:
 			mission["completed"] = true

@@ -82,6 +82,7 @@ const ENVIRONMENT_FIELDS := "res://assets/pixel/airport_v1/environment_distant_f
 const PARCEL_UNLOCK_FX_DURATION := 0.9
 const PREVIEW_SNAP_FX_DURATION := 0.18
 const PLACEMENT_CONFIRM_FX_DURATION := 0.46
+const NEW_BUILD_FX_DURATION := 0.82
 const EDIT_DIM_MODULATE := Color(0.78, 0.82, 0.80, 0.70)
 
 var parcels: Dictionary = {}
@@ -105,6 +106,7 @@ var preview_snap_origin := Vector2i(-1, -1)
 var preview_snap_footprint := Vector2i.ONE
 var preview_snap_valid := false
 var placement_confirm_fx: Array[Dictionary] = []
+var new_build_construction_fx: Dictionary = {}
 var hovered_building_uid := -1
 
 var preview_building_id := ""
@@ -169,10 +171,28 @@ func _process(delta: float) -> void:
 				item["elapsed"] = elapsed
 				placement_confirm_fx[index] = item
 
+	if not new_build_construction_fx.is_empty():
+		active = true
+		var completed_builds: Array[int] = []
+		for uid_variant in new_build_construction_fx.keys():
+			var uid := int(uid_variant)
+			var fx: Dictionary = new_build_construction_fx[uid]
+			var elapsed := float(
+				fx.get("elapsed", 0.0)
+			) + delta
+			if elapsed >= NEW_BUILD_FX_DURATION:
+				completed_builds.append(uid)
+			else:
+				fx["elapsed"] = elapsed
+				new_build_construction_fx[uid] = fx
+		for uid in completed_builds:
+			new_build_construction_fx.erase(uid)
+
 	if (
 		not parcel_unlock_fx.is_empty()
 		or preview_snap_elapsed >= 0.0
 		or not placement_confirm_fx.is_empty()
+		or not new_build_construction_fx.is_empty()
 	):
 		active = true
 
@@ -249,6 +269,7 @@ func _draw() -> void:
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
+	_draw_new_build_construction_fx()
 	_draw_airside_props()
 	_draw_hovered_building_outline()
 	_draw_selected_building_outline()
@@ -1140,6 +1161,26 @@ func _draw_buildings() -> void:
 			continue
 
 		var dimmed := _placement_focus_active()
+		var construction_visual := _construction_visual_state(
+			int(building.get("uid", -1))
+		)
+		var sprite_modulate := (
+			EDIT_DIM_MODULATE
+			if dimmed
+			else Color.WHITE
+		)
+		var sprite_offset := Vector2.ZERO
+		if not construction_visual.is_empty():
+			var construction_alpha := float(
+				construction_visual.get("alpha", 1.0)
+			)
+			sprite_modulate.a *= construction_alpha
+			sprite_offset.y += float(
+				construction_visual.get(
+					"vertical_offset",
+					0.0
+				)
+			)
 
 		if _definition_has_world_sprite(definition):
 			_draw_world_art_ground_pad(
@@ -1152,7 +1193,8 @@ func _draw_buildings() -> void:
 				origin,
 				footprint,
 				int(building["rotation"]),
-				EDIT_DIM_MODULATE if dimmed else Color.WHITE
+				sprite_modulate,
+				sprite_offset
 			)
 		else:
 			var color: Color = definition["color"]
@@ -3158,6 +3200,216 @@ func get_placement_confirm_feedback_count() -> int:
 	return placement_confirm_fx.size()
 
 
+func _construction_visual_state(
+	building_uid: int
+) -> Dictionary:
+	if not new_build_construction_fx.has(building_uid):
+		return {}
+
+	var fx: Dictionary = new_build_construction_fx[building_uid]
+	var progress := clampf(
+		float(fx.get("elapsed", 0.0))
+		/ NEW_BUILD_FX_DURATION,
+		0.0,
+		1.0
+	)
+	var settle := 1.0 - pow(1.0 - progress, 3.0)
+	return {
+		"progress": progress,
+		"alpha": lerpf(0.38, 1.0, settle),
+		"vertical_offset": lerpf(12.0, 0.0, settle)
+	}
+
+
+func get_building_construction_feedback(
+	building_uid: int
+) -> Dictionary:
+	return _construction_visual_state(building_uid)
+
+
+func is_building_construction_feedback_active(
+	building_uid: int
+) -> bool:
+	return new_build_construction_fx.has(building_uid)
+
+
+func get_new_build_construction_feedback_count() -> int:
+	return new_build_construction_fx.size()
+
+
+func _start_new_build_construction_fx(
+	building: Dictionary
+) -> void:
+	if building.is_empty():
+		return
+	var uid := int(building.get("uid", -1))
+	var definition_id := String(
+		building.get("definition_id", "")
+	)
+	var definition := BuildingCatalog.get_definition(
+		definition_id
+	)
+	if uid < 0 or definition.is_empty():
+		return
+
+	var rotation := int(
+		building.get("rotation", 0)
+	) % 2
+	var origin: Vector2i = building.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	new_build_construction_fx[uid] = {
+		"uid": uid,
+		"definition_id": definition_id,
+		"origin": origin,
+		"rotation": rotation,
+		"footprint": _footprint_for(
+			definition,
+			rotation
+		),
+		"elapsed": 0.0
+	}
+	set_process(true)
+	queue_redraw()
+
+
+func _draw_new_build_construction_fx() -> void:
+	for uid_variant in new_build_construction_fx.keys():
+		var uid := int(uid_variant)
+		var fx: Dictionary = new_build_construction_fx[uid]
+		var origin: Vector2i = fx.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var footprint: Vector2i = fx.get(
+			"footprint",
+			Vector2i.ONE
+		)
+		var progress := clampf(
+			float(fx.get("elapsed", 0.0))
+			/ NEW_BUILD_FX_DURATION,
+			0.0,
+			1.0
+		)
+		var polygon := _footprint_polygon(
+			origin,
+			footprint
+		)
+		if polygon.size() < 4:
+			continue
+
+		var early := clampf(
+			1.0 - progress / 0.78,
+			0.0,
+			1.0
+		)
+		draw_colored_polygon(
+			polygon,
+			Color(
+				0.83,
+				0.69,
+				0.43,
+				early * 0.12
+			)
+		)
+		draw_polyline(
+			PackedVector2Array([
+				polygon[0],
+				polygon[1],
+				polygon[2],
+				polygon[3],
+				polygon[0]
+			]),
+			Color(
+				1.0,
+				0.78,
+				0.26,
+				early * 0.82
+			),
+			lerpf(3.6, 1.2, progress)
+		)
+
+		var center := _footprint_center_world(
+			origin,
+			footprint
+		)
+		for index in range(10):
+			var seed := (
+				uid * 97
+				+ index * 53
+			)
+			var angle := (
+				float(index) * TAU / 10.0
+				+ float(seed % 11) * 0.035
+			)
+			var spread := (
+				14.0
+				+ float(seed % 9)
+				+ progress * 26.0
+			)
+			var dust := center + Vector2(
+				cos(angle) * spread,
+				sin(angle) * spread * 0.38
+				- progress * 11.0
+			)
+			var dust_alpha := (
+				(1.0 - progress) * 0.42
+			)
+			draw_circle(
+				dust,
+				lerpf(
+					4.2,
+					1.2,
+					progress
+				),
+				Color(
+					0.72,
+					0.64,
+					0.50,
+					dust_alpha
+				)
+			)
+
+		if progress > 0.58:
+			var completion := clampf(
+				(progress - 0.58) / 0.42,
+				0.0,
+				1.0
+			)
+			var completion_alpha := (
+				sin(completion * PI) * 0.82
+			)
+			draw_set_transform(
+				center,
+				0.0,
+				Vector2(1.0, 0.42)
+			)
+			draw_arc(
+				Vector2.ZERO,
+				lerpf(
+					18.0,
+					44.0,
+					completion
+				),
+				0.0,
+				TAU,
+				28,
+				Color(
+					1.0,
+					0.88,
+					0.42,
+					completion_alpha
+				),
+				2.2
+			)
+			draw_set_transform(
+				Vector2.ZERO,
+				0.0,
+				Vector2.ONE
+			)
+
+
 func _start_preview_snap_fx(
 	origin: Vector2i,
 	footprint: Vector2i,
@@ -3613,6 +3865,9 @@ func begin_move_preview(uid: int) -> Dictionary:
 			"reason": "Building not found."
 		}
 
+	if new_build_construction_fx.has(uid):
+		new_build_construction_fx.erase(uid)
+
 	preview_mode = "move"
 	preview_ignore_uid = uid
 	preview_stored_uid = -1
@@ -3779,14 +4034,6 @@ func confirm_build_preview() -> Dictionary:
 	if not bool(preview_status.get("valid", false)):
 		return {}
 
-	var definition := BuildingCatalog.get_definition(
-		preview_building_id
-	)
-	var confirmed_origin := preview_origin
-	var confirmed_footprint := _footprint_for(
-		definition,
-		preview_rotation
-	)
 	var placed := _place_building_internal(
 		preview_building_id,
 		preview_origin,
@@ -3796,9 +4043,8 @@ func confirm_build_preview() -> Dictionary:
 	_recalculate_airside_network()
 	_refresh_building_labels()
 	clear_build_preview()
-	_start_placement_confirm_fx(
-		confirmed_origin,
-		confirmed_footprint
+	_start_new_build_construction_fx(
+		placed
 	)
 	queue_redraw()
 	building_placed.emit(placed.duplicate(true))
@@ -4016,6 +4262,9 @@ func store_building(uid: int) -> Dictionary:
 			placed_buildings[index].get("uid", -1)
 		) != uid:
 			continue
+
+		if new_build_construction_fx.has(uid):
+			new_build_construction_fx.erase(uid)
 
 		if preview_mode == "move" and preview_ignore_uid == uid:
 			clear_build_preview()

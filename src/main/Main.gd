@@ -3802,6 +3802,12 @@ func _on_confirm_building_requested() -> void:
 			)
 		)
 	hud.set_player_data(player_level, coins, gems)
+	hud.set_operation_status(
+		"Construction complete • %s placed" % String(
+			definition.get("name", "Building")
+		),
+		"success"
+	)
 	hud.show_build_preview(definition, {}, player_level, coins)
 
 

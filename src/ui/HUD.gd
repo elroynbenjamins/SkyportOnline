@@ -303,11 +303,13 @@ func _build_expansion_banner(root: Control) -> void:
 	GameUIStyle.apply_panel(expansion_banner, "raised")
 
 	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
 	expansion_banner.add_child(row)
 
 	var icon := Label.new()
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.text = "✦"
 	icon.add_theme_font_size_override("font_size", 26)
 	icon.add_theme_color_override(
@@ -317,10 +319,12 @@ func _build_expansion_banner(root: Control) -> void:
 	row.add_child(icon)
 
 	var text_box := VBoxContainer.new()
+	text_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(text_box)
 
 	expansion_banner_title = Label.new()
+	expansion_banner_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner_title.text = "AIRPORT EXPANDED"
 	expansion_banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	expansion_banner_title.add_theme_font_size_override(
@@ -334,6 +338,7 @@ func _build_expansion_banner(root: Control) -> void:
 	text_box.add_child(expansion_banner_title)
 
 	expansion_banner_detail = Label.new()
+	expansion_banner_detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner_detail.text = "New land unlocked"
 	expansion_banner_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	expansion_banner_detail.add_theme_font_size_override(

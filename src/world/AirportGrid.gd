@@ -1188,6 +1188,13 @@ func _draw_buildings() -> void:
 				origin,
 				footprint
 			)
+			_draw_apron_surface_micro_detail(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"]),
+				sprite_modulate.a
+			)
 			_draw_building_sprite(
 				definition,
 				origin,
@@ -1195,6 +1202,13 @@ func _draw_buildings() -> void:
 				int(building["rotation"]),
 				sprite_modulate,
 				sprite_offset
+			)
+			_draw_apron_prop_micro_detail(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"]),
+				sprite_modulate.a
 			)
 		else:
 			var color: Color = definition["color"]
@@ -1222,6 +1236,553 @@ func _draw_buildings() -> void:
 						Color(0.05, 0.10, 0.10, 0.19)
 					)
 
+
+
+func get_apron_micro_detail_snapshot() -> Dictionary:
+	var stands := 0
+	var passenger_pads := 0
+	var service_pads := 0
+	var cart_bays := 0
+	var utility_cabinets := 0
+
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if definition.is_empty():
+			continue
+
+		var id := String(
+			definition.get("id", "")
+		)
+		var category := String(
+			definition.get("category", "")
+		)
+
+		if id.contains("stand"):
+			stands += 1
+			cart_bays += 1
+			continue
+
+		if category == "Passenger":
+			passenger_pads += 1
+			utility_cabinets += 1
+		elif category == "Services":
+			service_pads += 1
+			utility_cabinets += 1
+
+	return {
+		"stands": stands,
+		"stand_guidance": stands,
+		"stand_service_zones": stands * 2,
+		"cart_bays": cart_bays,
+		"passenger_pads": passenger_pads,
+		"pedestrian_crossings": passenger_pads,
+		"service_pads": service_pads,
+		"service_staging_zones": service_pads * 2,
+		"utility_cabinets": utility_cabinets
+	}
+
+
+func _micro_alpha(
+	color: Color,
+	strength: float
+) -> Color:
+	return Color(
+		color.r,
+		color.g,
+		color.b,
+		color.a * clampf(strength, 0.0, 1.0)
+	)
+
+
+func _iso_box_points(
+	center: Vector2,
+	half_x: float,
+	half_y: float
+) -> PackedVector2Array:
+	var axis_x := Vector2(
+		half_x,
+		-half_x * 0.5
+	)
+	var axis_y := Vector2(
+		half_y,
+		half_y * 0.5
+	)
+	return PackedVector2Array([
+		center - axis_x - axis_y,
+		center + axis_x - axis_y,
+		center + axis_x + axis_y,
+		center - axis_x + axis_y
+	])
+
+
+func _draw_iso_outline_box(
+	center: Vector2,
+	half_x: float,
+	half_y: float,
+	color: Color,
+	width: float = 1.5
+) -> void:
+	var points := _iso_box_points(
+		center,
+		half_x,
+		half_y
+	)
+	draw_polyline(
+		PackedVector2Array([
+			points[0],
+			points[1],
+			points[2],
+			points[3],
+			points[0]
+		]),
+		color,
+		width
+	)
+
+
+func _draw_apron_surface_micro_detail(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int,
+	strength: float = 1.0
+) -> void:
+	var id := String(
+		definition.get("id", "")
+	)
+	var category := String(
+		definition.get("category", "")
+	)
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	)
+
+	if id.contains("stand"):
+		_draw_stand_guidance_detail(
+			polygon,
+			center,
+			rotation,
+			strength
+		)
+		return
+
+	if category == "Passenger":
+		_draw_passenger_pad_detail(
+			polygon,
+			center,
+			strength
+		)
+	elif category == "Services":
+		_draw_service_pad_detail(
+			polygon,
+			center,
+			strength
+		)
+
+
+func _draw_stand_guidance_detail(
+	polygon: PackedVector2Array,
+	center: Vector2,
+	rotation: int,
+	strength: float
+) -> void:
+	var top_mid := polygon[0].lerp(
+		polygon[1],
+		0.5
+	)
+	var bottom_mid := polygon[3].lerp(
+		polygon[2],
+		0.5
+	)
+	var guidance := _micro_alpha(
+		Color("f2c84b", 0.92),
+		strength
+	)
+	var safety := _micro_alpha(
+		Color("e66f67", 0.88),
+		strength
+	)
+	var service := _micro_alpha(
+		Color("f5f0df", 0.76),
+		strength
+	)
+
+	draw_line(
+		top_mid.lerp(center, 0.18),
+		bottom_mid.lerp(center, 0.12),
+		guidance,
+		2.4
+	)
+
+	var wing_a := center + Vector2(
+		-31 if rotation % 2 == 0 else -25,
+		-3
+	)
+	var wing_b := center + Vector2(
+		31 if rotation % 2 == 0 else 25,
+		-3
+	)
+	draw_line(
+		wing_a,
+		wing_b,
+		guidance,
+		2.0
+	)
+	draw_line(
+		wing_a + Vector2(8, 6),
+		wing_a + Vector2(8, -6),
+		guidance,
+		1.5
+	)
+	draw_line(
+		wing_b + Vector2(-8, 6),
+		wing_b + Vector2(-8, -6),
+		guidance,
+		1.5
+	)
+
+	var front_a := polygon[3].lerp(
+		polygon[2],
+		0.16
+	)
+	var front_b := polygon[3].lerp(
+		polygon[2],
+		0.84
+	)
+	draw_dashed_line(
+		front_a,
+		front_b,
+		safety,
+		2.0,
+		9.0
+	)
+
+	var left_zone := center.lerp(
+		polygon[3].lerp(
+			polygon[0],
+			0.55
+		),
+		0.62
+	)
+	var right_zone := center.lerp(
+		polygon[1].lerp(
+			polygon[2],
+			0.55
+		),
+		0.62
+	)
+	_draw_iso_outline_box(
+		left_zone,
+		13.0,
+		8.0,
+		service,
+		1.4
+	)
+	_draw_iso_outline_box(
+		right_zone,
+		13.0,
+		8.0,
+		service,
+		1.4
+	)
+
+	var stop_bar := center.lerp(
+		bottom_mid,
+		0.36
+	)
+	draw_line(
+		stop_bar + Vector2(-10, 5),
+		stop_bar + Vector2(10, -5),
+		_micro_alpha(
+			Color("f8f4e9", 0.88),
+			strength
+		),
+		3.0
+	)
+
+
+func _draw_passenger_pad_detail(
+	polygon: PackedVector2Array,
+	center: Vector2,
+	strength: float
+) -> void:
+	var front_a := polygon[3]
+	var front_b := polygon[2]
+	var edge := front_b - front_a
+	if edge.length() <= 1.0:
+		return
+	var direction := edge.normalized()
+	var crossing_center := front_a.lerp(
+		front_b,
+		0.50
+	)
+	var white := _micro_alpha(
+		Color("f7f3e8", 0.72),
+		strength
+	)
+	for offset_value in [-16.0, -8.0, 0.0, 8.0, 16.0]:
+		var offset: float = float(offset_value)
+		var stripe_center: Vector2 = (
+			crossing_center
+			+ direction * offset
+			+ Vector2(0, -2)
+		)
+		draw_line(
+			stripe_center + Vector2(-5, 2),
+			stripe_center + Vector2(5, -2),
+			white,
+			2.4
+		)
+
+	var safe_line := center.lerp(
+		crossing_center,
+		0.66
+	)
+	draw_dashed_line(
+		safe_line + Vector2(-26, 13),
+		safe_line + Vector2(26, -13),
+		_micro_alpha(
+			Color("f1c84e", 0.62),
+			strength
+		),
+		1.7,
+		7.0
+	)
+
+
+func _draw_service_pad_detail(
+	polygon: PackedVector2Array,
+	center: Vector2,
+	strength: float
+) -> void:
+	var service_line := _micro_alpha(
+		Color("efe9dc", 0.64),
+		strength
+	)
+	var amber := _micro_alpha(
+		Color("f0bd48", 0.60),
+		strength
+	)
+
+	var left := center.lerp(
+		polygon[3].lerp(
+			polygon[0],
+			0.55
+		),
+		0.55
+	)
+	var right := center.lerp(
+		polygon[1].lerp(
+			polygon[2],
+			0.55
+		),
+		0.55
+	)
+	_draw_iso_outline_box(
+		left,
+		12.0,
+		7.0,
+		service_line,
+		1.3
+	)
+	_draw_iso_outline_box(
+		right,
+		12.0,
+		7.0,
+		service_line,
+		1.3
+	)
+	draw_dashed_line(
+		left,
+		right,
+		amber,
+		1.5,
+		6.0
+	)
+
+
+func _draw_apron_prop_micro_detail(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int,
+	strength: float = 1.0
+) -> void:
+	var id := String(
+		definition.get("id", "")
+	)
+	var category := String(
+		definition.get("category", "")
+	)
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	)
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	if id.contains("stand"):
+		_draw_cart_bay_prop(
+			center.lerp(
+				polygon[1].lerp(
+					polygon[2],
+					0.63
+				),
+				0.70
+			),
+			rotation,
+			strength
+		)
+		return
+
+	if category in ["Passenger", "Services"]:
+		var front := polygon[3].lerp(
+			polygon[2],
+			0.78
+		)
+		_draw_apron_utility_cabinet(
+			front + Vector2(0, -5),
+			rotation,
+			strength
+		)
+
+
+func _draw_cart_bay_prop(
+	base: Vector2,
+	rotation: int,
+	strength: float
+) -> void:
+	var body := _micro_alpha(
+		Color("6b7780", 0.95),
+		strength
+	)
+	var roof := _micro_alpha(
+		Color("aeb8bb", 0.94),
+		strength
+	)
+	var wheel := _micro_alpha(
+		Color("283136", 0.92),
+		strength
+	)
+	var step := (
+		Vector2(8, -4)
+		if rotation % 2 == 0
+		else Vector2(8, 4)
+	)
+
+	for index in range(2):
+		var pos := base + step * float(index)
+		var box := _iso_box_points(
+			pos,
+			5.0,
+			3.0
+		)
+		draw_colored_polygon(
+			box,
+			body
+		)
+		draw_line(
+			box[0],
+			box[1],
+			roof,
+			1.3
+		)
+		draw_circle(
+			pos + Vector2(-3, 4),
+			1.5,
+			wheel
+		)
+		draw_circle(
+			pos + Vector2(4, 1),
+			1.5,
+			wheel
+		)
+
+
+func _draw_apron_utility_cabinet(
+	base: Vector2,
+	rotation: int,
+	strength: float
+) -> void:
+	var body := _micro_alpha(
+		Color("5c7887", 0.96),
+		strength
+	)
+	var face := _micro_alpha(
+		Color("82a4b1", 0.96),
+		strength
+	)
+	var yellow := _micro_alpha(
+		Color("f1c44e", 0.92),
+		strength
+	)
+	var shadow := _micro_alpha(
+		Color(0.02, 0.05, 0.06, 0.24),
+		strength
+	)
+
+	draw_set_transform(
+		base + Vector2(3, 4),
+		0.0,
+		Vector2(1.0, 0.42)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		8.0,
+		shadow
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+	var side := -1.0 if rotation % 2 == 0 else 1.0
+	var cabinet := PackedVector2Array([
+		base + Vector2(-6 * side, -13),
+		base + Vector2(4 * side, -9),
+		base + Vector2(4 * side, 1),
+		base + Vector2(-6 * side, -3)
+	])
+	draw_colored_polygon(
+		cabinet,
+		body
+	)
+	draw_line(
+		cabinet[0],
+		cabinet[1],
+		face,
+		1.5
+	)
+	draw_circle(
+		base + Vector2(-10 * side, 1),
+		2.1,
+		Color(0.03, 0.05, 0.05, 0.35)
+	)
+	draw_circle(
+		base + Vector2(-10 * side, -1),
+		1.3,
+		yellow
+	)
+	draw_line(
+		base + Vector2(8 * side, 1),
+		base + Vector2(8 * side, -8),
+		yellow,
+		2.2
+	)
 
 
 func _building_ground_color(

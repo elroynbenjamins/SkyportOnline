@@ -104,7 +104,10 @@ static func all() -> Array[Dictionary]:
 			"passenger_generator": true,
 			"synergy_receiver": "passenger_hub",
 			"passenger_synergy_bonus": 0.15,
-			"icon_path": "res://assets/pixel/airport_v1/shuttle_station.svg"
+			"icon_path": "res://assets/pixel/airport_v1/shuttle_station.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/shuttle_station.svg", "res://assets/pixel/airport_v1/shuttle_station_b.svg"]),
+			"world_sprite_size": Vector2(280, 210),
+			"world_sprite_offset": Vector2(0, -58)
 		},
 		{
 			"id": "travel_office",
@@ -121,7 +124,10 @@ static func all() -> Array[Dictionary]:
 			"passenger_generator": true,
 			"synergy_receiver": "passenger_hub",
 			"passenger_synergy_bonus": 0.10,
-			"icon_path": "res://assets/pixel/airport_v1/travel_office.svg"
+			"icon_path": "res://assets/pixel/airport_v1/travel_office.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/travel_office.svg", "res://assets/pixel/airport_v1/travel_office_b.svg"]),
+			"world_sprite_size": Vector2(188, 157),
+			"world_sprite_offset": Vector2(0, -45)
 		},
 		{
 			"id": "ground_ops_depot",
@@ -183,6 +189,9 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/passenger_service_hub.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/passenger_service_hub.svg", "res://assets/pixel/airport_v1/passenger_service_hub_b.svg"]),
+			"world_sprite_size": Vector2(188, 157),
+			"world_sprite_offset": Vector2(0, -45),
 			"service": "passenger",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="640" viewBox="0 0 768 640">
+<defs><linearGradient id="roof" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4f8f7"/><stop offset="1" stop-color="#b7c7cb"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b8e1f2"/><stop offset="1" stop-color="#4f95b8"/></linearGradient></defs>
+<polygon points="100,331 365,240 661,406 394,500 131,418" fill="#21343a" opacity=".24"/><polygon points="91,311 364,218 671,391 396,487 119,401" fill="#d3cabc"/><polygon points="109,308 363,230 650,390 395,473 138,396" fill="#e6ded1"/>
+<polygon points="192,300 365,241 571,356 395,418" fill="#ccd8db"/><polygon points="192,300 395,418 395,462 192,344" fill="#9db2ba"/><polygon points="395,418 571,356 571,400 395,462" fill="#819aa5"/>
+<polygon points="178,287 365,223 590,348 395,416" fill="#f8fbfb"/><polygon points="194,287 365,233 571,347 395,401" fill="url(#roof)"/>
+<polygon points="221,307 360,261 527,353 385,401" fill="url(#glass)"/><polygon points="221,307 385,401 385,441 221,347" fill="#538eb0"/><polygon points="385,401 527,353 527,393 385,441" fill="#3c718d"/>
+<g stroke="#d7edf5" stroke-width="4"><line x1="261" y1="294" x2="261" y2="370"/><line x1="304" y1="280" x2="304" y2="394"/><line x1="347" y1="266" x2="347" y2="418"/><line x1="428" y1="387" x2="428" y2="426"/><line x1="471" y1="372" x2="471" y2="411"/></g>
+<polygon points="333,379 441,344 573,418 465,456" fill="#ffffff"/><polygon points="348,378 441,351 557,416 465,447" fill="#dce8eb"/>
+<g fill="none" stroke="#f1c54e" stroke-width="5"><polygon points="195,373 244,357 290,383 241,400"/><polygon points="292,429 341,412 387,438 338,455"/></g>
+<polygon points="200,382 247,366 292,391 245,408" fill="#f2f4f0"/><polygon points="200,382 245,408 245,426 200,400" fill="#538eb0"/><polygon points="245,408 292,391 292,409 245,426" fill="#3c718d"/><polygon points="210,383 237,374 263,388 236,397" fill="#a9dcec"/>
+<circle cx="216" cy="407" r="5" fill="#31434a"/><circle cx="269" cy="412" r="5" fill="#31434a"/>
+<line x1="553" y1="362" x2="553" y2="294" stroke="#59666b" stroke-width="7"/><rect x="527" y="268" width="52" height="38" rx="6" fill="#538eb0"/><circle cx="545" cy="282" r="5" fill="#eef8fb"/><circle cx="562" cy="282" r="5" fill="#eef8fb"/><path d="M536 298 q9-12 18 0 M553 298 q9-12 18 0" fill="none" stroke="#eef8fb" stroke-width="4"/>
+<text x="238" y="334" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#eff8fb" transform="rotate(30 238 334)">PAX</text>
+</svg>

@@ -1,1 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" shape-rendering="crispEdges"><rect width="128" height="128" fill="#173436"/><rect x="20" y="38" width="88" height="58" fill="#4d8f8e"/><rect x="28" y="46" width="20" height="18" fill="#bde8df"/><rect x="56" y="46" width="20" height="18" fill="#bde8df"/><rect x="84" y="46" width="16" height="18" fill="#bde8df"/><rect x="52" y="68" width="24" height="28" fill="#285c5c"/><rect x="14" y="96" width="100" height="10" fill="#2a4445"/><rect x="44" y="22" width="40" height="12" fill="#e8d07a"/><rect x="52" y="25" width="24" height="6" fill="#294347"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="640" viewBox="0 0 768 640">
+<defs>
+ <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbf7ec"/><stop offset="1" stop-color="#c9d0cb"/></linearGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9adfd8"/><stop offset=".5" stop-color="#5ca9a7"/><stop offset="1" stop-color="#397878"/></linearGradient>
+</defs>
+<polygon points="95,407 361,258 664,353 395,511 128,455" fill="#22363a" opacity=".24"/>
+<polygon points="89,380 360,232 671,331 397,491 118,432" fill="#d3cabc"/>
+<polygon points="108,374 360,244 650,337 395,476 138,425" fill="#e7dfd2"/>
+<polygon points="151,343 355,230 577,301 370,422" fill="#d7dfda"/>
+<polygon points="151,343 370,422 370,461 151,382" fill="#aebbb7"/>
+<polygon points="370,422 577,301 577,340 370,461" fill="#94a7a5"/>
+<polygon points="138,331 356,210 594,286 371,416" fill="#fffdf7"/>
+<polygon points="155,326 356,220 575,289 371,402" fill="url(#roof)"/>
+<polygon points="181,344 350,253 530,311 361,408" fill="url(#glass)"/>
+<polygon points="181,344 361,408 361,446 181,382" fill="#4d8f8e"/>
+<polygon points="361,408 530,311 530,350 361,446" fill="#3e7777"/>
+<g stroke="#d7f1ec" stroke-width="4" opacity=".9">
+ <line x1="229" y1="318" x2="229" y2="399"/><line x1="278" y1="291" x2="278" y2="417"/>
+ <line x1="326" y1="265" x2="326" y2="434"/><line x1="409" y1="381" x2="409" y2="419"/><line x1="455" y1="355" x2="455" y2="393"/>
+</g>
+<path d="M225 382 L330 324 L430 356 L365 394 L324 379 L273 406 Z" fill="#f7f5ed"/>
+<path d="M242 378 L330 331 L414 358 L364 387 L326 374 L280 398 Z" fill="#e4cf78"/>
+<polygon points="299,398 338,412 338,450 299,436" fill="#2b6767"/><line x1="318" y1="405" x2="318" y2="443" stroke="#bde9e2" stroke-width="3"/>
+<line x1="186" y1="350" x2="186" y2="282" stroke="#59666b" stroke-width="7"/><rect x="158" y="255" width="56" height="37" rx="6" fill="#e8d07a"/><path d="M173 266 h26 l-7 8 7 8 h-26 z" fill="#365a5c"/>
+<polygon points="494,397 529,377 566,389 530,410" fill="#d8d0c3"/><circle cx="530" cy="373" r="12" fill="#4e9858"/>
+<polygon points="183,406 214,389 247,400 215,419" fill="#d8d0c3"/><circle cx="214" cy="386" r="10" fill="#5aa45e"/>
+<polygon points="407,426 458,398 471,403 420,431" fill="#9b6b3a"/>
+<text x="204" y="366" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#eef8f5" transform="rotate(20 204 366)">TRAVEL</text>
+</svg>

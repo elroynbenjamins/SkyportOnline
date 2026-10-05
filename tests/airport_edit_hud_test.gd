@@ -180,6 +180,45 @@ func _run() -> void:
 		_fail("Confirm Move should return after expansion is resolved.")
 		return
 
+	hud.enter_building_mode(definition)
+	hud.set_player_data(5, 30000, 0)
+	hud.show_build_preview(
+		definition,
+		{
+			"valid": false,
+			"reason": "This land parcel is still locked.",
+			"locked_parcel_id": "north",
+			"locked_parcel_level": 5,
+			"locked_parcel_cost": 25000
+		},
+		5,
+		30000
+	)
+	if not hud.expand_here_button.disabled:
+		_fail(
+			"New construction expansion should reserve the building cost."
+		)
+		return
+
+	hud.set_player_data(5, 32500, 0)
+	hud.show_build_preview(
+		definition,
+		{
+			"valid": false,
+			"reason": "This land parcel is still locked.",
+			"locked_parcel_id": "north",
+			"locked_parcel_level": 5,
+			"locked_parcel_cost": 25000
+		},
+		5,
+		32500
+	)
+	if hud.expand_here_button.disabled:
+		_fail(
+			"Parcel plus building affordability should enable expansion."
+		)
+		return
+
 	hud._on_done_airport_edit_pressed()
 	if not done_emitted:
 		_fail("Done should emit an edit completion request.")

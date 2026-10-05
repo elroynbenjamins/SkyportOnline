@@ -26,8 +26,14 @@ const GRID_LINE := Color("b8d6a9", 0.12)
 const LOCKED_GRID_LINE := Color("84958d", 0.22)
 const AVAILABLE_GRID_LINE := Color("e2c46b", 0.55)
 const SELECTED_LINE := Color("ffd166")
-const PREVIEW_VALID := Color("68d391", 0.62)
-const PREVIEW_INVALID := Color("ef6461", 0.68)
+const PREVIEW_VALID := Color("68d391", 0.38)
+const PREVIEW_INVALID := Color("ef6461", 0.46)
+const BUILDING_PAD_PASSENGER := Color("d8d1c4", 0.56)
+const BUILDING_PAD_SERVICE := Color("cec7bb", 0.54)
+const BUILDING_PAD_OPERATIONS := Color("c8c6c0", 0.50)
+const BUILDING_PAD_INFRASTRUCTURE := Color("bbb7ae", 0.48)
+const BUILDING_PAD_OUTLINE := Color("f7f3eb", 0.22)
+const BUILDING_PAD_SHADOW := Color("202b2f", 0.18)
 const PREVIEW_EXPANSION_LINE := Color("ffd166", 0.95)
 const PREVIEW_FUTURE_LINE := Color("7d8b85", 0.88)
 const AIRSIDE_WARNING := Color("ffb84d")
@@ -682,18 +688,140 @@ func _draw_buildings() -> void:
 				_draw_service_road_detail(origin)
 			continue
 
-		var color: Color = definition["color"]
 		if _definition_has_world_sprite(definition):
-			color.a = 0.72
-
-		for y in range(footprint.y):
-			for x in range(footprint.x):
-				_draw_tile_overlay(origin + Vector2i(x, y), color, Color("eef2f1", 0.30), 1.0)
-
-		if not _definition_has_world_sprite(definition):
-			_draw_building_detail(building, definition, footprint)
+			_draw_world_art_ground_pad(
+				definition,
+				origin,
+				footprint
+			)
+			_draw_building_sprite(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"])
+			)
 		else:
-			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
+			var color: Color = definition["color"]
+			for y in range(footprint.y):
+				for x in range(footprint.x):
+					_draw_tile_overlay(
+						origin + Vector2i(x, y),
+						color,
+						Color("eef2f1", 0.30),
+						1.0
+					)
+			_draw_building_detail(
+				building,
+				definition,
+				footprint
+			)
+
+
+func _draw_world_art_ground_pad(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i
+) -> void:
+	var id := String(definition.get("id", ""))
+	var category := String(
+		definition.get("category", "")
+	)
+	var fill := BUILDING_PAD_INFRASTRUCTURE
+
+	match category:
+		"Passenger":
+			fill = BUILDING_PAD_PASSENGER
+		"Services":
+			fill = BUILDING_PAD_SERVICE
+		"Operations":
+			fill = BUILDING_PAD_OPERATIONS
+		_:
+			fill = BUILDING_PAD_INFRASTRUCTURE
+
+	# Runway art already carries a full shoulder/asphalt base. A very
+	# light dark pad only hides grass seams without adding a colored halo.
+	if id.contains("runway"):
+		fill = Color("343c42", 0.34)
+	elif id.contains("stand"):
+		fill = Color("d0c9bd", 0.62)
+
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var shadow := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shadow.append(point + Vector2(2.0, 3.0))
+	draw_colored_polygon(
+		shadow,
+		BUILDING_PAD_SHADOW
+	)
+	draw_colored_polygon(polygon, fill)
+	draw_line(
+		polygon[0],
+		polygon[1],
+		BUILDING_PAD_OUTLINE,
+		1.5
+	)
+	draw_line(
+		polygon[0],
+		polygon[3],
+		Color("ffffff", 0.12),
+		1.0
+	)
+	draw_line(
+		polygon[2],
+		polygon[3],
+		Color("263238", 0.16),
+		1.5
+	)
+	draw_line(
+		polygon[1],
+		polygon[2],
+		Color("263238", 0.10),
+		1.0
+	)
+
+
+func _footprint_polygon(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> PackedVector2Array:
+	if footprint.x <= 0 or footprint.y <= 0:
+		return PackedVector2Array()
+
+	var top_left_center := tile_to_world(
+		Vector2(origin.x, origin.y)
+	)
+	var top_right_center := tile_to_world(
+		Vector2(
+			origin.x + footprint.x - 1,
+			origin.y
+		)
+	)
+	var bottom_right_center := tile_to_world(
+		Vector2(
+			origin.x + footprint.x - 1,
+			origin.y + footprint.y - 1
+		)
+	)
+	var bottom_left_center := tile_to_world(
+		Vector2(
+			origin.x,
+			origin.y + footprint.y - 1
+		)
+	)
+
+	return PackedVector2Array([
+		top_left_center + Vector2(0, -TILE_HEIGHT * 0.5),
+		top_right_center + Vector2(TILE_WIDTH * 0.5, 0),
+		bottom_right_center + Vector2(0, TILE_HEIGHT * 0.5),
+		bottom_left_center + Vector2(-TILE_WIDTH * 0.5, 0)
+	])
 
 
 func _building_front_depth(building: Dictionary) -> int:
@@ -2012,26 +2140,65 @@ func _draw_build_preview() -> void:
 
 	for y in range(footprint.y):
 		for x in range(footprint.x):
-			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
+			_draw_tile_overlay(
+				preview_origin + Vector2i(x, y),
+				fill,
+				Color("ffffff", 0.56),
+				1.5
+			)
 
-	if preview_mode in ["move", "stored"]:
-		var shadow_center := (
-			_footprint_center_world(preview_origin, footprint)
-			+ Vector2(0, 10)
+	var footprint_outline := _footprint_polygon(
+		preview_origin,
+		footprint
+	)
+	if footprint_outline.size() >= 4:
+		var outline_color := (
+			Color("8ff0ae", 0.95)
+			if valid
+			else Color("ff8c87", 0.95)
 		)
-		draw_circle(
-			shadow_center,
-			maxf(18.0, float(footprint.x + footprint.y) * 7.0),
-			Color(0.02, 0.05, 0.06, 0.30)
+		draw_polyline(
+			PackedVector2Array([
+				footprint_outline[0],
+				footprint_outline[1],
+				footprint_outline[2],
+				footprint_outline[3],
+				footprint_outline[0]
+			]),
+			outline_color,
+			2.6
 		)
 
 	if _definition_has_world_sprite(definition):
-		var ghost := (
-			Color(0.88, 1.0, 0.90, 0.92)
-			if valid
-			else Color(1.0, 0.62, 0.62, 0.86)
+		var shadow_center := (
+			_footprint_center_world(preview_origin, footprint)
+			+ Vector2(0, 9)
 		)
-		var lift := Vector2.ZERO
+		draw_set_transform(
+			shadow_center,
+			0.0,
+			Vector2(1.0, 0.42)
+		)
+		draw_circle(
+			Vector2.ZERO,
+			maxf(
+				16.0,
+				float(footprint.x + footprint.y) * 6.5
+			),
+			Color(0.02, 0.05, 0.06, 0.22)
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+
+		var ghost := (
+			Color(0.96, 1.0, 0.97, 0.95)
+			if valid
+			else Color(1.0, 0.78, 0.76, 0.90)
+		)
+		var lift := Vector2(0, -6)
 		if preview_mode in ["move", "stored"]:
 			lift = Vector2(0, -10)
 		_draw_building_sprite(

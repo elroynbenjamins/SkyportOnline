@@ -62,6 +62,9 @@ var place_button: Button
 
 var build_hint: Label
 var catalog_panel: PanelContainer
+var catalog_count_label: Label
+var catalog_help_label: Label
+var catalog_close_button: Button
 var edit_airport_button: Button
 var airport_edit_panel: PanelContainer
 var airport_edit_status: Label
@@ -325,7 +328,7 @@ func _build_interface() -> void:
 	build_hint.offset_top = -192
 	build_hint.offset_right = 760
 	build_hint.offset_bottom = -160
-	build_hint.text = "BUILD MODE  •  Tap a building, then tap owned land"
+	build_hint.text = "AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
 	build_hint.add_theme_font_size_override("font_size", 14)
 	build_hint.add_theme_color_override(
 		"font_color",
@@ -760,15 +763,15 @@ func _build_storage_panel(root: Control) -> void:
 func _build_catalog_panel(root: Control) -> void:
 	catalog_panel = PanelContainer.new()
 	catalog_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	catalog_panel.offset_left = -438
-	catalog_panel.offset_top = 158
-	catalog_panel.offset_right = -8
-	catalog_panel.offset_bottom = -82
+	catalog_panel.offset_left = -468
+	catalog_panel.offset_top = 168
+	catalog_panel.offset_right = -10
+	catalog_panel.offset_bottom = -92
 	root.add_child(catalog_panel)
-	GameUIStyle.apply_panel(catalog_panel, "dark")
+	GameUIStyle.apply_panel(catalog_panel, "context")
 
 	var catalog_wrapper := VBoxContainer.new()
-	catalog_wrapper.add_theme_constant_override("separation", 5)
+	catalog_wrapper.add_theme_constant_override("separation", 7)
 	catalog_panel.add_child(catalog_wrapper)
 
 	var catalog_header_row := HBoxContainer.new()
@@ -776,28 +779,52 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_wrapper.add_child(catalog_header_row)
 
 	var catalog_header := Label.new()
-	catalog_header.text = "BUILD TRAY"
+	catalog_header.text = "🔨  BUILD AIRPORT"
 	catalog_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	catalog_header.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	GameUIStyle.heading(catalog_header, 15)
+	GameUIStyle.heading(catalog_header, 17)
+	catalog_header.add_theme_color_override("font_color", GameUIStyle.COLOR_ACCENT)
 	catalog_header_row.add_child(catalog_header)
 
+	catalog_count_label = Label.new()
+	catalog_count_label.text = "0 AVAILABLE"
+	catalog_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	catalog_count_label.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.muted(catalog_count_label)
+	catalog_header_row.add_child(catalog_count_label)
+
 	edit_airport_button = Button.new()
-	edit_airport_button.text = "✥ EDIT AIRPORT"
-	edit_airport_button.custom_minimum_size = Vector2(148, 34)
+	edit_airport_button.text = "✥ EDIT"
+	edit_airport_button.custom_minimum_size = Vector2(92, 36)
 	GameUIStyle.apply_button(edit_airport_button, "gold", true)
 	edit_airport_button.pressed.connect(_on_airport_edit_pressed)
 	catalog_header_row.add_child(edit_airport_button)
 
-	var filters := HBoxContainer.new()
-	filters.add_theme_constant_override("separation", 4)
+	catalog_close_button = Button.new()
+	catalog_close_button.text = "✕"
+	catalog_close_button.custom_minimum_size = Vector2(38, 36)
+	GameUIStyle.apply_button(catalog_close_button, "secondary", true)
+	catalog_close_button.pressed.connect(_on_catalog_close_pressed)
+	catalog_header_row.add_child(catalog_close_button)
+
+	catalog_help_label = Label.new()
+	catalog_help_label.text = "Choose a building • the drawer closes for placement • BUILD reopens it"
+	catalog_help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	catalog_help_label.add_theme_font_size_override("font_size", 11)
+	GameUIStyle.muted(catalog_help_label)
+	catalog_wrapper.add_child(catalog_help_label)
+
+	var filters := GridContainer.new()
+	filters.columns = 3
+	filters.add_theme_constant_override("h_separation", 4)
+	filters.add_theme_constant_override("v_separation", 4)
 	catalog_wrapper.add_child(filters)
 
 	for filter_data in [
 		["ALL", "ALL"],
-		["INFRA", "Infrastructure"],
+		["AIRFIELD", "Infrastructure"],
 		["PAX", "Passenger"],
-		["SERV", "Services"],
+		["SERVICE", "Services"],
 		["OPS", "Operations"],
 		["DECOR", "Decorations"]
 	]:
@@ -811,9 +838,7 @@ func _build_catalog_panel(root: Control) -> void:
 			"selected" if category == selected_catalog_category else "nav",
 			true
 		)
-		chip.pressed.connect(
-			_on_catalog_filter_pressed.bind(category)
-		)
+		chip.pressed.connect(_on_catalog_filter_pressed.bind(category))
 		filters.add_child(chip)
 		catalog_filter_buttons[category] = chip
 
@@ -827,8 +852,8 @@ func _build_catalog_panel(root: Control) -> void:
 	grid.columns = 2
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation", 5)
-	grid.add_theme_constant_override("v_separation", 5)
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(grid)
 
 

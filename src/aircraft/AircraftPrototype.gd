@@ -351,10 +351,16 @@ func set_turnaround_status(
 	var compact_text := text.replace("\n", " • ").strip_edges()
 	if compact_text.length() > 28:
 		var priority_suffix := ""
-		for keyword in ["WAIT", "READY", "RUNWAY"]:
-			if compact_text.contains(keyword):
-				priority_suffix = " • " + keyword
+		for segment_variant in compact_text.split(" • "):
+			var segment := String(segment_variant)
+			if segment.contains("WAIT"):
+				priority_suffix = " • " + segment
 				break
+		if priority_suffix.is_empty():
+			for keyword in ["READY", "RUNWAY"]:
+				if compact_text.contains(keyword):
+					priority_suffix = " • " + keyword
+					break
 		var prefix_limit := maxi(
 			27 - priority_suffix.length(),
 			12

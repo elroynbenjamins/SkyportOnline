@@ -25,6 +25,7 @@ var service_route := PackedVector2Array()
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	AirportAmbientLifeArt.texture()
+	AirportAmbientLifeArt.passenger_texture()
 	set_process(true)
 
 
@@ -300,6 +301,8 @@ func get_ambient_snapshot() -> Dictionary:
 			MAX_BAGGAGE_TRAINS
 		),
 		"art_atlas_ready": AirportAmbientLifeArt.texture() != null,
+		"passenger_art_ready": AirportAmbientLifeArt.passenger_texture() != null,
+		"passenger_variant_count": AirportAmbientLifeArt.PASSENGER_ARCHETYPES.size(),
 		"art_profile": AirportAmbientLifeArt.visual_profile(),
 		"npc_aircraft": npc_aircraft,
 		"npc_tiers": npc_tiers.duplicate(true)
@@ -501,6 +504,7 @@ func _draw_atlas_sprite(
 		)
 	)
 	draw_texture_rect_region(
+		atlas,
 		Rect2(
 			Vector2(
 				-size.x * 0.5,
@@ -508,9 +512,49 @@ func _draw_atlas_sprite(
 			),
 			size
 		),
-		atlas,
 		AirportAmbientLifeArt.source_rect(key),
 		modulate
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
+func _draw_passenger_sprite(
+	position: Vector2,
+	archetype: String,
+	frame: int,
+	mirror_x: bool = false
+) -> void:
+	var atlas := AirportAmbientLifeArt.passenger_texture()
+	if atlas == null:
+		return
+	var size := AirportAmbientLifeArt.passenger_world_size(
+		archetype
+	)
+	draw_set_transform(
+		position,
+		0.0,
+		Vector2(
+			-1.0 if mirror_x else 1.0,
+			1.0
+		)
+	)
+	draw_texture_rect_region(
+		atlas,
+		Rect2(
+			Vector2(
+				-size.x * 0.5,
+				-size.y * 0.78
+			),
+			size
+		),
+		AirportAmbientLifeArt.passenger_source_rect(
+			archetype,
+			frame
+		)
 	)
 	draw_set_transform(
 		Vector2.ZERO,
@@ -610,31 +654,40 @@ func _draw_terminal_activity() -> void:
 			)
 
 		for index in range(2):
+			var walk_speed := (
+				0.055 + float(index) * 0.012
+			)
+			var raw_walk_phase := (
+				motion_clock * walk_speed
+				+ float(index) * 0.52
+			)
 			var walk_phase := fmod(
-				motion_clock * (
-					0.055 + float(index) * 0.012
-				)
-				+ float(index) * 0.52,
+				raw_walk_phase,
 				1.0
 			)
+			var walk_cycle := floori(raw_walk_phase)
 			var pedestrian := center + Vector2(
 				lerpf(
 					-30.0,
 					30.0,
 					walk_phase
 				) * orientation,
-				18.0 + float(index) * 5.0
+				18.0 + float(index) * 7.0
 			)
-			var key := AirportAmbientLifeArt.civilian_key(
-				index + uid
+			# Keep one traveler identity for an entire crossing. A new
+			# archetype is selected only after that traveler loops back.
+			var archetype := AirportAmbientLifeArt.passenger_archetype(
+				uid + index * 3 + walk_cycle
 			)
-			_draw_atlas_sprite(
+			var frame := AirportAmbientLifeArt.animation_frame(
+				motion_clock,
+				3.4 + float(index) * 0.35,
+				float(uid % 7) * 0.17 + float(index) * 0.5
+			)
+			_draw_passenger_sprite(
 				pedestrian,
-				key,
-				AirportAmbientLifeArt.world_size(
-					"civilian"
-				),
-				0.76,
+				archetype,
+				frame,
 				orientation < 0.0
 			)
 

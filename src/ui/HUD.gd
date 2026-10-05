@@ -1051,6 +1051,7 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	var warning := String(status.get("warning", ""))
 	if not warning.is_empty():
 		build_status.text += "  •  ⚠ " + warning
+	build_status.text += _synergy_preview_suffix(status)
 	place_button.text = "BUILD  🪙 %s" % _format_number(cost)
 	place_button.disabled = false
 
@@ -1129,6 +1130,7 @@ func show_move_preview(
 	var warning := String(status.get("warning", ""))
 	if not warning.is_empty():
 		build_status.text += "  •  ⚠ " + warning
+	build_status.text += _synergy_preview_suffix(status)
 	place_button.text = "CONFIRM MOVE"
 	place_button.disabled = false
 
@@ -1210,6 +1212,7 @@ func show_stored_building_preview(
 	var warning := String(status.get("warning", ""))
 	if not warning.is_empty():
 		build_status.text += "  •  ⚠ " + warning
+	build_status.text += _synergy_preview_suffix(status)
 	place_button.text = "PLACE"
 	place_button.disabled = false
 
@@ -2279,6 +2282,30 @@ func _on_confirm_building_pressed() -> void:
 
 func _on_cancel_building_pressed() -> void:
 	cancel_building_requested.emit()
+
+
+func _synergy_preview_suffix(
+	status: Dictionary
+) -> String:
+	var synergy_value = status.get("synergy", {})
+	if not (synergy_value is Dictionary):
+		return ""
+	var synergy: Dictionary = synergy_value
+	if synergy.is_empty():
+		return ""
+
+	var text := String(
+		synergy.get("preview_text", "")
+	)
+	if text.is_empty():
+		return ""
+
+	var active := bool(
+		synergy.get("active", false)
+	)
+	if active:
+		return "  •  ✦ " + text
+	return "  •  ◇ " + text
 
 
 func _format_number(value: int) -> String:

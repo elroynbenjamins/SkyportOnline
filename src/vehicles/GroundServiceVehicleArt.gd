@@ -49,6 +49,33 @@ const SHADOW_ASPECT_BY_SERVICE := {
 	"pushback": 0.44
 }
 
+const APPROACH_DISTANCE_BY_SERVICE := {
+	"fuel": 30.0,
+	"passenger": 31.0,
+	"cargo": 24.0,
+	"cleaning": 23.0,
+	"catering": 29.0,
+	"pushback": 27.0
+}
+
+const ATTACHMENT_REACH_BY_SERVICE := {
+	"fuel": 48.0,
+	"passenger": 46.0,
+	"cargo": 40.0,
+	"cleaning": 36.0,
+	"catering": 44.0,
+	"pushback": 48.0
+}
+
+const SERVICE_ALIGN_RATE_BY_SERVICE := {
+	"fuel": 9.0,
+	"passenger": 8.0,
+	"cargo": 9.0,
+	"cleaning": 10.0,
+	"catering": 8.0,
+	"pushback": 14.0
+}
+
 static var _atlas: Texture2D
 
 
@@ -145,6 +172,39 @@ static func shadow_aspect(
 	)
 
 
+static func approach_distance(
+	service_type: String
+) -> float:
+	return float(
+		APPROACH_DISTANCE_BY_SERVICE.get(
+			service_type,
+			24.0
+		)
+	)
+
+
+static func attachment_reach(
+	service_type: String
+) -> float:
+	return float(
+		ATTACHMENT_REACH_BY_SERVICE.get(
+			service_type,
+			40.0
+		)
+	)
+
+
+static func service_align_rate(
+	service_type: String
+) -> float:
+	return float(
+		SERVICE_ALIGN_RATE_BY_SERVICE.get(
+			service_type,
+			9.0
+		)
+	)
+
+
 static func visual_profile(
 	service_type: String
 ) -> Dictionary:
@@ -152,5 +212,8 @@ static func visual_profile(
 		"world_size": world_size(service_type),
 		"shadow_radius": shadow_radius(service_type),
 		"shadow_aspect": shadow_aspect(service_type),
-		"motion_bob": motion_bob_amplitude(service_type)
+		"motion_bob": motion_bob_amplitude(service_type),
+		"approach_distance": approach_distance(service_type),
+		"attachment_reach": attachment_reach(service_type),
+		"service_align_rate": service_align_rate(service_type)
 	}

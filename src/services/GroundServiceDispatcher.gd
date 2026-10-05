@@ -806,6 +806,13 @@ func _dispatch_service(
 	)
 	stand_approach_active[stand_uid] = approach_count + 1
 
+	# Separate vehicles on the shared service-road route first, then
+	# create the dedicated straight final approach so the lane offset cannot
+	# bend the last parking leg away from the authored service pose.
+	route = ApronTrafficRules.offset_route(
+		route,
+		service_type
+	)
 	route = _route_to_aircraft_service_anchor(
 		route,
 		aircraft,
@@ -818,13 +825,24 @@ func _dispatch_service(
 			service_key
 		)
 	)
+	var docking_position := (
+		aircraft.get_service_docking_position(
+			service_type,
+			service_key
+		)
+	)
+	var connection_target := (
+		aircraft.get_service_connection_position(
+			service_type,
+			service_key
+		)
+	)
+	var service_z_index := _service_vehicle_z_index(
+		aircraft,
+		docking_position
+	)
 	var legacy_fuel_only := bool(
 		request.get("legacy_fuel_only", false)
-	)
-
-	route = ApronTrafficRules.offset_route(
-		route,
-		service_type
 	)
 
 	if not legacy_fuel_only and job_id >= 0:
@@ -837,7 +855,7 @@ func _dispatch_service(
 
 	if service_type == "fuel":
 		var truck := FuelTruckPrototype.new()
-		truck.z_index = 90
+		truck.z_index = service_z_index
 		add_child(truck)
 		truck.service_started.connect(
 			_on_service_started.bind(
@@ -869,12 +887,12 @@ func _dispatch_service(
 			docking_rotation
 		)
 		truck.set_service_connection_target(
-			aircraft.global_position
+			connection_target
 		)
 		truck.start_service(route, duration)
 	else:
 		var vehicle := GroundServiceVehiclePrototype.new()
-		vehicle.z_index = 90
+		vehicle.z_index = service_z_index
 		add_child(vehicle)
 		vehicle.service_started.connect(
 			_on_service_started.bind(
@@ -906,7 +924,7 @@ func _dispatch_service(
 			docking_rotation
 		)
 		vehicle.set_service_connection_target(
-			aircraft.global_position
+			connection_target
 		)
 		if service_type == "pushback":
 			vehicle.configure_tow(
@@ -933,6 +951,22 @@ func _dispatch_service(
 	)
 
 
+func _service_vehicle_z_index(
+	aircraft: AircraftPrototype,
+	docking_position: Vector2
+) -> int:
+	if aircraft == null:
+		return 90
+
+	var relative_y := (
+		docking_position.y
+		- aircraft.global_position.y
+	)
+	if relative_y < -2.0:
+		return aircraft.z_index - 1
+	return aircraft.z_index + 1
+
+
 func _route_length(
 	route: PackedVector2Array
 ) -> float:
@@ -957,10 +991,34 @@ func _route_to_aircraft_service_anchor(
 		service_type,
 		service_key
 	)
+	var docking_rotation := aircraft.get_service_docking_rotation(
+		service_type,
+		service_key
+	)
+	var approach_direction := Vector2.RIGHT.rotated(
+		docking_rotation
+	)
+	var approach_distance := GroundServiceVehicleArt.approach_distance(
+		service_type
+	)
+	var staging := (
+		docking
+		- approach_direction * approach_distance
+	)
+
+	# If a custom aircraft profile points the vehicle inward, fall back to
+	# the safe radial staging side rather than crossing the fuselage.
 	var from_aircraft := docking - aircraft.global_position
-	var staging := docking
-	if from_aircraft.length() > 0.01:
-		staging = docking + from_aircraft.normalized() * 18.0
+	if (
+		from_aircraft.length() > 0.01
+		and (
+			staging - aircraft.global_position
+		).length() < from_aircraft.length() * 0.82
+	):
+		staging = (
+			docking
+			+ from_aircraft.normalized() * approach_distance
+		)
 
 	var result := base_route.duplicate()
 	result[result.size() - 1] = staging

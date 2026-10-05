@@ -26,6 +26,7 @@ var tow_start_vehicle_position := Vector2.ZERO
 var tow_initialized := false
 var motion_clock := 0.0
 var visual_motion_amount := 0.0
+var service_pose_error := 0.0
 
 
 func _ready() -> void:
@@ -103,7 +104,17 @@ func _process(delta: float) -> void:
 			if _follow_route(outbound_route, delta):
 				phase = "SERVICING"
 				if has_service_pose_rotation:
-					rotation = service_pose_rotation
+					if service_type == "pushback":
+						rotation = service_pose_rotation
+						service_pose_error = 0.0
+					else:
+						service_pose_error = absf(
+							wrapf(
+								service_pose_rotation - rotation,
+								-PI,
+								PI
+							)
+						)
 				if tow_aircraft != null and is_instance_valid(
 					tow_aircraft
 				):
@@ -113,12 +124,37 @@ func _process(delta: float) -> void:
 					tow_start_vehicle_position = global_position
 					tow_initialized = true
 					service_connection_target = (
-						tow_aircraft.global_position
+						tow_aircraft.get_service_connection_position(
+							"pushback",
+							"pushback"
+						)
 					)
 					has_service_connection_target = true
 				service_started.emit()
 				queue_redraw()
 		"SERVICING":
+			if (
+				has_service_pose_rotation
+				and service_type != "pushback"
+			):
+				var align_rate := GroundServiceVehicleArt.service_align_rate(
+					service_type
+				)
+				rotation = lerp_angle(
+					rotation,
+					service_pose_rotation,
+					clampf(delta * align_rate, 0.0, 1.0)
+				)
+				service_pose_error = absf(
+					wrapf(
+						service_pose_rotation - rotation,
+						-PI,
+						PI
+					)
+				)
+				if service_pose_error < 0.004:
+					rotation = service_pose_rotation
+					service_pose_error = 0.0
 			service_remaining = maxf(
 				service_remaining - delta,
 				0.0
@@ -145,7 +181,10 @@ func _process(delta: float) -> void:
 					+ aircraft_delta * progress
 				)
 				service_connection_target = (
-					tow_aircraft.global_position
+					tow_aircraft.get_service_connection_position(
+						"pushback",
+						"pushback"
+					)
 				)
 				queue_redraw()
 			if service_remaining <= 0.0:
@@ -156,7 +195,10 @@ func _process(delta: float) -> void:
 						tow_end_aircraft_position
 					)
 					service_connection_target = (
-						tow_aircraft.global_position
+						tow_aircraft.get_service_connection_position(
+						"pushback",
+						"pushback"
+					)
 					)
 				phase = "RETURNING"
 				route_index = 0
@@ -376,77 +418,171 @@ func _draw_service_attachment() -> void:
 		return
 	var connection := target.normalized() * minf(
 		target.length(),
-		34.0
+		GroundServiceVehicleArt.attachment_reach(
+			service_type
+		)
 	)
+	var direction := connection.normalized()
+	var normal := Vector2(-direction.y, direction.x)
 
 	match service_type:
 		"passenger":
-			var step_direction := connection / 4.0
-			for index in range(1, 5):
-				var point := step_direction * float(index)
+			var stair_start := direction * 7.0
+			var stair_end := connection * 0.90
+			draw_line(
+				stair_start + normal * 6.0,
+				stair_end + normal * 4.0,
+				Color("dff4f7"),
+				2.2
+			)
+			draw_line(
+				stair_start - normal * 6.0,
+				stair_end - normal * 4.0,
+				Color("dff4f7"),
+				2.2
+			)
+			for fraction in [0.18, 0.36, 0.54, 0.72, 0.90]:
+				var point := stair_start.lerp(
+					stair_end,
+					float(fraction)
+				)
+				var half_width := lerpf(
+					6.0,
+					4.0,
+					float(fraction)
+				)
 				draw_line(
-					point + Vector2(-5, 0),
-					point + Vector2(5, 0),
-					Color("dff4f7"),
-					2.0
+					point - normal * half_width,
+					point + normal * half_width,
+					Color("f0fbfd"),
+					1.7
 				)
 			draw_line(
-				Vector2.ZERO,
-				connection,
-				Color("dff4f7"),
-				2.0
+				stair_end - normal * 6.0,
+				stair_end + normal * 6.0,
+				Color("92d7e5"),
+				3.0
 			)
 		"cargo":
+			var belt_start := direction * 6.0
+			var belt_end := connection * 0.93
 			draw_line(
-				Vector2.ZERO,
-				connection,
-				Color("d7b37c"),
-				4.0
+				belt_start + normal * 4.0,
+				belt_end + normal * 4.0,
+				Color("8a765e"),
+				2.2
 			)
-			for fraction in [0.35, 0.65, 0.9]:
-				draw_circle(
-					connection * float(fraction),
-					2.2,
-					Color("f2cf96")
+			draw_line(
+				belt_start - normal * 4.0,
+				belt_end - normal * 4.0,
+				Color("8a765e"),
+				2.2
+			)
+			for fraction in [0.18, 0.36, 0.54, 0.72, 0.90]:
+				var roller := belt_start.lerp(
+					belt_end,
+					float(fraction)
 				)
-		"cleaning":
-			draw_line(
-				Vector2.ZERO,
-				connection,
-				Color("b9efe5"),
-				2.0
-			)
-			draw_circle(
-				connection,
-				3.0,
-				Color("d7f5ef")
-			)
-		"catering":
-			var lift_end := connection * 0.85
-			draw_line(
-				Vector2.ZERO,
-				lift_end,
-				Color("f5ead8"),
-				3.0
+				draw_line(
+					roller - normal * 4.5,
+					roller + normal * 4.5,
+					Color("e0bf8c"),
+					1.4
+				)
+			var bag_center := belt_start.lerp(
+				belt_end,
+				0.42
 			)
 			draw_rect(
 				Rect2(
-					lift_end - Vector2(7, 4),
-					Vector2(14, 8)
+					bag_center - Vector2(4, 3),
+					Vector2(8, 6)
 				),
-				Color("f5ead8")
+				Color("b88a55")
 			)
-		"pushback":
-			draw_line(
-				Vector2(15, 0),
-				connection,
-				Color("d9b85f"),
-				4.0
+		"cleaning":
+			var clean_mid := (
+				connection * 0.52
+				+ normal * 5.0
+			)
+			draw_polyline(
+				PackedVector2Array([
+					direction * 5.0,
+					clean_mid,
+					connection
+				]),
+				Color("7fd6c8"),
+				2.4
 			)
 			draw_circle(
 				connection,
-				3.0,
-				Color("f1d98e")
+				3.3,
+				Color("d7f5ef")
+			)
+			draw_circle(
+				connection - direction * 5.0,
+				2.0,
+				Color("6aa79f")
+			)
+		"catering":
+			var lift_start := direction * 7.0
+			var lift_end := connection * 0.88
+			var frame_mid := lift_start.lerp(
+				lift_end,
+				0.52
+			)
+			draw_line(
+				lift_start + normal * 5.0,
+				lift_end - normal * 5.0,
+				Color("d9c9b1"),
+				2.0
+			)
+			draw_line(
+				lift_start - normal * 5.0,
+				lift_end + normal * 5.0,
+				Color("d9c9b1"),
+				2.0
+			)
+			draw_line(
+				frame_mid - normal * 7.0,
+				frame_mid + normal * 7.0,
+				Color("f0dfc7"),
+				2.2
+			)
+			var platform := PackedVector2Array([
+				lift_end - direction * 3.0 - normal * 7.0,
+				lift_end + direction * 3.0 - normal * 7.0,
+				lift_end + direction * 3.0 + normal * 7.0,
+				lift_end - direction * 3.0 + normal * 7.0
+			])
+			draw_colored_polygon(
+				platform,
+				Color("f5ead8")
+			)
+		"pushback":
+			var tow_start := direction * 12.0
+			var yoke := connection * 0.96
+			draw_line(
+				tow_start,
+				yoke,
+				Color("d9b85f"),
+				4.0
+			)
+			draw_line(
+				yoke - normal * 5.0,
+				yoke + normal * 5.0,
+				Color("f1d98e"),
+				3.0
+			)
+			draw_circle(
+				yoke - normal * 5.0,
+				2.5,
+				Color("806c35")
+			)
+			draw_circle(
+				yoke + normal * 5.0,
+				2.5,
+				Color("806c35")
 			)
 
 

@@ -1712,9 +1712,20 @@ func _get_placement_status(
 	}
 
 	if _needs_airside_connection(definition):
-		var preview_cells := _cells_for(origin, footprint)
-		if not _cells_touch_reachable_taxiway(preview_cells):
-			result["warning"] = "No taxiway connection to a runway yet."
+		var preview_cells := _cells_for(
+			origin,
+			footprint
+		)
+		var connection := _preview_airside_connection(
+			preview_cells
+		)
+		result["connection"] = connection
+		if not bool(
+			connection.get("connected", false)
+		):
+			result["warning"] = (
+				"No taxiway connection to a runway yet."
+			)
 
 	return result
 
@@ -2818,7 +2829,8 @@ func _recalculate_airside_network() -> void:
 		"hangars_connected": connected_hangars,
 		"connected_uids": connected_uids,
 		"disconnected": disconnected,
-		"reachable_taxiway_cells": reachable_taxiways.keys()
+		"reachable_taxiway_cells": reachable_taxiways.keys(),
+		"reachable_taxiway_positions": reachable_taxiways.values()
 	}
 	network_status_changed.emit(get_airside_status())
 	queue_redraw()
@@ -2846,6 +2858,54 @@ func _reachable_taxiway_cells(taxiway_cells: Dictionary, runway_cells: Dictionar
 				queue.append(neighbor)
 
 	return reachable
+
+
+func _preview_airside_connection(
+	cells: Array[Vector2i]
+) -> Dictionary:
+	var reachable_positions: Array = airside_status.get(
+		"reachable_taxiway_positions",
+		[]
+	)
+	if reachable_positions.is_empty():
+		return {
+			"required": true,
+			"connected": false,
+			"target_valid": false,
+			"distance": -1
+		}
+
+	var adjacent: Dictionary = {}
+	var nearest := Vector2i.ZERO
+	var nearest_valid := false
+	var nearest_distance := 999999
+
+	for cell in cells:
+		for reachable_variant in reachable_positions:
+			var reachable: Vector2i = reachable_variant
+			var distance := (
+				absi(cell.x - reachable.x)
+				+ absi(cell.y - reachable.y)
+			)
+			if distance == 1:
+				adjacent[_cell_key(reachable)] = reachable
+			if distance < nearest_distance:
+				nearest_distance = distance
+				nearest = reachable
+				nearest_valid = true
+
+	var target := nearest
+	if not adjacent.is_empty():
+		target = adjacent.values()[0]
+
+	return {
+		"required": true,
+		"connected": not adjacent.is_empty(),
+		"target_valid": nearest_valid,
+		"target_cell": target,
+		"distance": nearest_distance,
+		"adjacent_count": adjacent.size()
+	}
 
 
 func _cells_touch_reachable_taxiway(cells: Array[Vector2i]) -> bool:

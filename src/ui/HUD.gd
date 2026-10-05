@@ -375,8 +375,6 @@ func _build_context_panel(root: Control) -> void:
 	expand_here_button.text = "EXPAND HERE"
 	expand_here_button.visible = false
 	expand_here_button.disabled = true
-	if place_button != null:
-		place_button.visible = true
 	expand_here_button.pressed.connect(
 		_on_expand_here_pressed
 	)
@@ -1174,6 +1172,8 @@ func _reset_expand_here_action() -> void:
 		return
 	expand_here_button.visible = false
 	expand_here_button.disabled = true
+	if place_button != null:
+		place_button.visible = true
 
 
 func _update_placement_expand_action(

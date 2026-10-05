@@ -109,6 +109,9 @@ jobs:
       - name: Test UI modernization
         run: timeout 20s godot --headless --path . --script res://tests/ui_modernization_test.gd
 
+      - name: Test main airport UI takeover
+        run: timeout 20s godot --headless --path . --script res://tests/airport_ui_takeover_test.gd
+
       - name: Diagnose production building art alignment
         run: timeout 30s godot --headless --path . --script res://tests/building_art_alignment_test.gd
 

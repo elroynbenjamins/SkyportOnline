@@ -526,6 +526,19 @@ func _on_passenger_boarding_requested(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
+	if (
+		aircraft != null
+		and is_instance_valid(aircraft)
+		and aircraft.is_social_visitor()
+	):
+		aircraft.record_boarded_passengers(0)
+		ground_services.approve_passenger_loading(aircraft)
+		hud.set_operation_status(
+			"%s visitor turnaround • host passenger stock not used"
+			% label,
+			"success"
+		)
+		return
 	_attempt_boarding_and_departure(aircraft, label)
 
 
@@ -1413,8 +1426,11 @@ func _on_navigation_requested(tab: String) -> void:
 				event_screen.open_event(event_manager.get_snapshot())
 			else:
 				hud.set_operation_status("No event is active right now.")
-		"alliance":
-			hud.set_operation_status("Alliance unlocks later.")
+		"social", "alliance":
+			if social_airport_screen != null and social_airport_service != null:
+				social_airport_screen.open_screen(
+					social_airport_service.get_snapshot()
+				)
 		"more":
 			resource_inventory_screen.open_inventory(
 				resource_inventory,
@@ -1424,6 +1440,281 @@ func _on_navigation_requested(tab: String) -> void:
 				rewarded_passenger_ad_bridge.provider_connected,
 				current_profile.get("economy_stats", {})
 			)
+
+
+func _on_social_snapshot_changed(
+	snapshot: Dictionary
+) -> void:
+	if social_airport_screen != null:
+		social_airport_screen.set_snapshot(snapshot)
+
+
+func _on_social_screen_visit_requested(
+	contact_id: String
+) -> void:
+	if social_airport_service == null:
+		return
+	var request := social_airport_service.request_visit(
+		contact_id
+	)
+	if request.is_empty():
+		hud.set_operation_status(
+			"Unable to request another visitor right now.",
+			"warning"
+		)
+
+
+func _on_social_passenger_gift_requested(
+	contact_id: String
+) -> void:
+	if social_airport_service == null:
+		return
+	if social_airport_service.send_passenger_gift(contact_id):
+		var contact := social_airport_service.get_contact(contact_id)
+		hud.set_operation_status(
+			"+%d passengers sent to %s • available again tomorrow"
+			% [
+				PassengerSupportRules.friend_gift_amount(),
+				String(contact.get("airport_name", "friend airport"))
+			],
+			"success"
+		)
+	else:
+		hud.set_operation_status(
+			"Passenger gift already sent to this airport today.",
+			"warning"
+		)
+
+
+func _on_social_screen_closed() -> void:
+	hud.set_operation_status(
+		"Returned to airport operations."
+	)
+
+
+func _on_social_visit_requested(
+	request: Dictionary
+) -> void:
+	if request.is_empty():
+		return
+
+	var visit_id := String(request.get("visit_id", ""))
+	if visit_id.is_empty() or social_visitor_aircraft.has(visit_id):
+		return
+
+	var aircraft := AircraftPrototype.new()
+	var aircraft_type_id := String(
+		request.get("aircraft_type_id", "pico_p8")
+	)
+	aircraft.configure_aircraft_type(aircraft_type_id)
+	aircraft.configure_taxi_traffic(taxi_traffic)
+	aircraft.configure_social_visit(request)
+	aircraft.assign_flight_plan(
+		SocialFlightRules.create_social_flight_plan(request)
+	)
+
+	var airport_code := String(
+		request.get("airport_code", "FRD")
+	)
+	var label := "%s-%s" % [
+		"AL" if String(
+			request.get("relationship", "friend")
+		) == "alliance" else "FR",
+		airport_code
+	]
+	aircraft.name = label
+	aircraft.z_index = 96 + social_visitor_aircraft.size()
+	aircraft.state_changed.connect(
+		_on_social_aircraft_state_changed.bind(
+			aircraft,
+			label,
+			visit_id
+		)
+	)
+	aircraft.departed.connect(
+		_on_social_aircraft_departed.bind(
+			aircraft,
+			label,
+			visit_id
+		)
+	)
+	aircraft.arrival_completed.connect(
+		_on_social_arrival_completed.bind(
+			aircraft,
+			label,
+			visit_id
+		)
+	)
+	add_child(aircraft)
+	aircraft.prepare_social_inbound()
+
+	social_visitor_aircraft[visit_id] = aircraft
+	social_airport_service.register_visit_aircraft(
+		visit_id,
+		aircraft
+	)
+
+	if not _assign_arrival_if_possible(aircraft, label):
+		pending_arrivals.append({
+			"aircraft": aircraft,
+			"label": label,
+			"wait_seconds": 0.0
+		})
+		social_airport_service.update_visit_state(
+			visit_id,
+			"HOLDING_FOR_ARRIVAL"
+		)
+		hud.set_operation_status(
+			"%s visiting flight holding • no free compatible stand"
+			% label,
+			"warning"
+		)
+	else:
+		hud.set_operation_status(
+			"%s visiting flight assigned for arrival" % label,
+			"success"
+		)
+
+
+func _on_social_aircraft_state_changed(
+	state: String,
+	aircraft: AircraftPrototype,
+	label: String,
+	visit_id: String
+) -> void:
+	_on_demo_aircraft_state_changed(
+		state,
+		aircraft,
+		label
+	)
+	if social_airport_service != null:
+		social_airport_service.update_visit_state(
+			visit_id,
+			state
+		)
+
+
+func _on_social_arrival_completed(
+	aircraft: AircraftPrototype,
+	label: String,
+	visit_id: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	var route_info := airport_grid.get_departure_route_for_stand(
+		aircraft.stand_uid,
+		aircraft.aircraft_size
+	)
+	if route_info.is_empty():
+		hud.set_operation_status(
+			"%s visitor parked but has no departure route"
+			% label,
+			"warning"
+		)
+		return
+
+	var route: PackedVector2Array = route_info.get(
+		"route",
+		PackedVector2Array()
+	)
+	aircraft.set_departure_route(
+		route,
+		aircraft.aircraft_size,
+		int(route_info.get("stand_uid", -1)),
+		int(route_info.get("runway_uid", -1))
+	)
+	ground_services.request_turnaround(
+		aircraft,
+		label,
+		true
+	)
+	if social_airport_service != null:
+		social_airport_service.update_visit_state(
+			visit_id,
+			"UNLOADING"
+		)
+	hud.set_operation_status(
+		"%s visiting aircraft parked • social turnaround started"
+		% label,
+		"success"
+	)
+
+
+func _on_social_aircraft_departed(
+	aircraft: AircraftPrototype,
+	label: String,
+	visit_id: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+
+	var request := aircraft.get_social_visit_data()
+	var profile := aircraft.get_aircraft_profile()
+	var host_reward := SocialFlightRules.create_host_reward(
+		profile,
+		request,
+		reward_rng
+	)
+	var owner_reward := SocialFlightRules.create_owner_reward(
+		profile,
+		request
+	)
+
+	coins += int(host_reward.get("coins", 0))
+	player_xp += int(host_reward.get("xp", 0))
+	var resources_won: Array = host_reward.get(
+		"resources_won",
+		[]
+	)
+	if not resources_won.is_empty():
+		ProfileStore.add_resource_drops(resources_won)
+
+	ProfileStore.add_economy_stats({
+		"social_visits_serviced": 1,
+		"social_coins": int(host_reward.get("coins", 0)),
+		"social_xp": int(host_reward.get("xp", 0)),
+		"social_resources": resources_won.size()
+	})
+	ProfileStore.record_social_service(
+		String(request.get("contact_id", "")),
+		String(request.get("relationship", "friend")),
+		String(request.get("country_id", "")),
+		int(host_reward.get("coins", 0)),
+		int(host_reward.get("xp", 0)),
+		resources_won.size()
+	)
+	ProfileStore.enqueue_social_reward_receipt(
+		String(request.get("contact_id", "")),
+		owner_reward,
+		visit_id
+	)
+
+	current_profile = ProfileStore.load_profile()
+	resource_inventory = current_profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
+	hud.set_player_data(player_level, coins, gems)
+
+	if social_airport_service != null:
+		social_airport_service.complete_visit(
+			visit_id,
+			host_reward,
+			owner_reward
+		)
+	social_visitor_aircraft.erase(visit_id)
+
+	hud.set_operation_status(
+		"%s visitor serviced • %s"
+		% [
+			label,
+			SocialFlightRules.reward_summary(host_reward)
+		],
+		"success"
+	)
+
+	aircraft.call_deferred("queue_free")
 
 
 func _refresh_aircraft_event_visuals(

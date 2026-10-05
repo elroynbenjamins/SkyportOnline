@@ -90,6 +90,15 @@ static func load_profile() -> Dictionary:
 	if stored_cosmetics is Dictionary:
 		owned_cosmetics = stored_cosmetics.duplicate(true)
 
+	var resource_reward_receipts := {}
+	var stored_resource_receipts = config.get_value(
+		"profile",
+		"resource_reward_receipts",
+		{}
+	)
+	if stored_resource_receipts is Dictionary:
+		resource_reward_receipts = stored_resource_receipts.duplicate(true)
+
 	var priority_contract_progress := {}
 	var stored_contracts = config.get_value(
 		"profile",
@@ -133,6 +142,7 @@ static func load_profile() -> Dictionary:
 		"route_history": route_history,
 		"event_states": event_states,
 		"owned_cosmetics": owned_cosmetics,
+		"resource_reward_receipts": resource_reward_receipts,
 		"priority_contract_progress": priority_contract_progress,
 		"social_state": social_state,
 		"passenger_gift_day": String(
@@ -185,6 +195,7 @@ static func create_guest_airport(
 		"route_history": {},
 		"event_states": {},
 		"owned_cosmetics": {},
+		"resource_reward_receipts": {},
 		"priority_contract_progress": {},
 		"social_state": {},
 		"passenger_gift_day": "",
@@ -217,6 +228,44 @@ static func add_resource_drops(drops: Array) -> Dictionary:
 
 
 
+
+
+static func apply_resource_reward_receipt(
+	reward_id: String,
+	resource_id: String,
+	amount: int = 1
+) -> Dictionary:
+	if reward_id.is_empty() or amount <= 0:
+		return {}
+	var resource := CountryResourceCatalog.get_resource(resource_id)
+	if resource.is_empty():
+		return {}
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+	var receipts: Dictionary = profile.get(
+		"resource_reward_receipts",
+		{}
+	).duplicate(true)
+	if receipts.has(reward_id):
+		return profile
+	var inventory: Dictionary = profile.get(
+		"resource_inventory",
+		{}
+	).duplicate(true)
+	inventory[resource_id] = int(inventory.get(resource_id, 0)) + amount
+	receipts[reward_id] = {
+		"resource_id": resource_id,
+		"amount": amount,
+		"created_at_unix": int(Time.get_unix_time_from_system())
+	}
+	while receipts.size() > 1024:
+		receipts.erase(receipts.keys()[0])
+	profile["resource_inventory"] = inventory
+	profile["resource_reward_receipts"] = receipts
+	if not _save_profile(profile):
+		return {}
+	return profile
 
 static func save_airport_layout(
 	layout: Array,

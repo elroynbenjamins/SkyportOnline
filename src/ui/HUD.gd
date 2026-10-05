@@ -5,6 +5,8 @@ signal building_selected(building_id: String)
 signal rotate_building_requested
 signal confirm_building_requested
 signal cancel_building_requested
+signal store_building_requested
+signal stored_building_selected(building_uid: int)
 signal airport_edit_requested
 signal undo_airport_edit_requested
 signal done_airport_edit_requested
@@ -41,6 +43,7 @@ var build_action_panel: PanelContainer
 var build_title: Label
 var build_status: Label
 var rotate_button: Button
+var store_button: Button
 var place_button: Button
 
 var build_hint: Label
@@ -48,8 +51,12 @@ var catalog_panel: PanelContainer
 var edit_airport_button: Button
 var airport_edit_panel: PanelContainer
 var airport_edit_status: Label
+var storage_button: Button
 var undo_airport_edit_button: Button
 var done_airport_edit_button: Button
+var storage_panel: PanelContainer
+var storage_list: VBoxContainer
+var storage_count_label: Label
 
 var catalog_buttons: Dictionary = {}
 var catalog_definitions: Array[Dictionary] = []
@@ -269,6 +276,7 @@ func _build_interface() -> void:
 
 	_build_context_panel(root)
 	_build_airport_edit_panel(root)
+	_build_storage_panel(root)
 	_build_catalog_panel(root)
 	_build_bottom_navigation(root)
 
@@ -337,6 +345,14 @@ func _build_context_panel(root: Control) -> void:
 	build_status.add_theme_font_size_override("font_size", 14)
 	build_text.add_child(build_status)
 
+	store_button = Button.new()
+	store_button.custom_minimum_size = Vector2(104, 72)
+	store_button.text = "📦\nSTORE"
+	store_button.visible = false
+	store_button.pressed.connect(_on_store_building_pressed)
+	GameUIStyle.apply_button(store_button, "secondary", true)
+	build_row.add_child(store_button)
+
 	rotate_button = Button.new()
 	rotate_button.custom_minimum_size = Vector2(92, 72)
 	rotate_button.text = "↻\nROTATE"
@@ -395,6 +411,19 @@ func _build_airport_edit_panel(root: Control) -> void:
 	airport_edit_status.add_theme_font_size_override("font_size", 14)
 	text_box.add_child(airport_edit_status)
 
+	storage_button = Button.new()
+	storage_button.custom_minimum_size = Vector2(126, 72)
+	storage_button.text = "📦\nSTORAGE"
+	storage_button.pressed.connect(
+		_on_storage_pressed
+	)
+	GameUIStyle.apply_button(
+		storage_button,
+		"secondary",
+		true
+	)
+	row.add_child(storage_button)
+
 	undo_airport_edit_button = Button.new()
 	undo_airport_edit_button.custom_minimum_size = Vector2(112, 72)
 	undo_airport_edit_button.text = "↶\nUNDO"
@@ -420,6 +449,64 @@ func _build_airport_edit_panel(root: Control) -> void:
 		"primary"
 	)
 	row.add_child(done_airport_edit_button)
+
+
+func _build_storage_panel(root: Control) -> void:
+	storage_panel = PanelContainer.new()
+	storage_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	storage_panel.offset_left = -438
+	storage_panel.offset_top = 158
+	storage_panel.offset_right = -8
+	storage_panel.offset_bottom = -82
+	storage_panel.visible = false
+	root.add_child(storage_panel)
+	GameUIStyle.apply_panel(storage_panel, "dark")
+
+	var wrapper := VBoxContainer.new()
+	wrapper.add_theme_constant_override("separation", 6)
+	storage_panel.add_child(wrapper)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 6)
+	wrapper.add_child(header)
+
+	var title := Label.new()
+	title.text = "AIRPORT STORAGE"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameUIStyle.heading(title, 15)
+	header.add_child(title)
+
+	storage_count_label = Label.new()
+	storage_count_label.text = "0 STORED"
+	storage_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	GameUIStyle.muted(storage_count_label)
+	header.add_child(storage_count_label)
+
+	var close_button := Button.new()
+	close_button.text = "✕"
+	close_button.custom_minimum_size = Vector2(38, 34)
+	GameUIStyle.apply_button(close_button, "secondary", true)
+	close_button.pressed.connect(_on_storage_pressed)
+	header.add_child(close_button)
+
+	var help := Label.new()
+	help.text = (
+		"Stored buildings keep levels/upgrades but pause all airport effects."
+	)
+	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(help)
+	wrapper.add_child(help)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	wrapper.add_child(scroll)
+
+	storage_list = VBoxContainer.new()
+	storage_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	storage_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(storage_list)
 
 
 func _build_catalog_panel(root: Control) -> void:
@@ -767,6 +854,7 @@ func enter_building_mode(definition: Dictionary) -> void:
 		_size_text(definition),
 		_service_text(definition)
 	]
+	store_button.visible = false
 	rotate_button.visible = bool(definition.get("rotatable", false))
 	place_button.text = "TAP LAND"
 	place_button.disabled = true
@@ -787,6 +875,7 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	parcel_panel.visible = false
 	build_action_panel.visible = true
 	build_title.text = String(definition["name"]).to_upper()
+	store_button.visible = false
 	rotate_button.visible = bool(definition.get("rotatable", false))
 
 	var required_level := int(definition["level"])
@@ -848,6 +937,7 @@ func enter_move_mode(definition: Dictionary) -> void:
 	build_status.text = (
 		"Drag or tap a new position • Moving is free"
 	)
+	store_button.visible = true
 	rotate_button.visible = bool(
 		definition.get("rotatable", false)
 	)
@@ -871,6 +961,7 @@ func show_move_preview(
 	build_title.text = "MOVE %s" % String(
 		definition.get("name", "BUILDING")
 	).to_upper()
+	store_button.visible = true
 	rotate_button.visible = bool(
 		definition.get("rotatable", false)
 	)
@@ -906,6 +997,150 @@ func show_move_preview(
 	place_button.disabled = false
 
 
+func enter_stored_building_mode(
+	definition: Dictionary,
+	building: Dictionary
+) -> void:
+	if definition.is_empty() or building.is_empty():
+		return
+
+	active_building_id = String(definition.get("id", ""))
+	active_build_mode = "stored"
+	if storage_panel != null:
+		storage_panel.visible = false
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
+	parcel_panel.visible = false
+	build_action_panel.visible = true
+	build_title.text = "PLACE STORED %s" % String(
+		definition.get("name", "BUILDING")
+	).to_upper()
+	build_status.text = "Tap owned land to place • FREE"
+	store_button.visible = false
+	rotate_button.visible = bool(
+		definition.get("rotatable", false)
+	)
+	place_button.text = "TAP LAND"
+	place_button.disabled = true
+
+
+func show_stored_building_preview(
+	definition: Dictionary,
+	status: Dictionary
+) -> void:
+	if definition.is_empty():
+		return
+
+	active_building_id = String(definition.get("id", ""))
+	active_build_mode = "stored"
+	if storage_panel != null:
+		storage_panel.visible = false
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
+	parcel_panel.visible = false
+	build_action_panel.visible = true
+	build_title.text = "PLACE STORED %s" % String(
+		definition.get("name", "BUILDING")
+	).to_upper()
+	store_button.visible = false
+	rotate_button.visible = bool(
+		definition.get("rotatable", false)
+	)
+
+	if status.is_empty():
+		build_status.text = "Tap owned land to place • FREE"
+		place_button.text = "TAP LAND"
+		place_button.disabled = true
+		return
+
+	if not bool(status.get("valid", false)):
+		build_status.text = "Cannot place: %s" % String(
+			status.get("reason", "Invalid placement.")
+		)
+		place_button.text = "BLOCKED"
+		place_button.disabled = true
+		return
+
+	var footprint: Vector2i = status.get(
+		"footprint",
+		definition.get("footprint", Vector2i.ONE)
+	)
+	build_status.text = "Valid %dx%d • Place from storage FREE" % [
+		footprint.x,
+		footprint.y
+	]
+	var warning := String(status.get("warning", ""))
+	if not warning.is_empty():
+		build_status.text += "  •  ⚠ " + warning
+	place_button.text = "PLACE"
+	place_button.disabled = false
+
+
+func set_stored_buildings(
+	buildings: Array[Dictionary]
+) -> void:
+	if storage_list == null:
+		return
+
+	for child in storage_list.get_children():
+		child.queue_free()
+
+	var count := buildings.size()
+	storage_count_label.text = "%d STORED" % count
+	if storage_button != null:
+		storage_button.text = "📦\nSTORAGE %d" % count
+
+	if count <= 0:
+		var empty_label := Label.new()
+		empty_label.text = (
+			"No stored buildings. Select a movable building and tap STORE."
+		)
+		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		empty_label.add_theme_font_size_override("font_size", 13)
+		GameUIStyle.muted(empty_label)
+		storage_list.add_child(empty_label)
+		return
+
+	for building in buildings:
+		var uid := int(building.get("uid", -1))
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if uid < 0 or definition.is_empty():
+			continue
+
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(390, 64)
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_font_size_override("font_size", 13)
+		var footprint: Vector2i = definition.get(
+			"footprint",
+			Vector2i.ONE
+		)
+		if int(building.get("rotation", 0)) % 2 == 1:
+			footprint = Vector2i(
+				footprint.y,
+				footprint.x
+			)
+		button.text = "%s\nLV %d • %dx%d • PLACE FREE" % [
+			String(definition.get("name", "Building")),
+			int(building.get("upgrade_level", 1)),
+			footprint.x,
+			footprint.y
+		]
+		var icon := _catalog_icon_for(definition)
+		if icon != null:
+			button.icon = icon
+			button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			button.expand_icon = true
+			button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		GameUIStyle.apply_button(button, "secondary", true)
+		button.pressed.connect(
+			_on_stored_building_pressed.bind(uid)
+		)
+		storage_list.add_child(button)
+
+
 func show_airport_edit_mode(
 	active: bool,
 	can_undo: bool = false,
@@ -915,6 +1150,8 @@ func show_airport_edit_mode(
 	active_build_mode = "airport_edit" if active else ""
 	build_action_panel.visible = false
 	airport_edit_panel.visible = active
+	if storage_panel != null:
+		storage_panel.visible = false
 	if catalog_panel != null:
 		catalog_panel.visible = not active
 
@@ -1534,6 +1771,8 @@ func exit_building_mode() -> void:
 	build_action_panel.visible = false
 	if airport_edit_panel != null:
 		airport_edit_panel.visible = false
+	if storage_panel != null:
+		storage_panel.visible = false
 	if catalog_panel != null:
 		catalog_panel.visible = true
 	parcel_panel.visible = true
@@ -1624,6 +1863,23 @@ func _size_text(definition: Dictionary) -> String:
 			result += "/"
 		result += sizes[index]
 	return result
+
+
+func _on_store_building_pressed() -> void:
+	if store_button != null and store_button.visible:
+		store_building_requested.emit()
+
+
+func _on_storage_pressed() -> void:
+	if storage_panel == null:
+		return
+	storage_panel.visible = not storage_panel.visible
+
+
+func _on_stored_building_pressed(uid: int) -> void:
+	if storage_panel != null:
+		storage_panel.visible = false
+	stored_building_selected.emit(uid)
 
 
 func _on_airport_edit_pressed() -> void:

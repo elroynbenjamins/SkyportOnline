@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+ <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".5" stop-color="#e8edf0"/><stop offset="1" stop-color="#bcc8cd"/></linearGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b9f2ff"/><stop offset=".34" stop-color="#64cbe6"/><stop offset=".72" stop-color="#2d91b8"/><stop offset="1" stop-color="#176080"/></linearGradient>
+ <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0c5576"/><stop offset="1" stop-color="#07364f"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
+</defs>
+<ellipse cx="510" cy="625" rx="340" ry="70" fill="#142c34" opacity=".18" filter="url(#soft)"/>
+<polygon points="154,489 493,358 868,563 527,686 181,565" fill="#273b41" opacity=".18"/>
+<polygon points="174,455 493,338 848,531 522,650 198,533" fill="#d2cdc4"/>
+<polygon points="192,447 493,340 828,522 519,632 211,520" fill="#ebe7de"/>
+<polygon points="285,372 505,296 737,423 509,507" fill="#f8faf9"/>
+<polygon points="285,372 509,507 509,586 285,452" fill="#d5dcdf"/>
+<polygon points="509,507 737,423 737,503 509,586" fill="#b8c5ca"/>
+<polygon points="311,375 504,309 705,419 501,493" fill="url(#glass)"/>
+<polygon points="311,375 501,493 501,558 311,445" fill="#3b9abc"/>
+<polygon points="501,493 705,419 705,485 501,558" fill="#1c7092"/>
+<g stroke="#dff8ff" stroke-width="5" opacity=".88">
+ <line x1="357" y1="361" x2="357" y2="472"/><line x1="406" y1="345" x2="406" y2="501"/><line x1="455" y1="328" x2="455" y2="529"/>
+ <line x1="548" y1="476" x2="548" y2="535"/><line x1="598" y1="458" x2="598" y2="516"/><line x1="649" y1="440" x2="649" y2="498"/>
+</g>
+<polygon points="264,356 508,270 760,408 508,500" fill="#ffffff"/>
+<polygon points="281,351 507,281 737,407 508,485" fill="url(#roof)"/>
+<polyline points="281,351 507,281 737,407" fill="none" stroke="#ffffff" stroke-width="9" opacity=".9"/>
+<polygon points="395,324 506,286 630,354 516,396" fill="#f8faf9"/>
+<polygon points="395,324 516,396 516,446 395,375" fill="#d3dcde"/>
+<polygon points="516,396 630,354 630,404 516,446" fill="#b5c3c7"/>
+<polygon points="414,325 507,295 611,352 518,386" fill="url(#glass)"/>
+<polygon points="315,292 378,270 439,303 376,327" fill="#fbfcfa"/>
+<polygon points="315,292 376,327 376,412 315,376" fill="#d4dee0"/>
+<polygon points="376,327 439,303 439,388 376,412" fill="#b4c3c7"/>
+<polygon points="326,296 379,278 427,304 378,322" fill="#92def0"/>
+<polygon points="326,296 378,322 378,355 326,329" fill="#409fc0"/>
+<polygon points="378,322 427,304 427,337 378,355" fill="#1d6d8d"/>
+<polygon points="369,456 497,411 611,474 520,506 474,480 415,501" fill="#f7f8f4"/>
+<polygon points="389,452 497,420 592,472 520,498 476,475 424,493" fill="#95dcea"/>
+<polyline points="389,452 497,420 592,472" fill="none" stroke="#ffffff" stroke-width="6" opacity=".8"/>
+<polygon points="406,431 513,492 513,520 406,459" fill="#f0f6f7"/>
+<polygon points="428,443 493,480 493,492 428,455" fill="url(#navy)"/>
+<g fill="#21c7f1"><circle cx="439" cy="453" r="4"/><circle cx="454" cy="461" r="4"/><circle cx="469" cy="470" r="4"/></g>
+<polygon points="452,483 491,505 491,552 452,530" fill="#0f6589"/><line x1="471" y1="494" x2="471" y2="541" stroke="#b9eff9" stroke-width="4"/>
+<g>
+ <polygon points="432,290 465,279 500,298 466,311" fill="#aebbc0"/><polygon points="432,290 466,311 466,335 432,315" fill="#87969b"/>
+ <polygon points="548,320 581,309 616,328 582,341" fill="#b8c4c7"/><polygon points="548,320 582,341 582,365 548,345" fill="#8b9a9f"/>
+</g>
+<g stroke="#6a7477" stroke-width="7"><line x1="220" y1="442" x2="220" y2="350"/><line x1="770" y1="506" x2="770" y2="406"/></g>
+<g fill="#fff0b1"><circle cx="220" cy="346" r="9"/><circle cx="770" cy="402" r="9"/></g>
+<polygon points="235,454 271,441 308,461 271,475" fill="#d1ccc2"/><circle cx="271" cy="437" r="14" fill="#438d50"/>
+<polygon points="650,514 686,501 723,521 686,535" fill="#d1ccc2"/><circle cx="686" cy="497" r="13" fill="#4c9557"/>
+<rect x="326" y="501" width="14" height="32" rx="5" fill="#1e789f" transform="rotate(30 333 517)"/><circle cx="329" cy="495" r="7" fill="#e6b283"/>
+<rect x="354" y="517" width="14" height="32" rx="5" fill="#f09a32" transform="rotate(30 361 533)"/><circle cx="357" cy="511" r="7" fill="#e0a878"/>
+<path d="M760 449 l31 -11 29 16 -31 11z" fill="#e6e2d7"/><path d="M768 449 l23 -8 21 11 -22 8z" fill="#f4b53d"/>
+<circle cx="776" cy="466" r="5" fill="#273439"/><circle cx="803" cy="456" r="5" fill="#273439"/>
+</svg>

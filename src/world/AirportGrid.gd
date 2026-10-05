@@ -3236,11 +3236,40 @@ func purchase_selected() -> bool:
 	return purchase_parcel(selected_id)
 
 
+func _refresh_preview_snap_feedback(
+	previous_origin: Vector2i,
+	previous_rotation: int
+) -> void:
+	if preview_building_id.is_empty():
+		return
+	if (
+		previous_origin == preview_origin
+		and previous_rotation == preview_rotation
+	):
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
+	if definition.is_empty():
+		return
+	_start_preview_snap_fx(
+		preview_origin,
+		_footprint_for(
+			definition,
+			preview_rotation
+		),
+		bool(preview_status.get("valid", false))
+	)
+
+
 func set_build_preview(
 	building_id: String,
 	world_position: Vector2,
 	rotation: int
 ) -> Dictionary:
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_mode = "build"
 	preview_ignore_uid = -1
 	preview_stored_uid = -1
@@ -3251,6 +3280,10 @@ func set_build_preview(
 		building_id,
 		preview_origin,
 		preview_rotation
+	)
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
 	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
@@ -3311,6 +3344,8 @@ func set_move_preview(
 	if preview_mode != "move" or preview_ignore_uid < 0:
 		return {}
 
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_origin = world_to_tile(world_position)
 	preview_rotation = rotation % 2
 	preview_status = _get_placement_status(
@@ -3321,6 +3356,10 @@ func set_move_preview(
 	)
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = preview_ignore_uid
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
+	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -3360,6 +3399,8 @@ func set_stored_building_preview(
 	if preview_mode != "stored" or preview_stored_uid < 0:
 		return {}
 
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_origin = world_to_tile(world_position)
 	preview_rotation = rotation % 2
 	preview_status = _get_placement_status(
@@ -3369,6 +3410,10 @@ func set_stored_building_preview(
 	)
 	preview_status["mode"] = "stored"
 	preview_status["building_uid"] = preview_stored_uid
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
+	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -3377,6 +3422,8 @@ func set_stored_building_preview(
 func refresh_build_preview(rotation: int) -> Dictionary:
 	if preview_building_id.is_empty():
 		return {}
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_rotation = rotation % 2
 	preview_status = _get_placement_status(
 		preview_building_id,
@@ -3390,6 +3437,10 @@ func refresh_build_preview(rotation: int) -> Dictionary:
 	elif preview_mode == "stored":
 		preview_status["mode"] = "stored"
 		preview_status["building_uid"] = preview_stored_uid
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
+	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -3412,6 +3463,8 @@ func clear_build_preview() -> void:
 	preview_mode = "build"
 	preview_ignore_uid = -1
 	preview_stored_uid = -1
+	preview_snap_elapsed = -1.0
+	preview_snap_origin = Vector2i(-1, -1)
 	if was_move:
 		_refresh_building_labels()
 	queue_redraw()
@@ -3423,6 +3476,14 @@ func confirm_build_preview() -> Dictionary:
 	if not bool(preview_status.get("valid", false)):
 		return {}
 
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
+	var confirmed_origin := preview_origin
+	var confirmed_footprint := _footprint_for(
+		definition,
+		preview_rotation
+	)
 	var placed := _place_building_internal(
 		preview_building_id,
 		preview_origin,
@@ -3432,6 +3493,10 @@ func confirm_build_preview() -> Dictionary:
 	_recalculate_airside_network()
 	_refresh_building_labels()
 	clear_build_preview()
+	_start_placement_confirm_fx(
+		confirmed_origin,
+		confirmed_footprint
+	)
 	queue_redraw()
 	building_placed.emit(placed.duplicate(true))
 	return placed
@@ -3451,6 +3516,14 @@ func confirm_stored_building_preview() -> Dictionary:
 		) != preview_stored_uid:
 			continue
 
+		var definition := BuildingCatalog.get_definition(
+			preview_building_id
+		)
+		var confirmed_origin := preview_origin
+		var confirmed_footprint := _footprint_for(
+			definition,
+			preview_rotation
+		)
 		var restored := stored_buildings[index].duplicate(true)
 		restored["origin"] = preview_origin
 		restored["rotation"] = preview_rotation
@@ -3460,6 +3533,10 @@ func confirm_stored_building_preview() -> Dictionary:
 		_rebuild_occupied_cells()
 		_recalculate_airside_network()
 		clear_build_preview()
+		_start_placement_confirm_fx(
+			confirmed_origin,
+			confirmed_footprint
+		)
 		_refresh_building_labels()
 		queue_redraw()
 		building_restored.emit(restored.duplicate(true))
@@ -3482,6 +3559,14 @@ func confirm_move_preview() -> Dictionary:
 		) != preview_ignore_uid:
 			continue
 
+		var definition := BuildingCatalog.get_definition(
+			preview_building_id
+		)
+		var confirmed_origin := preview_origin
+		var confirmed_footprint := _footprint_for(
+			definition,
+			preview_rotation
+		)
 		var previous := placed_buildings[index].duplicate(true)
 		placed_buildings[index]["origin"] = preview_origin
 		placed_buildings[index]["rotation"] = preview_rotation
@@ -3490,6 +3575,10 @@ func confirm_move_preview() -> Dictionary:
 		_rebuild_occupied_cells()
 		_recalculate_airside_network()
 		clear_build_preview()
+		_start_placement_confirm_fx(
+			confirmed_origin,
+			confirmed_footprint
+		)
 		_refresh_building_labels()
 		queue_redraw()
 		building_moved.emit(
@@ -3562,6 +3651,15 @@ func restore_building_position(
 		_rebuild_occupied_cells()
 		_recalculate_airside_network()
 		_refresh_building_labels()
+		_start_placement_confirm_fx(
+			target_origin,
+			_footprint_for(
+				BuildingCatalog.get_definition(
+					definition_id
+				),
+				target_rotation
+			)
+		)
 		queue_redraw()
 		building_moved.emit(
 			restored.duplicate(true),

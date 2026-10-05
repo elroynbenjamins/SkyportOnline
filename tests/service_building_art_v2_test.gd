@@ -100,6 +100,28 @@ func _run() -> void:
 		if atlas.get_width() != 896 or atlas.get_height() != 1344:
 			_fail("Service-building v2 atlases should import at 896x1344.")
 			return
+		var atlas_image := atlas.get_image()
+		if atlas_image == null:
+			_fail("Service-building v2 atlases should expose readable image data.")
+			return
+		for corner in [
+			Vector2i(0, 0),
+			Vector2i(895, 0),
+			Vector2i(0, 1343),
+			Vector2i(895, 1343)
+		]:
+			if atlas_image.get_pixelv(corner).a > 0.05:
+				_fail("Service-building v2 atlas corners should remain transparent.")
+				return
+		for row in range(3):
+			for column in range(2):
+				var center := Vector2i(
+					column * 448 + 224,
+					row * 448 + 224
+				)
+				if atlas_image.get_pixelv(center).a < 0.50:
+					_fail("Each service-building v2 cell should contain visible art.")
+					return
 
 	var definitions: Array[Dictionary] = []
 	for building_id_variant in SERVICE_ART.keys():

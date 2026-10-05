@@ -24,6 +24,7 @@ var turnaround_jobs: Dictionary = {}
 var active_jobs := 0
 var service_analytics: Dictionary = {}
 var dispatch_retry_accumulator := 0.0
+var global_service_speed_multiplier := 1.0
 
 const DISPATCH_RETRY_INTERVAL := 0.25
 const ANALYTICS_SERVICE_TYPES: Array[String] = [
@@ -38,6 +39,14 @@ const ANALYTICS_SERVICE_TYPES: Array[String] = [
 
 func configure(grid: AirportGrid) -> void:
 	airport_grid = grid
+
+
+func set_global_service_speed_multiplier(value: float) -> void:
+	global_service_speed_multiplier = clampf(value, 1.0, 2.0)
+
+
+func get_global_service_speed_multiplier() -> float:
+	return global_service_speed_multiplier
 
 
 func request_turnaround(
@@ -762,7 +771,7 @@ func _dispatch_service(
 				"effective_service_speed",
 				station.get("service_speed", 1.0)
 			)
-		),
+		) * global_service_speed_multiplier,
 		0.1
 	)
 	var synergy_bonus_pct := maxi(

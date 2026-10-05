@@ -6,6 +6,9 @@ var progression_ready := false
 var legacy_airport := false
 var career_screen: AirportCareerScreen
 var career_pin: Button
+var mission_pass_screen: MissionPassScreen
+var mission_pin: Button
+var pending_mission_ad_id := ""
 var npc_director := NpcTrafficDirector.new()
 var deployed_owned: Dictionary = {}
 var deploying := false
@@ -13,6 +16,7 @@ var checkpoint_elapsed := 0.0
 var career_refresh_elapsed := 0.0
 var restoring_wallet := false
 var next_analytics_refresh_ms := 0
+var last_booster_signature := -1
 
 func _ready() -> void:
 	legacy_airport = ProfileStore.has_airport()
@@ -32,10 +36,29 @@ func _start_gameplay() -> void:
 		if not AirportProgressionStore.save_state(progression):
 			hud.set_operation_status("Cannot save airport progression. Check device storage.", "warning")
 			return
+	var stored_level := AirportProgressionRules.level_for_xp(int(progression.get("xp", 0)))
+	var mission_state_changed := MissionPassRules.ensure_state(
+		progression,
+		Time.get_unix_time_from_system(),
+		stored_level
+	)
+	var updated_level := AirportProgressionRules.level_for_xp(int(progression.get("xp", 0)))
+	var rollover_aero := MissionPassRules.aero_tokens_for_level_range(
+		stored_level,
+		updated_level
+	)
+	if rollover_aero > 0:
+		progression["aero_tokens"] = int(progression.get("aero_tokens", 0)) + rollover_aero
+		progression["gems"] = int(progression["aero_tokens"])
+		mission_state_changed = true
+	if mission_state_changed:
+		if not AirportProgressionStore.save_state(progression):
+			hud.set_operation_status("Mission progress could not be initialized safely.", "warning")
+			return
 	coins = int(progression.get("coins", coins))
-	gems = int(progression.get("gems", gems))
+	gems = int(progression.get("aero_tokens", progression.get("gems", gems)))
 	player_xp = int(progression.get("xp", 0))
-	player_level = AirportProgressionRules.level_for_xp(player_xp)
+	player_level = updated_level
 	progression_ready = true
 	npc_director.remaining = maxf(float(progression.get("npc_remaining", 90.0)), 0.0)
 	npc_director.last_npc = String(progression.get("npc_last", ""))
@@ -50,8 +73,20 @@ func _start_gameplay() -> void:
 	career_screen.aircraft_purchase_requested.connect(_purchase_career_aircraft)
 	career_screen.npc_toggle_requested.connect(_toggle_npc_traffic)
 	add_child(career_screen)
+	mission_pass_screen = MissionPassScreen.new()
+	mission_pass_screen.reroll_requested.connect(_on_mission_reroll_requested)
+	mission_pass_screen.pass_reward_claim_requested.connect(_on_pass_reward_claim_requested)
+	mission_pass_screen.claim_all_requested.connect(_on_pass_claim_all_requested)
+	mission_pass_screen.product_purchase_requested.connect(_on_mission_product_purchase_requested)
+	mission_pass_screen.booster_activate_requested.connect(_on_booster_activate_requested)
+	add_child(mission_pass_screen)
+	if rewarded_passenger_ad_bridge != null:
+		rewarded_passenger_ad_bridge.action_reward_granted.connect(_on_rewarded_action_completed)
+		rewarded_passenger_ad_bridge.action_unavailable.connect(_on_rewarded_action_unavailable)
 	_install_career_pin()
+	_apply_live_boosters(true)
 	_refresh_career_ui()
+	_refresh_mission_ui()
 	_drain_passenger_rewards()
 
 func _process(delta: float) -> void:
@@ -83,7 +118,9 @@ func _process(delta: float) -> void:
 		career_refresh_elapsed = 0.0
 		_deploy_reserve_aircraft()
 		_drain_passenger_rewards()
+		_apply_live_boosters()
 		_refresh_career_ui()
+		_refresh_mission_ui()
 
 func _notification(what: int) -> void:
 	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST]:
@@ -91,7 +128,7 @@ func _notification(what: int) -> void:
 			_save_checkpoint()
 
 func _install_career_pin() -> void:
-	# Replace the old static objective panel, without placing another overlay on top of it.
+	# Replace the old static objective with compact career + mission actions.
 	for child in hud.interface_root.get_children():
 		if not child is PanelContainer:
 			continue
@@ -99,11 +136,22 @@ func _install_career_pin() -> void:
 			if label is Label and label.text.begins_with("BUILD YOUR AIRPORT"):
 				child.remove_child(label)
 				label.queue_free()
+				child.offset_left = -430
+				var actions := HBoxContainer.new()
+				actions.add_theme_constant_override("separation", 6)
+				child.add_child(actions)
 				career_pin = Button.new()
 				career_pin.clip_text = true
-				career_pin.add_theme_font_size_override("font_size", 13)
+				career_pin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				career_pin.add_theme_font_size_override("font_size", 12)
 				career_pin.pressed.connect(_open_career)
-				child.add_child(career_pin)
+				actions.add_child(career_pin)
+				mission_pin = Button.new()
+				mission_pin.clip_text = true
+				mission_pin.custom_minimum_size.x = 155
+				mission_pin.add_theme_font_size_override("font_size", 12)
+				mission_pin.pressed.connect(_open_missions)
+				actions.add_child(mission_pin)
 				return
 
 func _spawn_aircraft_demos() -> void:
@@ -189,6 +237,20 @@ func _on_demo_aircraft_departed(aircraft: AircraftPrototype, label: String) -> v
 	progression["flight_sequence"] = sequence
 	aircraft.set_meta("career_flight_token", "flight:%s:%d" % [String(progression.get("airport_id", "")), sequence])
 	super._on_demo_aircraft_departed(aircraft, label)
+	var booster_profile := MissionBoosterRules.active_profile(
+		progression,
+		Time.get_unix_time_from_system()
+	)
+	var duration_multiplier := float(booster_profile.get("flight_duration", 1.0))
+	if duration_multiplier < 0.999:
+		aircraft.flight_remaining = maxf(
+			aircraft.flight_remaining * duration_multiplier,
+			1.0
+		)
+		hud.set_operation_status(
+			"%s departed • Tailwind active • travel time −10%%" % label,
+			"success"
+		)
 	_save_checkpoint()
 
 func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) -> void:
@@ -196,9 +258,33 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 	if token.is_empty() or (progression.get("seen_events", {}) as Dictionary).has(token):
 		return
 	var plan := aircraft.get_flight_plan()
+	var booster_profile := MissionBoosterRules.active_profile(
+		progression,
+		Time.get_unix_time_from_system()
+	)
+	var boosted_reward := false
+	var gold_multiplier := float(booster_profile.get("flight_gold", 1.0))
+	var xp_multiplier := float(booster_profile.get("flight_xp", 1.0))
+	if gold_multiplier > 1.001:
+		plan["coin_reward"] = int(round(float(plan.get("coin_reward", 0)) * gold_multiplier))
+		boosted_reward = true
+	if xp_multiplier > 1.001:
+		plan["xp_reward"] = int(round(float(plan.get("xp_reward", 0)) * xp_multiplier))
+		boosted_reward = true
+	if boosted_reward:
+		aircraft.assign_flight_plan(plan)
+	var boarded := aircraft.get_boarded_passengers()
+	var coins_before := coins
+	var xp_before := player_xp
 	super._apply_completed_flight_reward(aircraft, label)
 	AirportProgressionRules.record_event(progression, {"id": token, "kind": "flight_return",
 		"aircraft": aircraft.aircraft_type_id, "country": plan.get("country_code", ""), "visitor": false}, player_level)
+	_record_mission_event("flight", {
+		"passengers": boarded,
+		"coins": maxi(coins - coins_before, 0),
+		"xp": maxi(player_xp - xp_before, 0),
+		"country": String(plan.get("country_code", ""))
+	})
 	# A completed route is not an implicit order to charge passengers and fly it again.
 	aircraft.assign_flight_plan({})
 	aircraft.set_meta("passengers_paid", false)
@@ -206,6 +292,7 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 	_update_level()
 	_save_checkpoint()
 	_refresh_career_ui()
+	_refresh_mission_ui()
 
 func _on_world_map_flight_assignment_requested(aircraft: AircraftPrototype, destination_id: String) -> void:
 	if not is_instance_valid(aircraft) or not aircraft.can_change_flight_plan():
@@ -224,6 +311,7 @@ func _capture_state() -> Dictionary:
 	next["coins"] = coins
 	next["xp"] = player_xp
 	next["gems"] = gems
+	next["aero_tokens"] = gems
 	if is_instance_valid(passenger_economy):
 		next["passenger_balance"] = passenger_economy.passengers
 	next["npc_remaining"] = npc_director.remaining
@@ -259,6 +347,190 @@ func _career_snapshot() -> Dictionary:
 	return {"state": _capture_state(), "airport": _airport_career_snapshot(), "level": player_level,
 		"active_owned": deployed_owned.keys(), "npc_enabled": npc_director.enabled}
 
+func _mission_snapshot() -> Dictionary:
+	var state := _capture_state()
+	state.erase("aircraft_runtime")
+	state.erase("npc_remaining")
+	state.erase("passenger_balance")
+	var weekly: Array = (state.get("mission_pass", {}) as Dictionary).get("weekly", [])
+	var current_week := ""
+	if not weekly.is_empty():
+		current_week = String((weekly[weekly.size() - 1] as Dictionary).get("period_key", ""))
+	return {
+		"state": state,
+		"level": player_level,
+		"week_key": current_week,
+		"unix_time": float(int(Time.get_unix_time_from_system() / 60.0) * 60),
+		"rewarded_ad_connected": rewarded_passenger_ad_bridge != null and rewarded_passenger_ad_bridge.provider_connected
+	}
+
+func _refresh_mission_ui() -> void:
+	if mission_pass_screen == null or not progression_ready:
+		return
+	var changed := MissionPassRules.ensure_state(progression, Time.get_unix_time_from_system(), player_level)
+	if changed:
+		_save_checkpoint()
+	mission_pass_screen.set_snapshot(_mission_snapshot())
+	if mission_pin != null:
+		var claimable := MissionPassRules.claimable_count(progression)
+		var completed := MissionPassRules.completed_daily_count(progression)
+		mission_pin.text = "MISSIONS\n%d REWARD%s READY" % [claimable, "" if claimable == 1 else "S"] if claimable > 0 else "MISSIONS\nDAILY %d / 4" % completed
+		GameUIStyle.apply_button(mission_pin, "gold" if claimable > 0 else "nav", true)
+	hud.set_player_data(player_level, coins, gems)
+
+func _open_missions() -> void:
+	if career_screen != null:
+		career_screen.close_screen()
+	mission_pass_screen.open_screen(_mission_snapshot())
+
+func _record_mission_event(event_kind: String, payload: Dictionary) -> void:
+	if not progression_ready:
+		return
+	MissionPassRules.record_event(
+		progression,
+		event_kind,
+		payload,
+		Time.get_unix_time_from_system(),
+		player_level
+	)
+
+func _on_mission_reroll_requested(mission_id: String, use_ad: bool) -> void:
+	if use_ad:
+		if rewarded_passenger_ad_bridge == null or not rewarded_passenger_ad_bridge.provider_connected:
+			hud.set_operation_status("Rewarded mission reroll is unavailable until an ad provider is connected.", "warning")
+			return
+		pending_mission_ad_id = mission_id
+		rewarded_passenger_ad_bridge.request_ad_for("mission_reroll")
+		return
+	if not MissionPassRules.reroll_daily(
+		progression,
+		mission_id,
+		false,
+		Time.get_unix_time_from_system(),
+		player_level
+	):
+		hud.set_operation_status("Daily mission cannot be rerolled.", "warning")
+		return
+	_save_checkpoint()
+	_refresh_mission_ui()
+
+func _on_rewarded_action_completed(action_id: String) -> void:
+	if action_id != "mission_reroll":
+		return
+	var mission_id := pending_mission_ad_id
+	pending_mission_ad_id = ""
+	if mission_id.is_empty():
+		return
+	if MissionPassRules.reroll_daily(
+		progression,
+		mission_id,
+		true,
+		Time.get_unix_time_from_system(),
+		player_level
+	):
+		_save_checkpoint()
+		_refresh_mission_ui()
+		hud.set_operation_status("Daily mission rerolled after rewarded ad.", "success")
+
+func _on_rewarded_action_unavailable(action_id: String) -> void:
+	if action_id != "mission_reroll":
+		return
+	pending_mission_ad_id = ""
+	hud.set_operation_status("Rewarded mission reroll is unavailable right now.", "warning")
+
+func _on_pass_reward_claim_requested(tier_number: int, track: String) -> void:
+	var next := MissionPassRules.claim_pass_reward(_capture_state(), tier_number, track)
+	_apply_claimed_mission_state(next, "Airport Pass reward claimed.")
+
+func _on_pass_claim_all_requested() -> void:
+	var next := MissionPassRules.claim_all_available(_capture_state())
+	_apply_claimed_mission_state(next, "Available Airport Pass rewards claimed.")
+
+func _apply_claimed_mission_state(next: Dictionary, success_message: String) -> void:
+	if next.is_empty():
+		return
+	if not AirportProgressionStore.save_state(next):
+		hud.set_operation_status("Reward remains available because progress could not be saved.", "warning")
+		return
+	progression = next
+	coins = int(next.get("coins", coins))
+	player_xp = int(next.get("xp", player_xp))
+	gems = int(next.get("aero_tokens", next.get("gems", gems)))
+	_update_level()
+	_drain_passenger_rewards()
+	_refresh_career_ui()
+	_refresh_mission_ui()
+	hud.set_operation_status(success_message, "success")
+
+func _on_booster_activate_requested(booster_id: String) -> void:
+	var next := _capture_state()
+	if not MissionBoosterRules.activate(
+		next,
+		booster_id,
+		Time.get_unix_time_from_system()
+	):
+		hud.set_operation_status("That booster is not available in your inventory.", "warning")
+		return
+	if not AirportProgressionStore.save_state(next):
+		hud.set_operation_status("Booster was not consumed because progress could not be saved.", "warning")
+		return
+	progression = next
+	_apply_live_boosters(true)
+	_refresh_mission_ui()
+	var definition := MissionBoosterRules.definition(booster_id)
+	hud.set_operation_status(
+		"%s active • 2 hours added" % String(definition.get("title", "Booster")),
+		"success"
+	)
+
+
+func _apply_live_boosters(force: bool = false) -> void:
+	if not progression_ready:
+		return
+	var profile := MissionBoosterRules.active_profile(
+		progression,
+		Time.get_unix_time_from_system()
+	)
+	var signature := hash(profile)
+	if not force and signature == last_booster_signature:
+		return
+	last_booster_signature = signature
+	if ground_services != null:
+		ground_services.set_global_service_speed_multiplier(
+			float(profile.get("ground_service_speed", 1.0))
+		)
+	if passenger_economy != null:
+		passenger_economy.set_global_production_multiplier(
+			float(profile.get("passenger_production", 1.0))
+		)
+
+
+func _on_mission_product_purchase_requested(product_id: String) -> void:
+	var product := MissionPassCatalog.product(product_id)
+	if product.is_empty():
+		return
+	hud.set_operation_status(
+		"%s is configured at %s. Platform billing must confirm the purchase before rewards are granted." % [
+			String(product.get("title", "Product")),
+			String(product.get("price_label", ""))
+		],
+		"warning"
+	)
+
+func grant_verified_mission_product(product_id: String) -> bool:
+	# Billing adapters call this only after platform-side purchase verification.
+	MissionPassRules.ensure_state(progression, Time.get_unix_time_from_system(), player_level)
+	var next := MissionPassRules.grant_verified_product(_capture_state(), product_id)
+	if next.is_empty() or not AirportProgressionStore.save_state(next):
+		return false
+	progression = next
+	coins = int(next.get("coins", coins))
+	player_xp = int(next.get("xp", player_xp))
+	gems = int(next.get("aero_tokens", next.get("gems", gems)))
+	_refresh_career_ui()
+	_refresh_mission_ui()
+	return true
+
 func _refresh_career_ui() -> void:
 	if career_screen == null or not progression_ready:
 		return
@@ -277,6 +549,8 @@ func _refresh_career_ui() -> void:
 	hud.set_player_data(player_level, coins, gems)
 
 func _open_career() -> void:
+	if mission_pass_screen != null:
+		mission_pass_screen.close_screen()
 	career_screen.open_screen(_career_snapshot())
 
 func _claim_career_reward(quest_id: String) -> void:
@@ -328,8 +602,16 @@ func _purchase_career_aircraft(aircraft_id: String) -> void:
 func _update_level() -> void:
 	var old_level := player_level
 	player_level = AirportProgressionRules.level_for_xp(player_xp)
-	if player_level != old_level:
-		hud.set_operation_status("AIRPORT LEVEL %d • new aircraft and buildings may be available" % player_level, "success")
+	if player_level > old_level:
+		var aero_awarded := MissionPassRules.aero_tokens_for_level_range(
+			old_level,
+			player_level
+		)
+		if aero_awarded > 0:
+			gems += aero_awarded
+			progression["aero_tokens"] = gems
+			progression["gems"] = gems
+		hud.set_operation_status("AIRPORT LEVEL %d • +%d Aero Tokens • new unlocks may be available" % [player_level, aero_awarded], "success")
 	if world_map != null:
 		world_map.player_level = player_level
 	if fleet_screen != null:
@@ -437,6 +719,7 @@ func _on_social_aircraft_departed(aircraft: AircraftPrototype, label: String, vi
 			var reward := {"coins": 50 + seats * 2, "xp": 6 + ceili(float(seats) / 8.0), "resources_won": [], "relationship": "npc"}
 			coins += int(reward["coins"])
 			player_xp += int(reward["xp"])
+			_record_mission_event("npc_service", {"coins": int(reward["coins"]), "xp": int(reward["xp"])})
 			social_airport_service.complete_visit(visit_id, reward, {})
 			hud.set_operation_status("%s serviced • %d XP • NPCs do not generate friendship or remote-owner rewards" % [label, int(reward["xp"])], "success")
 		social_visitor_aircraft.erase(visit_id)
@@ -454,6 +737,7 @@ func _on_social_aircraft_departed(aircraft: AircraftPrototype, label: String, vi
 	_update_level()
 	_save_checkpoint()
 	_refresh_career_ui()
+	_refresh_mission_ui()
 
 func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:
 	var filtered := snapshot.duplicate(true)
@@ -471,6 +755,8 @@ func _on_social_snapshot_changed(snapshot: Dictionary) -> void:
 func _on_navigation_requested(tab: String) -> void:
 	if career_screen != null:
 		career_screen.close_screen()
+	if mission_pass_screen != null:
+		mission_pass_screen.close_screen()
 	super._on_navigation_requested(tab)
 	if tab in ["social", "alliance"] and social_airport_service != null:
 		social_airport_screen.set_snapshot(_social_only_snapshot(social_airport_service.get_snapshot()))
@@ -504,6 +790,13 @@ func _on_air_traffic_upgrade_requested(uid: int) -> void:
 func _on_event_shop_coins_granted(amount: int) -> void:
 	super._on_event_shop_coins_granted(amount)
 	_save_checkpoint()
+
+func _on_passive_passengers_generated(amount: int) -> void:
+	super._on_passive_passengers_generated(amount)
+	if amount <= 0:
+		return
+	_record_mission_event("passive_passengers", {"amount": amount})
+	_refresh_mission_ui()
 
 
 func _refresh_operations_analytics() -> void:

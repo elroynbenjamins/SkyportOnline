@@ -10,6 +10,7 @@ var capacity := 0
 var production_per_minute := 0.0
 var base_production_per_minute := 0.0
 var synergy_bonus_per_minute := 0.0
+var global_production_multiplier := 1.0
 var persist_accumulator := 0.0
 
 
@@ -48,6 +49,7 @@ func refresh_building_stats() -> void:
 	base_production_per_minute = 0.0
 	production_per_minute = 0.0
 	synergy_bonus_per_minute = 0.0
+	var raw_production_per_minute := 0.0
 
 	for building in airport_grid.get_passenger_generator_buildings():
 		var building_id := String(building.get("definition_id", ""))
@@ -68,11 +70,15 @@ func refresh_building_stats() -> void:
 		)
 		capacity += int(stats.get("storage", 0))
 		base_production_per_minute += base_rate
-		production_per_minute += base_rate * multiplier
+		raw_production_per_minute += base_rate * multiplier
 
 	synergy_bonus_per_minute = maxf(
-		production_per_minute - base_production_per_minute,
+		raw_production_per_minute - base_production_per_minute,
 		0.0
+	)
+	production_per_minute = (
+		raw_production_per_minute
+		* global_production_multiplier
 	)
 	passengers = minf(passengers, float(capacity))
 	_emit_changed()
@@ -111,6 +117,18 @@ func get_passengers() -> int:
 
 func get_capacity() -> int:
 	return capacity
+
+
+func set_global_production_multiplier(value: float) -> void:
+	var next := clampf(value, 1.0, 2.0)
+	if is_equal_approx(global_production_multiplier, next):
+		return
+	global_production_multiplier = next
+	refresh_building_stats()
+
+
+func get_global_production_multiplier() -> float:
+	return global_production_multiplier
 
 
 func get_production_per_minute() -> float:

@@ -147,7 +147,7 @@ func _build_interface() -> void:
 	top_row.add_child(coins_label)
 
 	gems_label = Label.new()
-	gems_label.custom_minimum_size = Vector2(92, 0)
+	gems_label.custom_minimum_size = Vector2(140, 0)
 	gems_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	gems_label.add_theme_font_size_override("font_size", 19)
 	gems_label.add_theme_color_override(
@@ -870,7 +870,7 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 	current_gems = gems
 	level_label.text = "LV %d" % level
 	coins_label.text = "🪙 %s" % _format_number(coins)
-	gems_label.text = "◆ %s" % _format_number(gems)
+	gems_label.text = "✦ AERO %s" % _format_number(gems)
 	_update_catalog_buttons()
 
 	if (

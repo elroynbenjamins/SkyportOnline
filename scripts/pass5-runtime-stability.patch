@@ -1,0 +1,282 @@
+--- a/src/build/BuildingCatalog.gd
++++ b/src/build/BuildingCatalog.gd
+@@ -1,5 +1,8 @@
+ class_name BuildingCatalog
+ extends RefCounted
++
++# Catalog definitions are immutable; return copies so callers cannot alter the cache.
++static var _definitions_by_id: Dictionary = {}
+ 
+ 
+ static func all() -> Array[Dictionary]:
+@@ -455,10 +458,12 @@
+ 
+ 
+ static func get_definition(building_id: String) -> Dictionary:
+-	for definition in all():
+-		if String(definition["id"]) == building_id:
+-			return definition.duplicate(true)
+-	return {}
++	if _definitions_by_id.is_empty():
++		for definition in all():
++			_definitions_by_id[String(definition["id"])] = definition
++	if not _definitions_by_id.has(building_id):
++		return {}
++	return (_definitions_by_id[building_id] as Dictionary).duplicate(true)
+ 
+ 
+ static func get_menu_definitions(
+--- a/src/ui/GameUIStyle.gd
++++ b/src/ui/GameUIStyle.gd
+@@ -134,6 +134,10 @@
+ ) -> void:
+ 	if button == null:
+ 		return
++	var style_key := kind + (":compact" if compact else ":full")
++	if String(button.get_meta("game_style_key", "")) == style_key:
++		return
++	button.set_meta("game_style_key", style_key)
+ 
+ 	var normal_bg := Color("173643")
+ 	var normal_border := Color("3c6574")
+--- a/src/ui/HUD.gd
++++ b/src/ui/HUD.gd
+@@ -251,6 +251,9 @@
+ 	airside_status_label = Label.new()
+ 	operation_status_label = Label.new()
+ 	atc_status_label = Label.new()
++	for legacy_label in [airside_status_label, operation_status_label, atc_status_label]:
++		legacy_label.visible = false
++		root.add_child(legacy_label)
+ 
+ 	status_details = {
+ 		"airside": {
+--- a/src/services/TaxiTrafficController.gd
++++ b/src/services/TaxiTrafficController.gd
+@@ -69,8 +69,11 @@
+ 			continue
+ 
+ 		var reservation: Dictionary = reservations[other_id]
+-		var other := reservation.get("aircraft") as AircraftPrototype
+-		if other == null or not is_instance_valid(other):
++		var other_value = reservation.get("aircraft")
++		if not is_instance_valid(other_value):
++			continue
++		var other := other_value as AircraftPrototype
++		if other == null:
+ 			continue
+ 
+ 		var other_clearance := clearance_for_aircraft(other)
+@@ -113,8 +116,10 @@
+ 	# Avoid entering a waypoint already occupied by a taxiing aircraft that
+ 	# has not requested its next segment yet.
+ 	for other_variant in registered.values():
++		if not is_instance_valid(other_variant):
++			continue
+ 		var other := other_variant as AircraftPrototype
+-		if other == null or not is_instance_valid(other):
++		if other == null:
+ 			continue
+ 		if other == aircraft:
+ 			continue
+@@ -223,19 +228,15 @@
+ 
+ 
+ func _cleanup_invalid() -> void:
+-	for key_variant in reservations.keys():
+-		var key := int(key_variant)
++	# Never cast a stale Object reference: checking after `as AircraftPrototype`
++	# is too late in GDScript and aborts cleanup, leaving the taxi queue blocked.
++	for key in reservations.keys():
+ 		var reservation: Dictionary = reservations[key]
+-		var aircraft := reservation.get(
+-			"aircraft"
+-		) as AircraftPrototype
+-		if aircraft == null or not is_instance_valid(aircraft):
++		var aircraft = reservation.get("aircraft")
++		if not is_instance_valid(aircraft):
+ 			reservations.erase(key)
+-
+-	for key_variant in registered.keys():
+-		var key := int(key_variant)
+-		var aircraft := registered[key] as AircraftPrototype
+-		if aircraft == null or not is_instance_valid(aircraft):
++	for key in registered.keys():
++		if not is_instance_valid(registered[key]):
+ 			registered.erase(key)
+ 
+ 
+--- a/src/aircraft/AircraftPrototype.gd
++++ b/src/aircraft/AircraftPrototype.gd
+@@ -1219,3 +1219,8 @@
+ 	draw_set_transform(Vector2(2, 4), 0.0, Vector2(1.0, 0.45))
+ 	draw_circle(Vector2.ZERO, 20.0, Color(0, 0, 0, 0.25))
+ 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
++
++
++func _exit_tree() -> void:
++	if is_instance_valid(taxi_traffic_controller):
++		taxi_traffic_controller.unregister_aircraft(self)
+--- a/src/main/ProgressionMain.gd
++++ b/src/main/ProgressionMain.gd
+@@ -12,6 +12,7 @@
+ var checkpoint_elapsed := 0.0
+ var career_refresh_elapsed := 0.0
+ var restoring_wallet := false
++var next_analytics_refresh_ms := 0
+ 
+ func _ready() -> void:
+ 	legacy_airport = ProfileStore.has_airport()
+@@ -210,6 +211,10 @@
+ 	if not is_instance_valid(aircraft) or not aircraft.can_change_flight_plan():
+ 		super._on_world_map_flight_assignment_requested(aircraft, destination_id)
+ 		return
++	var destination := DestinationCatalog.get_destination(destination_id)
++	if destination.is_empty() or player_level < int(destination.get("unlock_level", 1)) or not FlightRules.can_fly(aircraft.get_aircraft_profile(), destination):
++		super._on_world_map_flight_assignment_requested(aircraft, destination_id)
++		return
+ 	aircraft.set_meta("passengers_paid", false)
+ 	super._on_world_map_flight_assignment_requested(aircraft, destination_id)
+ 	_save_checkpoint()
+@@ -303,6 +308,8 @@
+ 	restoring_wallet = true
+ 	passenger_economy.set_passengers(float(next["passenger_balance"]))
+ 	restoring_wallet = false
++	# The change signal may immediately board a queued aircraft; save that debit too.
++	_save_checkpoint()
+ 
+ func _purchase_career_aircraft(aircraft_id: String) -> void:
+ 	var next := AirportProgressionRules.purchase_aircraft(_capture_state(), aircraft_id, player_level)
+@@ -497,3 +504,41 @@
+ func _on_event_shop_coins_granted(amount: int) -> void:
+ 	super._on_event_shop_coins_granted(amount)
+ 	_save_checkpoint()
++
++
++func _refresh_operations_analytics() -> void:
++	# Recompute recommendations at most once per 750ms, not for every vehicle/ATC signal.
++	var now := Time.get_ticks_msec()
++	if now < next_analytics_refresh_ms:
++		return
++	next_analytics_refresh_ms = now + 750
++	super._refresh_operations_analytics()
++
++
++func _assign_arrival_if_possible(aircraft: AircraftPrototype, label: String) -> bool:
++	if not is_instance_valid(aircraft) or not _is_npc(aircraft):
++		return super._assign_arrival_if_possible(aircraft, label)
++	# Keep the scheduler's infrastructure guarantee during actual runway selection.
++	# A nearer, unserviced stand must not win over the eligible stand we found.
++	var eligible_stands := NpcTrafficDirector.free_ready_stands(airport_grid, aircraft.aircraft_size, stand_occupancy)
++	var candidates: Array[Dictionary] = []
++	for option in airport_grid.get_arrival_route_options(aircraft.aircraft_size):
++		if eligible_stands.has(int(option.get("stand_uid", -1))):
++			var route: PackedVector2Array = option.get("route", PackedVector2Array())
++			if route.size() >= 4:
++				candidates.append(option)
++	if candidates.is_empty():
++		return false
++	var selected := runway_dispatcher.select_best_runway_option(candidates, "arrival")
++	if selected.is_empty():
++		return false
++	var stand_uid := int(selected.get("stand_uid", -1))
++	var runway_uid := int(selected.get("runway_uid", -1))
++	if stand_uid < 0 or runway_uid < 0:
++		return false
++	runway_dispatcher.record_assignment_decision(candidates, selected, "arrival")
++	stand_occupancy[stand_uid] = aircraft
++	aircraft.set_arrival_route(selected["route"], stand_uid, runway_uid)
++	runway_dispatcher.request_arrival(aircraft, label)
++	_refresh_operations_analytics()
++	return true
+--- a/src/progression/AirportProgressionStore.gd
++++ b/src/progression/AirportProgressionStore.gd
+@@ -7,7 +7,7 @@
+ 	return "user://skyport_progression_%s.cfg" % airport_id.sha256_text().left(24)
+ 
+ static func has_state(airport_id: String) -> bool:
+-	return not airport_id.is_empty() and FileAccess.file_exists(save_path(airport_id))
++	return not airport_id.is_empty() and (FileAccess.file_exists(save_path(airport_id)) or FileAccess.file_exists(save_path(airport_id) + ".bak"))
+ 
+ static func load_state(airport_id: String) -> Dictionary:
+ 	if airport_id.is_empty():
+--- a/tests/career_gameplay_integration_test.gd
++++ b/tests/career_gameplay_integration_test.gd
+@@ -26,7 +26,9 @@
+ 		return
+ 	var profile := ProfileStore.create_guest_airport("Career Test", "CAR", "NL")
+ 	airport_id = String(profile.get("airport_id", ""))
++	print("Starting actual airport gameplay integration")
+ 	main._on_airport_created(profile)
++	main.airport_setup.close()
+ 	await process_frame
+ 	check(main.gameplay_started and main.progression_ready, "Guest creation must start the real game.")
+ 	check(main.player_level == 1, "A new airport starts career progression at level one.")
+@@ -45,23 +47,23 @@
+ 	main.runway_dispatcher.set_process(false)
+ 	main.taxi_traffic.set_process(false)
+ 	var finished := false
+-	for step in range(16000):
+-		main._process(0.05)
+-		main.passenger_economy._process(0.05)
+-		main.ground_services._process(0.05)
+-		main.runway_dispatcher._process(0.05)
++	for step in range(8000):
++		main._process(0.10)
++		main.passenger_economy._process(0.10)
++		main.ground_services._process(0.10)
++		main.runway_dispatcher._process(0.10)
+ 		if main.taxi_traffic.has_method("_process"):
+-			main.taxi_traffic._process(0.05)
++			main.taxi_traffic._process(0.10)
+ 		var aircraft: Array = main.aircraft_demos.duplicate()
+ 		aircraft.append_array(main.social_visitor_aircraft.values())
+ 		for plane in aircraft:
+ 			if is_instance_valid(plane) and not plane.is_queued_for_deletion():
+ 				plane.set_process(false)
+-				plane._process(0.05)
++				plane._process(0.10)
+ 		for vehicle in main.ground_services.get_children():
+ 			if is_instance_valid(vehicle) and not vehicle.is_queued_for_deletion() and vehicle.has_method("_process"):
+ 				vehicle.set_process(false)
+-				vehicle._process(0.05)
++				vehicle._process(0.10)
+ 		if step % 30 == 0:
+ 			await process_frame
+ 		var first_progress := int((main.progression.get("progress", {}) as Dictionary).get("first_circuit", 0))
+--- a/tests/career_progression_rules_test.gd
++++ b/tests/career_progression_rules_test.gd
+@@ -86,6 +86,33 @@
+ 		ledger = FriendshipRules.record_completion(ledger, {"contact_id": "friend-1", "visit_id": "day-two-%d" % index, "relationship": "friend"}, "2026-10-06")
+ 	check(int(FriendshipRules.status(ledger["friend-1"])["rank"]) == 2, "Ten visits should earn friendship rank two.")
+ 
++	# Cached definitions remain isolated from caller mutations.
++	var definition_copy := BuildingCatalog.get_definition("small_stand")
++	definition_copy["cost"] = -1
++	check(int(BuildingCatalog.get_definition("small_stand")["cost"]) == 4500, "Catalog cache must return independent definitions.")
++	var styled_button := Button.new()
++	GameUIStyle.apply_button(styled_button, "primary", true)
++	var first_style := styled_button.get_theme_stylebox("normal")
++	GameUIStyle.apply_button(styled_button, "primary", true)
++	check(first_style == styled_button.get_theme_stylebox("normal"), "Unchanged button style must not allocate a fresh theme.")
++	GameUIStyle.apply_button(styled_button, "gold", true)
++	check(first_style != styled_button.get_theme_stylebox("normal"), "Changed button style must still apply.")
++	styled_button.free()
++	var traffic := TaxiTrafficController.new()
++	root.add_child(traffic)
++	var departing_visitor := AircraftPrototype.new()
++	root.add_child(departing_visitor)
++	departing_visitor.configure_taxi_traffic(traffic)
++	var departed_id := departing_visitor.get_instance_id()
++	departing_visitor.free()
++	check(not traffic.registered.has(departed_id), "Removed visitors must unregister from taxi traffic.")
++	var stale_plane := AircraftPrototype.new()
++	traffic.register_aircraft(stale_plane)
++	stale_plane.free()
++	traffic._cleanup_invalid()
++	check(traffic.registered.is_empty(), "Stale references must be checked before casting during taxi cleanup.")
++	traffic.queue_free()
++
+ 	var director := NpcTrafficDirector.new()
+ 	director.rng.seed = 2026
+ 	check(director.eligible(1, ["S"]).size() == 1, "Level one NPC pool should contain only the Pico pilot.")

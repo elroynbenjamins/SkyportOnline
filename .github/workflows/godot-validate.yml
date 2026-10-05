@@ -130,6 +130,9 @@ jobs:
       - name: Test airport expansion districts and visuals
         run: timeout 20s godot --headless --path . --script res://tests/airport_expansion_district_test.gd
 
+      - name: Test airport terrain visuals
+        run: timeout 20s godot --headless --path . --script res://tests/terrain_visual_test.gd
+
 
       - name: Test aircraft taxi traffic
         run: timeout 20s godot --headless --path . --script res://tests/taxi_traffic_test.gd

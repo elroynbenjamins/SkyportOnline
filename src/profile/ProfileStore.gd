@@ -47,6 +47,15 @@ static func load_profile() -> Dictionary:
 	if stored_parcels is Array:
 		owned_parcels = stored_parcels.duplicate(true)
 
+	var airport_storage: Array = []
+	var stored_airport_storage = config.get_value(
+		"profile",
+		"airport_storage",
+		[]
+	)
+	if stored_airport_storage is Array:
+		airport_storage = stored_airport_storage.duplicate(true)
+
 	var runway_strategies := {}
 	var stored_runway_strategies = config.get_value(
 		"profile",
@@ -108,6 +117,7 @@ static func load_profile() -> Dictionary:
 		"building_upgrades": building_upgrades,
 		"airport_layout": airport_layout,
 		"owned_parcels": owned_parcels,
+		"airport_storage": airport_storage,
 		"runway_strategies": runway_strategies,
 		"aircraft_mastery_hours": aircraft_mastery,
 		"economy_stats": economy_stats,
@@ -158,6 +168,7 @@ static func create_guest_airport(
 		"building_upgrades": {},
 		"airport_layout": [],
 		"owned_parcels": [],
+		"airport_storage": [],
 		"runway_strategies": {},
 		"aircraft_mastery_hours": {},
 		"economy_stats": {},
@@ -198,7 +209,8 @@ static func add_resource_drops(drops: Array) -> Dictionary:
 
 static func save_airport_layout(
 	layout: Array,
-	owned_parcels: Array
+	owned_parcels: Array,
+	airport_storage: Array = []
 ) -> Dictionary:
 	var profile := load_profile()
 	if profile.is_empty():
@@ -206,6 +218,7 @@ static func save_airport_layout(
 
 	profile["airport_layout"] = layout.duplicate(true)
 	profile["owned_parcels"] = owned_parcels.duplicate(true)
+	profile["airport_storage"] = airport_storage.duplicate(true)
 	if not _save_profile(profile):
 		return {}
 	return profile

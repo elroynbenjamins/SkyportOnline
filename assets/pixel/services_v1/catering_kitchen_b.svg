@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="192" viewBox="0 0 256 192" shape-rendering="crispEdges"><g transform="translate(256 0) scale(-1 1)"><g stroke="#263a46" stroke-width="4" stroke-linejoin="miter">
+      <polygon fill="#87989d" points="25,129 112,86 228,129 139,178"/>
+      <polygon fill="#eadfd2" points="62,94 132,60 197,88 126,124"/>
+      <polygon fill="#c69470" points="62,94 126,124 126,158 62,128"/>
+      <polygon fill="#a87657" points="126,124 197,88 197,123 126,158"/>
+      <polygon fill="#edf1ee" points="72,85 132,56 187,80 126,111"/>
+      <rect fill="#5a463b" x="71" y="107" width="22" height="27"/>
+      <rect fill="#5a463b" x="98" y="120" width="22" height="27"/>
+      <rect fill="#f0c36b" x="136" y="116" width="18" height="12"/>
+      <rect fill="#f0c36b" x="160" y="104" width="18" height="12"/><rect fill="#f2c56b" x="146" y="134" width="31" height="18"/><rect fill="#ecf2ee" x="153" y="137" width="17" height="7"/><rect fill="#6f7f83" x="118" y="61" width="11" height="22"/><rect fill="#8e9ea2" x="149" y="57" width="12" height="24"/>
+      <circle fill="#4d8f48" cx="45" cy="139" r="12"/><circle fill="#68aa58" cx="40" cy="134" r="8"/>
+      <circle fill="#4d8f48" cx="211" cy="139" r="12"/><circle fill="#68aa58" cx="216" cy="134" r="8"/></g></g></svg>

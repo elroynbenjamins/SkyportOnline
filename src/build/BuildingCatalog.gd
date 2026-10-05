@@ -23,7 +23,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/runway_short.svg", "res://assets/pixel/airport_v1/runway_short_b.svg"]),
 			"world_sprite_size": Vector2(310, 145),
-			"world_sprite_offset": Vector2(0, -5)
+			"world_sprite_offsets": [Vector2(0, 34), Vector2(0, 34)],
+			"world_sprite_offset": Vector2(0, 34)
 		},
 		{
 			"id": "small_stand",
@@ -213,8 +214,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/cleaning_center.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/cleaning_center.svg", "res://assets/pixel/airport_v1/cleaning_center_b.svg"]),
 			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
-			"world_sprite_offset": Vector2(0, -45),
+			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
+			"world_sprite_offset": Vector2(0, -16),
 			"service": "cleaning",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -266,8 +267,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/baggage_depot.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/baggage_depot.svg", "res://assets/pixel/airport_v1/baggage_depot_b.svg"]),
 			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
-			"world_sprite_offset": Vector2(0, -45),
+			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
+			"world_sprite_offset": Vector2(0, -16),
 			"service": "cargo",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -289,8 +290,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/catering_kitchen.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/catering_kitchen.svg", "res://assets/pixel/airport_v1/catering_kitchen_b.svg"]),
 			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
-			"world_sprite_offset": Vector2(0, -45),
+			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
+			"world_sprite_offset": Vector2(0, -16),
 			"service": "catering",
 			"service_speed": 1.30,
 			"vehicle_capacity": 2
@@ -312,8 +313,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/tow_operations.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/tow_operations.svg", "res://assets/pixel/airport_v1/tow_operations_b.svg"]),
 			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
-			"world_sprite_offset": Vector2(0, -45),
+			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
+			"world_sprite_offset": Vector2(0, -16),
 			"service": "pushback",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2
@@ -333,8 +334,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/atc_tower.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/atc_tower.svg", "res://assets/pixel/airport_v1/atc_tower_b.svg"]),
 			"world_sprite_size": Vector2(210, 240),
-			"world_sprite_offsets": [Vector2(0, -104), Vector2(0, -101)],
-			"world_sprite_offset": Vector2(0, -104),
+			"world_sprite_offsets": [Vector2(0, -50), Vector2(0, -44)],
+			"world_sprite_offset": Vector2(0, -50),
 			"air_traffic_control": true
 		},
 		{
@@ -411,8 +412,9 @@ static func all() -> Array[Dictionary]:
 			"vehicle_capacity": 2,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_rapid.svg", "res://assets/pixel/airport_v1/fuel_rapid_b.svg"]),
-			"world_sprite_size": Vector2(160, 124),
-			"world_sprite_offset": Vector2(0, -38)
+			"world_sprite_size": Vector2(224, 187),
+			"world_sprite_offsets": [Vector2(0, -25), Vector2(0, -21)],
+			"world_sprite_offset": Vector2(0, -25)
 		},
 		{
 			"id": "medium_stand",
@@ -428,8 +430,9 @@ static func all() -> Array[Dictionary]:
 			"description": "Larger turnaround stand for small and medium aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/stand_small.svg", "res://assets/pixel/airport_v1/stand_small_b.svg"]),
-			"world_sprite_size": Vector2(165, 132),
-			"world_sprite_offset": Vector2(0, -31)
+			"world_sprite_size": Vector2(270, 162),
+			"world_sprite_offsets": [Vector2(0, 6), Vector2(0, 2)],
+			"world_sprite_offset": Vector2(0, 6)
 		},
 		{
 			"id": "regional_fuel",
@@ -450,8 +453,9 @@ static func all() -> Array[Dictionary]:
 			"vehicle_capacity": 2,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_basic.svg", "res://assets/pixel/airport_v1/fuel_basic_b.svg"]),
-			"world_sprite_size": Vector2(184, 145),
-			"world_sprite_offset": Vector2(0, -42)
+			"world_sprite_size": Vector2(280, 233),
+			"world_sprite_offsets": [Vector2(0, -23), Vector2(0, -18)],
+			"world_sprite_offset": Vector2(0, -23)
 		},
 		{
 			"id": "regional_runway",
@@ -468,7 +472,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/runway_short.svg", "res://assets/pixel/airport_v1/runway_short_b.svg"]),
 			"world_sprite_size": Vector2(430, 202),
-			"world_sprite_offset": Vector2(0, -8)
+			"world_sprite_offsets": [Vector2(0, 51), Vector2(0, 51)],
+			"world_sprite_offset": Vector2(0, 51)
 		},
 		{
 			"id": "autumn_event_flag",
@@ -549,8 +554,9 @@ static func all() -> Array[Dictionary]:
 			"vehicle_capacity": 3,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_rapid.svg", "res://assets/pixel/airport_v1/fuel_rapid_b.svg"]),
-			"world_sprite_size": Vector2(220, 165),
-			"world_sprite_offset": Vector2(0, -48)
+			"world_sprite_size": Vector2(330, 275),
+			"world_sprite_offsets": [Vector2(0, -27), Vector2(0, -21)],
+			"world_sprite_offset": Vector2(0, -27)
 		}
 	]
 

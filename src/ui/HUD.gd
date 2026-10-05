@@ -296,7 +296,7 @@ func _build_expansion_banner(root: Control) -> void:
 	expansion_banner.offset_left = 360
 	expansion_banner.offset_top = 82
 	expansion_banner.offset_right = -360
-	expansion_banner.offset_bottom = 142
+	expansion_banner.offset_bottom = 158
 	expansion_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner.visible = false
 	root.add_child(expansion_banner)
@@ -341,6 +341,8 @@ func _build_expansion_banner(root: Control) -> void:
 	expansion_banner_detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner_detail.text = "New land unlocked"
 	expansion_banner_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	expansion_banner_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	expansion_banner_detail.max_lines_visible = 2
 	expansion_banner_detail.add_theme_font_size_override(
 		"font_size",
 		12
@@ -353,7 +355,7 @@ func _build_context_panel(root: Control) -> void:
 	parcel_panel = PanelContainer.new()
 	parcel_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	parcel_panel.offset_left = 12
-	parcel_panel.offset_top = -154
+	parcel_panel.offset_top = -180
 	parcel_panel.offset_right = -450
 	parcel_panel.offset_bottom = -82
 	root.add_child(parcel_panel)
@@ -380,7 +382,7 @@ func _build_context_panel(root: Control) -> void:
 	parcel_text.add_child(parcel_requirements)
 
 	purchase_button = Button.new()
-	purchase_button.custom_minimum_size = Vector2(210, 74)
+	purchase_button.custom_minimum_size = Vector2(210, 92)
 	purchase_button.text = "SELECT LAND"
 	purchase_button.disabled = true
 	purchase_button.pressed.connect(_on_purchase_pressed)

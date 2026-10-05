@@ -149,6 +149,26 @@ static func apply_panel(
 				"panel",
 				panel(Color("081c25"), Color("2e5c6b"), 10, 1, false)
 			)
+		"screen_top":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("0b2935", 0.99), Color("4b8191"), 15, 1, true)
+			)
+		"screen_section":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("0b222c", 0.985), Color("315866"), 13, 1, false)
+			)
+		"screen_focus":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("102f3b", 0.99), Color("62c7dd"), 14, 2, true)
+			)
+		"reward_tile":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("122c35"), Color("4d7988"), 11, 1, false)
+			)
 		"toast_success":
 			control.add_theme_stylebox_override(
 				"panel",
@@ -268,6 +288,24 @@ static func apply_button(
 			hover_bg = Color("18242a")
 			pressed_bg = Color("18242a")
 			pressed_border = Color("34464d")
+		"screen_tab":
+			normal_bg = Color("0d2631")
+			normal_border = Color("2b4d59")
+			hover_bg = Color("173b48")
+			pressed_bg = Color("194653")
+			pressed_border = COLOR_ACCENT
+		"screen_tab_selected":
+			normal_bg = Color("1a5363")
+			normal_border = Color("78d5e7")
+			hover_bg = Color("216779")
+			pressed_bg = Color("174754")
+			pressed_border = Color("b6f1fb")
+		"mission_complete":
+			normal_bg = Color("183a2d")
+			normal_border = COLOR_SUCCESS
+			hover_bg = Color("204a39")
+			pressed_bg = Color("143126")
+			pressed_border = Color("a8efc1")
 
 	var radius := 10 if compact else 12
 	button.add_theme_stylebox_override(

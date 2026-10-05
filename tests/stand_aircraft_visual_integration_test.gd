@@ -15,46 +15,51 @@ func _run() -> void:
 	)
 	if String(
 		stand_definition.get("art_tier", "")
-	) != "starter_v4":
-		_fail("Small Stand should use the starter_v4 production art tier.")
+	) != "canonical_v2":
+		_fail("Small Stand should use the canonical v2 production art tier.")
 		return
-	if not String(
+	if String(
 		stand_definition.get("world_sprite_atlas_path", "")
-	).is_empty():
-		_fail("Small Stand should no longer depend on the legacy building atlas.")
+	) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+		_fail("Small Stand should resolve to the canonical production atlas.")
 		return
-
-	var stand_paths: PackedStringArray = stand_definition.get(
+	var stand_regions: Array = stand_definition.get(
+		"world_sprite_regions",
+		[]
+	)
+	var expected_regions := [
+		Rect2(896, 0, 448, 448),
+		Rect2(1344, 0, 448, 448)
+	]
+	if stand_regions != expected_regions:
+		_fail("Small Stand should expose both approved canonical v2 atlas views.")
+		return
+	var legacy_paths: PackedStringArray = stand_definition.get(
 		"world_sprite_paths",
 		PackedStringArray()
 	)
-	if stand_paths.size() != 2:
-		_fail("Small Stand should expose two true isometric orientations.")
-		return
-	if stand_paths[0] == stand_paths[1]:
-		_fail("Small Stand orientations should use distinct production files.")
+	if not legacy_paths.is_empty():
+		_fail("Small Stand should not fall back to starter-v4 SVG art.")
 		return
 	for rotation in range(2):
-		var path := String(stand_paths[rotation])
-		if not ResourceLoader.exists(path):
-			_fail("Small Stand rotation %d art is missing." % rotation)
-			return
-		var texture = load(path)
-		if not (texture is Texture2D):
-			_fail("Small Stand rotation %d should import as Texture2D." % rotation)
-			return
 		if grid._sprite_path_for_rotation(
 			stand_definition,
 			rotation
-		) != path:
-			_fail("Stand rotation %d should resolve to its dedicated art." % rotation)
+		) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+			_fail("Stand rotation %d should resolve to the canonical atlas." % rotation)
+			return
+		if grid._sprite_region_for_rotation(
+			stand_definition,
+			rotation
+		) != expected_regions[rotation]:
+			_fail("Stand rotation %d should resolve to its approved atlas cell." % rotation)
 			return
 
 	if stand_definition.get(
 		"world_sprite_size",
 		Vector2.ZERO
-	) != Vector2(208, 156):
-		_fail("Small Stand should retain its tuned starter-v4 world size.")
+	) != Vector2(192, 192):
+		_fail("Small Stand should retain its tuned canonical v2 world size.")
 		return
 
 	var starter_stands: Array[Dictionary] = []
@@ -192,11 +197,20 @@ func _run() -> void:
 	if stand_button.icon == null:
 		_fail("Small Stand Build Tray card should show production art.")
 		return
-	if stand_button.icon is AtlasTexture:
-		_fail("Small Stand Build Tray should not fall back to the legacy atlas.")
+	if not (stand_button.icon is AtlasTexture):
+		_fail("Small Stand Build Tray should use canonical v2 atlas art.")
 		return
-	if String(stand_button.icon.resource_path) != String(stand_paths[0]):
-		_fail("Small Stand Build Tray should preview its exact first world-art orientation.")
+	var stand_preview := stand_button.icon as AtlasTexture
+	if stand_preview.atlas == null:
+		_fail("Small Stand Build Tray atlas preview should retain its atlas.")
+		return
+	if String(
+		stand_preview.atlas.resource_path
+	) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+		_fail("Small Stand Build Tray should preview the canonical production atlas.")
+		return
+	if stand_preview.region != expected_regions[0]:
+		_fail("Small Stand Build Tray should preview its first canonical atlas view.")
 		return
 
 	var card := BuildingContextCard.new()
@@ -215,18 +229,25 @@ func _run() -> void:
 	if card.building_image.texture == null:
 		_fail("Small Stand context card should show production art.")
 		return
-	if card.building_image.texture is AtlasTexture:
-		_fail("Small Stand context card should use starter-v4 art.")
+	if not (card.building_image.texture is AtlasTexture):
+		_fail("Small Stand context card should use canonical v2 atlas art.")
+		return
+	var card_preview := card.building_image.texture as AtlasTexture
+	if card_preview.atlas == null:
+		_fail("Small Stand context card atlas preview should retain its atlas.")
 		return
 	if String(
-		card.building_image.texture.resource_path
-	) != String(stand_paths[0]):
-		_fail("Small Stand context card should preview its exact world sprite.")
+		card_preview.atlas.resource_path
+	) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+		_fail("Small Stand context card should preview the canonical production atlas.")
+		return
+	if card_preview.region != expected_regions[0]:
+		_fail("Small Stand context card should preview its first canonical atlas view.")
 		return
 
 	var apron_snapshot := grid.get_apron_micro_detail_snapshot()
 	if int(apron_snapshot.get("stand_service_zones", 0)) != 4:
-		_fail("Dedicated stand art must preserve two live service zones per starter stand.")
+		_fail("Canonical stand art must preserve two live service zones per starter stand.")
 		return
 
 	print(

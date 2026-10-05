@@ -39,17 +39,18 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Parking and turnaround for small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
-			"art_tier": "starter_v4",
-			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/starter_v4/stand_small_v4_a.svg",
-				"res://assets/production/starter_v4/stand_small_v4_b.svg"
-			]),
-			"world_sprite_size": Vector2(208, 156),
-			"world_sprite_offsets": [
-				Vector2(0, -21),
-				Vector2(0, -22)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 0, 448, 448),
+				Rect2(1344, 0, 448, 448)
 			],
-			"world_sprite_offset": Vector2(0, -21)
+			"world_sprite_size": Vector2(192, 192),
+			"world_sprite_offsets": [
+				Vector2(0, -29),
+				Vector2(0, -34)
+			],
+			"world_sprite_offset": Vector2(0, -29)
 		},
 		{
 			"id": "taxiway",
@@ -95,17 +96,18 @@ static func all() -> Array[Dictionary]:
 			"synergy_radius_tiles": 5.0,
 			"synergy_bonus": 0.10,
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
-			"art_tier": "starter_v3",
-			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/starter_v3/terminal_small_v3_a.svg",
-				"res://assets/production/starter_v3/terminal_small_v3_b.svg"
-			]),
-			"world_sprite_size": Vector2(326, 244),
-			"world_sprite_offsets": [
-				Vector2(0, -59),
-				Vector2(0, -59)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 0, 448, 448),
+				Rect2(448, 0, 448, 448)
 			],
-			"world_sprite_offset": Vector2(0, -59)
+			"world_sprite_size": Vector2(300, 300),
+			"world_sprite_offsets": [
+				Vector2(0, -55),
+				Vector2(0, -60)
+			],
+			"world_sprite_offset": Vector2(0, -55)
 		},
 		{
 			"id": "shuttle_station",
@@ -382,17 +384,18 @@ static func all() -> Array[Dictionary]:
 			"service_speed": 1.0,
 			"vehicle_capacity": 1,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
-			"art_tier": "starter_v3",
-			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/starter_v3/fuel_basic_v3_a.svg",
-				"res://assets/production/starter_v3/fuel_basic_v3_b.svg"
-			]),
-			"world_sprite_size": Vector2(206, 172),
-			"world_sprite_offsets": [
-				Vector2(0, -38),
-				Vector2(0, -38)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 448, 448, 448),
+				Rect2(1344, 448, 448, 448)
 			],
-			"world_sprite_offset": Vector2(0, -38)
+			"world_sprite_size": Vector2(188, 188),
+			"world_sprite_offsets": [
+				Vector2(0, -35),
+				Vector2(0, -45)
+			],
+			"world_sprite_offset": Vector2(0, -35)
 		},
 		{
 			"id": "rapid_small_fuel",

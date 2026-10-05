@@ -99,24 +99,41 @@ func _run() -> void:
 	var fuel_definition := BuildingCatalog.get_definition(
 		"basic_fuel"
 	)
-	var fuel_paths: PackedStringArray = fuel_definition.get(
-		"world_sprite_paths",
-		PackedStringArray()
+	if String(
+		fuel_definition.get("art_tier", "")
+	) != "canonical_v2":
+		_fail("Basic Fuel should use the canonical v2 quality tier.")
+		return
+	if String(
+		fuel_definition.get("world_sprite_atlas_path", "")
+	) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+		_fail("Basic Fuel should resolve to the canonical production atlas.")
+		return
+	var fuel_regions: Array = fuel_definition.get(
+		"world_sprite_regions",
+		[]
 	)
-	if fuel_paths.size() != 2:
-		_fail(
-			"Basic Fuel should expose two high-detail world-art orientations."
-		)
+	var expected_fuel_regions := [
+		Rect2(896, 448, 448, 448),
+		Rect2(1344, 448, 448, 448)
+	]
+	if fuel_regions != expected_fuel_regions:
+		_fail("Basic Fuel should expose both approved canonical atlas views.")
 		return
-	if card.building_image.texture is AtlasTexture:
-		_fail(
-			"Basic Fuel context card should use the dedicated starter-v3 world art, not the legacy atlas."
-		)
+	if not (card.building_image.texture is AtlasTexture):
+		_fail("Basic Fuel context card should use canonical v2 atlas art.")
 		return
-	if String(card.building_image.texture.resource_path) != String(fuel_paths[0]):
-		_fail(
-			"Basic Fuel context card should preview the exact first world-art orientation."
-		)
+	var fuel_preview := card.building_image.texture as AtlasTexture
+	if fuel_preview.atlas == null:
+		_fail("Basic Fuel context-card atlas preview should retain its atlas.")
+		return
+	if String(
+		fuel_preview.atlas.resource_path
+	) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+		_fail("Basic Fuel context card should preview the canonical production atlas.")
+		return
+	if fuel_preview.region != fuel_regions[0]:
+		_fail("Basic Fuel context card should preview its first canonical atlas view.")
 		return
 	if (
 		card.building_image.texture_filter

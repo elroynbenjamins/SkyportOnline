@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="420" viewBox="0 0 520 420">
+<ellipse cx="266" cy="346" rx="173" ry="42" fill="#20343a" opacity=".22"/>
+<polygon points="78,319 242,226 449,292 282,391" fill="#d5cec2"/>
+<polygon points="96,314 242,239 430,298 281,376" fill="#e8e1d6"/>
+<rect x="174" y="161" width="26" height="158" rx="8" fill="#6d7779"/><rect x="337" y="191" width="26" height="128" rx="8" fill="#6d7779"/>
+<polygon points="139,180 272,105 410,148 274,227" fill="#14394b"/>
+<polygon points="151,177 272,118 398,157 274,215" fill="#24576c"/>
+<path d="M229 168 l44-31 42 13 -41 14 -18 34 -14-3 10-29 -31 12z" fill="#f2c94c"/>
+<text x="258" y="185" text-anchor="middle" font-family="Arial,sans-serif" font-size="31" font-weight="700" fill="#f4f8f8">AIRPORT</text>
+<g fill="#467f45"><circle cx="118" cy="302" r="30"/><circle cx="150" cy="292" r="34"/><circle cx="389" cy="311" r="31"/><circle cx="420" cy="303" r="34"/></g>
+<g fill="#75a85f"><circle cx="140" cy="278" r="13"/><circle cx="410" cy="288" r="13"/></g>
+</svg>

@@ -50,6 +50,7 @@ var current_level := 1
 var current_coins := 0
 var current_gems := 0
 var active_building_id := ""
+var active_build_mode := ""
 var event_nav_button: Button
 var nav_buttons: Dictionary = {}
 
@@ -588,10 +589,13 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 	gems_label.text = "◆ %s" % _format_number(gems)
 	_update_catalog_buttons()
 
-	if not active_building_id.is_empty():
+	if (
+		not active_building_id.is_empty()
+		and active_build_mode == "build"
+	):
 		var definition := BuildingCatalog.get_definition(active_building_id)
 		show_build_preview(definition, {}, current_level, current_coins)
-	elif not current_parcel.is_empty():
+	elif active_building_id.is_empty() and not current_parcel.is_empty():
 		show_parcel(current_parcel, current_level, current_coins)
 
 
@@ -654,6 +658,7 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 
 func enter_building_mode(definition: Dictionary) -> void:
 	active_building_id = String(definition["id"])
+	active_build_mode = "build"
 	parcel_panel.visible = false
 	build_action_panel.visible = true
 	build_title.text = String(definition["name"]).to_upper()
@@ -675,6 +680,7 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 		return
 
 	active_building_id = String(definition["id"])
+	active_build_mode = "build"
 	current_level = player_level
 	current_coins = player_coins
 	parcel_panel.visible = false
@@ -722,6 +728,76 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	if not warning.is_empty():
 		build_status.text += "  •  ⚠ " + warning
 	place_button.text = "BUILD  🪙 %s" % _format_number(cost)
+	place_button.disabled = false
+
+
+func enter_move_mode(definition: Dictionary) -> void:
+	if definition.is_empty():
+		return
+
+	active_building_id = String(definition.get("id", ""))
+	active_build_mode = "move"
+	parcel_panel.visible = false
+	build_action_panel.visible = true
+	build_title.text = "MOVE %s" % String(
+		definition.get("name", "BUILDING")
+	).to_upper()
+	build_status.text = (
+		"Drag or tap a new position • Moving is free"
+	)
+	rotate_button.visible = bool(
+		definition.get("rotatable", false)
+	)
+	place_button.text = "CONFIRM MOVE"
+	place_button.disabled = false
+
+
+func show_move_preview(
+	definition: Dictionary,
+	status: Dictionary
+) -> void:
+	if definition.is_empty():
+		return
+
+	active_building_id = String(definition.get("id", ""))
+	active_build_mode = "move"
+	parcel_panel.visible = false
+	build_action_panel.visible = true
+	build_title.text = "MOVE %s" % String(
+		definition.get("name", "BUILDING")
+	).to_upper()
+	rotate_button.visible = bool(
+		definition.get("rotatable", false)
+	)
+
+	if status.is_empty():
+		build_status.text = (
+			"Drag or tap a new position • Moving is free"
+		)
+		place_button.text = "CONFIRM MOVE"
+		place_button.disabled = true
+		return
+
+	if not bool(status.get("valid", false)):
+		build_status.text = "Cannot move: %s" % String(
+			status.get("reason", "Invalid placement.")
+		)
+		place_button.text = "BLOCKED"
+		place_button.disabled = true
+		return
+
+	var footprint: Vector2i = status.get(
+		"footprint",
+		definition.get("footprint", Vector2i.ONE)
+	)
+	build_status.text = "Valid %dx%d • Move FREE" % [
+		footprint.x,
+		footprint.y
+	]
+	var warning := String(status.get("warning", ""))
+	if not warning.is_empty():
+		build_status.text += "  •  ⚠ " + warning
+	place_button.text = "CONFIRM MOVE"
 	place_button.disabled = false
 
 
@@ -1303,6 +1379,7 @@ func _refresh_all_status_chip_styles() -> void:
 
 func exit_building_mode() -> void:
 	active_building_id = ""
+	active_build_mode = ""
 	build_action_panel.visible = false
 	parcel_panel.visible = true
 	show_parcel(current_parcel, current_level, current_coins)

@@ -169,6 +169,11 @@ static func apply_panel(
 				"panel",
 				panel(Color("122c35"), Color("4d7988"), 11, 1, false)
 			)
+		"mission_done":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("123126"), COLOR_SUCCESS, 12, 2, false)
+			)
 		"toast_success":
 			control.add_theme_stylebox_override(
 				"panel",

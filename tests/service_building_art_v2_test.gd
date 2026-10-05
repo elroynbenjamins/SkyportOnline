@@ -10,8 +10,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(210, 210),
 		"offsets": [
-			Vector2(0, -38),
-			Vector2(0, -38)
+			Vector2(0, -58),
+			Vector2(0, -58)
 		]
 	},
 	"baggage_depot": {
@@ -22,8 +22,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(210, 210),
 		"offsets": [
-			Vector2(0, -38),
-			Vector2(0, -38)
+			Vector2(0, -51),
+			Vector2(0, -51)
 		]
 	},
 	"catering_kitchen": {
@@ -34,8 +34,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(210, 210),
 		"offsets": [
-			Vector2(0, -38),
-			Vector2(0, -38)
+			Vector2(0, -52),
+			Vector2(0, -52)
 		]
 	},
 	"tow_operations": {
@@ -46,7 +46,7 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(210, 210),
 		"offsets": [
-			Vector2(0, -35),
+			Vector2(0, -32),
 			Vector2(0, -35)
 		]
 	},
@@ -58,8 +58,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(220, 220),
 		"offsets": [
-			Vector2(0, -37),
-			Vector2(0, -37)
+			Vector2(0, -67),
+			Vector2(0, -66)
 		]
 	},
 	"atc_tower": {
@@ -70,8 +70,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(228, 228),
 		"offsets": [
-			Vector2(0, -50),
-			Vector2(0, -50)
+			Vector2(0, -54),
+			Vector2(0, -58)
 		]
 	}
 }

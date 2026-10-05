@@ -688,7 +688,39 @@ func enter_building_mode(definition: Dictionary) -> void:
 	build_action_panel.visible = true
 	_set_build_context_definition(definition)
 	rotate_button.visible = bool(definition.get("rotatable", false))
-	place_button.text = "TAP LAND"
+
+	var state := BuildCatalogPresentation.availability(
+		definition,
+		current_level,
+		current_coins,
+		active_building_id
+	)
+	var availability_status := String(
+		state.get("status", "ready")
+	)
+	match availability_status:
+		"locked":
+			var required_level := int(
+				state.get("required_level", 1)
+			)
+			build_status.text = (
+				"Preview available • unlocks at airport Lv %d."
+				% required_level
+			)
+			place_button.text = "🔒 LV %d" % required_level
+		"shortfall":
+			build_status.text = "Preview available • need 🪙 %s more." % (
+				_format_number(
+					int(state.get("coin_shortfall", 0))
+				)
+			)
+			place_button.text = "🪙 %s" % _format_number(
+				int(state.get("cost", 0))
+			)
+		_:
+			build_status.text = "Tap owned land to preview placement."
+			place_button.text = "TAP LAND"
+
 	place_button.disabled = true
 	_update_catalog_buttons()
 

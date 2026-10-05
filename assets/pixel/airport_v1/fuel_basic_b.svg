@@ -1,12 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="224" height="176" viewBox="0 0 224 176" shape-rendering="crispEdges">
-<g transform="translate(224 0) scale(-1 1)">
-<polygon points="24,118 95,78 202,108 130,150" fill="#121b1f" opacity=".55"/>
-<polygon points="30,108 95,71 195,100 129,140" fill="#6a7273"/>
-<rect x="72" y="66" width="36" height="49" fill="#d7d8d2"/><polygon points="72,66 89,56 108,62 91,72" fill="#f0ede2"/><polygon points="72,115 90,124 108,115 91,108" fill="#a6aaa8"/>
-<rect x="117" y="57" width="33" height="54" fill="#caccc8"/><polygon points="117,57 133,48 150,54 134,63" fill="#efece1"/><polygon points="117,111 133,120 150,111 134,104" fill="#9da3a2"/>
-<rect x="77" y="72" width="4" height="36" fill="#e0ad37"/><rect x="122" y="63" width="4" height="42" fill="#e0ad37"/><rect x="92" y="58" width="5" height="8" fill="#b88222"/><rect x="136" y="49" width="5" height="8" fill="#b88222"/>
-<rect x="54" y="93" width="16" height="24" fill="#b6862d"/><polygon points="54,93 62,88 70,91 62,96" fill="#e1b248"/>
-<polygon points="143,116 165,103 181,108 160,121" fill="#e8bd3b"/><rect x="149" y="112" width="20" height="8" fill="#d79c1e"/><rect x="151" y="120" width="4" height="4" fill="#1b2428"/><rect x="165" y="119" width="4" height="4" fill="#1b2428"/>
-<rect x="102" y="84" width="19" height="4" fill="#d6a332"/><rect x="110" y="84" width="4" height="22" fill="#d6a332"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="640" viewBox="0 0 768 640">
+<defs>
+ <linearGradient id="tank" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbfaf4"/><stop offset=".5" stop-color="#d9dedc"/><stop offset="1" stop-color="#aab3b2"/></linearGradient>
+ <linearGradient id="office" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3f0e9"/><stop offset="1" stop-color="#c7cbc7"/></linearGradient>
+</defs>
+<polygon points="103,332 365,242 658,407 393,500 132,417" fill="#22363a" opacity=".25"/>
+<polygon points="92,311 365,218 672,391 395,486 119,399" fill="#d3cabc"/>
+<polygon points="110,308 364,230 649,390 394,470 138,394" fill="#e8dfd1"/>
+<!-- office -->
+<polygon points="417,337 520,302 623,360 518,397" fill="url(#office)"/>
+<polygon points="417,337 518,397 518,451 417,392" fill="#c5cac7"/>
+<polygon points="518,397 623,360 623,413 518,451" fill="#aeb7b7"/>
+<polygon points="438,341 507,317 598,368 528,392" fill="#4c9dbc"/>
+<polygon points="438,341 528,392 528,415 438,364" fill="#347791"/>
+<!-- tanks -->
+<g>
+<ellipse cx="300" cy="291" rx="56" ry="24" fill="#f9f7ef"/>
+<rect x="244" y="291" width="112" height="99" fill="url(#tank)"/>
+<ellipse cx="300" cy="390" rx="56" ry="24" fill="#aab3b2"/>
+<ellipse cx="300" cy="291" rx="44" ry="17" fill="#e6e8e2"/>
+<ellipse cx="191" cy="329" rx="47" ry="21" fill="#f9f7ef"/>
+<rect x="144" y="329" width="94" height="83" fill="url(#tank)"/>
+<ellipse cx="191" cy="412" rx="47" ry="21" fill="#aab3b2"/>
 </g>
+<rect x="244" y="326" width="112" height="13" fill="#f1c54e"/>
+<rect x="144" y="359" width="94" height="12" fill="#f1c54e"/>
+<path d="M278 390 L278 432 L409 432 L409 400" fill="none" stroke="#6f7d80" stroke-width="11"/>
+<polygon points="383,401 425,387 466,410 424,425" fill="#59676b"/>
+<polygon points="383,401 424,425 424,457 383,433" fill="#3f5055"/>
+<rect x="399" y="406" width="15" height="20" fill="#f1c54e"/>
+<line x1="585" y1="352" x2="585" y2="287" stroke="#5f6d71" stroke-width="8"/>
+<rect x="562" y="262" width="47" height="35" rx="4" fill="#d8a52f"/>
+<path d="M580 270 h14 v19 h-14 z" fill="#fff3cb"/>
+<g fill="none" stroke="#f1c54e" stroke-width="6">
+<polygon points="350,420 425,394 490,431 416,456"/>
+<line x1="515" y1="428" x2="625" y2="390"/>
+</g>
+<g fill="#d65e45"><circle cx="155" cy="433" r="7"/><circle cx="373" cy="458" r="7"/></g>
+<text x="454" y="366" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#eef7f8" transform="rotate(30 454 366)">FUEL</text>
 </svg>

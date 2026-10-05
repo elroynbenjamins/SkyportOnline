@@ -806,6 +806,13 @@ func _dispatch_service(
 	)
 	stand_approach_active[stand_uid] = approach_count + 1
 
+	# Separate vehicles on the shared service-road route first, then
+	# create the dedicated straight final approach so the lane offset cannot
+	# bend the last parking leg away from the authored service pose.
+	route = ApronTrafficRules.offset_route(
+		route,
+		service_type
+	)
 	route = _route_to_aircraft_service_anchor(
 		route,
 		aircraft,
@@ -836,11 +843,6 @@ func _dispatch_service(
 	)
 	var legacy_fuel_only := bool(
 		request.get("legacy_fuel_only", false)
-	)
-
-	route = ApronTrafficRules.offset_route(
-		route,
-		service_type
 	)
 
 	if not legacy_fuel_only and job_id >= 0:

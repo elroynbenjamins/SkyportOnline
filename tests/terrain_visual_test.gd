@@ -122,6 +122,44 @@ func _run() -> void:
 			"Aircraft stands should retain a clearly readable apron base."
 		)
 
+
+	var pad_polygon := grid._footprint_polygon(
+		Vector2i(2, 3),
+		Vector2i(3, 2)
+	)
+	if pad_polygon.size() != 4:
+		_fail(
+			"Detailed building hardscape should use one continuous footprint polygon."
+		)
+	else:
+		var min_x := INF
+		var max_x := -INF
+		var min_y := INF
+		var max_y := -INF
+		for point_variant in pad_polygon:
+			var point: Vector2 = point_variant
+			min_x = minf(min_x, point.x)
+			max_x = maxf(max_x, point.x)
+			min_y = minf(min_y, point.y)
+			max_y = maxf(max_y, point.y)
+		if absf((max_x - min_x) - 160.0) > 0.01:
+			_fail(
+				"3x2 hardscape pad should span 160 world pixels."
+			)
+		if absf((max_y - min_y) - 80.0) > 0.01:
+			_fail(
+				"3x2 hardscape pad should span 80 world pixels."
+			)
+
+	if AirportGrid.PREVIEW_VALID.a >= 0.50:
+		_fail(
+			"Valid placement preview should leave detailed art readable."
+		)
+	if AirportGrid.PREVIEW_INVALID.a >= 0.55:
+		_fail(
+			"Invalid placement preview should not overwhelm detailed art."
+		)
+
 	var north := grid.get_parcel("north")
 	var north_state := String(
 		north.get("progression_state", "")

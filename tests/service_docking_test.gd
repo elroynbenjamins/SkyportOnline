@@ -23,6 +23,25 @@ func _run() -> void:
 		"fuel",
 		"pushback"
 	]
+
+	for service_type in service_types:
+		var shadow_radius := GroundServiceVehicleArt.shadow_radius(
+			service_type
+		)
+		if shadow_radius < 13.0 or shadow_radius > 19.0:
+			_fail(
+				"%s service shadow radius is outside the approved visual range."
+				% service_type
+			)
+			return
+	if (
+		GroundServiceVehicleArt.shadow_radius("passenger")
+		<= GroundServiceVehicleArt.shadow_radius("pushback")
+	):
+		_fail(
+			"Passenger bus shadow should read larger than the pushback tug."
+		)
+		return
 	var pico_positions: Array[Vector2] = []
 	for service_type in service_types:
 		var docking := pico.get_service_docking_position(
@@ -143,6 +162,9 @@ func _run() -> void:
 
 	var passenger_vehicle := GroundServiceVehiclePrototype.new()
 	root.add_child(passenger_vehicle)
+	if not passenger_vehicle.has_method("_draw_service_beacon"):
+		_fail("Ground service vehicles should expose the fixed-screen service beacon.")
+		return
 	passenger_vehicle.set_service_pose_rotation(0.25)
 	passenger_vehicle.set_service_connection_target(
 		pico.global_position
@@ -153,6 +175,9 @@ func _run() -> void:
 
 	var fuel_vehicle := FuelTruckPrototype.new()
 	root.add_child(fuel_vehicle)
+	if not fuel_vehicle.has_method("_draw_service_beacon"):
+		_fail("Fuel tanker should expose the fixed-screen service beacon.")
+		return
 	fuel_vehicle.set_service_connection_target(
 		pico.global_position
 	)

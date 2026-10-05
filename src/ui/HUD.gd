@@ -833,36 +833,37 @@ func _build_catalog_panel(root: Control) -> void:
 
 
 func _build_bottom_navigation(root: Control) -> void:
-	var bottom_nav := PanelContainer.new()
-	bottom_nav.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_nav.offset_left = 8
-	bottom_nav.offset_top = -72
-	bottom_nav.offset_right = -8
-	bottom_nav.offset_bottom = -8
-	root.add_child(bottom_nav)
-	GameUIStyle.apply_panel(bottom_nav, "top")
+	bottom_nav_panel = PanelContainer.new()
+	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_nav_panel.offset_left = 92
+	bottom_nav_panel.offset_top = -82
+	bottom_nav_panel.offset_right = -92
+	bottom_nav_panel.offset_bottom = -10
+	root.add_child(bottom_nav_panel)
+	GameUIStyle.apply_panel(bottom_nav_panel, "dock")
 
 	var nav_row := HBoxContainer.new()
-	nav_row.add_theme_constant_override("separation", 4)
-	bottom_nav.add_child(nav_row)
+	nav_row.add_theme_constant_override("separation", 6)
+	bottom_nav_panel.add_child(nav_row)
 
 	for item in ["🔨\nBUILD", "✈\nFLEET", "🌍\nWORLD", "🎉\nEVENT", "👥\nSOCIAL", "☰\nMORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0, 54)
+		button.custom_minimum_size = Vector2(0, 60)
 		button.add_theme_font_size_override("font_size", 15)
 
 		var parts: PackedStringArray = item.split("\n")
 		var tab: String = String(parts[1]).to_lower()
 		GameUIStyle.apply_button(
 			button,
-			"selected" if tab == "build" else "nav",
+			"dock_selected" if tab == "build" else "dock",
 			true
 		)
 		nav_buttons[tab] = button
 		if tab == "build":
-			button.disabled = true
+			button.tooltip_text = "Airport home • building and layout tools"
+			button.pressed.connect(_on_build_navigation_pressed)
 		else:
 			button.pressed.connect(_on_navigation_pressed.bind(tab))
 
@@ -896,7 +897,7 @@ func set_event_attention(claimable: bool) -> void:
 		GameUIStyle.apply_button(event_nav_button, "event", true)
 	else:
 		event_nav_button.text = "🎉\nEVENT"
-		GameUIStyle.apply_button(event_nav_button, "nav", true)
+		GameUIStyle.apply_button(event_nav_button, "dock", true)
 
 
 func set_social_attention(active: bool) -> void:
@@ -913,7 +914,7 @@ func set_social_attention(active: bool) -> void:
 		social_nav_button.text = "👥\nSOCIAL"
 		GameUIStyle.apply_button(
 			social_nav_button,
-			"nav",
+			"dock",
 			true
 		)
 
@@ -2502,6 +2503,15 @@ func _format_number(value: int) -> String:
 		count += 1
 	return result
 
+
+func _on_build_navigation_pressed() -> void:
+	if catalog_panel != null:
+		catalog_panel.visible = true
+	if storage_panel != null:
+		storage_panel.visible = false
+	if status_detail_panel != null:
+		_close_status_detail()
+	set_operation_status("Build tray ready • choose infrastructure or edit your airport.")
 
 func _on_navigation_pressed(tab: String) -> void:
 	navigation_requested.emit(tab)

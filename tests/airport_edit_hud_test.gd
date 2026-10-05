@@ -72,14 +72,15 @@ func _run() -> void:
 	var definition := BuildingCatalog.get_definition(
 		"basic_fuel"
 	)
-	hud.set_stored_buildings([
+	var stored_items: Array[Dictionary] = [
 		{
 			"uid": 77,
 			"definition_id": "basic_fuel",
 			"rotation": 0,
 			"upgrade_level": 2
 		}
-	])
+	]
+	hud.set_stored_buildings(stored_items)
 	if not hud.storage_button.text.contains("1"):
 		_fail("Storage toolbar should show stored building count.")
 		return

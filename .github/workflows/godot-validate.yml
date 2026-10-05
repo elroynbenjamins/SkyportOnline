@@ -155,6 +155,9 @@ jobs:
       - name: Test airfield perimeter details
         run: timeout 20s godot --headless --path . --script res://tests/airfield_perimeter_detail_test.gd
 
+      - name: Test apron and terminal micro details
+        run: timeout 20s godot --headless --path . --script res://tests/apron_micro_detail_test.gd
+
 
       - name: Test aircraft taxi traffic
         run: timeout 20s godot --headless --path . --script res://tests/taxi_traffic_test.gd

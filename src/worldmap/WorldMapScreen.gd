@@ -8,6 +8,8 @@ signal flight_assignment_requested(
 )
 
 var root: Control
+var screen_title_label: Label
+var network_meta_label: Label
 var map_canvas: WorldMapCanvas
 var aircraft_list_container: VBoxContainer
 var details_title: Label
@@ -172,23 +174,33 @@ func _build_top_bar() -> void:
 	top.offset_right = -10
 	top.offset_bottom = 68
 	root.add_child(top)
-	GameUIStyle.apply_panel(top, "top")
+	GameUIStyle.apply_panel(top, "screen_top")
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	top.add_child(row)
 
-	var title := Label.new()
-	title.text = "🌍  WORLD MAP  •  EUROPE NETWORK"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	GameUIStyle.heading(title, 22)
-	row.add_child(title)
+	var title_box := VBoxContainer.new()
+	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(title_box)
+
+	screen_title_label = Label.new()
+	screen_title_label.text = "🌍  ROUTE CONTROL"
+	screen_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	GameUIStyle.heading(screen_title_label, 22)
+	title_box.add_child(screen_title_label)
+
+	network_meta_label = Label.new()
+	network_meta_label.text = "1  SELECT AIRCRAFT   →   2  CHOOSE DESTINATION   →   3  DISPATCH"
+	network_meta_label.add_theme_font_size_override("font_size", 11)
+	network_meta_label.add_theme_color_override("font_color", GameUIStyle.COLOR_ACCENT)
+	title_box.add_child(network_meta_label)
 
 	var origin := Label.new()
-	origin.text = "DEV HOME: %s" % DestinationCatalog.DEVELOPMENT_HOME_NAME
+	origin.text = "★ HOME HUB  •  %s" % DestinationCatalog.DEVELOPMENT_HOME_NAME.to_upper()
 	origin.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	origin.add_theme_font_size_override("font_size", 14)
+	origin.add_theme_font_size_override("font_size", 12)
 	GameUIStyle.muted(origin)
 	row.add_child(origin)
 
@@ -208,14 +220,14 @@ func _build_aircraft_sidebar() -> void:
 	panel.offset_right = 270
 	panel.offset_bottom = -10
 	root.add_child(panel)
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, "screen_section")
 
 	var wrapper := VBoxContainer.new()
 	wrapper.add_theme_constant_override("separation", 8)
 	panel.add_child(wrapper)
 
 	var heading := Label.new()
-	heading.text = "SELECT AIRCRAFT"
+	heading.text = "1  YOUR AIRCRAFT"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(heading, 16)
 	wrapper.add_child(heading)
@@ -242,7 +254,7 @@ func _build_map_area() -> void:
 	panel.offset_right = -350
 	panel.offset_bottom = -10
 	root.add_child(panel)
-	GameUIStyle.apply_panel(panel, "dark")
+	GameUIStyle.apply_panel(panel, "context_preview")
 
 	map_canvas = WorldMapCanvas.new()
 	map_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -287,14 +299,14 @@ func _build_details_sidebar() -> void:
 	panel.offset_right = -10
 	panel.offset_bottom = -10
 	root.add_child(panel)
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, "screen_focus")
 
 	var wrapper := VBoxContainer.new()
 	wrapper.add_theme_constant_override("separation", 10)
 	panel.add_child(wrapper)
 
 	var heading := Label.new()
-	heading.text = "FLIGHT DETAILS"
+	heading.text = "2  ROUTE BRIEFING"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(heading, 16)
 	wrapper.add_child(heading)
@@ -348,7 +360,7 @@ func _build_details_sidebar() -> void:
 	wrapper.add_child(details_body)
 
 	assign_button = Button.new()
-	assign_button.text = "ASSIGN FLIGHT"
+	assign_button.text = "3  DISPATCH FLIGHT"
 	assign_button.custom_minimum_size = Vector2(0, 58)
 	assign_button.add_theme_font_size_override("font_size", 16)
 	assign_button.pressed.connect(_on_assign_pressed)
@@ -364,7 +376,7 @@ func _make_detail_card(
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.custom_minimum_size = Vector2(0, 88)
-	GameUIStyle.apply_panel(card, "dark")
+	GameUIStyle.apply_panel(card, "reward_tile")
 	parent.add_child(card)
 
 	var label := Label.new()
@@ -400,7 +412,7 @@ func _refresh_aircraft_buttons() -> void:
 	while aircraft_buttons.size() < aircraft.size():
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0, 68)
-		GameUIStyle.apply_button(button, "secondary", true)
+		GameUIStyle.apply_button(button, "build_card", true)
 		var index := aircraft_buttons.size()
 		button.pressed.connect(_on_aircraft_pressed.bind(index))
 		aircraft_list_container.add_child(button)
@@ -445,7 +457,7 @@ func _refresh_aircraft_buttons() -> void:
 		]
 		GameUIStyle.apply_button(
 			button,
-			"selected" if index == selected_aircraft_index else "secondary",
+			"build_card_selected" if index == selected_aircraft_index else "build_card",
 			true
 		)
 		button.disabled = index == selected_aircraft_index
@@ -471,7 +483,7 @@ func _refresh_destination_buttons() -> void:
 		button.disabled = player_level < required_level
 
 		if button.disabled:
-			GameUIStyle.apply_button(button, "secondary", true)
+			GameUIStyle.apply_button(button, "build_card_locked", true)
 			button.text = "%s\n🔒 LV %d" % [
 				String(destination["city"]).to_upper(),
 				required_level
@@ -486,9 +498,9 @@ func _refresh_destination_buttons() -> void:
 			else:
 				contract_suffix = " • ★ CONTRACT"
 
-		var button_kind := "nav"
+		var button_kind := "screen_tab"
 		if destination_id == selected_destination_id:
-			button_kind = "selected"
+			button_kind = "screen_tab_selected"
 		elif destination_id == contract_destination_id:
 			button_kind = "gold"
 		elif String(condition.get("id", "normal")) in [

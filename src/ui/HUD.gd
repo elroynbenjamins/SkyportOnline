@@ -1248,7 +1248,8 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	active_building_id = String(definition["id"])
 	active_build_mode = "build"
 	if catalog_panel != null:
-		catalog_panel.visible = true
+		catalog_panel.visible = false
+	build_hint.text = "PLACING BUILDING  •  Tap owned land • use Rotate / Place / Cancel below"
 	if airport_edit_panel != null:
 		airport_edit_panel.visible = false
 	current_level = player_level

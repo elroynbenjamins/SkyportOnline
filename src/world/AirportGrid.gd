@@ -2904,6 +2904,7 @@ func select_world_position(world_position: Vector2) -> void:
 		selected_synergy_uid = int(
 			visual_building.get("uid", -1)
 		)
+		_refresh_building_labels()
 		queue_redraw()
 		building_selected_world.emit(
 			visual_building
@@ -2919,11 +2920,13 @@ func select_world_position(world_position: Vector2) -> void:
 		var building := get_building(int(occupied_cells[key]))
 		if not building.is_empty():
 			selected_synergy_uid = int(building.get("uid", -1))
+			_refresh_building_labels()
 			queue_redraw()
 			building_selected_world.emit(building)
 			return
 
 	selected_synergy_uid = -1
+	_refresh_building_labels()
 	queue_redraw()
 	var parcel := _parcel_for_tile(tile)
 	if not parcel.is_empty():
@@ -2934,6 +2937,7 @@ func select_parcel(parcel_id: String) -> void:
 	if not parcels.has(parcel_id):
 		return
 	selected_id = parcel_id
+	_refresh_parcel_labels()
 	queue_redraw()
 	parcel_selected.emit(
 		parcel_id,
@@ -2943,6 +2947,7 @@ func select_parcel(parcel_id: String) -> void:
 
 func clear_parcel_selection() -> void:
 	selected_id = ""
+	_refresh_parcel_labels()
 	queue_redraw()
 
 
@@ -3810,20 +3815,12 @@ func _update_parcel_label(id: String) -> void:
 			id.replace("_", " ").capitalize()
 		)
 	)
-	label.visible = true
+	label.visible = false
 	match state:
 		"owned":
-			if id == "home":
-				label.text = "YOUR AIRPORT\n%s" % zone_name.to_upper()
-				label.add_theme_color_override(
-					"font_color",
-					Color("f5f7f6")
-				)
-			else:
-				# Once purchased the district becomes part of the airport; hide the
-				# large land-sale label to keep the operational view uncluttered.
-				label.visible = false
+			label.visible = false
 		"available":
+			label.visible = true
 			label.text = "%s\nLv %d • %s coins" % [
 				zone_name.to_upper(),
 				int(parcel.get("level", 1)),
@@ -3836,7 +3833,8 @@ func _update_parcel_label(id: String) -> void:
 				Color("ffe19a")
 			)
 		_:
-			label.text = "🔒 %s\nConnect adjacent land" % zone_name.to_upper()
+			label.visible = selected_id == id
+			label.text = "%s\nConnect adjacent land" % zone_name.to_upper()
 			label.add_theme_color_override(
 				"font_color",
 				Color("aab8b2")
@@ -3866,12 +3864,18 @@ func _refresh_building_labels() -> void:
 		if id in ["taxiway", "service_road"]:
 			continue
 
-		var label_text := _building_label_text(
+		var uid := int(building.get("uid", -1))
+		var warning_text := _world_building_warning_text(
 			building,
 			definition
 		)
-		if _definition_has_world_sprite(definition):
-			label_text = _world_building_warning_text(
+		var selected := uid == selected_synergy_uid
+		if not selected and warning_text.is_empty():
+			continue
+
+		var label_text := warning_text
+		if label_text.is_empty() and selected:
+			label_text = _building_label_text(
 				building,
 				definition
 			)
@@ -4274,6 +4278,7 @@ func get_preview_synergy_summary(
 
 func clear_synergy_selection() -> void:
 	selected_synergy_uid = -1
+	_refresh_building_labels()
 	queue_redraw()
 
 

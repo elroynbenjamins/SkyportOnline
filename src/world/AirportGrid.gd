@@ -539,8 +539,8 @@ func _draw_landside_environment() -> void:
 		)
 
 
-func _draw_landside_access_road() -> void:
-	var road := PackedVector2Array([
+func get_landside_access_road_points() -> PackedVector2Array:
+	return PackedVector2Array([
 		Vector2(-980, 592),
 		Vector2(-805, 554),
 		Vector2(-655, 575),
@@ -548,6 +548,10 @@ func _draw_landside_access_road() -> void:
 		Vector2(-365, 682),
 		Vector2(-205, 728)
 	])
+
+
+func _draw_landside_access_road() -> void:
+	var road := get_landside_access_road_points()
 	var shadow := PackedVector2Array()
 	for point in road:
 		shadow.append(point + Vector2(4, 6))

@@ -3160,7 +3160,7 @@ func _draw_charter_logistics_district() -> void:
 				footprint
 			)
 
-		_draw_building_sprite(
+		_draw_charter_visual_item(
 			definition,
 			origin,
 			footprint,
@@ -3169,6 +3169,97 @@ func _draw_charter_logistics_district() -> void:
 
 	_draw_charter_future_pads(base_tile)
 	_draw_charter_district_props(base_tile)
+
+
+func _draw_charter_visual_item(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int
+) -> void:
+	if String(
+		definition.get(
+			"anchor",
+			"center"
+		)
+	) != "bottom_center":
+		_draw_building_sprite(
+			definition,
+			origin,
+			footprint,
+			rotation
+		)
+		return
+
+	var sprite_path := _sprite_path_for_rotation(
+		definition,
+		rotation
+	)
+	if sprite_path.is_empty():
+		return
+	var texture := _get_building_texture(
+		sprite_path
+	)
+	if texture == null:
+		return
+
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+	var draw_size: Vector2 = definition.get(
+		"world_sprite_size",
+		Vector2(160, 120)
+	)
+	var offset := _sprite_offset_for_rotation(
+		definition,
+		rotation
+	)
+	var lift := float(
+		definition.get(
+			"bottom_anchor_lift",
+			0.0
+		)
+	)
+	var anchor_point := (
+		polygon[2]
+		+ offset
+		+ Vector2(0, -lift)
+	)
+	var rect := Rect2(
+		anchor_point
+		- Vector2(
+			draw_size.x * 0.5,
+			draw_size.y
+		),
+		draw_size
+	)
+	draw_texture_rect(
+		texture,
+		rect,
+		false
+	)
+
+
+func get_charter_structure_placement_status(
+	visual_id: String,
+	world_origin: Vector2i,
+	rotation: int = 0
+) -> Dictionary:
+	var relative_origin := (
+		world_origin
+		- _charter_district_base_tile()
+	)
+	var result := CharterDistrictLayout.placement_status(
+		visual_id,
+		relative_origin,
+		rotation
+	)
+	result["origin"] = world_origin
+	result["relative_origin"] = relative_origin
+	return result
 
 
 func _draw_charter_industrial_grounding(

@@ -49,9 +49,11 @@ static func building_visuals() -> Array[Dictionary]:
 			"footprint": Vector2i(2, 2),
 			"rotatable": true,
 			"world_sprite_size": Vector2(218, 184),
+			"anchor": "bottom_center",
+			"bottom_anchor_lift": 4.0,
 			"world_sprite_offsets": [
-				Vector2(0, -42),
-				Vector2(0, -44)
+				Vector2(0, 0),
+				Vector2(0, 0)
 			]
 		},
 		{
@@ -61,9 +63,11 @@ static func building_visuals() -> Array[Dictionary]:
 			"footprint": Vector2i(3, 2),
 			"rotatable": true,
 			"world_sprite_size": Vector2(294, 224),
+			"anchor": "bottom_center",
+			"bottom_anchor_lift": 6.0,
 			"world_sprite_offsets": [
-				Vector2(0, -52),
-				Vector2(0, -54)
+				Vector2(0, 0),
+				Vector2(0, 0)
 			]
 		},
 		{
@@ -73,9 +77,11 @@ static func building_visuals() -> Array[Dictionary]:
 			"footprint": Vector2i(2, 1),
 			"rotatable": true,
 			"world_sprite_size": Vector2(188, 138),
+			"anchor": "bottom_center",
+			"bottom_anchor_lift": 3.0,
 			"world_sprite_offsets": [
-				Vector2(0, -28),
-				Vector2(0, -30)
+				Vector2(0, 0),
+				Vector2(0, 0)
 			]
 		},
 		{
@@ -85,8 +91,9 @@ static func building_visuals() -> Array[Dictionary]:
 			"footprint": Vector2i(3, 3),
 			"rotatable": true,
 			"world_sprite_size": Vector2(300, 226),
+			"anchor": "center",
 			"world_sprite_offsets": [
-				Vector2(0, 2),
+				Vector2(0, 0),
 				Vector2(0, 0)
 			]
 		}

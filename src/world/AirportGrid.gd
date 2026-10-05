@@ -1231,14 +1231,17 @@ func get_starter_apron_visual_snapshot() -> Dictionary:
 			"stand_count": nearby_stands.size()
 		}
 
+	var stand_uids: Array[int] = []
+	for stand in nearby_stands:
+		stand_uids.append(
+			int(stand.get("uid", -1))
+		)
+
 	return {
 		"active": true,
 		"terminal_uid": int(terminal.get("uid", -1)),
 		"stand_count": nearby_stands.size(),
-		"stand_uids": nearby_stands.map(
-			func(item: Dictionary) -> int:
-				return int(item.get("uid", -1))
-		),
+		"stand_uids": stand_uids,
 		"origin": origin,
 		"footprint": footprint,
 		"floodlights": 4,
@@ -1305,7 +1308,8 @@ func _draw_starter_apron_surface() -> void:
 	var shoulder := PackedVector2Array()
 	var center := Vector2.ZERO
 	for point_variant in polygon:
-		center += point_variant as Vector2
+		var center_point: Vector2 = point_variant
+		center += center_point
 	center /= float(polygon.size())
 	for point_variant in polygon:
 		var point: Vector2 = point_variant
@@ -1380,8 +1384,9 @@ func _draw_starter_apron_surface() -> void:
 		polygon[3].lerp(polygon[2], 0.82)
 	]
 	for base_variant in lights:
+		var light_base: Vector2 = base_variant
 		_draw_apron_floodlight(
-			(base_variant as Vector2) + Vector2(0, -2)
+			light_base + Vector2(0, -2)
 		)
 
 
@@ -1748,13 +1753,23 @@ func _building_ground_color(
 	if id.contains("runway"):
 		return Color("596167", 0.80)
 	if id.contains("stand"):
-		return Color(APRON_CONCRETE, 0.26)
+		return Color(
+			APRON_CONCRETE.r,
+			APRON_CONCRETE.g,
+			APRON_CONCRETE.b,
+			0.26
+		)
 	if id in [
 		"small_terminal",
 		"basic_fuel",
 		"ground_ops_depot"
 	]:
-		return Color(APRON_CONCRETE, 0.20)
+		return Color(
+			APRON_CONCRETE.r,
+			APRON_CONCRETE.g,
+			APRON_CONCRETE.b,
+			0.20
+		)
 
 	var category := String(
 		definition.get("category", "")

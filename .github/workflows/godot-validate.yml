@@ -106,6 +106,18 @@ jobs:
       - name: Test building context card
         run: timeout 20s godot --headless --path . --script res://tests/building_context_card_test.gd
 
+      - name: Test land expansion frontier progression
+        run: timeout 20s godot --headless --path . --script res://tests/land_expansion_progression_test.gd
+
+      - name: Test placement-time expansion
+        run: timeout 20s godot --headless --path . --script res://tests/placement_expansion_test.gd
+
+      - name: Test airport edit and expansion HUD
+        run: timeout 20s godot --headless --path . --script res://tests/airport_edit_hud_test.gd
+
+      - name: Test airport expansion districts and visuals
+        run: timeout 20s godot --headless --path . --script res://tests/airport_expansion_district_test.gd
+
 
       - name: Test aircraft taxi traffic
         run: timeout 20s godot --headless --path . --script res://tests/taxi_traffic_test.gd

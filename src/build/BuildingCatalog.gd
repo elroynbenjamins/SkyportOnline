@@ -225,10 +225,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(210, 210),
 			"world_sprite_offsets": [
-				Vector2(0, -38),
-				Vector2(0, -38)
+				Vector2(0, -58),
+				Vector2(0, -58)
 			],
-			"world_sprite_offset": Vector2(0, -38),
+			"world_sprite_offset": Vector2(0, -58),
 			"service": "cleaning",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -286,10 +286,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(210, 210),
 			"world_sprite_offsets": [
-				Vector2(0, -38),
-				Vector2(0, -38)
+				Vector2(0, -51),
+				Vector2(0, -51)
 			],
-			"world_sprite_offset": Vector2(0, -38),
+			"world_sprite_offset": Vector2(0, -51),
 			"service": "cargo",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -317,10 +317,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(210, 210),
 			"world_sprite_offsets": [
-				Vector2(0, -38),
-				Vector2(0, -38)
+				Vector2(0, -52),
+				Vector2(0, -52)
 			],
-			"world_sprite_offset": Vector2(0, -38),
+			"world_sprite_offset": Vector2(0, -52),
 			"service": "catering",
 			"service_speed": 1.30,
 			"vehicle_capacity": 2
@@ -348,10 +348,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(210, 210),
 			"world_sprite_offsets": [
-				Vector2(0, -35),
+				Vector2(0, -32),
 				Vector2(0, -35)
 			],
-			"world_sprite_offset": Vector2(0, -35),
+			"world_sprite_offset": Vector2(0, -32),
 			"service": "pushback",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2
@@ -377,10 +377,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(228, 228),
 			"world_sprite_offsets": [
-				Vector2(0, -50),
-				Vector2(0, -50)
+				Vector2(0, -54),
+				Vector2(0, -58)
 			],
-			"world_sprite_offset": Vector2(0, -50),
+			"world_sprite_offset": Vector2(0, -54),
 			"air_traffic_control": true
 		},
 		{
@@ -465,10 +465,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(220, 220),
 			"world_sprite_offsets": [
-				Vector2(0, -37),
-				Vector2(0, -37)
+				Vector2(0, -67),
+				Vector2(0, -66)
 			],
-			"world_sprite_offset": Vector2(0, -37)
+			"world_sprite_offset": Vector2(0, -67)
 		},
 		{
 			"id": "medium_stand",

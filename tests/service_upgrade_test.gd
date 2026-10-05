@@ -56,12 +56,25 @@ func _run() -> void:
 		{},
 		0
 	)
-	if not (
-		service_upgrade_panel.building_image.texture
-		is AtlasTexture
-	):
+	var ground_ops_definition := BuildingCatalog.get_definition(
+		"ground_ops_depot"
+	)
+	var ground_ops_path := String(
+		ground_ops_definition.get("world_sprite_path", "")
+	)
+	if ground_ops_path.is_empty():
+		_fail("Ground Ops should expose dedicated starter-v3 world art.")
+		return
+	if service_upgrade_panel.building_image.texture is AtlasTexture:
 		_fail(
-			"Ground Ops upgrade panel should use production atlas art."
+			"Ground Ops upgrade panel should use dedicated starter-v3 art, not the legacy atlas."
+		)
+		return
+	if String(
+		service_upgrade_panel.building_image.texture.resource_path
+	) != ground_ops_path:
+		_fail(
+			"Ground Ops upgrade panel should preview the exact production world sprite."
 		)
 		return
 	if (

@@ -236,6 +236,9 @@ func _setup_aircraft_context_card() -> void:
 	aircraft_context_card.fleet_requested.connect(
 		_on_aircraft_context_fleet_requested
 	)
+	aircraft_context_card.social_requested.connect(
+		_on_aircraft_context_social_requested
+	)
 	add_child(aircraft_context_card)
 
 
@@ -1735,6 +1738,18 @@ func _on_social_aircraft_departed(
 	aircraft.call_deferred("queue_free")
 
 
+func _on_aircraft_context_social_requested(
+	_aircraft: AircraftPrototype
+) -> void:
+	if social_airport_service == null or social_airport_screen == null:
+		return
+	if aircraft_context_card != null:
+		aircraft_context_card.close_card()
+	social_airport_screen.open_screen(
+		social_airport_service.get_snapshot()
+	)
+
+
 func _refresh_aircraft_event_visuals(
 	snapshot: Dictionary
 ) -> void:
@@ -2147,8 +2162,13 @@ func _aircraft_at_world_position(
 ) -> AircraftPrototype:
 	var closest: AircraftPrototype = null
 	var closest_distance := INF
+	var candidates: Array[AircraftPrototype] = aircraft_demos.duplicate()
+	for visitor_variant in social_visitor_aircraft.values():
+		var visitor := visitor_variant as AircraftPrototype
+		if visitor != null and is_instance_valid(visitor):
+			candidates.append(visitor)
 
-	for aircraft in aircraft_demos:
+	for aircraft in candidates:
 		if (
 			aircraft == null
 			or not is_instance_valid(aircraft)

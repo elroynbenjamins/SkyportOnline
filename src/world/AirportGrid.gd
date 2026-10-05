@@ -69,6 +69,7 @@ var selected_synergy_uid := -1
 
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_initialize_parcels()
 	_initialize_starter_airport()
 	_recalculate_airside_network()
@@ -1084,15 +1085,55 @@ func _draw_winter_snow_globe_garden(
 
 
 func _definition_has_world_sprite(definition: Dictionary) -> bool:
-	var variants: PackedStringArray = definition.get("world_sprite_paths", PackedStringArray())
-	return variants.size() > 0 or not String(definition.get("world_sprite_path", "")).is_empty()
+	var atlas_path := String(
+		definition.get("world_sprite_atlas_path", "")
+	)
+	if not atlas_path.is_empty():
+		return true
+	var variants: PackedStringArray = definition.get(
+		"world_sprite_paths",
+		PackedStringArray()
+	)
+	return (
+		variants.size() > 0
+		or not String(
+			definition.get("world_sprite_path", "")
+		).is_empty()
+	)
 
 
-func _sprite_path_for_rotation(definition: Dictionary, rotation: int) -> String:
-	var variants: PackedStringArray = definition.get("world_sprite_paths", PackedStringArray())
+func _sprite_path_for_rotation(
+	definition: Dictionary,
+	rotation: int
+) -> String:
+	var atlas_path := String(
+		definition.get("world_sprite_atlas_path", "")
+	)
+	if not atlas_path.is_empty():
+		return atlas_path
+
+	var variants: PackedStringArray = definition.get(
+		"world_sprite_paths",
+		PackedStringArray()
+	)
 	if variants.size() > 0:
 		return variants[rotation % variants.size()]
 	return String(definition.get("world_sprite_path", ""))
+
+
+func _sprite_region_for_rotation(
+	definition: Dictionary,
+	rotation: int
+) -> Rect2:
+	var regions: Array = definition.get(
+		"world_sprite_regions",
+		[]
+	)
+	if regions.is_empty():
+		return Rect2()
+
+	var region: Rect2 = regions[rotation % regions.size()]
+	return region
 
 
 func _draw_building_sprite(
@@ -1103,7 +1144,10 @@ func _draw_building_sprite(
 	modulate: Color = Color.WHITE,
 	extra_offset: Vector2 = Vector2.ZERO
 ) -> void:
-	var sprite_path := _sprite_path_for_rotation(definition, rotation)
+	var sprite_path := _sprite_path_for_rotation(
+		definition,
+		rotation
+	)
 	if sprite_path.is_empty():
 		return
 
@@ -1111,14 +1155,32 @@ func _draw_building_sprite(
 	if texture == null:
 		return
 
-	var draw_size: Vector2 = definition.get("world_sprite_size", Vector2(160, 120))
-	var offset: Vector2 = definition.get("world_sprite_offset", Vector2.ZERO)
+	var draw_size: Vector2 = definition.get(
+		"world_sprite_size",
+		Vector2(160, 120)
+	)
+	var offset: Vector2 = definition.get(
+		"world_sprite_offset",
+		Vector2.ZERO
+	)
 	var center := _footprint_center_world(origin, footprint)
 	var rect := Rect2(
 		center - draw_size * 0.5 + offset + extra_offset,
 		draw_size
 	)
-	draw_texture_rect(texture, rect, false, modulate)
+	var source_region := _sprite_region_for_rotation(
+		definition,
+		rotation
+	)
+	if source_region.size.x > 0.0 and source_region.size.y > 0.0:
+		draw_texture_rect_region(
+			texture,
+			rect,
+			source_region,
+			modulate
+		)
+	else:
+		draw_texture_rect(texture, rect, false, modulate)
 
 
 func _draw_taxiway_detail(origin: Vector2i) -> void:

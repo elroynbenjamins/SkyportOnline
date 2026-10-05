@@ -36,13 +36,16 @@ var purchase_button: Button
 
 var build_action_panel: PanelContainer
 var build_title: Label
+var build_meta_label: Label
 var build_status: Label
+var build_preview_icon: TextureRect
 var rotate_button: Button
 var place_button: Button
 
 var catalog_buttons: Dictionary = {}
 var catalog_definitions: Array[Dictionary] = []
 var catalog_filter_buttons: Dictionary = {}
+var catalog_summary_label: Label
 var selected_catalog_category := "ALL"
 
 var current_parcel: Dictionary = {}
@@ -299,7 +302,7 @@ func _build_context_panel(root: Control) -> void:
 	build_action_panel = PanelContainer.new()
 	build_action_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	build_action_panel.offset_left = 12
-	build_action_panel.offset_top = -154
+	build_action_panel.offset_top = -170
 	build_action_panel.offset_right = -450
 	build_action_panel.offset_bottom = -82
 	build_action_panel.visible = false
@@ -310,8 +313,16 @@ func _build_context_panel(root: Control) -> void:
 	build_row.add_theme_constant_override("separation", 10)
 	build_action_panel.add_child(build_row)
 
+	build_preview_icon = TextureRect.new()
+	build_preview_icon.custom_minimum_size = Vector2(86, 72)
+	build_preview_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	build_preview_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	build_preview_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	build_row.add_child(build_preview_icon)
+
 	var build_text := VBoxContainer.new()
 	build_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	build_text.add_theme_constant_override("separation", 2)
 	build_row.add_child(build_text)
 
 	build_title = Label.new()
@@ -319,9 +330,20 @@ func _build_context_panel(root: Control) -> void:
 	build_title.add_theme_font_size_override("font_size", 19)
 	build_text.add_child(build_title)
 
+	build_meta_label = Label.new()
+	build_meta_label.text = "SELECT A BUILDING"
+	build_meta_label.add_theme_font_size_override("font_size", 12)
+	build_meta_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	build_text.add_child(build_meta_label)
+
 	build_status = Label.new()
 	build_status.text = "Tap owned land to preview placement."
-	build_status.add_theme_font_size_override("font_size", 14)
+	build_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	build_status.add_theme_font_size_override("font_size", 13)
+	GameUIStyle.muted(build_status)
 	build_text.add_child(build_status)
 
 	rotate_button = Button.new()
@@ -366,6 +388,13 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(catalog_header, 15)
 	catalog_wrapper.add_child(catalog_header)
+
+	catalog_summary_label = Label.new()
+	catalog_summary_label.text = "Choose a category"
+	catalog_summary_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	catalog_summary_label.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(catalog_summary_label)
+	catalog_wrapper.add_child(catalog_summary_label)
 
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 4)
@@ -514,14 +543,13 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(195, 74)
+		button.custom_minimum_size = Vector2(195, 84)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 12)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		button.tooltip_text = String(definition.get("description", ""))
 		GameUIStyle.apply_button(button, "secondary", true)
 		var icon := _catalog_icon_for(definition)
 		if icon != null:
@@ -560,6 +588,8 @@ func _apply_catalog_filter() -> void:
 			selected_catalog_category == "ALL"
 			or category == selected_catalog_category
 		)
+
+	_refresh_catalog_summary()
 
 
 func _catalog_icon_for(definition: Dictionary) -> Texture2D:
@@ -656,21 +686,51 @@ func enter_building_mode(definition: Dictionary) -> void:
 	active_building_id = String(definition["id"])
 	parcel_panel.visible = false
 	build_action_panel.visible = true
-	build_title.text = String(definition["name"]).to_upper()
-	var footprint: Vector2i = definition["footprint"]
-	build_status.text = "%s  •  %dx%d  •  %s%s" % [
-		String(definition["description"]),
-		footprint.x,
-		footprint.y,
-		_size_text(definition),
-		_service_text(definition)
-	]
+	_set_build_context_definition(definition)
 	rotate_button.visible = bool(definition.get("rotatable", false))
-	place_button.text = "TAP LAND"
+
+	var state := BuildCatalogPresentation.availability(
+		definition,
+		current_level,
+		current_coins,
+		active_building_id
+	)
+	var availability_status := String(
+		state.get("status", "ready")
+	)
+	match availability_status:
+		"locked":
+			var required_level := int(
+				state.get("required_level", 1)
+			)
+			build_status.text = (
+				"Preview available • unlocks at airport Lv %d."
+				% required_level
+			)
+			place_button.text = "🔒 LV %d" % required_level
+		"shortfall":
+			build_status.text = "Preview available • need 🪙 %s more." % (
+				_format_number(
+					int(state.get("coin_shortfall", 0))
+				)
+			)
+			place_button.text = "🪙 %s" % _format_number(
+				int(state.get("cost", 0))
+			)
+		_:
+			build_status.text = "Tap owned land to preview placement."
+			place_button.text = "TAP LAND"
+
 	place_button.disabled = true
+	_update_catalog_buttons()
 
 
-func show_build_preview(definition: Dictionary, status: Dictionary, player_level: int, player_coins: int) -> void:
+func show_build_preview(
+	definition: Dictionary,
+	status: Dictionary,
+	player_level: int,
+	player_coins: int
+) -> void:
 	if definition.is_empty():
 		return
 
@@ -679,50 +739,95 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	current_coins = player_coins
 	parcel_panel.visible = false
 	build_action_panel.visible = true
-	build_title.text = String(definition["name"]).to_upper()
+	_set_build_context_definition(definition)
 	rotate_button.visible = bool(definition.get("rotatable", false))
+	_update_catalog_buttons()
 
-	var required_level := int(definition["level"])
-	var cost := int(definition["cost"])
+	var state := BuildCatalogPresentation.availability(
+		definition,
+		player_level,
+		player_coins,
+		active_building_id
+	)
+	var required_level := int(state.get("required_level", 1))
+	var cost := int(state.get("cost", 0))
+	var availability_status := String(
+		state.get("status", "ready")
+	)
 
-	if player_level < required_level:
-		build_status.text = "Locked until airport Lv %d." % required_level
-		place_button.text = "LV %d" % required_level
+	if availability_status == "locked":
+		build_status.text = (
+			"Preview available • unlock this building at airport Lv %d."
+			% required_level
+		)
+		place_button.text = "🔒 LV %d" % required_level
 		place_button.disabled = true
 		return
 
-	if player_coins < cost:
-		build_status.text = "Need 🪙 %s more." % _format_number(cost - player_coins)
+	if availability_status == "shortfall":
+		build_status.text = "Preview available • need 🪙 %s more." % (
+			_format_number(int(state.get("coin_shortfall", 0)))
+		)
 		place_button.text = "🪙 %s" % _format_number(cost)
 		place_button.disabled = true
 		return
 
 	if status.is_empty():
-		build_status.text = "Tap owned land to preview • Cost 🪙 %s" % _format_number(cost)
+		build_status.text = (
+			"Tap owned land to preview placement • Cost 🪙 %s"
+			% _format_number(cost)
+		)
 		place_button.text = "TAP LAND"
 		place_button.disabled = true
 		return
 
 	if not bool(status.get("valid", false)):
-		build_status.text = "Cannot build: %s" % String(status.get("reason", "Invalid placement."))
+		build_status.text = "Cannot build here • %s" % String(
+			status.get("reason", "Invalid placement.")
+		)
 		place_button.text = "MOVE"
 		place_button.disabled = true
 		return
 
-	var footprint: Vector2i = status.get("footprint", definition["footprint"])
-	build_status.text = "Valid %dx%d • %s%s • Cost 🪙 %s" % [
+	var footprint: Vector2i = status.get(
+		"footprint",
+		definition["footprint"]
+	)
+	build_status.text = "Valid %dx%d placement • Cost 🪙 %s" % [
 		footprint.x,
 		footprint.y,
-		_size_text(definition),
-		_service_text(definition),
 		_format_number(cost)
 	]
 
 	var warning := String(status.get("warning", ""))
 	if not warning.is_empty():
 		build_status.text += "  •  ⚠ " + warning
+
 	place_button.text = "BUILD  🪙 %s" % _format_number(cost)
 	place_button.disabled = false
+
+
+func _set_build_context_definition(
+	definition: Dictionary
+) -> void:
+	build_title.text = String(
+		definition.get("name", "Building")
+	).to_upper()
+
+	if build_preview_icon != null:
+		build_preview_icon.texture = _catalog_icon_for(definition)
+
+	if build_meta_label != null:
+		var detail_lines := BuildCatalogPresentation.detail_text(
+			definition,
+			current_level,
+			current_coins
+		).split("\n")
+		build_meta_label.text = (
+			String(detail_lines[0])
+			if detail_lines.size() > 0
+			else String(definition.get("category", "Building")).to_upper()
+		)
 
 
 func set_operation_status(
@@ -1313,29 +1418,84 @@ func _update_catalog_buttons() -> void:
 		var id := String(definition["id"])
 		if not catalog_buttons.has(id):
 			continue
-		var button: Button = catalog_buttons[id]
-		var required_level := int(definition["level"])
-		var cost := int(definition["cost"])
 
-		if current_level < required_level:
-			GameUIStyle.apply_button(button, "secondary", true)
-			button.text = "%s\n🔒 LV %d" % [
-				String(definition["menu_name"]),
-				required_level
-			]
-			button.disabled = true
-		else:
-			GameUIStyle.apply_button(
-				button,
-				"selected" if id == active_building_id else "secondary",
-				true
+		var button: Button = catalog_buttons[id]
+		var state := BuildCatalogPresentation.availability(
+			definition,
+			current_level,
+			current_coins,
+			active_building_id
+		)
+		var selected := bool(state.get("selected", false))
+		var status := String(state.get("status", "ready"))
+		var kind := "selected" if selected else "secondary"
+		if status == "locked" and not selected:
+			kind = "nav"
+
+		GameUIStyle.apply_button(button, kind, true)
+		button.text = BuildCatalogPresentation.card_text(
+			definition,
+			current_level,
+			current_coins,
+			active_building_id
+		)
+		button.tooltip_text = BuildCatalogPresentation.detail_text(
+			definition,
+			current_level,
+			current_coins
+		)
+
+		# Locked and unaffordable cards remain tappable so players can
+		# inspect future buildings instead of seeing a dead catalog.
+		button.disabled = false
+
+		if status == "locked":
+			button.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_MUTED
 			)
-			button.text = "%s\n🪙 %s • %s" % [
-				String(definition["menu_name"]),
-				_format_number(cost),
-				_size_text(definition)
-			]
-			button.disabled = false
+		elif status == "shortfall":
+			button.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_WARNING
+			)
+		elif selected:
+			button.add_theme_color_override(
+				"font_color",
+				Color.WHITE
+			)
+		else:
+			button.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_TEXT
+			)
+
+	_refresh_catalog_summary()
+
+
+func _refresh_catalog_summary() -> void:
+	if catalog_summary_label == null:
+		return
+
+	var summary := BuildCatalogPresentation.visible_summary(
+		catalog_definitions,
+		selected_catalog_category,
+		current_level,
+		current_coins
+	)
+	var visible := int(summary.get("visible", 0))
+	var ready := int(summary.get("ready", 0))
+	var locked := int(summary.get("locked", 0))
+	var shortfall := int(summary.get("shortfall", 0))
+
+	catalog_summary_label.text = "%d shown  •  %d ready" % [
+		visible,
+		ready
+	]
+	if shortfall > 0:
+		catalog_summary_label.text += "  •  %d need coins" % shortfall
+	if locked > 0:
+		catalog_summary_label.text += "  •  %d locked" % locked
 
 
 func _service_text(definition: Dictionary) -> String:

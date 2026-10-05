@@ -111,12 +111,233 @@ func get_visual_scale() -> float:
 			return lerpf(0.96, 1.12, small_progress)
 
 
+func get_visual_design() -> Dictionary:
+	var design := {
+		"family": "generic",
+		"nose_x": 22.0,
+		"tail_x": -25.0,
+		"fuselage_half_width": 5.0,
+		"wing_half_span": 18.0,
+		"wing_root_front_x": 4.0,
+		"wing_root_back_x": -7.0,
+		"wing_tip_front_x": -5.0,
+		"wing_tip_back_x": -12.0,
+		"tail_half_span": 11.0,
+		"tail_root_front_x": -14.0,
+		"tail_root_back_x": -20.0,
+		"tail_tip_front_x": -19.0,
+		"tail_tip_back_x": -23.0,
+		"engine_style": "jet",
+		"engine_x": -2.0,
+		"engine_y_ratio": 0.56,
+		"window_count": 4,
+		"winglets": false,
+		"body_color": Color("f4f7f7"),
+		"belly_color": Color("c6d2d5"),
+		"wing_color": Color("dce8ea"),
+		"tail_color": Color("5d90b8"),
+		"accent_color": Color("4f91bd"),
+		"cockpit_color": Color("31586f")
+	}
+
+	match aircraft_type_id:
+		"pico_p8":
+			design.merge({
+				"family": "compact_prop",
+				"nose_x": 19.5,
+				"tail_x": -21.5,
+				"fuselage_half_width": 5.1,
+				"wing_half_span": 16.8,
+				"wing_root_front_x": 3.0,
+				"wing_root_back_x": -6.2,
+				"wing_tip_front_x": -0.5,
+				"wing_tip_back_x": -5.5,
+				"tail_half_span": 8.8,
+				"tail_root_front_x": -13.0,
+				"tail_root_back_x": -18.0,
+				"tail_tip_front_x": -17.0,
+				"tail_tip_back_x": -20.0,
+				"engine_style": "prop",
+				"engine_x": 0.5,
+				"engine_y_ratio": 0.54,
+				"window_count": 3,
+				"tail_color": Color("3f78a9"),
+				"accent_color": Color("e3b64e"),
+				"cockpit_color": Color("315a72")
+			}, true)
+		"swift_s14":
+			design.merge({
+				"family": "fast_prop",
+				"nose_x": 21.0,
+				"tail_x": -23.0,
+				"fuselage_half_width": 4.8,
+				"wing_half_span": 18.0,
+				"wing_root_front_x": 5.0,
+				"wing_root_back_x": -7.0,
+				"wing_tip_front_x": -3.0,
+				"wing_tip_back_x": -9.0,
+				"tail_half_span": 9.4,
+				"engine_style": "prop",
+				"engine_x": 1.0,
+				"engine_y_ratio": 0.56,
+				"window_count": 4,
+				"tail_color": Color("2f7f83"),
+				"accent_color": Color("37aaa2"),
+				"cockpit_color": Color("275b69")
+			}, true)
+		"comet_c22":
+			design.merge({
+				"family": "compact_jet",
+				"nose_x": 22.5,
+				"tail_x": -24.0,
+				"fuselage_half_width": 5.1,
+				"wing_half_span": 18.8,
+				"wing_root_front_x": 5.4,
+				"wing_root_back_x": -8.0,
+				"wing_tip_front_x": -5.0,
+				"wing_tip_back_x": -11.5,
+				"tail_half_span": 10.0,
+				"engine_style": "jet",
+				"engine_x": -1.5,
+				"window_count": 5,
+				"tail_color": Color("b95d3c"),
+				"accent_color": Color("e58845"),
+				"cockpit_color": Color("355b70")
+			}, true)
+		"voyager_v32":
+			design.merge({
+				"family": "stretched_jet",
+				"nose_x": 24.0,
+				"tail_x": -26.0,
+				"fuselage_half_width": 5.3,
+				"wing_half_span": 20.0,
+				"wing_root_front_x": 6.0,
+				"wing_root_back_x": -8.7,
+				"wing_tip_front_x": -6.2,
+				"wing_tip_back_x": -13.4,
+				"tail_half_span": 10.6,
+				"engine_style": "jet",
+				"engine_x": -2.0,
+				"window_count": 6,
+				"tail_color": Color("5d4f8e"),
+				"accent_color": Color("7d6db6"),
+				"cockpit_color": Color("365970")
+			}, true)
+		"nimbus_n40":
+			design.merge({
+				"family": "regional_jet",
+				"nose_x": 24.2,
+				"tail_x": -26.5,
+				"fuselage_half_width": 5.7,
+				"wing_half_span": 20.6,
+				"wing_root_front_x": 6.6,
+				"wing_root_back_x": -9.2,
+				"wing_tip_front_x": -5.4,
+				"wing_tip_back_x": -14.2,
+				"tail_half_span": 11.0,
+				"engine_style": "jet",
+				"engine_x": -1.0,
+				"window_count": 6,
+				"tail_color": Color("347fa5"),
+				"accent_color": Color("4aa8d4"),
+				"cockpit_color": Color("2f596f")
+			}, true)
+		"arrow_a52":
+			design.merge({
+				"family": "fast_regional",
+				"nose_x": 25.0,
+				"tail_x": -27.0,
+				"fuselage_half_width": 5.6,
+				"wing_half_span": 21.2,
+				"wing_root_front_x": 7.6,
+				"wing_root_back_x": -9.4,
+				"wing_tip_front_x": -7.5,
+				"wing_tip_back_x": -16.2,
+				"tail_half_span": 11.4,
+				"engine_style": "jet",
+				"engine_x": -0.5,
+				"window_count": 7,
+				"winglets": true,
+				"tail_color": Color("a84540"),
+				"accent_color": Color("d7645c"),
+				"cockpit_color": Color("31586c")
+			}, true)
+		"atlas_a64":
+			design.merge({
+				"family": "wide_regional",
+				"nose_x": 25.8,
+				"tail_x": -27.8,
+				"fuselage_half_width": 6.0,
+				"wing_half_span": 22.0,
+				"wing_root_front_x": 7.0,
+				"wing_root_back_x": -10.2,
+				"wing_tip_front_x": -5.2,
+				"wing_tip_back_x": -15.6,
+				"tail_half_span": 11.8,
+				"engine_style": "jet",
+				"engine_x": -1.8,
+				"window_count": 8,
+				"tail_color": Color("78642f"),
+				"accent_color": Color("d4b24d"),
+				"cockpit_color": Color("36596c")
+			}, true)
+		"falcon_f72":
+			design.merge({
+				"family": "performance_regional",
+				"nose_x": 26.3,
+				"tail_x": -28.3,
+				"fuselage_half_width": 5.8,
+				"wing_half_span": 22.4,
+				"wing_root_front_x": 8.2,
+				"wing_root_back_x": -10.2,
+				"wing_tip_front_x": -8.3,
+				"wing_tip_back_x": -17.4,
+				"tail_half_span": 12.0,
+				"engine_style": "jet",
+				"engine_x": -0.3,
+				"window_count": 8,
+				"winglets": true,
+				"tail_color": Color("29475f"),
+				"accent_color": Color("3b6992"),
+				"cockpit_color": Color("2c536a")
+			}, true)
+		"horizon_h88":
+			design.merge({
+				"family": "flagship_regional",
+				"nose_x": 27.2,
+				"tail_x": -28.8,
+				"fuselage_half_width": 6.2,
+				"wing_half_span": 23.0,
+				"wing_root_front_x": 8.5,
+				"wing_root_back_x": -11.0,
+				"wing_tip_front_x": -7.8,
+				"wing_tip_back_x": -18.2,
+				"tail_half_span": 12.4,
+				"engine_style": "jet",
+				"engine_x": -0.8,
+				"window_count": 9,
+				"winglets": true,
+				"tail_color": Color("205f78"),
+				"accent_color": Color("27b7c7"),
+				"cockpit_color": Color("294f65")
+			}, true)
+
+	return design
+
+
 func get_visual_half_length() -> float:
-	return 25.0 * get_visual_scale()
+	var design := get_visual_design()
+	return maxf(
+		absf(float(design.get("nose_x", 22.0))),
+		absf(float(design.get("tail_x", -25.0)))
+	) * get_visual_scale()
 
 
 func get_visual_half_span() -> float:
-	return 18.0 * get_visual_scale()
+	var design := get_visual_design()
+	return float(
+		design.get("wing_half_span", 18.0)
+	) * get_visual_scale()
 
 
 func contains_world_point(world_position: Vector2) -> bool:
@@ -1114,92 +1335,276 @@ func _draw() -> void:
 	_draw_shadow()
 
 	var visual_scale := get_visual_scale()
+	var design := get_visual_design()
 	draw_set_transform(
 		Vector2.ZERO,
 		0.0,
 		Vector2.ONE * visual_scale
 	)
 
-	var fuselage := PackedVector2Array([
-		Vector2(22, 0),
-		Vector2(12, -5),
-		Vector2(-18, -5),
-		Vector2(-25, 0),
-		Vector2(-18, 5),
-		Vector2(12, 5)
-	])
-	var fuselage_color := Color("f4f7f7")
+	var nose_x := float(design.get("nose_x", 22.0))
+	var tail_x := float(design.get("tail_x", -25.0))
+	var body_half := float(
+		design.get("fuselage_half_width", 5.0)
+	)
+	var wing_span := float(
+		design.get("wing_half_span", 18.0)
+	)
+	var wing_root_front := float(
+		design.get("wing_root_front_x", 4.0)
+	)
+	var wing_root_back := float(
+		design.get("wing_root_back_x", -7.0)
+	)
+	var wing_tip_front := float(
+		design.get("wing_tip_front_x", -5.0)
+	)
+	var wing_tip_back := float(
+		design.get("wing_tip_back_x", -12.0)
+	)
+	var tail_span := float(
+		design.get("tail_half_span", 11.0)
+	)
+	var tail_root_front := float(
+		design.get("tail_root_front_x", -14.0)
+	)
+	var tail_root_back := float(
+		design.get("tail_root_back_x", -20.0)
+	)
+	var tail_tip_front := float(
+		design.get("tail_tip_front_x", -19.0)
+	)
+	var tail_tip_back := float(
+		design.get("tail_tip_back_x", -23.0)
+	)
+
+	var body_color: Color = design.get(
+		"body_color",
+		Color("f4f7f7")
+	)
+	var belly_color: Color = design.get(
+		"belly_color",
+		Color("c6d2d5")
+	)
+	var wing_color: Color = design.get(
+		"wing_color",
+		Color("dce8ea")
+	)
+	var tail_color: Color = design.get(
+		"tail_color",
+		Color("5d90b8")
+	)
+	var accent_color: Color = design.get(
+		"accent_color",
+		Color("4f91bd")
+	)
+	var cockpit_color: Color = design.get(
+		"cockpit_color",
+		Color("31586f")
+	)
+
 	if event_livery_enabled:
 		match event_theme:
 			"autumn":
-				fuselage_color = Color("f4e6d0")
+				body_color = Color("f4e6d0")
+				tail_color = Color("c35f2d")
+				accent_color = Color("e5a23b")
 			"winter":
-				fuselage_color = Color("f7fcff")
-	draw_colored_polygon(fuselage, fuselage_color)
+				body_color = Color("f7fcff")
+				tail_color = Color("c8373c")
+				accent_color = Color("2f8f58")
 
 	var wing := PackedVector2Array([
-		Vector2(4, -4),
-		Vector2(-5, -18),
-		Vector2(-12, -18),
-		Vector2(-7, -3),
-		Vector2(-7, 3),
-		Vector2(-12, 18),
-		Vector2(-5, 18),
-		Vector2(4, 4)
+		Vector2(wing_root_front, -body_half * 0.72),
+		Vector2(wing_tip_front, -wing_span),
+		Vector2(wing_tip_back, -wing_span),
+		Vector2(wing_root_back, -body_half * 0.82),
+		Vector2(wing_root_back, body_half * 0.82),
+		Vector2(wing_tip_back, wing_span),
+		Vector2(wing_tip_front, wing_span),
+		Vector2(wing_root_front, body_half * 0.72)
 	])
-	draw_colored_polygon(wing, Color("dce8ea"))
+	var wing_shadow := PackedVector2Array()
+	for point_variant in wing:
+		var point: Vector2 = point_variant
+		wing_shadow.append(
+			point + Vector2(1.5, 1.8)
+		)
+	draw_colored_polygon(
+		wing_shadow,
+		wing_color.darkened(0.30)
+	)
+	draw_colored_polygon(
+		wing,
+		wing_color
+	)
+	draw_line(
+		Vector2(wing_root_front - 1.0, -body_half * 0.72),
+		Vector2(wing_tip_front + 1.0, -wing_span + 1.5),
+		wing_color.lightened(0.22),
+		1.1
+	)
+	draw_line(
+		Vector2(wing_root_front - 1.0, body_half * 0.72),
+		Vector2(wing_tip_front + 1.0, wing_span - 1.5),
+		wing_color.lightened(0.15),
+		1.0
+	)
 
-	var tail := PackedVector2Array([
-		Vector2(-14, -4),
-		Vector2(-20, -11),
-		Vector2(-23, -11),
-		Vector2(-20, -3),
-		Vector2(-20, 3),
-		Vector2(-23, 11),
-		Vector2(-20, 11),
-		Vector2(-14, 4)
+	var tailplane := PackedVector2Array([
+		Vector2(tail_root_front, -body_half * 0.68),
+		Vector2(tail_tip_front, -tail_span),
+		Vector2(tail_tip_back, -tail_span),
+		Vector2(tail_root_back, -body_half * 0.72),
+		Vector2(tail_root_back, body_half * 0.72),
+		Vector2(tail_tip_back, tail_span),
+		Vector2(tail_tip_front, tail_span),
+		Vector2(tail_root_front, body_half * 0.68)
 	])
-	var tail_color := Color("5d90b8")
-	if event_livery_enabled:
-		match event_theme:
-			"autumn":
-				tail_color = Color("c35f2d")
-			"winter":
-				tail_color = Color("c8373c")
-	draw_colored_polygon(tail, tail_color)
+	draw_colored_polygon(
+		tailplane,
+		wing_color.darkened(0.03)
+	)
 
-	draw_rect(Rect2(Vector2(2, -4), Vector2(7, 8)), Color("4a7898"))
-	draw_circle(Vector2(14, 0), 2.2, Color("c8e9f1"))
+	_draw_aircraft_engines(
+		design,
+		body_half,
+		wing_span,
+		wing_color,
+		accent_color
+	)
+
+	var fuselage := PackedVector2Array([
+		Vector2(nose_x, 0),
+		Vector2(nose_x - 7.0, -body_half * 0.66),
+		Vector2(tail_x + 6.5, -body_half),
+		Vector2(tail_x, 0),
+		Vector2(tail_x + 6.5, body_half),
+		Vector2(nose_x - 7.0, body_half * 0.66)
+	])
+	var belly := PackedVector2Array()
+	for point_variant in fuselage:
+		var point: Vector2 = point_variant
+		belly.append(
+			point + Vector2(0.6, 1.5)
+		)
+	draw_colored_polygon(
+		belly,
+		belly_color
+	)
+	draw_colored_polygon(
+		fuselage,
+		body_color
+	)
+
+	draw_line(
+		Vector2(nose_x - 8.0, -body_half * 0.55),
+		Vector2(tail_x + 7.5, -body_half * 0.72),
+		body_color.lightened(0.25),
+		1.2
+	)
+	draw_line(
+		Vector2(nose_x - 7.0, body_half * 0.72),
+		Vector2(tail_x + 8.0, body_half * 0.88),
+		belly_color.darkened(0.12),
+		1.0
+	)
+
+	var accent_y := body_half * 0.56
+	draw_line(
+		Vector2(tail_x + 6.5, accent_y),
+		Vector2(nose_x - 7.5, accent_y * 0.60),
+		accent_color,
+		1.7
+	)
+	draw_line(
+		Vector2(tail_x + 6.5, -accent_y),
+		Vector2(nose_x - 7.5, -accent_y * 0.60),
+		accent_color.lightened(0.10),
+		1.1
+	)
+
+	var rear_fin := PackedVector2Array([
+		Vector2(tail_x + 2.0, -2.2),
+		Vector2(tail_x + 10.0, -2.2),
+		Vector2(tail_x + 12.0, 0),
+		Vector2(tail_x + 10.0, 2.2),
+		Vector2(tail_x + 2.0, 2.2)
+	])
+	draw_colored_polygon(
+		rear_fin,
+		tail_color
+	)
+
+	var cockpit := PackedVector2Array([
+		Vector2(nose_x - 1.8, 0),
+		Vector2(nose_x - 6.0, -2.3),
+		Vector2(nose_x - 8.2, -1.5),
+		Vector2(nose_x - 8.2, 1.5),
+		Vector2(nose_x - 6.0, 2.3)
+	])
+	draw_colored_polygon(
+		cockpit,
+		cockpit_color
+	)
+	draw_line(
+		Vector2(nose_x - 5.7, -1.6),
+		Vector2(nose_x - 2.7, -0.5),
+		Color("9fd4e2", 0.85),
+		1.0
+	)
+
+	_draw_aircraft_windows(
+		design,
+		nose_x,
+		tail_x,
+		body_half,
+		cockpit_color
+	)
+
+	if bool(design.get("winglets", false)):
+		_draw_aircraft_winglets(
+			wing_tip_front,
+			wing_tip_back,
+			wing_span,
+			accent_color
+		)
+
+	draw_circle(
+		Vector2(wing_tip_front, -wing_span),
+		1.25,
+		Color("d84a4a")
+	)
+	draw_circle(
+		Vector2(wing_tip_front, wing_span),
+		1.25,
+		Color("4fc27b")
+	)
+	draw_circle(
+		Vector2(nose_x - 0.5, 0),
+		1.15,
+		Color("f7e5a8")
+	)
 
 	if event_livery_enabled and event_theme == "autumn":
-		draw_rect(
-			Rect2(Vector2(-3, -5), Vector2(6, 10)),
-			Color("e5a23b")
-		)
 		draw_line(
-			Vector2(-10, -14),
-			Vector2(1, -4),
+			Vector2(-9, -wing_span * 0.60),
+			Vector2(2, -body_half),
 			Color("a94b2b"),
-			3.0
+			2.4
 		)
 
 	if event_livery_enabled and event_theme == "winter":
-		draw_line(
-			Vector2(-15, 0),
-			Vector2(10, 0),
-			Color("2f8f58"),
-			3.0
-		)
 		draw_circle(
-			Vector2(-17, 0),
-			3.0,
+			Vector2(tail_x + 5.0, 0),
+			2.4,
 			Color("f2c94c")
 		)
 		draw_line(
-			Vector2(-9, -14),
-			Vector2(1, -4),
+			Vector2(-9, -wing_span * 0.58),
+			Vector2(1, -body_half),
 			Color("c8373c"),
-			3.0
+			2.4
 		)
 
 	if (
@@ -1213,29 +1618,33 @@ func _draw() -> void:
 	):
 		_draw_social_badge()
 
+	var state_indicator_y := -maxf(
+		26.0,
+		wing_span + 7.0
+	)
 	match state:
 		"WAITING_FUEL":
-			draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("f4c95d"))
 		"UNLOADING":
-			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("d6a3ff"))
 		"SERVICING":
-			draw_circle(Vector2(-2, -26), 6.0, Color("f4c95d"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("f4c95d"))
 		"LOADING":
-			draw_circle(Vector2(-2, -26), 6.0, Color("69c9dd"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("69c9dd"))
 		"PUSHBACK_PREP":
-			draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("76d39b"))
 		"READY_FOR_DESTINATION":
-			draw_circle(Vector2(-2, -26), 6.0, Color("f0a6ff"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("f0a6ff"))
 		"WAITING_PASSENGERS":
-			draw_circle(Vector2(-2, -26), 6.0, Color("ff9f68"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("ff9f68"))
 		"READY_FOR_DEPARTURE":
-			draw_circle(Vector2(-2, -26), 6.0, Color("76d39b"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("76d39b"))
 		"HOLD_SHORT":
-			draw_circle(Vector2(-2, -26), 6.0, Color("f3c969"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("f3c969"))
 		"CLEARED", "ENTERING_RUNWAY", "LINE_UP":
-			draw_circle(Vector2(-2, -26), 6.0, Color("78b7e8"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("78b7e8"))
 		"HOLDING_FOR_ARRIVAL":
-			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
+			draw_circle(Vector2(-2, state_indicator_y), 5.2, Color("d6a3ff"))
 
 	draw_set_transform(
 		Vector2.ZERO,
@@ -1244,8 +1653,153 @@ func _draw() -> void:
 	)
 
 
+func _draw_aircraft_engines(
+	design: Dictionary,
+	body_half: float,
+	wing_span: float,
+	wing_color: Color,
+	accent_color: Color
+) -> void:
+	var style := String(
+		design.get("engine_style", "jet")
+	)
+	var engine_x := float(
+		design.get("engine_x", -2.0)
+	)
+	var engine_y := wing_span * float(
+		design.get("engine_y_ratio", 0.56)
+	)
+
+	for side in [-1.0, 1.0]:
+		var y := engine_y * side
+		if style == "prop":
+			var pod := PackedVector2Array([
+				Vector2(engine_x + 4.0, y),
+				Vector2(engine_x + 1.5, y - 2.5),
+				Vector2(engine_x - 4.5, y - 2.1),
+				Vector2(engine_x - 6.2, y),
+				Vector2(engine_x - 4.5, y + 2.1),
+				Vector2(engine_x + 1.5, y + 2.5)
+			])
+			draw_colored_polygon(
+				pod,
+				wing_color.darkened(0.12)
+			)
+			draw_line(
+				Vector2(engine_x + 5.3, y - 5.0),
+				Vector2(engine_x + 5.3, y + 5.0),
+				Color("627076", 0.72),
+				1.1
+			)
+			draw_circle(
+				Vector2(engine_x + 5.3, y),
+				1.35,
+				accent_color.darkened(0.12)
+			)
+		else:
+			var nacelle := PackedVector2Array([
+				Vector2(engine_x + 4.5, y),
+				Vector2(engine_x + 2.0, y - 2.2),
+				Vector2(engine_x - 4.2, y - 2.0),
+				Vector2(engine_x - 5.8, y),
+				Vector2(engine_x - 4.2, y + 2.0),
+				Vector2(engine_x + 2.0, y + 2.2)
+			])
+			draw_colored_polygon(
+				nacelle,
+				Color("b9c8cc")
+			)
+			draw_circle(
+				Vector2(engine_x + 3.1, y),
+				1.55,
+				Color("3f555e")
+			)
+			draw_circle(
+				Vector2(engine_x + 3.1, y),
+				0.75,
+				Color("9fd1dc")
+			)
+
+		draw_line(
+			Vector2(engine_x - 1.0, y),
+			Vector2(engine_x - 6.0, y),
+			Color("5d6b70", 0.45),
+			0.9
+		)
+
+
+func _draw_aircraft_windows(
+	design: Dictionary,
+	nose_x: float,
+	tail_x: float,
+	body_half: float,
+	cockpit_color: Color
+) -> void:
+	var count := maxi(
+		int(design.get("window_count", 4)),
+		2
+	)
+	var start_x := tail_x + 10.0
+	var end_x := nose_x - 10.0
+	if end_x <= start_x:
+		return
+
+	for index in range(count):
+		var fraction := (
+			0.5
+			if count <= 1
+			else float(index) / float(count - 1)
+		)
+		var x := lerpf(
+			start_x,
+			end_x,
+			fraction
+		)
+		for side in [-1.0, 1.0]:
+			draw_circle(
+				Vector2(
+					x,
+					body_half * 0.72 * side
+				),
+				0.78,
+				cockpit_color.lightened(0.08)
+			)
+
+
+func _draw_aircraft_winglets(
+	wing_tip_front: float,
+	wing_tip_back: float,
+	wing_span: float,
+	accent_color: Color
+) -> void:
+	var x := lerpf(
+		wing_tip_front,
+		wing_tip_back,
+		0.45
+	)
+	draw_line(
+		Vector2(x, -wing_span),
+		Vector2(x - 1.5, -wing_span - 3.6),
+		accent_color,
+		1.8
+	)
+	draw_line(
+		Vector2(x, wing_span),
+		Vector2(x - 1.5, wing_span + 3.6),
+		accent_color,
+		1.8
+	)
+
+
 func _draw_social_badge() -> void:
-	var center := Vector2(-2, -39)
+	var design := get_visual_design()
+	var wing_span := float(
+		design.get("wing_half_span", 18.0)
+	)
+	var center := Vector2(
+		-2,
+		-maxf(39.0, wing_span + 20.0)
+	)
 	var relationship := String(
 		social_visit_data.get("relationship", "friend")
 	)
@@ -1269,7 +1823,14 @@ func _draw_social_badge() -> void:
 
 
 func _draw_event_badge() -> void:
-	var center := Vector2(-2, -39)
+	var design := get_visual_design()
+	var wing_span := float(
+		design.get("wing_half_span", 18.0)
+	)
+	var center := Vector2(
+		-2,
+		-maxf(39.0, wing_span + 20.0)
+	)
 	var fill := Color("e6a83f")
 	match event_theme:
 		"autumn":
@@ -1292,7 +1853,7 @@ func _draw_event_badge() -> void:
 	if not event_marker_text.is_empty():
 		draw_string(
 			ThemeDB.fallback_font,
-			Vector2(-20, -50),
+			center + Vector2(-18, -11),
 			event_marker_text,
 			HORIZONTAL_ALIGNMENT_CENTER,
 			36.0,
@@ -1305,18 +1866,35 @@ func _draw_shadow() -> void:
 	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
 		return
 
+	var design := get_visual_design()
 	var visual_scale := get_visual_scale()
+	var half_length := maxf(
+		absf(float(design.get("nose_x", 22.0))),
+		absf(float(design.get("tail_x", -25.0)))
+	)
+	var wing_span := float(
+		design.get("wing_half_span", 18.0)
+	)
+	var shadow_radius := maxf(
+		half_length * 0.82,
+		17.0
+	)
+	var y_ratio := clampf(
+		(wing_span / maxf(half_length, 1.0)) * 0.58,
+		0.34,
+		0.56
+	)
 	draw_set_transform(
 		Vector2(2, 4) * visual_scale,
 		0.0,
 		Vector2(
 			visual_scale,
-			visual_scale * 0.45
+			visual_scale * y_ratio
 		)
 	)
 	draw_circle(
 		Vector2.ZERO,
-		20.0,
+		shadow_radius,
 		Color(0, 0, 0, 0.25)
 	)
 	draw_set_transform(

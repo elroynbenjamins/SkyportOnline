@@ -6,6 +6,7 @@ var undo_emitted := false
 var done_emitted := false
 var store_emitted := false
 var stored_uid := -1
+var expanded_parcel_id := ""
 
 
 func _init() -> void:
@@ -35,6 +36,9 @@ func _run() -> void:
 	)
 	hud.stored_building_selected.connect(
 		_on_stored_building_selected
+	)
+	hud.placement_expand_requested.connect(
+		_on_placement_expand_requested
 	)
 
 	hud._on_airport_edit_pressed()
@@ -122,6 +126,99 @@ func _run() -> void:
 		_fail("Stored placement should wait for a placement preview.")
 		return
 
+	hud.set_player_data(4, 50000, 0)
+	hud.show_move_preview(
+		definition,
+		{
+			"valid": false,
+			"reason": "This land parcel is still locked.",
+			"locked_parcel_id": "north",
+			"locked_parcel_level": 5,
+			"locked_parcel_cost": 25000
+		}
+	)
+	if not hud.expand_here_button.visible:
+		_fail("Locked placement should expose Expand Here.")
+		return
+	if not hud.expand_here_button.disabled:
+		_fail("Expand Here should respect the parcel level requirement.")
+		return
+	if hud.place_button.visible:
+		_fail("Expand Here should replace the blocked confirm button.")
+		return
+
+	hud.set_player_data(5, 25000, 0)
+	hud.show_move_preview(
+		definition,
+		{
+			"valid": false,
+			"reason": "This land parcel is still locked.",
+			"locked_parcel_id": "north",
+			"locked_parcel_level": 5,
+			"locked_parcel_cost": 25000
+		}
+	)
+	if hud.expand_here_button.disabled:
+		_fail("Affordable level-eligible expansion should be enabled.")
+		return
+	hud._on_expand_here_pressed()
+	if expanded_parcel_id != "north":
+		_fail("Expand Here should emit the blocking parcel id.")
+		return
+
+	hud.show_move_preview(
+		definition,
+		{
+			"valid": true,
+			"footprint": Vector2i(2, 2)
+		}
+	)
+	if hud.expand_here_button.visible:
+		_fail("Expand Here should hide once placement is valid.")
+		return
+	if not hud.place_button.visible:
+		_fail("Confirm Move should return after expansion is resolved.")
+		return
+
+	hud.enter_building_mode(definition)
+	hud.set_player_data(5, 30000, 0)
+	hud.show_build_preview(
+		definition,
+		{
+			"valid": false,
+			"reason": "This land parcel is still locked.",
+			"locked_parcel_id": "north",
+			"locked_parcel_level": 5,
+			"locked_parcel_cost": 25000
+		},
+		5,
+		30000
+	)
+	if not hud.expand_here_button.disabled:
+		_fail(
+			"New construction expansion should reserve the building cost."
+		)
+		return
+
+	hud.set_player_data(5, 32500, 0)
+	hud.show_build_preview(
+		definition,
+		{
+			"valid": false,
+			"reason": "This land parcel is still locked.",
+			"locked_parcel_id": "north",
+			"locked_parcel_level": 5,
+			"locked_parcel_cost": 25000
+		},
+		5,
+		32500
+	)
+	if hud.expand_here_button.disabled:
+		_fail(
+			"Parcel plus building affordability should enable expansion."
+		)
+		return
+
 	hud._on_done_airport_edit_pressed()
 	if not done_emitted:
 		_fail("Done should emit an edit completion request.")
@@ -159,6 +256,10 @@ func _on_store_requested() -> void:
 
 func _on_stored_building_selected(uid: int) -> void:
 	stored_uid = uid
+
+
+func _on_placement_expand_requested(parcel_id: String) -> void:
+	expanded_parcel_id = parcel_id
 
 
 func _fail(message: String) -> void:

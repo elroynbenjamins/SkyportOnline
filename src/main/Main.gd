@@ -69,6 +69,9 @@ func _ready() -> void:
 	hud.rotate_building_requested.connect(_on_rotate_building_requested)
 	hud.confirm_building_requested.connect(_on_confirm_building_requested)
 	hud.cancel_building_requested.connect(_on_cancel_building_requested)
+	hud.placement_expand_requested.connect(
+		_on_placement_expand_requested
+	)
 	hud.store_building_requested.connect(_on_store_building_requested)
 	hud.stored_building_selected.connect(
 		_on_stored_building_selected
@@ -2840,6 +2843,109 @@ func _on_purchase_expansion_requested() -> void:
 	_persist_airport_layout()
 	hud.set_player_data(player_level, coins, gems)
 	hud.show_parcel(airport_grid.get_selected_parcel(), player_level, coins)
+
+
+func _on_placement_expand_requested(
+	parcel_id: String
+) -> void:
+	if (
+		selected_building_id.is_empty()
+		or not airport_grid.has_build_preview()
+	):
+		return
+
+	var status := airport_grid.get_build_preview_status()
+	if String(
+		status.get("locked_parcel_id", "")
+	) != parcel_id:
+		return
+
+	var parcel := airport_grid.get_parcel(parcel_id)
+	if parcel.is_empty() or bool(
+		parcel.get("owned", false)
+	):
+		return
+
+	var required_level := int(
+		parcel.get("level", 1)
+	)
+	var cost := int(
+		parcel.get("cost", 0)
+	)
+	var reserved_build_cost := 0
+	if (
+		moving_building_uid < 0
+		and placing_stored_building_uid < 0
+	):
+		var build_definition := BuildingCatalog.get_definition(
+			selected_building_id
+		)
+		if not build_definition.is_empty():
+			reserved_build_cost = maxi(
+				int(build_definition.get("cost", 0)),
+				0
+			)
+	var total_required_coins := cost + reserved_build_cost
+
+	if player_level < required_level:
+		hud.set_operation_status(
+			"Airport Lv %d required to expand here." % required_level,
+			"warning"
+		)
+		return
+	if coins < total_required_coins:
+		hud.set_operation_status(
+			"Need 🪙 %d more to expand here." % (
+				total_required_coins - coins
+			),
+			"warning"
+		)
+		return
+
+	if not airport_grid.purchase_parcel(parcel_id):
+		return
+
+	coins -= cost
+	_persist_airport_layout()
+	hud.set_player_data(player_level, coins, gems)
+
+	var definition := BuildingCatalog.get_definition(
+		selected_building_id
+	)
+	var refreshed := airport_grid.refresh_build_preview(
+		selected_building_rotation
+	)
+	if moving_building_uid >= 0:
+		hud.show_move_preview(
+			definition,
+			refreshed
+		)
+	elif placing_stored_building_uid >= 0:
+		hud.show_stored_building_preview(
+			definition,
+			refreshed
+		)
+	else:
+		hud.show_build_preview(
+			definition,
+			refreshed,
+			player_level,
+			coins
+		)
+
+	var next_locked := String(
+		refreshed.get("locked_parcel_id", "")
+	)
+	if next_locked.is_empty():
+		hud.set_operation_status(
+			"Airport expanded • placement is still active.",
+			"success"
+		)
+	else:
+		hud.set_operation_status(
+			"Parcel unlocked • this footprint also needs another expansion.",
+			"warning"
+		)
 
 
 func _on_building_selected(building_id: String) -> void:

@@ -673,6 +673,10 @@ func _first_available_station(
 	stand_uid: int,
 	service_type: String
 ) -> Dictionary:
+	var best: Dictionary = {}
+	var best_speed := -1.0
+	var best_route_length := INF
+
 	for station in stations:
 		var uid := int(station.get("uid", -1))
 		var capacity := maxi(
@@ -688,11 +692,44 @@ func _first_available_station(
 		if route.size() < 2:
 			continue
 
-		var result := station.duplicate(true)
-		result["service_route"] = route
-		return result
+		var synergy := airport_grid.get_service_synergy(
+			uid,
+			stand_uid,
+			service_type
+		)
+		var synergy_multiplier := maxf(
+			float(synergy.get("multiplier", 1.0)),
+			1.0
+		)
+		var base_speed := maxf(
+			float(station.get("service_speed", 1.0)),
+			0.1
+		)
+		var effective_speed := base_speed * synergy_multiplier
+		var route_length := _route_length(route)
 
-	return {}
+		if (
+			effective_speed < best_speed - 0.0001
+			or (
+				absf(effective_speed - best_speed) <= 0.0001
+				and route_length >= best_route_length
+			)
+		):
+			continue
+
+		best = station.duplicate(true)
+		best["service_route"] = route
+		best["base_service_speed"] = base_speed
+		best["synergy_multiplier"] = synergy_multiplier
+		best["synergy_bonus_pct"] = int(
+			synergy.get("bonus_pct", 0)
+		)
+		best["effective_service_speed"] = effective_speed
+		best["service_route_length"] = route_length
+		best_speed = effective_speed
+		best_route_length = route_length
+
+	return best
 
 
 func _dispatch_service(
@@ -718,8 +755,17 @@ func _dispatch_service(
 	active_jobs += 1
 
 	var speed := maxf(
-		float(station.get("service_speed", 1.0)),
+		float(
+			station.get(
+				"effective_service_speed",
+				station.get("service_speed", 1.0)
+			)
+		),
 		0.1
+	)
+	var synergy_bonus_pct := maxi(
+		int(station.get("synergy_bonus_pct", 0)),
+		0
 	)
 	var base_duration := maxf(
 		float(request.get("base_duration", 1.0)),
@@ -862,15 +908,29 @@ func _dispatch_service(
 			service_type
 		)
 
+	var dispatch_text := "%s %s dispatched • %.0fs • x%.2f" % [
+		label,
+		_service_display_name(service_type),
+		duration,
+		speed
+	]
+	if synergy_bonus_pct > 0:
+		dispatch_text += " • +%d%% local" % synergy_bonus_pct
 	status_changed.emit(
-		"%s %s dispatched • %.0fs • x%.2f" % [
-			label,
-			_service_display_name(service_type),
-			duration,
-			speed
-		],
+		dispatch_text,
 		"normal"
 	)
+
+
+func _route_length(
+	route: PackedVector2Array
+) -> float:
+	var total := 0.0
+	for index in range(1, route.size()):
+		total += route[index - 1].distance_to(
+			route[index]
+		)
+	return total
 
 
 func _route_to_aircraft_service_anchor(

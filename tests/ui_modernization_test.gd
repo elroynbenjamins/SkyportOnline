@@ -39,6 +39,9 @@ func _run() -> void:
 	var event := EventScreen.new()
 	root.add_child(event)
 
+	var mission_control := MissionPassScreen.new()
+	root.add_child(mission_control)
+
 	var social := SocialAirportScreen.new()
 	root.add_child(social)
 
@@ -116,6 +119,12 @@ func _run() -> void:
 		return
 	hud.set_social_attention(false)
 
+	if world.screen_title_label == null or not world.screen_title_label.text.contains("ROUTE CONTROL"):
+		_fail("World screen should present itself as game-style Route Control.")
+		return
+	if world.network_meta_label == null or not world.network_meta_label.text.contains("DISPATCH"):
+		_fail("Route Control should expose the select-route-dispatch gameplay flow.")
+		return
 	if world.route_card_label == null:
 		_fail("World Map should expose compact Route information card.")
 		return
@@ -129,6 +138,15 @@ func _run() -> void:
 		_fail("World Map should expose compact Aircraft Fit card.")
 		return
 
+	if fleet.screen_title_label == null or not fleet.screen_title_label.text.contains("FLEET BAY"):
+		_fail("Fleet screen should present itself as the game Fleet Bay.")
+		return
+	if mission_control.header == null or not mission_control.header.text.contains("MISSION CONTROL"):
+		_fail("Mission screen should expose a game-style Mission Control header.")
+		return
+	if mission_control.header_meta_label == null:
+		_fail("Mission Control should separate live pass stats from the screen title.")
+		return
 	if passenger_upgrade.current_stats_label == null:
 		_fail("Passenger upgrade should show Current stat card.")
 		return
@@ -143,6 +161,9 @@ func _run() -> void:
 		_fail("Service upgrade should show Next stat card.")
 		return
 
+	if return_summary.reward_panel == null or return_summary.result_badge_label == null:
+		_fail("Flight return should expose a focused game reward panel and result badge.")
+		return
 	if return_summary.coin_tile_label == null:
 		_fail("Flight return should show Coin reward tile.")
 		return
@@ -157,6 +178,7 @@ func _run() -> void:
 		world.root,
 		fleet.root,
 		event.root,
+		mission_control.root,
 		social.root,
 		inventory.root,
 		passenger_upgrade.root,
@@ -185,6 +207,11 @@ func _run() -> void:
 	if dock_button.get_theme_stylebox("normal") == null:
 		_fail("Airport action dock selected style should exist.")
 		return
+	var screen_tab := Button.new()
+	GameUIStyle.apply_button(screen_tab, "screen_tab_selected", true)
+	if screen_tab.get_theme_stylebox("normal") == null:
+		_fail("Secondary game screens should share a selected mode-tab style.")
+		return
 
 	var map := CountryMap.new()
 	root.add_child(map)
@@ -194,9 +221,9 @@ func _run() -> void:
 		return
 
 	print(
-		"UI modernization passed: game-style airport identity/resources/XP dock, "
-		+ "compact operations chips, construction drawer, World Map/Social cards, "
-		+ "upgrade comparisons, reward tiles, and shared game styling."
+		"UI modernization passed: game-style airport HUD/build drawer, Route Control, "
+		+ "Fleet Bay, Mission Control, Flight Complete rewards, upgrade cards, "
+		+ "and shared control-room styling."
 	)
 	quit(0)
 

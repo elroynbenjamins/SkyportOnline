@@ -14,6 +14,7 @@ var root: Control
 var body: VBoxContainer
 var scroll: ScrollContainer
 var header: Label
+var header_meta_label: Label
 var tabs: Dictionary = {}
 var selected_tab := "Daily"
 var data: Dictionary = {}
@@ -44,18 +45,33 @@ func _ready() -> void:
 	column.add_theme_constant_override("separation", 12)
 	margin.add_child(column)
 
+	var header_panel := PanelContainer.new()
+	GameUIStyle.apply_panel(header_panel, "screen_top")
+	column.add_child(header_panel)
+
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 12)
-	column.add_child(top)
+	header_panel.add_child(top)
+
+	var header_box := VBoxContainer.new()
+	header_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	top.add_child(header_box)
 
 	header = Label.new()
-	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	GameUIStyle.heading(header, 21)
-	top.add_child(header)
+	header.text = "🎯  MISSION CONTROL"
+	GameUIStyle.heading(header, 22)
+	header_box.add_child(header)
+
+	header_meta_label = Label.new()
+	header_meta_label.text = "DAILY • WEEKLY • AIRPORT PASS"
+	header_meta_label.add_theme_font_size_override("font_size", 11)
+	header_meta_label.add_theme_color_override("font_color", GameUIStyle.COLOR_ACCENT)
+	header_box.add_child(header_meta_label)
 
 	var close_button := Button.new()
-	close_button.text = "AIRPORT  ×"
-	close_button.custom_minimum_size = Vector2(140, 48)
+	close_button.text = "✕  AIRPORT"
+	close_button.custom_minimum_size = Vector2(140, 46)
 	GameUIStyle.apply_button(close_button, "secondary", true)
 	close_button.pressed.connect(close_screen)
 	top.add_child(close_button)
@@ -118,18 +134,24 @@ func _refresh() -> void:
 		body.remove_child(child)
 		child.queue_free()
 	for title in tabs:
-		GameUIStyle.apply_button(tabs[title], "selected" if title == selected_tab else "nav", true)
+		GameUIStyle.apply_button(
+			tabs[title],
+			"screen_tab_selected" if title == selected_tab else "screen_tab",
+			true
+		)
 
 	var state: Dictionary = data.get("state", {})
 	var pass_state: Dictionary = state.get("mission_pass", {})
 	var points := int(pass_state.get("points", 0))
 	var tier := MissionPassRules.pass_level(state)
-	header.text = "MISSIONS  •  PASS %d / %d  •  %d PTS  •  ✦ %d AERO" % [
-		tier,
-		MissionPassCatalog.TIERS,
-		points,
-		int(state.get("aero_tokens", state.get("gems", 0)))
-	]
+	header.text = "🎯  MISSION CONTROL"
+	if header_meta_label != null:
+		header_meta_label.text = "PASS TIER %d / %d  •  %d PTS  •  ✦ %d AERO" % [
+			tier,
+			MissionPassCatalog.TIERS,
+			points,
+			int(state.get("aero_tokens", state.get("gems", 0)))
+		]
 
 	match selected_tab:
 		"Daily":
@@ -146,7 +168,7 @@ func _daily(state: Dictionary) -> void:
 	var pass_state: Dictionary = state.get("mission_pass", {})
 	var daily: Array = pass_state.get("daily", [])
 	var completed := MissionPassRules.completed_daily_count(state)
-	var intro := _card()
+	var intro := _card("screen_focus")
 	_text(intro, "DAILY MISSIONS  •  %d / %d" % [completed, daily.size()], true)
 	_text(intro, "Each completed mission awards %d Pass Points. Complete all four for +%d bonus points." % [
 		MissionPassCatalog.DAILY_MISSION_POINTS,
@@ -161,7 +183,8 @@ func _daily(state: Dictionary) -> void:
 
 	for mission_variant in daily:
 		var mission: Dictionary = mission_variant
-		var card := _card()
+		var done := bool(mission.get("awarded", false))
+		var card := _card("mission_done" if done else "screen_section")
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
 		card.add_child(row)
@@ -172,8 +195,7 @@ func _daily(state: Dictionary) -> void:
 		_text(details, String(mission.get("title", "Mission")), true)
 		_text(details, String(mission.get("description", "")))
 		_progress(details, int(mission.get("progress", 0)), int(mission.get("target", 1)))
-		var done := bool(mission.get("awarded", false))
-		_text(details, "COMPLETE • +%d PASS POINTS" % MissionPassCatalog.DAILY_MISSION_POINTS if done else "PROGRESS %d / %d" % [
+		_text(details, "✓ COMPLETE • +%d PASS POINTS" % MissionPassCatalog.DAILY_MISSION_POINTS if done else "PROGRESS %d / %d" % [
 			int(mission.get("progress", 0)),
 			int(mission.get("target", 1))
 		])
@@ -212,7 +234,7 @@ func _daily(state: Dictionary) -> void:
 func _weekly(state: Dictionary) -> void:
 	var pass_state: Dictionary = state.get("mission_pass", {})
 	var weekly: Array = pass_state.get("weekly", [])
-	var intro := _card()
+	var intro := _card("screen_focus")
 	_text(intro, "WEEKLY MISSIONS", true)
 	_text(intro, "Each weekly mission gives %d Pass Points. Finishing all five from a week gives +%d bonus. Unfinished weekly missions stay available until the monthly pass ends." % [
 		MissionPassCatalog.WEEKLY_MISSION_POINTS,
@@ -238,7 +260,7 @@ func _weekly(state: Dictionary) -> void:
 		for mission in missions:
 			if bool(mission.get("awarded", false)):
 				done_count += 1
-		var header_card := _card()
+		var header_card := _card("context")
 		_text(header_card, "%s  •  %d / %d" % [
 			"CURRENT WEEK" if key == current_key else "CATCH-UP WEEK",
 			done_count,
@@ -248,7 +270,8 @@ func _weekly(state: Dictionary) -> void:
 		_text(header_card, "Weekly completion bonus claimed automatically." if bonus_awarded else "Complete all five for +%d Pass Points." % MissionPassCatalog.WEEKLY_COMPLETION_BONUS)
 		for mission_variant in missions:
 			var mission: Dictionary = mission_variant
-			var card := _card()
+			var done := bool(mission.get("awarded", false))
+			var card := _card("mission_done" if done else "screen_section")
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 12)
 			card.add_child(row)
@@ -275,7 +298,7 @@ func _pass(state: Dictionary) -> void:
 	var pass_state: Dictionary = state.get("mission_pass", {})
 	var points := int(pass_state.get("points", 0))
 	var premium := bool(pass_state.get("premium", false))
-	var intro := _card()
+	var intro := _card("screen_focus")
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 10)
 	intro.add_child(top)
@@ -326,7 +349,7 @@ func _pass(state: Dictionary) -> void:
 		owned.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
 		top.add_child(owned)
 
-	var inventory := _card()
+	var inventory := _card("screen_section")
 	_text(inventory, "PASS REWARD INVENTORY", true)
 	_text(inventory, "Boosters last 2 hours. Using another copy while active adds 2 more hours instead of increasing the percentage.")
 	var booster_now := float(data.get("unix_time", Time.get_unix_time_from_system()))
@@ -399,7 +422,7 @@ func _pass(state: Dictionary) -> void:
 		_reward_row(column, number, "premium", tier.get("premium", {}), unlocked, bool(claimed_premium.get(str(number), false)), premium)
 
 func _store(state: Dictionary) -> void:
-	var intro := _card()
+	var intro := _card("screen_focus")
 	_text(intro, "AERO TOKENS  •  ✦ %d" % int(state.get("aero_tokens", state.get("gems", 0))), true)
 	_text(intro, "Aero Tokens are the premium currency. They can also be earned slowly through gameplay and the free Airport Pass. Store purchases are capped at €9.99.")
 	var billing_ready := bool(data.get("billing_connected", false))
@@ -409,7 +432,7 @@ func _store(state: Dictionary) -> void:
 		var product: Dictionary = product_variant
 		if bool(product.get("premium_pass", false)):
 			continue
-		var card := _card()
+		var card := _card("screen_section")
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
 		card.add_child(row)
@@ -621,10 +644,10 @@ func _reward_icon(reward: Dictionary) -> String:
 			return "⚡"
 	return "•"
 
-func _card() -> VBoxContainer:
+func _card(variant: String = "screen_section") -> VBoxContainer:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, variant)
 	body.add_child(panel)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 8)

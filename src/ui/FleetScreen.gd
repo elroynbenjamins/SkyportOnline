@@ -2,6 +2,8 @@ class_name FleetScreen
 extends CanvasLayer
 
 var root: Control
+var screen_title_label: Label
+var screen_meta_label: Label
 var owned_list: VBoxContainer
 var details_title: Label
 var selected_aircraft_image: TextureRect
@@ -114,21 +116,31 @@ func _build_header(parent: Control) -> void:
 	panel.offset_right = -14
 	panel.offset_bottom = 68
 	parent.add_child(panel)
-	GameUIStyle.apply_panel(panel, "top")
+	GameUIStyle.apply_panel(panel, "screen_top")
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	panel.add_child(row)
 
-	var title := Label.new()
-	title.text = "✈  FLEET CONTROL"
-	GameUIStyle.heading(title, 24)
-	row.add_child(title)
+	var title_box := VBoxContainer.new()
+	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(title_box)
+
+	screen_title_label = Label.new()
+	screen_title_label.text = "✈  FLEET BAY"
+	GameUIStyle.heading(screen_title_label, 24)
+	title_box.add_child(screen_title_label)
+
+	screen_meta_label = Label.new()
+	screen_meta_label.text = "AIRCRAFT STATUS  •  MASTERY  •  PERFORMANCE"
+	screen_meta_label.add_theme_font_size_override("font_size", 11)
+	screen_meta_label.add_theme_color_override("font_color", GameUIStyle.COLOR_ACCENT)
+	title_box.add_child(screen_meta_label)
 
 	fleet_summary_label = Label.new()
-	fleet_summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fleet_summary_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	fleet_summary_label.add_theme_font_size_override("font_size", 14)
+	fleet_summary_label.add_theme_font_size_override("font_size", 13)
 	GameUIStyle.muted(fleet_summary_label)
 	row.add_child(fleet_summary_label)
 
@@ -144,7 +156,7 @@ func _build_owned_panel(parent: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(300, 0)
 	parent.add_child(panel)
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, "screen_section")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
@@ -158,7 +170,7 @@ func _build_owned_panel(parent: HBoxContainer) -> void:
 	margin.add_child(column)
 
 	var heading := Label.new()
-	heading.text = "OWNED AIRCRAFT"
+	heading.text = "YOUR FLEET"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(heading, 17)
 	column.add_child(heading)
@@ -177,7 +189,7 @@ func _build_details_panel(parent: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(panel)
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, "screen_focus")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
@@ -197,7 +209,7 @@ func _build_details_panel(parent: HBoxContainer) -> void:
 
 	var preview_card := PanelContainer.new()
 	preview_card.custom_minimum_size = Vector2(0, 116)
-	GameUIStyle.apply_panel(preview_card, "dark")
+	GameUIStyle.apply_panel(preview_card, "context_preview")
 	column.add_child(preview_card)
 
 	selected_aircraft_image = TextureRect.new()
@@ -249,7 +261,7 @@ func _build_catalog_panel(parent: HBoxContainer) -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(330, 0)
 	parent.add_child(panel)
-	GameUIStyle.apply_panel(panel, "dark")
+	GameUIStyle.apply_panel(panel, "screen_section")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 12)
@@ -263,13 +275,13 @@ func _build_catalog_panel(parent: HBoxContainer) -> void:
 	margin.add_child(column)
 
 	var heading := Label.new()
-	heading.text = "V1 AIRCRAFT CATALOG"
+	heading.text = "AIRCRAFT CATALOG"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(heading, 17)
 	column.add_child(heading)
 
 	var note := Label.new()
-	note.text = "L / XL aircraft remain future-ready."
+	note.text = "Aircraft unlock as your airport level grows."
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_font_size_override("font_size", 12)
 	GameUIStyle.muted(note)
@@ -292,7 +304,7 @@ func _refresh_owned_aircraft() -> void:
 	while aircraft_buttons.size() < aircraft.size():
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(0, 72)
-		GameUIStyle.apply_button(button, "secondary", true)
+		GameUIStyle.apply_button(button, "build_card", true)
 		var index := aircraft_buttons.size()
 		button.pressed.connect(_on_aircraft_selected.bind(index))
 		owned_list.add_child(button)
@@ -321,7 +333,7 @@ func _refresh_owned_aircraft() -> void:
 		]
 		GameUIStyle.apply_button(
 			button,
-			"selected" if index == selected_index else "secondary",
+			"build_card_selected" if index == selected_index else "build_card",
 			true
 		)
 		button.disabled = index == selected_index
@@ -516,7 +528,7 @@ func _refresh_catalog() -> void:
 		var card := PanelContainer.new()
 		GameUIStyle.apply_panel(
 			card,
-			"raised" if owned_count > 0 else "dark"
+			"context" if owned_count > 0 else "screen_section"
 		)
 		catalog_list.add_child(card)
 
@@ -566,7 +578,7 @@ func _make_stat_chip(
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.custom_minimum_size = Vector2(0, 52)
-	GameUIStyle.apply_panel(card, "dark")
+	GameUIStyle.apply_panel(card, "reward_tile")
 	parent.add_child(card)
 
 	var label := Label.new()

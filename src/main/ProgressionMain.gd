@@ -412,13 +412,23 @@ func _resource_inventory_total() -> int:
 func _record_mission_event(event_kind: String, payload: Dictionary) -> void:
 	if not progression_ready:
 		return
-	MissionPassRules.record_event(
+	var before_tier := MissionPassRules.pass_level(progression)
+	var result := MissionPassRules.record_event(
 		progression,
 		event_kind,
 		payload,
 		Time.get_unix_time_from_system(),
 		player_level
 	)
+	var completed: Array = result.get("completed", [])
+	if completed.is_empty():
+		return
+	var after_tier := MissionPassRules.pass_level(progression)
+	var message := "MISSION COMPLETE" if completed.size() == 1 else "%d MISSIONS COMPLETE" % completed.size()
+	message += " • +%d PASS POINTS" % int(result.get("points_added", 0))
+	if after_tier > before_tier:
+		message += " • TIER %d UNLOCKED" % after_tier
+	hud.set_operation_status(message, "success")
 
 func _on_mission_reroll_requested(mission_id: String, use_ad: bool) -> void:
 	if use_ad:

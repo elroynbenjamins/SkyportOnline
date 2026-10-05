@@ -46,7 +46,7 @@ func _run() -> void:
 	await process_frame
 
 	_check_starter_world_art(grid)
-	_check_starter_layout_and_reload(grid)
+	await _check_starter_layout_and_reload(grid)
 	_check_ground_service_atlas()
 	await _check_build_drawer_uses_world_art()
 

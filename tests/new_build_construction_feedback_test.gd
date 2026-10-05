@@ -108,6 +108,37 @@ func _run() -> void:
 		_fail("Relocation must not restart construction feedback.")
 		return
 
+	var quick_grid := AirportGrid.new()
+	root.add_child(quick_grid)
+	await process_frame
+	if not quick_grid.purchase_parcel("north"):
+		_fail("Quick-edit construction grid should unlock north.")
+		return
+	var quick_status := quick_grid.set_build_preview(
+		"basic_fuel",
+		quick_grid.tile_to_world(Vector2(10, 3)),
+		0
+	)
+	if not bool(quick_status.get("valid", false)):
+		_fail("Quick-edit construction target should be valid.")
+		return
+	var quick_build := quick_grid.confirm_build_preview()
+	var quick_uid := int(quick_build.get("uid", -1))
+	if not quick_grid.is_building_construction_feedback_active(
+		quick_uid
+	):
+		_fail("Quick-edit building should begin construction feedback.")
+		return
+	var quick_move := quick_grid.begin_move_preview(quick_uid)
+	if not bool(quick_move.get("valid", false)):
+		_fail("Freshly built structure should still be immediately editable.")
+		return
+	if quick_grid.is_building_construction_feedback_active(
+		quick_uid
+	):
+		_fail("Immediate edit should cancel stale construction cosmetics.")
+		return
+
 	print(
 		"New building construction feedback passed: distinct build-in effect, "
 		+ "automatic completion and separate relocation pulse."

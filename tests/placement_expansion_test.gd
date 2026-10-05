@@ -44,6 +44,9 @@ func _run() -> void:
 	if not grid.purchase_parcel("north"):
 		_fail("Direct parcel purchase should unlock locked placement land.")
 		return
+	if not grid.is_parcel_unlock_animation_active("north"):
+		_fail("Placement-time expansion should trigger the unlock effect.")
+		return
 
 	parcel = grid.get_parcel("north")
 	if not bool(parcel.get("owned", false)):

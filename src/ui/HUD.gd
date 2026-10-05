@@ -992,7 +992,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
-		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		button.tooltip_text = String(definition.get("description", ""))
 		GameUIStyle.apply_button(button, "build_card", true)
 		var icon := _catalog_icon_for(definition)
@@ -1045,6 +1045,42 @@ func _apply_catalog_filter() -> void:
 
 
 func _catalog_icon_for(definition: Dictionary) -> Texture2D:
+	# Prefer the exact world art so build/storage cards always preview
+	# what the player will actually place on the airport.
+	var atlas_path := String(
+		definition.get("world_sprite_atlas_path", "")
+	)
+	var regions: Array = definition.get(
+		"world_sprite_regions",
+		[]
+	)
+	if not atlas_path.is_empty() and not regions.is_empty():
+		var atlas_resource := load(atlas_path)
+		if atlas_resource is Texture2D:
+			var first_region = regions[0]
+			if first_region is Rect2:
+				var atlas_texture := AtlasTexture.new()
+				atlas_texture.atlas = atlas_resource as Texture2D
+				atlas_texture.region = first_region
+				return atlas_texture
+
+	var variants: PackedStringArray = definition.get(
+		"world_sprite_paths",
+		PackedStringArray()
+	)
+	if not variants.is_empty():
+		var world_resource := load(variants[0])
+		if world_resource is Texture2D:
+			return world_resource as Texture2D
+
+	var single_world_path := String(
+		definition.get("world_sprite_path", "")
+	)
+	if not single_world_path.is_empty():
+		var single_world_resource := load(single_world_path)
+		if single_world_resource is Texture2D:
+			return single_world_resource as Texture2D
+
 	var path := String(definition.get("icon_path", ""))
 	if path.is_empty():
 		return null
@@ -1525,7 +1561,7 @@ func set_stored_buildings(
 			button.icon = icon
 			button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 			button.expand_icon = true
-			button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		GameUIStyle.apply_button(button, "secondary", true)
 		button.pressed.connect(
 			_on_stored_building_pressed.bind(uid)

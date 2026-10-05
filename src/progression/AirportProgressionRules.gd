@@ -22,7 +22,8 @@ static func level_for_xp(xp: int) -> int:
 static func new_state(airport_id: String, legacy_level: int = 1) -> Dictionary:
 	return {
 		"version": 1, "airport_id": airport_id, "coins": 18420,
-		"xp": xp_for_level(legacy_level), "gems": 120, "passenger_balance": 20.0,
+		"xp": xp_for_level(legacy_level), "gems": 0, "aero_tokens": 0, "passenger_balance": 20.0,
+		"booster_inventory": {}, "active_boosters": {}, "resource_choice_crates": 0, "pass_cosmetics": {},
 		"claimed": {}, "progress": {}, "seen_events": {}, "tour_countries": {},
 		"pending_passengers": 0, "npc_seen": {}, "npc_serviced": 0,
 		"friendships": {}, "npc_remaining": 90.0, "npc_last": "",

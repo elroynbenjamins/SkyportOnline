@@ -1,3 +1,4 @@
+# Ground-service visual QA: presentation-only changes must not alter service logic.
 extends SceneTree
 
 

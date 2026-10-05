@@ -40,6 +40,9 @@ var passenger_economy: PassengerEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var event_manager: EventManager
 var event_screen: EventScreen
+var social_airport_service: SocialAirportService
+var social_airport_screen: SocialAirportScreen
+var social_visitor_aircraft: Dictionary = {}
 var current_profile: Dictionary = {}
 var gameplay_started := false
 var current_event_snapshot: Dictionary = {}
@@ -153,6 +156,7 @@ func _start_gameplay() -> void:
 	_setup_building_context_card()
 	_setup_return_summary()
 	_setup_passenger_system()
+	_setup_social_system()
 	_setup_event_system()
 	_setup_rewarded_passenger_ad_bridge()
 	_setup_resource_inventory()
@@ -269,6 +273,33 @@ func _setup_passenger_system() -> void:
 	passenger_economy.configure(
 		airport_grid,
 		float(current_profile.get("passenger_balance", 20))
+	)
+
+
+func _setup_social_system() -> void:
+	social_airport_service = SocialAirportService.new()
+	social_airport_service.changed.connect(
+		_on_social_snapshot_changed
+	)
+	social_airport_service.visit_requested.connect(
+		_on_social_visit_requested
+	)
+	add_child(social_airport_service)
+	social_airport_service.configure(true)
+
+	social_airport_screen = SocialAirportScreen.new()
+	social_airport_screen.visit_requested.connect(
+		_on_social_screen_visit_requested
+	)
+	social_airport_screen.passenger_gift_requested.connect(
+		_on_social_passenger_gift_requested
+	)
+	social_airport_screen.close_requested.connect(
+		_on_social_screen_closed
+	)
+	add_child(social_airport_screen)
+	social_airport_screen.set_snapshot(
+		social_airport_service.get_snapshot()
 	)
 
 

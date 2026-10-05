@@ -109,6 +109,51 @@ static func apply_panel(
 	match variant:
 		"top":
 			control.add_theme_stylebox_override("panel", top_bar())
+		"hud_top":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("0b2531", 0.98), Color("4d7a89"), 15, 1, true)
+			)
+		"hud_level":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("302919"), COLOR_GOLD, 12, 1, false)
+			)
+		"hud_passenger":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("102f3a"), Color("58b9cf"), 12, 1, false)
+			)
+		"hud_coin":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("342c18"), COLOR_GOLD_DARK, 12, 1, false)
+			)
+		"hud_premium":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("2a2038"), Color("a884d6"), 12, 1, false)
+			)
+		"dock":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("081b24", 0.98), Color("365a68"), 16, 1, true)
+			)
+		"toast_success":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("123328", 0.98), COLOR_SUCCESS, 12, 2, true)
+			)
+		"toast_warning":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("3a2e18", 0.98), COLOR_WARNING, 12, 2, true)
+			)
+		"toast_danger":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("3a2022", 0.98), COLOR_DANGER, 12, 2, true)
+			)
 		"raised":
 			control.add_theme_stylebox_override(
 				"panel",
@@ -183,6 +228,18 @@ static func apply_button(
 			hover_bg = Color("985126")
 			pressed_bg = Color("603319")
 			pressed_border = Color("ffb36a")
+		"dock":
+			normal_bg = Color("0d2631")
+			normal_border = Color("294d5a")
+			hover_bg = Color("143743")
+			pressed_bg = Color("183f4d")
+			pressed_border = COLOR_ACCENT
+		"dock_selected":
+			normal_bg = Color("1d5667")
+			normal_border = Color("79d6e8")
+			hover_bg = Color("246a7d")
+			pressed_bg = Color("194b5a")
+			pressed_border = Color("b5f1fb")
 
 	var radius := 10 if compact else 12
 	button.add_theme_stylebox_override(

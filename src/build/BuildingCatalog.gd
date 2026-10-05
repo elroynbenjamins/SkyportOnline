@@ -178,13 +178,18 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.05,
 			"local_service_radius_tiles": 5.0,
 			"icon_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
-			"art_tier": "starter_v3",
-			"world_sprite_path": "res://assets/production/starter_v3/ground_ops_depot_v3.svg",
-			"world_sprite_size": Vector2(132, 132),
-			"world_sprite_offsets": [
-				Vector2(0, -34)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 896, 448, 448),
+				Rect2(448, 896, 448, 448)
 			],
-			"world_sprite_offset": Vector2(0, -34),
+			"world_sprite_size": Vector2(116, 116),
+			"world_sprite_offsets": [
+				Vector2(0, -31),
+				Vector2(0, -29)
+			],
+			"world_sprite_offset": Vector2(0, -31),
 			"services": {
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},

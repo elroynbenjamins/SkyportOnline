@@ -12,6 +12,7 @@ var deploying := false
 var checkpoint_elapsed := 0.0
 var career_refresh_elapsed := 0.0
 var restoring_wallet := false
+var next_analytics_refresh_ms := 0
 
 func _ready() -> void:
 	legacy_airport = ProfileStore.has_airport()
@@ -210,6 +211,10 @@ func _on_world_map_flight_assignment_requested(aircraft: AircraftPrototype, dest
 	if not is_instance_valid(aircraft) or not aircraft.can_change_flight_plan():
 		super._on_world_map_flight_assignment_requested(aircraft, destination_id)
 		return
+	var destination := DestinationCatalog.get_destination(destination_id)
+	if destination.is_empty() or player_level < int(destination.get("unlock_level", 1)) or not FlightRules.can_fly(aircraft.get_aircraft_profile(), destination):
+		super._on_world_map_flight_assignment_requested(aircraft, destination_id)
+		return
 	aircraft.set_meta("passengers_paid", false)
 	super._on_world_map_flight_assignment_requested(aircraft, destination_id)
 	_save_checkpoint()
@@ -303,6 +308,8 @@ func _drain_passenger_rewards() -> void:
 	restoring_wallet = true
 	passenger_economy.set_passengers(float(next["passenger_balance"]))
 	restoring_wallet = false
+	# The change signal may immediately board a queued aircraft; save that debit too.
+	_save_checkpoint()
 
 func _purchase_career_aircraft(aircraft_id: String) -> void:
 	var next := AirportProgressionRules.purchase_aircraft(_capture_state(), aircraft_id, player_level)
@@ -497,3 +504,41 @@ func _on_air_traffic_upgrade_requested(uid: int) -> void:
 func _on_event_shop_coins_granted(amount: int) -> void:
 	super._on_event_shop_coins_granted(amount)
 	_save_checkpoint()
+
+
+func _refresh_operations_analytics() -> void:
+	# Recompute recommendations at most once per 750ms, not for every vehicle/ATC signal.
+	var now := Time.get_ticks_msec()
+	if now < next_analytics_refresh_ms:
+		return
+	next_analytics_refresh_ms = now + 750
+	super._refresh_operations_analytics()
+
+
+func _assign_arrival_if_possible(aircraft: AircraftPrototype, label: String) -> bool:
+	if not is_instance_valid(aircraft) or not _is_npc(aircraft):
+		return super._assign_arrival_if_possible(aircraft, label)
+	# Keep the scheduler's infrastructure guarantee during actual runway selection.
+	# A nearer, unserviced stand must not win over the eligible stand we found.
+	var eligible_stands := NpcTrafficDirector.free_ready_stands(airport_grid, aircraft.aircraft_size, stand_occupancy)
+	var candidates: Array[Dictionary] = []
+	for option in airport_grid.get_arrival_route_options(aircraft.aircraft_size):
+		if eligible_stands.has(int(option.get("stand_uid", -1))):
+			var route: PackedVector2Array = option.get("route", PackedVector2Array())
+			if route.size() >= 4:
+				candidates.append(option)
+	if candidates.is_empty():
+		return false
+	var selected := runway_dispatcher.select_best_runway_option(candidates, "arrival")
+	if selected.is_empty():
+		return false
+	var stand_uid := int(selected.get("stand_uid", -1))
+	var runway_uid := int(selected.get("runway_uid", -1))
+	if stand_uid < 0 or runway_uid < 0:
+		return false
+	runway_dispatcher.record_assignment_decision(candidates, selected, "arrival")
+	stand_occupancy[stand_uid] = aircraft
+	aircraft.set_arrival_route(selected["route"], stand_uid, runway_uid)
+	runway_dispatcher.request_arrival(aircraft, label)
+	_refresh_operations_analytics()
+	return true

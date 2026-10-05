@@ -251,6 +251,9 @@ func _build_interface() -> void:
 	airside_status_label = Label.new()
 	operation_status_label = Label.new()
 	atc_status_label = Label.new()
+	for legacy_label in [airside_status_label, operation_status_label, atc_status_label]:
+		legacy_label.visible = false
+		root.add_child(legacy_label)
 
 	status_details = {
 		"airside": {

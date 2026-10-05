@@ -86,6 +86,33 @@ func _run() -> void:
 		ledger = FriendshipRules.record_completion(ledger, {"contact_id": "friend-1", "visit_id": "day-two-%d" % index, "relationship": "friend"}, "2026-10-06")
 	check(int(FriendshipRules.status(ledger["friend-1"])["rank"]) == 2, "Ten visits should earn friendship rank two.")
 
+	# Cached definitions remain isolated from caller mutations.
+	var definition_copy := BuildingCatalog.get_definition("small_stand")
+	definition_copy["cost"] = -1
+	check(int(BuildingCatalog.get_definition("small_stand")["cost"]) == 4500, "Catalog cache must return independent definitions.")
+	var styled_button := Button.new()
+	GameUIStyle.apply_button(styled_button, "primary", true)
+	var first_style := styled_button.get_theme_stylebox("normal")
+	GameUIStyle.apply_button(styled_button, "primary", true)
+	check(first_style == styled_button.get_theme_stylebox("normal"), "Unchanged button style must not allocate a fresh theme.")
+	GameUIStyle.apply_button(styled_button, "gold", true)
+	check(first_style != styled_button.get_theme_stylebox("normal"), "Changed button style must still apply.")
+	styled_button.free()
+	var traffic := TaxiTrafficController.new()
+	root.add_child(traffic)
+	var departing_visitor := AircraftPrototype.new()
+	root.add_child(departing_visitor)
+	departing_visitor.configure_taxi_traffic(traffic)
+	var departed_id := departing_visitor.get_instance_id()
+	departing_visitor.free()
+	check(not traffic.registered.has(departed_id), "Removed visitors must unregister from taxi traffic.")
+	var stale_plane := AircraftPrototype.new()
+	traffic.register_aircraft(stale_plane)
+	stale_plane.free()
+	traffic._cleanup_invalid()
+	check(traffic.registered.is_empty(), "Stale references must be checked before casting during taxi cleanup.")
+	traffic.queue_free()
+
 	var director := NpcTrafficDirector.new()
 	director.rng.seed = 2026
 	check(director.eligible(1, ["S"]).size() == 1, "Level one NPC pool should contain only the Pico pilot.")

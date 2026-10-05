@@ -7,7 +7,7 @@ static func save_path(airport_id: String) -> String:
 	return "user://skyport_progression_%s.cfg" % airport_id.sha256_text().left(24)
 
 static func has_state(airport_id: String) -> bool:
-	return not airport_id.is_empty() and FileAccess.file_exists(save_path(airport_id))
+	return not airport_id.is_empty() and (FileAccess.file_exists(save_path(airport_id)) or FileAccess.file_exists(save_path(airport_id) + ".bak"))
 
 static func load_state(airport_id: String) -> Dictionary:
 	if airport_id.is_empty():

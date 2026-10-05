@@ -26,7 +26,9 @@ func _run() -> void:
 		return
 	var profile := ProfileStore.create_guest_airport("Career Test", "CAR", "NL")
 	airport_id = String(profile.get("airport_id", ""))
+	print("Starting actual airport gameplay integration")
 	main._on_airport_created(profile)
+	main.airport_setup.close()
 	await process_frame
 	check(main.gameplay_started and main.progression_ready, "Guest creation must start the real game.")
 	check(main.player_level == 1, "A new airport starts career progression at level one.")
@@ -45,23 +47,23 @@ func _run() -> void:
 	main.runway_dispatcher.set_process(false)
 	main.taxi_traffic.set_process(false)
 	var finished := false
-	for step in range(16000):
-		main._process(0.05)
-		main.passenger_economy._process(0.05)
-		main.ground_services._process(0.05)
-		main.runway_dispatcher._process(0.05)
+	for step in range(8000):
+		main._process(0.10)
+		main.passenger_economy._process(0.10)
+		main.ground_services._process(0.10)
+		main.runway_dispatcher._process(0.10)
 		if main.taxi_traffic.has_method("_process"):
-			main.taxi_traffic._process(0.05)
+			main.taxi_traffic._process(0.10)
 		var aircraft: Array = main.aircraft_demos.duplicate()
 		aircraft.append_array(main.social_visitor_aircraft.values())
 		for plane in aircraft:
 			if is_instance_valid(plane) and not plane.is_queued_for_deletion():
 				plane.set_process(false)
-				plane._process(0.05)
+				plane._process(0.10)
 		for vehicle in main.ground_services.get_children():
 			if is_instance_valid(vehicle) and not vehicle.is_queued_for_deletion() and vehicle.has_method("_process"):
 				vehicle.set_process(false)
-				vehicle._process(0.05)
+				vehicle._process(0.10)
 		if step % 30 == 0:
 			await process_frame
 		var first_progress := int((main.progression.get("progress", {}) as Dictionary).get("first_circuit", 0))

@@ -69,8 +69,11 @@ func request_segment(
 			continue
 
 		var reservation: Dictionary = reservations[other_id]
-		var other := reservation.get("aircraft") as AircraftPrototype
-		if other == null or not is_instance_valid(other):
+		var other_value = reservation.get("aircraft")
+		if not is_instance_valid(other_value):
+			continue
+		var other := other_value as AircraftPrototype
+		if other == null:
 			continue
 
 		var other_clearance := clearance_for_aircraft(other)
@@ -113,8 +116,10 @@ func request_segment(
 	# Avoid entering a waypoint already occupied by a taxiing aircraft that
 	# has not requested its next segment yet.
 	for other_variant in registered.values():
+		if not is_instance_valid(other_variant):
+			continue
 		var other := other_variant as AircraftPrototype
-		if other == null or not is_instance_valid(other):
+		if other == null:
 			continue
 		if other == aircraft:
 			continue
@@ -223,19 +228,15 @@ static func clearance_for_aircraft(
 
 
 func _cleanup_invalid() -> void:
-	for key_variant in reservations.keys():
-		var key := int(key_variant)
+	# Never cast a stale Object reference: checking after `as AircraftPrototype`
+	# is too late in GDScript and aborts cleanup, leaving the taxi queue blocked.
+	for key in reservations.keys():
 		var reservation: Dictionary = reservations[key]
-		var aircraft := reservation.get(
-			"aircraft"
-		) as AircraftPrototype
-		if aircraft == null or not is_instance_valid(aircraft):
+		var aircraft = reservation.get("aircraft")
+		if not is_instance_valid(aircraft):
 			reservations.erase(key)
-
-	for key_variant in registered.keys():
-		var key := int(key_variant)
-		var aircraft := registered[key] as AircraftPrototype
-		if aircraft == null or not is_instance_valid(aircraft):
+	for key in registered.keys():
+		if not is_instance_valid(registered[key]):
 			registered.erase(key)
 
 

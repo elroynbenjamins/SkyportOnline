@@ -1161,6 +1161,9 @@ func _process_priority_contract_return(
 
 
 func _on_navigation_requested(tab: String) -> void:
+	if moving_building_uid >= 0:
+		_cancel_building_move(false)
+
 	if aircraft_context_card != null:
 		aircraft_context_card.close_card()
 	if building_context_card != null:

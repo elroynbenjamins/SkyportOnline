@@ -1,6 +1,9 @@
 class_name BuildingCatalog
 extends RefCounted
 
+# Catalog definitions are immutable; return copies so callers cannot alter the cache.
+static var _definitions_by_id: Dictionary = {}
+
 
 static func all() -> Array[Dictionary]:
 	return [
@@ -455,10 +458,12 @@ static func all() -> Array[Dictionary]:
 
 
 static func get_definition(building_id: String) -> Dictionary:
-	for definition in all():
-		if String(definition["id"]) == building_id:
-			return definition.duplicate(true)
-	return {}
+	if _definitions_by_id.is_empty():
+		for definition in all():
+			_definitions_by_id[String(definition["id"])] = definition
+	if not _definitions_by_id.has(building_id):
+		return {}
+	return (_definitions_by_id[building_id] as Dictionary).duplicate(true)
 
 
 static func get_menu_definitions(

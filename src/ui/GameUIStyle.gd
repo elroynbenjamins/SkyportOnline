@@ -134,6 +134,10 @@ static func apply_button(
 ) -> void:
 	if button == null:
 		return
+	var style_key := kind + (":compact" if compact else ":full")
+	if String(button.get_meta("game_style_key", "")) == style_key:
+		return
+	button.set_meta("game_style_key", style_key)
 
 	var normal_bg := Color("173643")
 	var normal_border := Color("3c6574")

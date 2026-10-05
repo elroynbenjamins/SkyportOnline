@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://src/main/Main.gd" id="1_main"]
+[ext_resource type="Script" path="res://src/main/ProgressionMain.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/world/AirportGrid.gd" id="2_grid"]
 [ext_resource type="Script" path="res://src/world/CameraController.gd" id="3_camera"]
 [ext_resource type="Script" path="res://src/ui/HUD.gd" id="4_hud"]
@@ -25,7 +25,6 @@ script = ExtResource("3_camera")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("4_hud")
-
 
 [node name="AirportSetup" type="CanvasLayer" parent="."]
 layer = 100

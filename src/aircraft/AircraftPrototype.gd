@@ -1219,3 +1219,8 @@ func _draw_shadow() -> void:
 	draw_set_transform(Vector2(2, 4), 0.0, Vector2(1.0, 0.45))
 	draw_circle(Vector2.ZERO, 20.0, Color(0, 0, 0, 0.25))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(taxi_traffic_controller):
+		taxi_traffic_controller.unregister_aircraft(self)

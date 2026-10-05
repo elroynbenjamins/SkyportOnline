@@ -191,6 +191,9 @@ func _add_parcel(id: String, px: int, py: int, level: int, cost: int, owned: boo
 
 func _draw() -> void:
 	_draw_world_terrain_background()
+	# Landside art is a background layer. Drawing it before parcel terrain
+	# guarantees decorative scenery can never cover buildable placement tiles.
+	_draw_landside_environment()
 
 	for py in range(PARCEL_ROWS):
 		for px in range(PARCEL_COLUMNS):
@@ -199,7 +202,6 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
-	_draw_landside_environment()
 	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()

@@ -2872,16 +2872,31 @@ func _on_placement_expand_requested(
 	var cost := int(
 		parcel.get("cost", 0)
 	)
+	var reserved_build_cost := 0
+	if (
+		moving_building_uid < 0
+		and placing_stored_building_uid < 0
+	):
+		var build_definition := BuildingCatalog.get_definition(
+			selected_building_id
+		)
+		if not build_definition.is_empty():
+			reserved_build_cost = maxi(
+				int(build_definition.get("cost", 0)),
+				0
+			)
+	var total_required_coins := cost + reserved_build_cost
+
 	if player_level < required_level:
 		hud.set_operation_status(
 			"Airport Lv %d required to expand here." % required_level,
 			"warning"
 		)
 		return
-	if coins < cost:
+	if coins < total_required_coins:
 		hud.set_operation_status(
 			"Need 🪙 %d more to expand here." % (
-				cost - coins
+				total_required_coins - coins
 			),
 			"warning"
 		)

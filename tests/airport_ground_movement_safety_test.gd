@@ -51,6 +51,8 @@ func _run() -> void:
 		return
 
 	traffic.release_segment(blocker)
+	blocker.state = "PARKED"
+	blocker.position = Vector2(0, 120)
 	pushback_clearance = pushback_plane.reserve_pushback_path()
 	if not bool(pushback_clearance.get("allowed", false)):
 		_fail("Pushback should reserve its corridor after crossing traffic clears.")
@@ -117,6 +119,8 @@ func _run() -> void:
 		return
 
 	traffic.release_segment(entry_blocker)
+	entry_blocker.state = "PARKED"
+	entry_blocker.position = Vector2(25, 120)
 	departure._process(0.10)
 	if departure.is_taxi_holding():
 		_fail("Runway-entry hold should clear after crossing traffic releases.")

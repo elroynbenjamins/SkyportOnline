@@ -1,6 +1,6 @@
 extends Node2D
 
-@onready var airport_grid = $AirportGrid
+@onready var airport_grid: AirportGrid = $AirportGrid
 @onready var camera_controller = $Camera
 @onready var hud = $HUD
 @onready var airport_setup = $AirportSetup

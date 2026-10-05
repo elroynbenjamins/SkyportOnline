@@ -402,7 +402,7 @@ func _spawn_aircraft_demos() -> void:
 			continue
 
 		var label := "SO-%03d" % (index + 1)
-		var aircraft := AircraftPrototype.new()
+		var aircraft := CareerAircraft.new()
 
 		var profile_ids: Array[String] = ["pico_p8", "pico_p8"]
 		var default_destinations: Array[String] = ["brussels", "brussels"]
@@ -1524,7 +1524,7 @@ func _on_social_visit_requested(
 	if visit_id.is_empty() or social_visitor_aircraft.has(visit_id):
 		return
 
-	var aircraft := AircraftPrototype.new()
+	var aircraft := CareerAircraft.new()
 	var aircraft_type_id := String(
 		request.get("aircraft_type_id", "pico_p8")
 	)

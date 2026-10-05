@@ -39,17 +39,17 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Parking and turnaround for small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
-			"world_sprite_regions": [
-				Rect2(896, 0, 448, 448),
-				Rect2(1344, 0, 448, 448)
-			],
-			"world_sprite_size": Vector2(192, 192),
+			"art_tier": "starter_v4",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/starter_v4/stand_small_v4_a.svg",
+				"res://assets/production/starter_v4/stand_small_v4_b.svg"
+			]),
+			"world_sprite_size": Vector2(208, 156),
 			"world_sprite_offsets": [
-				Vector2(0, -29),
-				Vector2(0, -34)
+				Vector2(0, -21),
+				Vector2(0, -22)
 			],
-			"world_sprite_offset": Vector2(0, -29)
+			"world_sprite_offset": Vector2(0, -21)
 		},
 		{
 			"id": "taxiway",

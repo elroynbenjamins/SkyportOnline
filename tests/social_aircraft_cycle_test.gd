@@ -30,7 +30,7 @@ func _run() -> void:
 		_fail("Social visitor request should be creatable.")
 		return
 
-	var plane := AircraftPrototype.new()
+	var plane := CareerAircraft.new()
 	root.add_child(plane)
 	plane.name = "FR-BRU"
 	plane.configure_aircraft_type(

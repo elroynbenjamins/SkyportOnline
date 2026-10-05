@@ -1941,7 +1941,9 @@ func _draw_apron_surface_micro_detail(
 			polygon,
 			center,
 			rotation,
-			strength
+			strength,
+			String(definition.get("art_tier", ""))
+				!= "starter_v4"
 		)
 		return
 
@@ -1963,7 +1965,8 @@ func _draw_stand_guidance_detail(
 	polygon: PackedVector2Array,
 	center: Vector2,
 	rotation: int,
-	strength: float
+	strength: float,
+	draw_primary_markings: bool = true
 ) -> void:
 	var top_mid := polygon[0].lerp(
 		polygon[1],
@@ -1986,55 +1989,56 @@ func _draw_stand_guidance_detail(
 		strength
 	)
 
-	draw_line(
-		top_mid.lerp(center, 0.18),
-		bottom_mid.lerp(center, 0.12),
-		guidance,
-		2.4
-	)
+	if draw_primary_markings:
+		draw_line(
+			top_mid.lerp(center, 0.18),
+			bottom_mid.lerp(center, 0.12),
+			guidance,
+			2.4
+		)
 
-	var wing_a := center + Vector2(
-		-31 if rotation % 2 == 0 else -25,
-		-3
-	)
-	var wing_b := center + Vector2(
-		31 if rotation % 2 == 0 else 25,
-		-3
-	)
-	draw_line(
-		wing_a,
-		wing_b,
-		guidance,
-		2.0
-	)
-	draw_line(
-		wing_a + Vector2(8, 6),
-		wing_a + Vector2(8, -6),
-		guidance,
-		1.5
-	)
-	draw_line(
-		wing_b + Vector2(-8, 6),
-		wing_b + Vector2(-8, -6),
-		guidance,
-		1.5
-	)
+		var wing_a := center + Vector2(
+			-31 if rotation % 2 == 0 else -25,
+			-3
+		)
+		var wing_b := center + Vector2(
+			31 if rotation % 2 == 0 else 25,
+			-3
+		)
+		draw_line(
+			wing_a,
+			wing_b,
+			guidance,
+			2.0
+		)
+		draw_line(
+			wing_a + Vector2(8, 6),
+			wing_a + Vector2(8, -6),
+			guidance,
+			1.5
+		)
+		draw_line(
+			wing_b + Vector2(-8, 6),
+			wing_b + Vector2(-8, -6),
+			guidance,
+			1.5
+		)
 
-	var front_a := polygon[3].lerp(
-		polygon[2],
-		0.16
-	)
-	var front_b := polygon[3].lerp(
-		polygon[2],
-		0.84
-	)
-	draw_dashed_line(
-		front_a,
-		front_b,
-		safety,
-		2.0,
-		9.0
-	)
+		var front_a := polygon[3].lerp(
+			polygon[2],
+			0.16
+		)
+		var front_b := polygon[3].lerp(
+			polygon[2],
+			0.84
+		)
+		draw_dashed_line(
+			front_a,
+			front_b,
+			safety,
+			2.0,
+			9.0
+		)
 
 	var left_zone := center.lerp(
 		polygon[3].lerp(
@@ -2065,19 +2069,20 @@ func _draw_stand_guidance_detail(
 		1.4
 	)
 
-	var stop_bar := center.lerp(
-		bottom_mid,
-		0.36
-	)
-	draw_line(
-		stop_bar + Vector2(-10, 5),
-		stop_bar + Vector2(10, -5),
-		_micro_alpha(
-			Color("f8f4e9", 0.88),
-			strength
-		),
-		3.0
-	)
+	if draw_primary_markings:
+		var stop_bar := center.lerp(
+			bottom_mid,
+			0.36
+		)
+		draw_line(
+			stop_bar + Vector2(-10, 5),
+			stop_bar + Vector2(10, -5),
+			_micro_alpha(
+				Color("f8f4e9", 0.88),
+				strength
+			),
+			3.0
+		)
 
 
 func _draw_passenger_pad_detail(
@@ -2205,17 +2210,20 @@ func _draw_apron_prop_micro_detail(
 		return
 
 	if id.contains("stand"):
-		_draw_cart_bay_prop(
-			center.lerp(
-				polygon[1].lerp(
-					polygon[2],
-					0.63
+		# Starter-v4 stand art already includes its static cart/edge props.
+		# Older/larger stands still receive the procedural cart bay.
+		if String(definition.get("art_tier", "")) != "starter_v4":
+			_draw_cart_bay_prop(
+				center.lerp(
+					polygon[1].lerp(
+						polygon[2],
+						0.63
+					),
+					0.70
 				),
-				0.70
-			),
-			rotation,
-			strength
-		)
+				rotation,
+				strength
+			)
 		return
 
 	if category in ["Passenger", "Services"]:

@@ -256,31 +256,24 @@ func get_service_docking_local_offset(
 		if type_value is Vector2:
 			return type_value
 
-	var scale := 1.0
-	match aircraft_size:
-		"M":
-			scale = 1.35
-		"L":
-			scale = 1.65
-		"XL":
-			scale = 2.0
+	var scale := get_visual_scale()
 
 	var base := Vector2.ZERO
 	match service_type:
 		"passenger":
-			base = Vector2(10, -34)
+			base = Vector2(12, -38)
 		"cargo":
-			base = Vector2(-10, 32)
+			base = Vector2(-12, 36)
 		"cleaning":
-			base = Vector2(-14, -30)
+			base = Vector2(-16, -34)
 		"catering":
-			base = Vector2(14, 30)
+			base = Vector2(16, 34)
 		"fuel":
-			base = Vector2(-2, -40)
+			base = Vector2(-4, -44)
 		"pushback":
-			base = Vector2(36, 0)
+			base = Vector2(42, 0)
 		_:
-			base = Vector2(0, 34)
+			base = Vector2(0, 38)
 
 	return base * scale
 
@@ -1307,18 +1300,49 @@ func _draw_shadow() -> void:
 
 	var visual_scale := get_visual_scale()
 	draw_set_transform(
-		Vector2(2, 4) * visual_scale,
+		Vector2(4, 7) * visual_scale,
 		0.0,
 		Vector2(
 			visual_scale,
-			visual_scale * 0.45
+			visual_scale * 0.46
 		)
 	)
-	draw_circle(
-		Vector2.ZERO,
-		20.0,
-		Color(0, 0, 0, 0.25)
+
+	# Two-layer aircraft-shaped shadow reads far better on the pale apron
+	# than the old circular blob while remaining inexpensive to draw.
+	var soft_wing := PackedVector2Array([
+		Vector2(7, -4),
+		Vector2(-4, -23),
+		Vector2(-12, -22),
+		Vector2(-8, -4),
+		Vector2(-8, 4),
+		Vector2(-12, 22),
+		Vector2(-4, 23),
+		Vector2(7, 4)
+	])
+	draw_colored_polygon(
+		soft_wing,
+		Color(0, 0, 0, 0.11)
 	)
+
+	var soft_fuselage := PackedVector2Array([
+		Vector2(29, 0),
+		Vector2(16, -7),
+		Vector2(-19, -7),
+		Vector2(-30, 0),
+		Vector2(-19, 7),
+		Vector2(16, 7)
+	])
+	draw_colored_polygon(
+		soft_fuselage,
+		Color(0, 0, 0, 0.15)
+	)
+	draw_circle(
+		Vector2(-1, 1),
+		18.0,
+		Color(0, 0, 0, 0.06)
+	)
+
 	draw_set_transform(
 		Vector2.ZERO,
 		0.0,

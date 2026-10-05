@@ -3040,14 +3040,12 @@ func apply_saved_airport_layout(
 		)
 		_update_parcel_label(String(parcel_id))
 
-	if not saved_layout.is_empty():
-		placed_buildings = restored
-	if not saved_storage.is_empty():
-		stored_buildings = restored_storage
 	if (
 		not saved_layout.is_empty()
 		or not saved_storage.is_empty()
 	):
+		placed_buildings = restored
+		stored_buildings = restored_storage
 		next_building_uid = max_uid + 1
 
 	_rebuild_occupied_cells()

@@ -3,6 +3,7 @@ extends RefCounted
 
 # Catalog definitions are immutable; return copies so callers cannot alter the cache.
 static var _definitions_by_id: Dictionary = {}
+const PRODUCTION_BUILDING_ATLAS := "res://assets/production/airport_buildings_v2/skyport_buildings_atlas.webp"
 
 
 static func all() -> Array[Dictionary]:
@@ -37,9 +38,13 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Parking and turnaround for small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/stand_small.svg", "res://assets/pixel/airport_v1/stand_small_b.svg"]),
-			"world_sprite_size": Vector2(192, 115),
-			"world_sprite_offset": Vector2(0, -27)
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 0, 448, 448),
+				Rect2(1344, 0, 448, 448)
+			],
+			"world_sprite_size": Vector2(192, 192),
+			"world_sprite_offset": Vector2(0, -66)
 		},
 		{
 			"id": "taxiway",
@@ -85,9 +90,13 @@ static func all() -> Array[Dictionary]:
 			"synergy_radius_tiles": 5.0,
 			"synergy_bonus": 0.10,
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/terminal_small.svg", "res://assets/pixel/airport_v1/terminal_small_b.svg"]),
-			"world_sprite_size": Vector2(300, 225),
-			"world_sprite_offset": Vector2(0, -75)
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 0, 448, 448),
+				Rect2(448, 0, 448, 448)
+			],
+			"world_sprite_size": Vector2(300, 300),
+			"world_sprite_offset": Vector2(0, -113)
 		},
 		{
 			"id": "shuttle_station",
@@ -105,9 +114,13 @@ static func all() -> Array[Dictionary]:
 			"synergy_receiver": "passenger_hub",
 			"passenger_synergy_bonus": 0.15,
 			"icon_path": "res://assets/pixel/airport_v1/shuttle_station.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/shuttle_station.svg", "res://assets/pixel/airport_v1/shuttle_station_b.svg"]),
-			"world_sprite_size": Vector2(280, 210),
-			"world_sprite_offset": Vector2(0, -58)
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 1344, 448, 448),
+				Rect2(448, 1344, 448, 448)
+			],
+			"world_sprite_size": Vector2(280, 280),
+			"world_sprite_offset": Vector2(0, -93)
 		},
 		{
 			"id": "travel_office",
@@ -125,9 +138,13 @@ static func all() -> Array[Dictionary]:
 			"synergy_receiver": "passenger_hub",
 			"passenger_synergy_bonus": 0.10,
 			"icon_path": "res://assets/pixel/airport_v1/travel_office.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/travel_office.svg", "res://assets/pixel/airport_v1/travel_office_b.svg"]),
-			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offset": Vector2(0, -45)
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 896, 448, 448),
+				Rect2(1344, 896, 448, 448)
+			],
+			"world_sprite_size": Vector2(188, 188),
+			"world_sprite_offset": Vector2(0, -61)
 		},
 		{
 			"id": "ground_ops_depot",
@@ -144,7 +161,11 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.05,
 			"local_service_radius_tiles": 5.0,
 			"icon_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
-			"world_sprite_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 896, 448, 448),
+				Rect2(448, 896, 448, 448)
+			],
 			"world_sprite_size": Vector2(116, 116),
 			"world_sprite_offset": Vector2(0, -35),
 			"services": {
@@ -189,9 +210,13 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/passenger_service_hub.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/passenger_service_hub.svg", "res://assets/pixel/airport_v1/passenger_service_hub_b.svg"]),
-			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offset": Vector2(0, -45),
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 1344, 448, 448),
+				Rect2(1344, 1344, 448, 448)
+			],
+			"world_sprite_size": Vector2(188, 188),
+			"world_sprite_offset": Vector2(0, -61),
 			"service": "passenger",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2
@@ -280,9 +305,13 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/hangar_small.svg", "res://assets/pixel/airport_v1/hangar_small_b.svg"]),
-			"world_sprite_size": Vector2(292, 256),
-			"world_sprite_offset": Vector2(0, -70)
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 448, 448, 448),
+				Rect2(448, 448, 448, 448)
+			],
+			"world_sprite_size": Vector2(292, 292),
+			"world_sprite_offset": Vector2(0, -88)
 		},
 		{
 			"id": "basic_fuel",
@@ -302,9 +331,13 @@ static func all() -> Array[Dictionary]:
 			"service_speed": 1.0,
 			"vehicle_capacity": 1,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_basic.svg", "res://assets/pixel/airport_v1/fuel_basic_b.svg"]),
-			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offset": Vector2(0, -45)
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 448, 448, 448),
+				Rect2(1344, 448, 448, 448)
+			],
+			"world_sprite_size": Vector2(188, 188),
+			"world_sprite_offset": Vector2(0, -61)
 		},
 		{
 			"id": "rapid_small_fuel",

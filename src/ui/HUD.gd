@@ -933,11 +933,14 @@ func set_airport_identity(
 	if title_label == null:
 		return
 
-	title_label.text = "✈ %s  •  %s  •  %s" % [
-		airport_name.to_upper(),
-		airport_code.to_upper(),
-		country_name
-	]
+	title_label.text = airport_name.to_upper()
+	if airport_meta_label != null:
+		var account_label := "GUEST AIRPORT" if account_type == "guest" else "LINKED AIRPORT"
+		airport_meta_label.text = "✈ %s  •  %s  •  %s" % [
+			airport_code.to_upper(),
+			country_name.to_upper(),
+			account_label
+		]
 	if account_type == "guest":
 		title_label.tooltip_text = (
 			"Guest airport • secure or link later without losing progress."
@@ -1028,8 +1031,8 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 	current_coins = coins
 	current_gems = gems
 	level_label.text = "LV %d" % level
-	coins_label.text = "🪙 %s" % _format_number(coins)
-	gems_label.text = "✦ AERO %s" % _format_number(gems)
+	coins_label.text = _format_number(coins)
+	gems_label.text = _format_number(gems)
 	_update_catalog_buttons()
 
 	if (
@@ -1048,6 +1051,32 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 
 
 
+
+func set_level_progress(
+	xp: int,
+	level_start_xp: int,
+	next_level_xp: int,
+	max_level: bool = false
+) -> void:
+	if xp_progress == null or xp_label == null:
+		return
+	if max_level or next_level_xp <= level_start_xp:
+		xp_progress.min_value = 0.0
+		xp_progress.max_value = 1.0
+		xp_progress.value = 1.0
+		xp_label.text = "MAX LEVEL"
+		return
+	var span := maxi(next_level_xp - level_start_xp, 1)
+	var earned := clampi(xp - level_start_xp, 0, span)
+	xp_progress.min_value = 0.0
+	xp_progress.max_value = float(span)
+	xp_progress.value = float(earned)
+	xp_label.text = "%s / %s XP" % [
+		_format_number(earned),
+		_format_number(span)
+	]
+
+
 func set_passenger_data(
 	passengers: int,
 	capacity: int,
@@ -1055,11 +1084,12 @@ func set_passenger_data(
 ) -> void:
 	if passenger_label == null:
 		return
-	passenger_label.text = "👥 %d / %d  +%.1f/m" % [
+	passenger_label.text = "%d / %d" % [
 		passengers,
-		capacity,
-		per_minute
+		capacity
 	]
+	if passenger_rate_label != null:
+		passenger_rate_label.text = "+%.1f / MIN" % per_minute
 
 
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:
@@ -1647,9 +1677,15 @@ func set_operation_status(
 	text: String,
 	tone: String = "normal"
 ) -> void:
+	var changed := (
+		text != current_operation_status_text
+		or tone != current_operation_status_tone
+	)
 	current_operation_status_text = text
 	current_operation_status_tone = tone
 	_refresh_operations_status()
+	if changed and tone in ["success", "warning", "danger"]:
+		_show_operation_toast(text, tone)
 
 
 func set_operations_analytics(

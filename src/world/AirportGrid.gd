@@ -223,7 +223,7 @@ func _draw_grass_detail(tile: Vector2i, center: Vector2) -> void:
 		return
 	var offset := Vector2(
 		float((seed % 17) - 8),
-		float((seed / 3) % 9 - 4)
+		float((int(seed / 3.0) % 9) - 4)
 	)
 	var tuft := center + offset
 	draw_line(

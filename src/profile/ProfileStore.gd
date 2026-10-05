@@ -692,6 +692,20 @@ static func record_outgoing_friend_passenger_gift(
 	state["gifts_sent_total"] = int(
 		state.get("gifts_sent_total", 0)
 	) + 1
+	var action_outbox: Array = state.get(
+		"social_action_outbox",
+		[]
+	).duplicate(true)
+	action_outbox.append({
+		"action": "passenger_gift",
+		"contact_id": contact_id,
+		"amount": PassengerSupportRules.friend_gift_amount(),
+		"day": String(status.get("day", day_key)),
+		"created_at_unix": int(Time.get_unix_time_from_system())
+	})
+	while action_outbox.size() > 50:
+		action_outbox.remove_at(0)
+	state["social_action_outbox"] = action_outbox
 	profile["social_state"] = state
 	if not _save_profile(profile):
 		return {}

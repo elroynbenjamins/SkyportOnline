@@ -75,7 +75,7 @@ func _build_ui() -> void:
 	panel.offset_bottom = -84
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel)
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, "context")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 14)
@@ -94,7 +94,7 @@ func _build_ui() -> void:
 
 	var preview_card := PanelContainer.new()
 	preview_card.custom_minimum_size = Vector2(112, 82)
-	GameUIStyle.apply_panel(preview_card, "dark")
+	GameUIStyle.apply_panel(preview_card, "context_preview")
 	header.add_child(preview_card)
 
 	building_image = TextureRect.new()
@@ -162,14 +162,14 @@ func _build_ui() -> void:
 	actions.add_child(primary_button)
 
 	move_button = Button.new()
-	move_button.text = "MOVE"
+	move_button.text = "✥ MOVE"
 	move_button.custom_minimum_size = Vector2(94, 46)
 	GameUIStyle.apply_button(move_button, "secondary", true)
 	move_button.pressed.connect(_on_move_pressed)
 	actions.add_child(move_button)
 
 	details_button = Button.new()
-	details_button.text = "DETAILS"
+	details_button.text = "ⓘ DETAILS"
 	details_button.custom_minimum_size = Vector2(100, 46)
 	GameUIStyle.apply_button(details_button, "secondary", true)
 	details_button.pressed.connect(_on_details_pressed)
@@ -188,7 +188,7 @@ func _refresh() -> void:
 		String(definition.get("name", "Airport Building")),
 		level
 	]
-	role_label.text = String(
+	role_label.text = "◆ " + String(
 		current_summary.get(
 			"role",
 			definition.get("category", "Airport")

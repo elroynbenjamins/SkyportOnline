@@ -94,7 +94,18 @@ func _run() -> void:
 		_fail("Airport status detail drawer should start collapsed.")
 		return
 	if hud.catalog_filter_buttons.size() < 6:
-		_fail("Build Tray should expose category filter chips.")
+		_fail("Build drawer should expose category filter chips.")
+		return
+	if hud.catalog_close_button == null or hud.catalog_count_label == null:
+		_fail("Build drawer should expose close control and availability counter.")
+		return
+	hud._on_catalog_close_pressed()
+	if hud.catalog_panel.visible:
+		_fail("Build drawer close control should reveal more of the airport.")
+		return
+	hud._on_build_navigation_pressed()
+	if not hud.catalog_panel.visible:
+		_fail("BUILD action dock button should reopen the construction drawer.")
 		return
 	if hud.social_nav_button == null:
 		_fail("Airport HUD should expose the Social network navigation button.")
@@ -184,7 +195,7 @@ func _run() -> void:
 
 	print(
 		"UI modernization passed: game-style airport identity/resources/XP dock, "
-		+ "compact operations chips, build tray, World Map/Social cards, "
+		+ "compact operations chips, construction drawer, World Map/Social cards, "
 		+ "upgrade comparisons, reward tiles, and shared game styling."
 	)
 	quit(0)

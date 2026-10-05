@@ -62,6 +62,9 @@ var place_button: Button
 
 var build_hint: Label
 var catalog_panel: PanelContainer
+var catalog_count_label: Label
+var catalog_help_label: Label
+var catalog_close_button: Button
 var edit_airport_button: Button
 var airport_edit_panel: PanelContainer
 var airport_edit_status: Label
@@ -325,7 +328,7 @@ func _build_interface() -> void:
 	build_hint.offset_top = -192
 	build_hint.offset_right = 760
 	build_hint.offset_bottom = -160
-	build_hint.text = "BUILD MODE  •  Tap a building, then tap owned land"
+	build_hint.text = "AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
 	build_hint.add_theme_font_size_override("font_size", 14)
 	build_hint.add_theme_color_override(
 		"font_color",
@@ -760,15 +763,15 @@ func _build_storage_panel(root: Control) -> void:
 func _build_catalog_panel(root: Control) -> void:
 	catalog_panel = PanelContainer.new()
 	catalog_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	catalog_panel.offset_left = -438
-	catalog_panel.offset_top = 158
-	catalog_panel.offset_right = -8
-	catalog_panel.offset_bottom = -82
+	catalog_panel.offset_left = -468
+	catalog_panel.offset_top = 168
+	catalog_panel.offset_right = -10
+	catalog_panel.offset_bottom = -92
 	root.add_child(catalog_panel)
-	GameUIStyle.apply_panel(catalog_panel, "dark")
+	GameUIStyle.apply_panel(catalog_panel, "context")
 
 	var catalog_wrapper := VBoxContainer.new()
-	catalog_wrapper.add_theme_constant_override("separation", 5)
+	catalog_wrapper.add_theme_constant_override("separation", 7)
 	catalog_panel.add_child(catalog_wrapper)
 
 	var catalog_header_row := HBoxContainer.new()
@@ -776,28 +779,52 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_wrapper.add_child(catalog_header_row)
 
 	var catalog_header := Label.new()
-	catalog_header.text = "BUILD TRAY"
+	catalog_header.text = "🔨  BUILD AIRPORT"
 	catalog_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	catalog_header.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	GameUIStyle.heading(catalog_header, 15)
+	GameUIStyle.heading(catalog_header, 17)
+	catalog_header.add_theme_color_override("font_color", GameUIStyle.COLOR_ACCENT)
 	catalog_header_row.add_child(catalog_header)
 
+	catalog_count_label = Label.new()
+	catalog_count_label.text = "0 AVAILABLE"
+	catalog_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	catalog_count_label.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.muted(catalog_count_label)
+	catalog_header_row.add_child(catalog_count_label)
+
 	edit_airport_button = Button.new()
-	edit_airport_button.text = "✥ EDIT AIRPORT"
-	edit_airport_button.custom_minimum_size = Vector2(148, 34)
+	edit_airport_button.text = "✥ EDIT"
+	edit_airport_button.custom_minimum_size = Vector2(92, 36)
 	GameUIStyle.apply_button(edit_airport_button, "gold", true)
 	edit_airport_button.pressed.connect(_on_airport_edit_pressed)
 	catalog_header_row.add_child(edit_airport_button)
 
-	var filters := HBoxContainer.new()
-	filters.add_theme_constant_override("separation", 4)
+	catalog_close_button = Button.new()
+	catalog_close_button.text = "✕"
+	catalog_close_button.custom_minimum_size = Vector2(38, 36)
+	GameUIStyle.apply_button(catalog_close_button, "secondary", true)
+	catalog_close_button.pressed.connect(_on_catalog_close_pressed)
+	catalog_header_row.add_child(catalog_close_button)
+
+	catalog_help_label = Label.new()
+	catalog_help_label.text = "Choose a building • the drawer closes for placement • BUILD reopens it"
+	catalog_help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	catalog_help_label.add_theme_font_size_override("font_size", 11)
+	GameUIStyle.muted(catalog_help_label)
+	catalog_wrapper.add_child(catalog_help_label)
+
+	var filters := GridContainer.new()
+	filters.columns = 3
+	filters.add_theme_constant_override("h_separation", 4)
+	filters.add_theme_constant_override("v_separation", 4)
 	catalog_wrapper.add_child(filters)
 
 	for filter_data in [
 		["ALL", "ALL"],
-		["INFRA", "Infrastructure"],
+		["AIRFIELD", "Infrastructure"],
 		["PAX", "Passenger"],
-		["SERV", "Services"],
+		["SERVICE", "Services"],
 		["OPS", "Operations"],
 		["DECOR", "Decorations"]
 	]:
@@ -811,9 +838,7 @@ func _build_catalog_panel(root: Control) -> void:
 			"selected" if category == selected_catalog_category else "nav",
 			true
 		)
-		chip.pressed.connect(
-			_on_catalog_filter_pressed.bind(category)
-		)
+		chip.pressed.connect(_on_catalog_filter_pressed.bind(category))
 		filters.add_child(chip)
 		catalog_filter_buttons[category] = chip
 
@@ -827,8 +852,8 @@ func _build_catalog_panel(root: Control) -> void:
 	grid.columns = 2
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation", 5)
-	grid.add_theme_constant_override("v_separation", 5)
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(grid)
 
 
@@ -961,7 +986,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(195, 74)
+		button.custom_minimum_size = Vector2(205, 88)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 12)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -969,7 +994,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 		button.expand_icon = true
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		button.tooltip_text = String(definition.get("description", ""))
-		GameUIStyle.apply_button(button, "secondary", true)
+		GameUIStyle.apply_button(button, "build_card", true)
 		var icon := _catalog_icon_for(definition)
 		if icon != null:
 			button.icon = icon
@@ -995,18 +1020,28 @@ func _on_catalog_filter_pressed(category: String) -> void:
 
 
 func _apply_catalog_filter() -> void:
+	var visible_total := 0
+	var available_total := 0
 	for definition in catalog_definitions:
 		var id := String(definition.get("id", ""))
 		if not catalog_buttons.has(id):
 			continue
 		var button: Button = catalog_buttons[id]
-		var category := String(
-			definition.get("category", "")
-		)
-		button.visible = (
+		var category := String(definition.get("category", ""))
+		var visible := (
 			selected_catalog_category == "ALL"
 			or category == selected_catalog_category
 		)
+		button.visible = visible
+		if visible:
+			visible_total += 1
+			if current_level >= int(definition.get("level", 1)):
+				available_total += 1
+	if catalog_count_label != null:
+		catalog_count_label.text = "%d/%d AVAILABLE" % [
+			available_total,
+			visible_total
+		]
 
 
 func _catalog_icon_for(definition: Dictionary) -> Texture2D:
@@ -1184,7 +1219,8 @@ func enter_building_mode(definition: Dictionary) -> void:
 	active_building_id = String(definition["id"])
 	active_build_mode = "build"
 	if catalog_panel != null:
-		catalog_panel.visible = true
+		catalog_panel.visible = false
+	build_hint.text = "PLACING BUILDING  •  Tap owned land • use Rotate / Place / Cancel below"
 	if airport_edit_panel != null:
 		airport_edit_panel.visible = false
 	parcel_panel.visible = false
@@ -1212,7 +1248,8 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	active_building_id = String(definition["id"])
 	active_build_mode = "build"
 	if catalog_panel != null:
-		catalog_panel.visible = true
+		catalog_panel.visible = false
+	build_hint.text = "PLACING BUILDING  •  Tap owned land • use Rotate / Place / Cancel below"
 	if airport_edit_panel != null:
 		airport_edit_panel.visible = false
 	current_level = player_level
@@ -1599,7 +1636,7 @@ func show_airport_edit_mode(
 		)
 	else:
 		build_hint.text = (
-			"BUILD MODE  •  Tap a building, then tap owned land"
+			"AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
 		)
 		airport_edit_status.text = (
 			"Tap a movable building • changes save when confirmed"
@@ -2349,6 +2386,7 @@ func exit_building_mode() -> void:
 		storage_panel.visible = false
 	if catalog_panel != null:
 		catalog_panel.visible = true
+	build_hint.text = "AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
 	parcel_panel.visible = true
 	show_parcel(current_parcel, current_level, current_coins)
 
@@ -2363,24 +2401,28 @@ func _update_catalog_buttons() -> void:
 		var cost := int(definition["cost"])
 
 		if current_level < required_level:
-			GameUIStyle.apply_button(button, "secondary", true)
-			button.text = "%s\n🔒 LV %d" % [
+			GameUIStyle.apply_button(button, "build_card_locked", true)
+			button.text = "%s\n🔒 UNLOCK LV %d" % [
 				String(definition["menu_name"]),
 				required_level
 			]
 			button.disabled = true
 		else:
+			var selected := id == active_building_id
 			GameUIStyle.apply_button(
 				button,
-				"selected" if id == active_building_id else "secondary",
+				"build_card_selected" if selected else "build_card",
 				true
 			)
-			button.text = "%s\n🪙 %s • %s" % [
+			button.text = "%s%s\n🪙 %s  •  LV %d  •  %s" % [
+				"✓ " if selected else "",
 				String(definition["menu_name"]),
 				_format_number(cost),
+				required_level,
 				_size_text(definition)
 			]
 			button.disabled = false
+	_apply_catalog_filter()
 
 
 func _service_text(definition: Dictionary) -> String:
@@ -2489,7 +2531,15 @@ func _on_purchase_pressed() -> void:
 
 
 func _on_building_button_pressed(building_id: String) -> void:
+	if catalog_panel != null:
+		catalog_panel.visible = false
+	build_hint.text = "PLACING BUILDING  •  Tap owned land • use Rotate / Place / Cancel below"
 	building_selected.emit(building_id)
+
+func _on_catalog_close_pressed() -> void:
+	if catalog_panel != null:
+		catalog_panel.visible = false
+	build_hint.text = "AIRPORT VIEW  •  BUILD reopens construction"
 
 
 func _on_rotate_pressed() -> void:
@@ -2547,7 +2597,8 @@ func _on_build_navigation_pressed() -> void:
 		storage_panel.visible = false
 	if status_detail_panel != null:
 		_close_status_detail()
-	set_operation_status("Build tray ready • choose infrastructure or edit your airport.")
+	build_hint.text = "BUILD AIRPORT  •  Choose a building from the drawer"
+	set_operation_status("Construction drawer opened • choose a building to place.")
 
 func _on_navigation_pressed(tab: String) -> void:
 	navigation_requested.emit(tab)

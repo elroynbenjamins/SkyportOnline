@@ -911,7 +911,7 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 		)
 	)
 	var unlock_names_value = parcel.get("unlock_names", [])
-	var unlock_names: Array[String] = []
+	var unlock_names := PackedStringArray()
 	if unlock_names_value is Array:
 		for name_variant in unlock_names_value:
 			unlock_names.append(String(name_variant))

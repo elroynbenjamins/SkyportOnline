@@ -1003,49 +1003,351 @@ func _get_building_texture(path: String) -> Texture2D:
 
 
 func _draw_build_preview() -> void:
-	if preview_building_id.is_empty() or preview_origin.x < 0 or preview_origin.y < 0:
+	if (
+		preview_building_id.is_empty()
+		or preview_origin.x < 0
+		or preview_origin.y < 0
+	):
 		return
 
-	var definition := BuildingCatalog.get_definition(preview_building_id)
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
 	if definition.is_empty():
 		return
 
-	var footprint := _footprint_for(definition, preview_rotation)
-	var valid: bool = bool(preview_status.get("valid", false))
-	var fill := PREVIEW_VALID if valid else PREVIEW_INVALID
+	var footprint := _footprint_for(
+		definition,
+		preview_rotation
+	)
+	var valid := bool(
+		preview_status.get("valid", false)
+	)
+	var connection: Dictionary = preview_status.get(
+		"connection",
+		{}
+	)
+	var profile := PlacementVisualRules.profile(
+		preview_mode,
+		valid,
+		bool(definition.get("rotatable", false)),
+		connection
+	)
+	var fill: Color = profile["fill_color"]
+	var outline: Color = profile["outline_color"]
+	var lift_px := float(profile["lift_px"])
+	var center := _footprint_center_world(
+		preview_origin,
+		footprint
+	)
+
+	_draw_preview_shadow(
+		center,
+		footprint,
+		float(profile["shadow_alpha"])
+	)
 
 	for y in range(footprint.y):
 		for x in range(footprint.x):
-			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
+			_draw_tile_overlay(
+				preview_origin + Vector2i(x, y),
+				fill,
+				outline,
+				2.5
+			)
 
-	if preview_mode == "move":
-		var shadow_center := (
-			_footprint_center_world(preview_origin, footprint)
-			+ Vector2(0, 10)
-		)
+	var outline_points := _preview_outline_points(
+		preview_origin,
+		footprint
+	)
+	draw_polyline(
+		outline_points,
+		outline,
+		4.0,
+		true
+	)
+	for point in outline_points.slice(
+		0,
+		outline_points.size() - 1
+	):
 		draw_circle(
-			shadow_center,
-			maxf(18.0, float(footprint.x + footprint.y) * 7.0),
-			Color(0.02, 0.05, 0.06, 0.30)
+			point,
+			3.5,
+			outline
 		)
 
 	if _definition_has_world_sprite(definition):
-		var ghost := (
-			Color(0.88, 1.0, 0.90, 0.92)
-			if valid
-			else Color(1.0, 0.62, 0.62, 0.86)
-		)
-		var lift := Vector2.ZERO
-		if preview_mode == "move":
-			lift = Vector2(0, -10)
 		_draw_building_sprite(
 			definition,
 			preview_origin,
 			footprint,
 			preview_rotation,
-			ghost,
-			lift
+			profile["ghost_color"],
+			Vector2(0, -lift_px)
 		)
+
+	_draw_preview_connection_hints(
+		definition,
+		footprint,
+		connection
+	)
+	_draw_preview_rotation_hint(
+		definition,
+		center,
+		lift_px
+	)
+	_draw_preview_snap_feedback(
+		center + Vector2(0, -lift_px),
+		outline
+	)
+
+
+func _draw_preview_shadow(
+	center: Vector2,
+	footprint: Vector2i,
+	alpha: float
+) -> void:
+	var radius := maxf(
+		20.0,
+		float(footprint.x + footprint.y) * 8.0
+	)
+	draw_set_transform(
+		center + Vector2(0, 9),
+		0.0,
+		Vector2(1.0, 0.42)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		radius,
+		Color(0.02, 0.05, 0.06, alpha)
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
+func _preview_outline_points(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> PackedVector2Array:
+	var top := (
+		tile_to_world(Vector2(origin.x, origin.y))
+		+ Vector2(0, -TILE_HEIGHT * 0.5)
+	)
+	var right := (
+		tile_to_world(
+			Vector2(
+				origin.x + footprint.x - 1,
+				origin.y
+			)
+		)
+		+ Vector2(TILE_WIDTH * 0.5, 0)
+	)
+	var bottom := (
+		tile_to_world(
+			Vector2(
+				origin.x + footprint.x - 1,
+				origin.y + footprint.y - 1
+			)
+		)
+		+ Vector2(0, TILE_HEIGHT * 0.5)
+	)
+	var left := (
+		tile_to_world(
+			Vector2(
+				origin.x,
+				origin.y + footprint.y - 1
+			)
+		)
+		+ Vector2(-TILE_WIDTH * 0.5, 0)
+	)
+
+	return PackedVector2Array([
+		top,
+		right,
+		bottom,
+		left,
+		top
+	])
+
+
+func _draw_preview_connection_hints(
+	definition: Dictionary,
+	footprint: Vector2i,
+	connection: Dictionary
+) -> void:
+	if (
+		not _needs_airside_connection(definition)
+		or connection.is_empty()
+	):
+		return
+
+	var connected := bool(
+		connection.get("connected", false)
+	)
+	var color := (
+		AIRSIDE_CONNECTED
+		if connected
+		else AIRSIDE_WARNING
+	)
+	var center := _footprint_center_world(
+		preview_origin,
+		footprint
+	)
+	var target_valid := bool(
+		connection.get("target_valid", false)
+	)
+
+	if target_valid:
+		var target_cell: Vector2i = connection.get(
+			"target_cell",
+			Vector2i.ZERO
+		)
+		var target := tile_to_world(
+			Vector2(target_cell.x, target_cell.y)
+		)
+		if connected:
+			draw_line(
+				center,
+				target,
+				color,
+				3.0
+			)
+		else:
+			draw_dashed_line(
+				center,
+				target,
+				color,
+				2.0,
+				8.0
+			)
+		draw_circle(
+			target,
+			8.0,
+			Color(0.05, 0.13, 0.15, 0.88)
+		)
+		draw_circle(
+			target,
+			5.0,
+			color
+		)
+
+	var badge_center := center + Vector2(0, -28)
+	draw_circle(
+		badge_center,
+		10.0,
+		Color(0.05, 0.13, 0.15, 0.90)
+	)
+	if connected:
+		draw_line(
+			badge_center + Vector2(-4, 0),
+			badge_center + Vector2(-1, 4),
+			color,
+			2.5
+		)
+		draw_line(
+			badge_center + Vector2(-1, 4),
+			badge_center + Vector2(5, -4),
+			color,
+			2.5
+		)
+	else:
+		draw_line(
+			badge_center + Vector2(0, -5),
+			badge_center + Vector2(0, 2),
+			color,
+			2.5
+		)
+		draw_circle(
+			badge_center + Vector2(0, 6),
+			1.7,
+			color
+		)
+
+
+func _draw_preview_rotation_hint(
+	definition: Dictionary,
+	center: Vector2,
+	lift_px: float
+) -> void:
+	if not bool(definition.get("rotatable", false)):
+		return
+
+	var badge_center := center + Vector2(
+		0,
+		32.0 - lift_px * 0.25
+	)
+	draw_circle(
+		badge_center,
+		11.0,
+		Color(0.04, 0.12, 0.16, 0.88)
+	)
+	draw_arc(
+		badge_center,
+		6.5,
+		-2.5,
+		1.35,
+		14,
+		Color("dff9ff"),
+		2.0,
+		true
+	)
+	var arrow_direction := (
+		Vector2(1, -0.45).normalized()
+		if preview_rotation % 2 == 0
+		else Vector2(-1, -0.45).normalized()
+	)
+	var arrow_start := badge_center
+	var arrow_end := badge_center + arrow_direction * 17.0
+	draw_line(
+		arrow_start,
+		arrow_end,
+		Color("dff9ff"),
+		2.0
+	)
+	var normal := Vector2(
+		-arrow_direction.y,
+		arrow_direction.x
+	)
+	draw_line(
+		arrow_end,
+		arrow_end - arrow_direction * 6.0 + normal * 3.5,
+		Color("dff9ff"),
+		2.0
+	)
+	draw_line(
+		arrow_end,
+		arrow_end - arrow_direction * 6.0 - normal * 3.5,
+		Color("dff9ff"),
+		2.0
+	)
+
+
+func _draw_preview_snap_feedback(
+	center: Vector2,
+	color: Color
+) -> void:
+	if preview_snap_feedback_remaining <= 0.0:
+		return
+
+	var progress := PlacementVisualRules.snap_progress(
+		preview_snap_feedback_remaining
+	)
+	var radius := lerpf(10.0, 28.0, progress)
+	var pulse_color := color
+	pulse_color.a = (1.0 - progress) * 0.88
+	draw_arc(
+		center,
+		radius,
+		0.0,
+		TAU,
+		28,
+		pulse_color,
+		2.5,
+		true
+	)
 
 
 func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:

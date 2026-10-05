@@ -96,9 +96,26 @@ func _run() -> void:
 		_fail("Building card should load the building icon.")
 		return
 
-	if not (card.building_image.texture is AtlasTexture):
+	var fuel_definition := BuildingCatalog.get_definition(
+		"basic_fuel"
+	)
+	var fuel_paths: PackedStringArray = fuel_definition.get(
+		"world_sprite_paths",
+		PackedStringArray()
+	)
+	if fuel_paths.size() != 2:
 		_fail(
-			"Basic Fuel context card should use the same production atlas art as the airport."
+			"Basic Fuel should expose two high-detail world-art orientations."
+		)
+		return
+	if card.building_image.texture is AtlasTexture:
+		_fail(
+			"Basic Fuel context card should use the dedicated starter-v3 world art, not the legacy atlas."
+		)
+		return
+	if String(card.building_image.texture.resource_path) != String(fuel_paths[0]):
+		_fail(
+			"Basic Fuel context card should preview the exact first world-art orientation."
 		)
 		return
 	if (

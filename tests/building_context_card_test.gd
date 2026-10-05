@@ -29,6 +29,40 @@ func _run() -> void:
 		_fail("Fuel-station tap should select the Basic Fuel Station.")
 		return
 
+	var selected_uid := int(
+		selected_building.get("uid", -1)
+	)
+	if grid.selected_synergy_uid != selected_uid:
+		_fail(
+			"World building selection should retain the selected UID for visual feedback."
+		)
+		return
+	var selection_polygon := grid._selected_building_polygon()
+	if selection_polygon.size() != 4:
+		_fail(
+			"Selected high-detail building should expose a four-corner footprint highlight."
+		)
+		return
+	if not grid.building_labels.is_empty():
+		_fail(
+			"Clean starter airport should not cover production building art with generic labels."
+		)
+		return
+
+	grid.clear_synergy_selection()
+	if not grid._selected_building_polygon().is_empty():
+		_fail(
+			"Clearing building selection should remove the in-world selection outline."
+		)
+		return
+
+	grid.select_world_position(fuel_world)
+	if grid.selected_synergy_uid != selected_uid:
+		_fail(
+			"Fuel building should be reselectable after clearing visual selection."
+		)
+		return
+
 	var card := BuildingContextCard.new()
 	root.add_child(card)
 	await process_frame

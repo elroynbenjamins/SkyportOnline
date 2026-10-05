@@ -46,6 +46,8 @@ const TERRAIN_SOIL := Color("9b825c", 0.10)
 const TERRAIN_STONE := Color("d4d0c4", 0.26)
 const TERRAIN_FLOWER := Color("f3d66b", 0.72)
 const SELECTED_LINE := Color("ffd166")
+const SELECTED_BUILDING_LINE := Color("7fd8ff")
+const SELECTED_BUILDING_FILL := Color("68bde8", 0.08)
 const PREVIEW_VALID := Color("68d391", 0.38)
 const PREVIEW_INVALID := Color("ef6461", 0.46)
 const PREVIEW_EXPANSION_LINE := Color("ffd166", 0.95)
@@ -198,6 +200,7 @@ func _draw() -> void:
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
 	_draw_airside_props()
+	_draw_selected_building_outline()
 	_draw_synergy_overlay()
 	_draw_event_theme_overlay()
 	_draw_runway_hold_short_markings()
@@ -3664,25 +3667,74 @@ func _refresh_building_labels() -> void:
 		):
 			continue
 
-		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
-		if definition.is_empty() or String(definition["id"]) == "taxiway":
+		var definition := BuildingCatalog.get_definition(
+			String(building["definition_id"])
+		)
+		if definition.is_empty():
 			continue
 
-		var footprint := _footprint_for(definition, int(building["rotation"]))
+		var id := String(definition.get("id", ""))
+		if id in ["taxiway", "service_road"]:
+			continue
+
+		var label_text := _building_label_text(
+			building,
+			definition
+		)
+		if _definition_has_world_sprite(definition):
+			label_text = _world_building_warning_text(
+				building,
+				definition
+			)
+		if label_text.is_empty():
+			continue
+
+		var footprint := _footprint_for(
+			definition,
+			int(building["rotation"])
+		)
 		var label := Label.new()
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.size = Vector2(150, 34)
-		label.position = _footprint_center_world(building["origin"], footprint) - Vector2(75, 42)
+		label.size = Vector2(150, 30)
+		label.position = (
+			_footprint_center_world(
+				building["origin"],
+				footprint
+			)
+			- Vector2(75, 39)
+		)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 13)
-		label.add_theme_color_override("font_color", Color("f8faf9"))
-		label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		label.add_theme_font_size_override("font_size", 12)
+		label.add_theme_color_override(
+			"font_color",
+			Color("ffe19a")
+		)
+		label.add_theme_color_override(
+			"font_shadow_color",
+			Color(0, 0, 0, 0.92)
+		)
 		label.add_theme_constant_override("shadow_offset_x", 1)
 		label.add_theme_constant_override("shadow_offset_y", 2)
-		label.text = _building_label_text(building, definition)
+		label.text = label_text
 		add_child(label)
 		building_labels.append(label)
+
+
+func _world_building_warning_text(
+	building: Dictionary,
+	definition: Dictionary
+) -> String:
+	var id := String(definition.get("id", ""))
+	if (
+		id.contains("stand")
+		or id.contains("hangar")
+	):
+		if not _is_airside_building_connected(
+			int(building.get("uid", -1))
+		):
+			return "⚠ TAXIWAY"
+	return ""
 
 
 func _building_label_text(building: Dictionary, definition: Dictionary) -> String:
@@ -3756,6 +3808,70 @@ func _size_text(definition: Dictionary) -> String:
 		result += sizes[index]
 	return result
 
+
+
+func _selected_building_polygon() -> PackedVector2Array:
+	if (
+		selected_synergy_uid < 0
+		or not preview_building_id.is_empty()
+	):
+		return PackedVector2Array()
+
+	var building := _building_by_uid(
+		selected_synergy_uid
+	)
+	if building.is_empty():
+		return PackedVector2Array()
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return PackedVector2Array()
+
+	var footprint := _footprint_for(
+		definition,
+		int(building.get("rotation", 0))
+	)
+	return _footprint_polygon(
+		building.get("origin", Vector2i.ZERO),
+		footprint
+	)
+
+
+func _draw_selected_building_outline() -> void:
+	var polygon := _selected_building_polygon()
+	if polygon.size() < 4:
+		return
+
+	draw_colored_polygon(
+		polygon,
+		SELECTED_BUILDING_FILL
+	)
+	draw_polyline(
+		PackedVector2Array([
+			polygon[0],
+			polygon[1],
+			polygon[2],
+			polygon[3],
+			polygon[0]
+		]),
+		SELECTED_BUILDING_LINE,
+		2.4
+	)
+
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		draw_circle(
+			point,
+			4.2,
+			Color(0.03, 0.08, 0.11, 0.55)
+		)
+		draw_circle(
+			point,
+			2.4,
+			SELECTED_BUILDING_LINE
+		)
 
 
 func _draw_synergy_overlay() -> void:

@@ -10,6 +10,12 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 
+	if not grid.building_labels.is_empty():
+		_fail(
+			"Connected starter airport should keep detailed building art free of generic floating labels."
+		)
+		return
+
 	var starter := grid.get_airside_status()
 	if int(starter.get("runways", 0)) != 1:
 		_fail("Starter airport should have one runway.")

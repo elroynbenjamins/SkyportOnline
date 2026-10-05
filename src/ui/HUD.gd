@@ -1390,7 +1390,6 @@ func show_airport_expanded(
 		1.0,
 		0.0
 	)
-	expansion_banner.position.y = -10.0
 
 	expansion_banner_tween = create_tween()
 	expansion_banner_tween.tween_property(
@@ -1398,12 +1397,6 @@ func show_airport_expanded(
 		"modulate:a",
 		1.0,
 		0.16
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	expansion_banner_tween.parallel().tween_property(
-		expansion_banner,
-		"position:y",
-		0.0,
-		0.20
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	expansion_banner_tween.tween_interval(0.72)
 	expansion_banner_tween.tween_property(
@@ -1413,10 +1406,13 @@ func show_airport_expanded(
 		0.24
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	expansion_banner_tween.tween_callback(
-		func() -> void:
-			if expansion_banner != null:
-				expansion_banner.visible = false
+		Callable(self, "_hide_expansion_banner")
 	)
+
+
+func _hide_expansion_banner() -> void:
+	if expansion_banner != null:
+		expansion_banner.visible = false
 
 
 func set_operation_status(

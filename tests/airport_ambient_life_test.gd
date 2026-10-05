@@ -53,6 +53,69 @@ func _run() -> void:
 	if AirportAmbientLifeArt.texture() == null:
 		_fail("Production ambient-life atlas should resolve as a texture.")
 		return
+
+	if not bool(snapshot.get("passenger_art_ready", false)):
+		_fail("V2 passenger atlas should be ready in the ambient snapshot.")
+		return
+	if AirportAmbientLifeArt.passenger_texture() == null:
+		_fail("V2 passenger atlas should resolve as a texture.")
+		return
+	if AirportAmbientLifeArt.PASSENGER_ARCHETYPES.size() != 8:
+		_fail("Passenger v2 should expose exactly eight traveler archetypes.")
+		return
+	if int(snapshot.get("passenger_variant_count", 0)) != 8:
+		_fail("Ambient snapshot should expose all eight v2 traveler archetypes.")
+		return
+
+	var passenger_texture := AirportAmbientLifeArt.passenger_texture()
+	if (
+		passenger_texture.get_width() != 1024
+		or passenger_texture.get_height() != 1024
+	):
+		_fail("Passenger v2 atlas must import at exactly 1024x1024.")
+		return
+
+	for archetype_variant in AirportAmbientLifeArt.PASSENGER_ARCHETYPES:
+		var archetype := String(archetype_variant)
+		var frame_a := AirportAmbientLifeArt.passenger_source_rect(
+			archetype,
+			0
+		)
+		var frame_b := AirportAmbientLifeArt.passenger_source_rect(
+			archetype,
+			1
+		)
+		if (
+			frame_a.size != Vector2(256, 256)
+			or frame_b.size != Vector2(256, 256)
+		):
+			_fail("%s should use two 256x256 passenger frames." % archetype)
+			return
+		if not is_equal_approx(
+			frame_b.position.x - frame_a.position.x,
+			256.0
+		):
+			_fail("%s walk frames should be adjacent in the atlas." % archetype)
+			return
+		if frame_a.position.y != frame_b.position.y:
+			_fail("%s walk frames should share one atlas row." % archetype)
+			return
+		if (
+			frame_b.position.x + frame_b.size.x > 1024.0
+			or frame_b.position.y + frame_b.size.y > 1024.0
+		):
+			_fail("%s passenger frames should stay inside the atlas." % archetype)
+			return
+
+	if AirportAmbientLifeArt.passenger_archetype(0) != "business":
+		_fail("Passenger v2 archetype order should start with business traveler.")
+		return
+	if AirportAmbientLifeArt.passenger_archetype(7) != "vacation":
+		_fail("Passenger v2 archetype order should end with vacation traveler.")
+		return
+	if AirportAmbientLifeArt.passenger_archetype(8) != "business":
+		_fail("Passenger v2 archetype selection should wrap cleanly.")
+		return
 	for key in [
 		"crew_a",
 		"crew_b",
@@ -158,6 +221,10 @@ func _run() -> void:
 		_fail("Ambient subjects should render through the shared production atlas.")
 		return
 
+	if not ambient.has_method("_draw_passenger_sprite"):
+		_fail("Terminal travelers should use the dedicated v2 passenger renderer.")
+		return
+
 	if int(live_snapshot.get("npc_aircraft", 0)) != 1:
 		_fail("NPC aircraft should be identified from their behavior metadata.")
 		return
@@ -170,7 +237,7 @@ func _run() -> void:
 		(
 			"AIRPORT_AMBIENT_LIFE_OK "
 			+ "stands=%d route=%d windsocks=%d draw_hz=%.0f "
-			+ "crew=%d baggage=%d atlas=true npc_tier=%s"
+			+ "crew=%d baggage=%d atlas=true passengers=8 npc_tier=%s"
 		) % [
 			int(snapshot.get("stands", 0)),
 			int(snapshot.get("service_route_points", 0)),

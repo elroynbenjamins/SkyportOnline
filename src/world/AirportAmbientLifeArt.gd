@@ -4,6 +4,29 @@ extends RefCounted
 const ATLAS_PATH := "res://assets/production/ambient_life_v1/airport_ambient_atlas_v1.svg"
 const CELL_SIZE := 256.0
 
+const PASSENGER_ATLAS_PATH := "res://assets/production/passenger_v2/airport_passenger_atlas_v2.png"
+const PASSENGER_CELL_SIZE := 256.0
+const PASSENGER_ARCHETYPES := [
+	"business",
+	"backpacker",
+	"family",
+	"couple",
+	"casual",
+	"premium",
+	"elderly",
+	"vacation"
+]
+const PASSENGER_CELLS := {
+	"business": Vector2i(0, 0),
+	"backpacker": Vector2i(2, 0),
+	"family": Vector2i(0, 1),
+	"couple": Vector2i(2, 1),
+	"casual": Vector2i(0, 2),
+	"premium": Vector2i(2, 2),
+	"elderly": Vector2i(0, 3),
+	"vacation": Vector2i(2, 3)
+}
+
 const CELLS := {
 	"crew_a": Vector2i(0, 0),
 	"crew_b": Vector2i(1, 0),
@@ -32,12 +55,75 @@ const WORLD_SIZES := {
 }
 
 static var _atlas: Texture2D
+static var _passenger_atlas: Texture2D
 
 
 static func texture() -> Texture2D:
 	if _atlas == null and ResourceLoader.exists(ATLAS_PATH):
 		_atlas = load(ATLAS_PATH) as Texture2D
 	return _atlas
+
+
+static func passenger_texture() -> Texture2D:
+	if (
+		_passenger_atlas == null
+		and ResourceLoader.exists(PASSENGER_ATLAS_PATH)
+	):
+		_passenger_atlas = load(PASSENGER_ATLAS_PATH) as Texture2D
+	return _passenger_atlas
+
+
+static func passenger_archetype(variant: int) -> String:
+	if PASSENGER_ARCHETYPES.is_empty():
+		return "business"
+	var index := variant % PASSENGER_ARCHETYPES.size()
+	if index < 0:
+		index += PASSENGER_ARCHETYPES.size()
+	return PASSENGER_ARCHETYPES[index]
+
+
+static func passenger_source_rect(
+	archetype: String,
+	frame: int
+) -> Rect2:
+	var normalized := (
+		archetype
+		if PASSENGER_CELLS.has(archetype)
+		else "business"
+	)
+	var start: Vector2i = PASSENGER_CELLS.get(
+		normalized,
+		Vector2i.ZERO
+	)
+	var frame_index := frame % 2
+	if frame_index < 0:
+		frame_index += 2
+	var cell := Vector2i(
+		start.x + frame_index,
+		start.y
+	)
+	return Rect2(
+		Vector2(
+			float(cell.x) * PASSENGER_CELL_SIZE,
+			float(cell.y) * PASSENGER_CELL_SIZE
+		),
+		Vector2(
+			PASSENGER_CELL_SIZE,
+			PASSENGER_CELL_SIZE
+		)
+	)
+
+
+static func passenger_world_size(
+	archetype: String = ""
+) -> Vector2:
+	match archetype:
+		"family", "couple":
+			return Vector2(62, 62)
+		"premium", "vacation":
+			return Vector2(59, 59)
+		_:
+			return Vector2(56, 56)
 
 
 static func source_rect(key: String) -> Rect2:
@@ -104,6 +190,10 @@ static func visual_profile() -> Dictionary:
 	return {
 		"atlas_path": ATLAS_PATH,
 		"cell_size": CELL_SIZE,
+		"passenger_atlas_path": PASSENGER_ATLAS_PATH,
+		"passenger_cell_size": PASSENGER_CELL_SIZE,
+		"passenger_variant_count": PASSENGER_ARCHETYPES.size(),
+		"passenger_size": passenger_world_size(),
 		"crew_size": world_size("crew"),
 		"marshaller_size": world_size("marshaller"),
 		"civilian_size": world_size("civilian"),

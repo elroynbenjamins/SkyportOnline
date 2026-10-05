@@ -61,6 +61,7 @@ var occupied_cells: Dictionary = {}
 var next_building_uid := 1
 var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
+var building_texture_images: Dictionary = {}
 var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
 var event_visual_snapshot: Dictionary = {}
@@ -1412,6 +1413,156 @@ func _sprite_offset_for_rotation(
 	)
 
 
+
+func _building_sprite_rect(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int,
+	extra_offset: Vector2 = Vector2.ZERO
+) -> Rect2:
+	var draw_size: Vector2 = definition.get(
+		"world_sprite_size",
+		Vector2(160, 120)
+	)
+	var offset := _sprite_offset_for_rotation(
+		definition,
+		rotation
+	)
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	)
+	return Rect2(
+		center - draw_size * 0.5 + offset + extra_offset,
+		draw_size
+	)
+
+
+func _get_building_texture_image(
+	path: String
+):
+	if building_texture_images.has(path):
+		return building_texture_images[path]
+
+	var texture := _get_building_texture(path)
+	if texture == null:
+		return null
+
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		return null
+
+	building_texture_images[path] = image
+	return image
+
+
+func _building_at_visual_position(
+	world_position: Vector2
+) -> Dictionary:
+	var buildings_to_check: Array[Dictionary] = (
+		placed_buildings.duplicate(true)
+	)
+	buildings_to_check.sort_custom(
+		Callable(self, "_sort_buildings_by_depth")
+	)
+
+	for index in range(
+		buildings_to_check.size() - 1,
+		-1,
+		-1
+	):
+		var building: Dictionary = buildings_to_check[index]
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not _definition_has_world_sprite(definition)
+		):
+			continue
+
+		var rotation := int(
+			building.get("rotation", 0)
+		) % 2
+		var footprint := _footprint_for(
+			definition,
+			rotation
+		)
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var rect := _building_sprite_rect(
+			definition,
+			origin,
+			footprint,
+			rotation
+		)
+		if not rect.has_point(world_position):
+			continue
+
+		var sprite_path := _sprite_path_for_rotation(
+			definition,
+			rotation
+		)
+		if sprite_path.is_empty():
+			continue
+
+		var image = _get_building_texture_image(
+			sprite_path
+		)
+		if image == null:
+			continue
+
+		var local := Vector2(
+			(world_position.x - rect.position.x)
+				/ maxf(rect.size.x, 1.0),
+			(world_position.y - rect.position.y)
+				/ maxf(rect.size.y, 1.0)
+		)
+		local.x = clampf(local.x, 0.0, 0.9999)
+		local.y = clampf(local.y, 0.0, 0.9999)
+
+		var source := _sprite_region_for_rotation(
+			definition,
+			rotation
+		)
+		var pixel := Vector2i.ZERO
+		if (
+			source.size.x > 0.0
+			and source.size.y > 0.0
+		):
+			pixel = Vector2i(
+				int(
+					source.position.x
+					+ local.x * source.size.x
+				),
+				int(
+					source.position.y
+					+ local.y * source.size.y
+				)
+			)
+		else:
+			pixel = Vector2i(
+				int(local.x * float(image.get_width())),
+				int(local.y * float(image.get_height()))
+			)
+
+		if (
+			pixel.x < 0
+			or pixel.y < 0
+			or pixel.x >= image.get_width()
+			or pixel.y >= image.get_height()
+		):
+			continue
+
+		if image.get_pixelv(pixel).a > 0.05:
+			return building.duplicate(true)
+
+	return {}
+
+
 func _draw_building_sprite(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -1431,18 +1582,12 @@ func _draw_building_sprite(
 	if texture == null:
 		return
 
-	var draw_size: Vector2 = definition.get(
-		"world_sprite_size",
-		Vector2(160, 120)
-	)
-	var offset := _sprite_offset_for_rotation(
+	var rect := _building_sprite_rect(
 		definition,
-		rotation
-	)
-	var center := _footprint_center_world(origin, footprint)
-	var rect := Rect2(
-		center - draw_size * 0.5 + offset + extra_offset,
-		draw_size
+		origin,
+		footprint,
+		rotation,
+		extra_offset
 	)
 	var source_region := _sprite_region_for_rotation(
 		definition,
@@ -2132,6 +2277,19 @@ func world_to_tile(world_position: Vector2) -> Vector2i:
 
 
 func select_world_position(world_position: Vector2) -> void:
+	var visual_building := _building_at_visual_position(
+		world_position
+	)
+	if not visual_building.is_empty():
+		selected_synergy_uid = int(
+			visual_building.get("uid", -1)
+		)
+		queue_redraw()
+		building_selected_world.emit(
+			visual_building
+		)
+		return
+
 	var tile := world_to_tile(world_position)
 	if not _tile_in_world(tile):
 		return

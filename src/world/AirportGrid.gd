@@ -1305,6 +1305,81 @@ func confirm_move_preview() -> Dictionary:
 	return {}
 
 
+func restore_building_position(
+	snapshot: Dictionary
+) -> Dictionary:
+	if snapshot.is_empty():
+		return {
+			"valid": false,
+			"reason": "No move is available to undo."
+		}
+
+	var uid := int(snapshot.get("uid", -1))
+	var current := _building_by_uid(uid)
+	if current.is_empty():
+		return {
+			"valid": false,
+			"reason": "Building no longer exists."
+		}
+
+	var definition_id := String(
+		snapshot.get("definition_id", "")
+	)
+	if definition_id != String(
+		current.get("definition_id", "")
+	):
+		return {
+			"valid": false,
+			"reason": "Building type changed."
+		}
+
+	var target_origin: Vector2i = snapshot.get(
+		"origin",
+		Vector2i(-1, -1)
+	)
+	var target_rotation := int(
+		snapshot.get("rotation", 0)
+	) % 2
+	var status := _get_placement_status(
+		definition_id,
+		target_origin,
+		target_rotation,
+		uid
+	)
+	if not bool(status.get("valid", false)):
+		return status
+
+	for index in range(placed_buildings.size()):
+		if int(
+			placed_buildings[index].get("uid", -1)
+		) != uid:
+			continue
+
+		var previous := placed_buildings[index].duplicate(true)
+		placed_buildings[index]["origin"] = target_origin
+		placed_buildings[index]["rotation"] = target_rotation
+		var restored := placed_buildings[index].duplicate(true)
+
+		_rebuild_occupied_cells()
+		_recalculate_airside_network()
+		_refresh_building_labels()
+		queue_redraw()
+		building_moved.emit(
+			restored.duplicate(true),
+			previous.duplicate(true)
+		)
+		return {
+			"valid": true,
+			"building": restored,
+			"previous": previous
+		}
+
+	return {
+		"valid": false,
+		"reason": "Building could not be restored."
+	}
+
+
 func get_move_eligibility(uid: int) -> Dictionary:
 	var building := _building_by_uid(uid)
 	if building.is_empty():

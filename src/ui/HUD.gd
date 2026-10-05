@@ -5,6 +5,9 @@ signal building_selected(building_id: String)
 signal rotate_building_requested
 signal confirm_building_requested
 signal cancel_building_requested
+signal airport_edit_requested
+signal undo_airport_edit_requested
+signal done_airport_edit_requested
 signal navigation_requested(tab: String)
 
 var interface_root: Control
@@ -39,6 +42,14 @@ var build_title: Label
 var build_status: Label
 var rotate_button: Button
 var place_button: Button
+
+var build_hint: Label
+var catalog_panel: PanelContainer
+var edit_airport_button: Button
+var airport_edit_panel: PanelContainer
+var airport_edit_status: Label
+var undo_airport_edit_button: Button
+var done_airport_edit_button: Button
 
 var catalog_buttons: Dictionary = {}
 var catalog_definitions: Array[Dictionary] = []
@@ -242,7 +253,7 @@ func _build_interface() -> void:
 		}
 	}
 
-	var build_hint := Label.new()
+	build_hint = Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	build_hint.offset_left = 18
 	build_hint.offset_top = -192
@@ -257,6 +268,7 @@ func _build_interface() -> void:
 	root.add_child(build_hint)
 
 	_build_context_panel(root)
+	_build_airport_edit_panel(root)
 	_build_catalog_panel(root)
 	_build_bottom_navigation(root)
 
@@ -348,8 +360,70 @@ func _build_context_panel(root: Control) -> void:
 	build_row.add_child(place_button)
 
 
+func _build_airport_edit_panel(root: Control) -> void:
+	airport_edit_panel = PanelContainer.new()
+	airport_edit_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	airport_edit_panel.offset_left = 12
+	airport_edit_panel.offset_top = -154
+	airport_edit_panel.offset_right = -450
+	airport_edit_panel.offset_bottom = -82
+	airport_edit_panel.visible = false
+	root.add_child(airport_edit_panel)
+	GameUIStyle.apply_panel(airport_edit_panel, "raised")
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	airport_edit_panel.add_child(row)
+
+	var text_box := VBoxContainer.new()
+	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(text_box)
+
+	var title := Label.new()
+	title.text = "EDIT AIRPORT"
+	title.add_theme_font_size_override("font_size", 19)
+	title.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	text_box.add_child(title)
+
+	airport_edit_status = Label.new()
+	airport_edit_status.text = (
+		"Tap a movable building • changes save when confirmed"
+	)
+	airport_edit_status.add_theme_font_size_override("font_size", 14)
+	text_box.add_child(airport_edit_status)
+
+	undo_airport_edit_button = Button.new()
+	undo_airport_edit_button.custom_minimum_size = Vector2(112, 72)
+	undo_airport_edit_button.text = "↶\nUNDO"
+	undo_airport_edit_button.disabled = true
+	undo_airport_edit_button.pressed.connect(
+		_on_undo_airport_edit_pressed
+	)
+	GameUIStyle.apply_button(
+		undo_airport_edit_button,
+		"secondary",
+		true
+	)
+	row.add_child(undo_airport_edit_button)
+
+	done_airport_edit_button = Button.new()
+	done_airport_edit_button.custom_minimum_size = Vector2(126, 72)
+	done_airport_edit_button.text = "✓\nDONE"
+	done_airport_edit_button.pressed.connect(
+		_on_done_airport_edit_pressed
+	)
+	GameUIStyle.apply_button(
+		done_airport_edit_button,
+		"primary"
+	)
+	row.add_child(done_airport_edit_button)
+
+
 func _build_catalog_panel(root: Control) -> void:
-	var catalog_panel := PanelContainer.new()
+	catalog_panel = PanelContainer.new()
 	catalog_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
 	catalog_panel.offset_left = -438
 	catalog_panel.offset_top = 158
@@ -362,11 +436,23 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_wrapper.add_theme_constant_override("separation", 5)
 	catalog_panel.add_child(catalog_wrapper)
 
+	var catalog_header_row := HBoxContainer.new()
+	catalog_header_row.add_theme_constant_override("separation", 6)
+	catalog_wrapper.add_child(catalog_header_row)
+
 	var catalog_header := Label.new()
 	catalog_header.text = "BUILD TRAY"
-	catalog_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	catalog_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	catalog_header.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(catalog_header, 15)
-	catalog_wrapper.add_child(catalog_header)
+	catalog_header_row.add_child(catalog_header)
+
+	edit_airport_button = Button.new()
+	edit_airport_button.text = "✥ EDIT AIRPORT"
+	edit_airport_button.custom_minimum_size = Vector2(148, 34)
+	GameUIStyle.apply_button(edit_airport_button, "gold", true)
+	edit_airport_button.pressed.connect(_on_airport_edit_pressed)
+	catalog_header_row.add_child(edit_airport_button)
 
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 4)
@@ -595,7 +681,11 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 	):
 		var definition := BuildingCatalog.get_definition(active_building_id)
 		show_build_preview(definition, {}, current_level, current_coins)
-	elif active_building_id.is_empty() and not current_parcel.is_empty():
+	elif (
+		active_build_mode.is_empty()
+		and active_building_id.is_empty()
+		and not current_parcel.is_empty()
+	):
 		show_parcel(current_parcel, current_level, current_coins)
 
 
@@ -620,7 +710,10 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 	current_level = player_level
 	current_coins = player_coins
 
-	if not active_building_id.is_empty():
+	if (
+		not active_building_id.is_empty()
+		or active_build_mode == "airport_edit"
+	):
 		return
 
 	parcel_panel.visible = true
@@ -659,6 +752,10 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 func enter_building_mode(definition: Dictionary) -> void:
 	active_building_id = String(definition["id"])
 	active_build_mode = "build"
+	if catalog_panel != null:
+		catalog_panel.visible = true
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
 	parcel_panel.visible = false
 	build_action_panel.visible = true
 	build_title.text = String(definition["name"]).to_upper()
@@ -681,6 +778,10 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 
 	active_building_id = String(definition["id"])
 	active_build_mode = "build"
+	if catalog_panel != null:
+		catalog_panel.visible = true
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
 	current_level = player_level
 	current_coins = player_coins
 	parcel_panel.visible = false
@@ -737,6 +838,8 @@ func enter_move_mode(definition: Dictionary) -> void:
 
 	active_building_id = String(definition.get("id", ""))
 	active_build_mode = "move"
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
 	parcel_panel.visible = false
 	build_action_panel.visible = true
 	build_title.text = "MOVE %s" % String(
@@ -761,6 +864,8 @@ func show_move_preview(
 
 	active_building_id = String(definition.get("id", ""))
 	active_build_mode = "move"
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
 	parcel_panel.visible = false
 	build_action_panel.visible = true
 	build_title.text = "MOVE %s" % String(
@@ -799,6 +904,52 @@ func show_move_preview(
 		build_status.text += "  •  ⚠ " + warning
 	place_button.text = "CONFIRM MOVE"
 	place_button.disabled = false
+
+
+func show_airport_edit_mode(
+	active: bool,
+	can_undo: bool = false,
+	message: String = ""
+) -> void:
+	active_building_id = ""
+	active_build_mode = "airport_edit" if active else ""
+	build_action_panel.visible = false
+	airport_edit_panel.visible = active
+	if catalog_panel != null:
+		catalog_panel.visible = not active
+
+	if active:
+		parcel_panel.visible = false
+		build_hint.text = (
+			"EDIT AIRPORT  •  Tap a movable building to reposition it"
+		)
+		undo_airport_edit_button.disabled = not can_undo
+		airport_edit_status.text = (
+			message
+			if not message.is_empty()
+			else "Tap a movable building • Confirm each move"
+		)
+	else:
+		build_hint.text = (
+			"BUILD MODE  •  Tap a building, then tap owned land"
+		)
+		airport_edit_status.text = (
+			"Tap a movable building • changes save when confirmed"
+		)
+		undo_airport_edit_button.disabled = true
+		parcel_panel.visible = true
+		show_parcel(
+			current_parcel,
+			current_level,
+			current_coins
+		)
+
+
+func set_airport_edit_undo_available(
+	can_undo: bool
+) -> void:
+	if undo_airport_edit_button != null:
+		undo_airport_edit_button.disabled = not can_undo
 
 
 func set_operation_status(
@@ -1381,6 +1532,10 @@ func exit_building_mode() -> void:
 	active_building_id = ""
 	active_build_mode = ""
 	build_action_panel.visible = false
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
+	if catalog_panel != null:
+		catalog_panel.visible = true
 	parcel_panel.visible = true
 	show_parcel(current_parcel, current_level, current_coins)
 
@@ -1469,6 +1624,22 @@ func _size_text(definition: Dictionary) -> String:
 			result += "/"
 		result += sizes[index]
 	return result
+
+
+func _on_airport_edit_pressed() -> void:
+	airport_edit_requested.emit()
+
+
+func _on_undo_airport_edit_pressed() -> void:
+	if (
+		undo_airport_edit_button != null
+		and not undo_airport_edit_button.disabled
+	):
+		undo_airport_edit_requested.emit()
+
+
+func _on_done_airport_edit_pressed() -> void:
+	done_airport_edit_requested.emit()
 
 
 func _on_purchase_pressed() -> void:

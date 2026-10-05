@@ -23,6 +23,7 @@ const LOCKED_GRID_LINE := Color("84958d", 0.22)
 const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
+const PREVIEW_SNAP := Color("dff9ff")
 const AIRSIDE_WARNING := Color("ffb84d")
 const AIRSIDE_CONNECTED := Color("76d39b")
 const HOLD_SHORT_SOLID := Color("f5d76e")
@@ -54,15 +55,32 @@ var preview_rotation := 0
 var preview_status: Dictionary = {}
 var preview_mode := "build"
 var preview_ignore_uid := -1
+var preview_snap_feedback_remaining := 0.0
+var preview_snap_sequence := 0
 
 
 func _ready() -> void:
+	set_process(false)
 	_initialize_parcels()
 	_initialize_starter_airport()
 	_recalculate_airside_network()
 	_create_parcel_labels()
 	_refresh_building_labels()
 	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	if preview_snap_feedback_remaining <= 0.0:
+		set_process(false)
+		return
+
+	preview_snap_feedback_remaining = maxf(
+		preview_snap_feedback_remaining - delta,
+		0.0
+	)
+	queue_redraw()
+	if preview_snap_feedback_remaining <= 0.0:
+		set_process(false)
 
 
 func _initialize_parcels() -> void:
@@ -985,49 +1003,348 @@ func _get_building_texture(path: String) -> Texture2D:
 
 
 func _draw_build_preview() -> void:
-	if preview_building_id.is_empty() or preview_origin.x < 0 or preview_origin.y < 0:
+	if (
+		preview_building_id.is_empty()
+		or preview_origin.x < 0
+		or preview_origin.y < 0
+	):
 		return
 
-	var definition := BuildingCatalog.get_definition(preview_building_id)
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
 	if definition.is_empty():
 		return
 
-	var footprint := _footprint_for(definition, preview_rotation)
-	var valid: bool = bool(preview_status.get("valid", false))
-	var fill := PREVIEW_VALID if valid else PREVIEW_INVALID
+	var footprint := _footprint_for(
+		definition,
+		preview_rotation
+	)
+	var valid := bool(
+		preview_status.get("valid", false)
+	)
+	var connection: Dictionary = preview_status.get(
+		"connection",
+		{}
+	)
+	var profile := PlacementVisualRules.profile(
+		preview_mode,
+		valid,
+		bool(definition.get("rotatable", false)),
+		connection
+	)
+	var fill: Color = profile["fill_color"]
+	var outline: Color = profile["outline_color"]
+	var lift_px := float(profile["lift_px"])
+	var center := _footprint_center_world(
+		preview_origin,
+		footprint
+	)
+
+	_draw_preview_shadow(
+		center,
+		footprint,
+		float(profile["shadow_alpha"])
+	)
 
 	for y in range(footprint.y):
 		for x in range(footprint.x):
-			_draw_tile_overlay(preview_origin + Vector2i(x, y), fill, Color("ffffff", 0.75), 2.0)
+			_draw_tile_overlay(
+				preview_origin + Vector2i(x, y),
+				fill,
+				outline,
+				2.5
+			)
 
-	if preview_mode == "move":
-		var shadow_center := (
-			_footprint_center_world(preview_origin, footprint)
-			+ Vector2(0, 10)
-		)
+	var outline_points := _preview_outline_points(
+		preview_origin,
+		footprint
+	)
+	draw_polyline(
+		outline_points,
+		outline,
+		4.0,
+		true
+	)
+	for index in range(outline_points.size() - 1):
 		draw_circle(
-			shadow_center,
-			maxf(18.0, float(footprint.x + footprint.y) * 7.0),
-			Color(0.02, 0.05, 0.06, 0.30)
+			outline_points[index],
+			3.5,
+			outline
 		)
 
 	if _definition_has_world_sprite(definition):
-		var ghost := (
-			Color(0.88, 1.0, 0.90, 0.92)
-			if valid
-			else Color(1.0, 0.62, 0.62, 0.86)
-		)
-		var lift := Vector2.ZERO
-		if preview_mode == "move":
-			lift = Vector2(0, -10)
 		_draw_building_sprite(
 			definition,
 			preview_origin,
 			footprint,
 			preview_rotation,
-			ghost,
-			lift
+			profile["ghost_color"],
+			Vector2(0, -lift_px)
 		)
+
+	_draw_preview_connection_hints(
+		definition,
+		footprint,
+		connection
+	)
+	_draw_preview_rotation_hint(
+		definition,
+		center,
+		lift_px
+	)
+	_draw_preview_snap_feedback(
+		center + Vector2(0, -lift_px),
+		outline
+	)
+
+
+func _draw_preview_shadow(
+	center: Vector2,
+	footprint: Vector2i,
+	alpha: float
+) -> void:
+	var radius := maxf(
+		20.0,
+		float(footprint.x + footprint.y) * 8.0
+	)
+	draw_set_transform(
+		center + Vector2(0, 9),
+		0.0,
+		Vector2(1.0, 0.42)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		radius,
+		Color(0.02, 0.05, 0.06, alpha)
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
+func _preview_outline_points(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> PackedVector2Array:
+	var top := (
+		tile_to_world(Vector2(origin.x, origin.y))
+		+ Vector2(0, -TILE_HEIGHT * 0.5)
+	)
+	var right := (
+		tile_to_world(
+			Vector2(
+				origin.x + footprint.x - 1,
+				origin.y
+			)
+		)
+		+ Vector2(TILE_WIDTH * 0.5, 0)
+	)
+	var bottom := (
+		tile_to_world(
+			Vector2(
+				origin.x + footprint.x - 1,
+				origin.y + footprint.y - 1
+			)
+		)
+		+ Vector2(0, TILE_HEIGHT * 0.5)
+	)
+	var left := (
+		tile_to_world(
+			Vector2(
+				origin.x,
+				origin.y + footprint.y - 1
+			)
+		)
+		+ Vector2(-TILE_WIDTH * 0.5, 0)
+	)
+
+	return PackedVector2Array([
+		top,
+		right,
+		bottom,
+		left,
+		top
+	])
+
+
+func _draw_preview_connection_hints(
+	definition: Dictionary,
+	footprint: Vector2i,
+	connection: Dictionary
+) -> void:
+	if (
+		not _needs_airside_connection(definition)
+		or connection.is_empty()
+	):
+		return
+
+	var connected := bool(
+		connection.get("connected", false)
+	)
+	var color := (
+		AIRSIDE_CONNECTED
+		if connected
+		else AIRSIDE_WARNING
+	)
+	var center := _footprint_center_world(
+		preview_origin,
+		footprint
+	)
+	var target_valid := bool(
+		connection.get("target_valid", false)
+	)
+
+	if target_valid:
+		var target_cell: Vector2i = connection.get(
+			"target_cell",
+			Vector2i.ZERO
+		)
+		var target := tile_to_world(
+			Vector2(target_cell.x, target_cell.y)
+		)
+		if connected:
+			draw_line(
+				center,
+				target,
+				color,
+				3.0
+			)
+		else:
+			draw_dashed_line(
+				center,
+				target,
+				color,
+				2.0,
+				8.0
+			)
+		draw_circle(
+			target,
+			8.0,
+			Color(0.05, 0.13, 0.15, 0.88)
+		)
+		draw_circle(
+			target,
+			5.0,
+			color
+		)
+
+	var badge_center := center + Vector2(0, -28)
+	draw_circle(
+		badge_center,
+		10.0,
+		Color(0.05, 0.13, 0.15, 0.90)
+	)
+	if connected:
+		draw_line(
+			badge_center + Vector2(-4, 0),
+			badge_center + Vector2(-1, 4),
+			color,
+			2.5
+		)
+		draw_line(
+			badge_center + Vector2(-1, 4),
+			badge_center + Vector2(5, -4),
+			color,
+			2.5
+		)
+	else:
+		draw_line(
+			badge_center + Vector2(0, -5),
+			badge_center + Vector2(0, 2),
+			color,
+			2.5
+		)
+		draw_circle(
+			badge_center + Vector2(0, 6),
+			1.7,
+			color
+		)
+
+
+func _draw_preview_rotation_hint(
+	definition: Dictionary,
+	center: Vector2,
+	lift_px: float
+) -> void:
+	if not bool(definition.get("rotatable", false)):
+		return
+
+	var badge_center := center + Vector2(
+		0,
+		32.0 - lift_px * 0.25
+	)
+	draw_circle(
+		badge_center,
+		11.0,
+		Color(0.04, 0.12, 0.16, 0.88)
+	)
+	draw_arc(
+		badge_center,
+		6.5,
+		-2.5,
+		1.35,
+		14,
+		Color("dff9ff"),
+		2.0,
+		true
+	)
+	var arrow_direction := (
+		Vector2(1, -0.45).normalized()
+		if preview_rotation % 2 == 0
+		else Vector2(-1, -0.45).normalized()
+	)
+	var arrow_start := badge_center
+	var arrow_end := badge_center + arrow_direction * 17.0
+	draw_line(
+		arrow_start,
+		arrow_end,
+		Color("dff9ff"),
+		2.0
+	)
+	var normal := Vector2(
+		-arrow_direction.y,
+		arrow_direction.x
+	)
+	draw_line(
+		arrow_end,
+		arrow_end - arrow_direction * 6.0 + normal * 3.5,
+		Color("dff9ff"),
+		2.0
+	)
+	draw_line(
+		arrow_end,
+		arrow_end - arrow_direction * 6.0 - normal * 3.5,
+		Color("dff9ff"),
+		2.0
+	)
+
+
+func _draw_preview_snap_feedback(
+	center: Vector2,
+	color: Color
+) -> void:
+	if preview_snap_feedback_remaining <= 0.0:
+		return
+
+	var progress := PlacementVisualRules.snap_progress(
+		preview_snap_feedback_remaining
+	)
+	var radius := lerpf(10.0, 28.0, progress)
+	var pulse_color := color
+	pulse_color.a = (1.0 - progress) * 0.88
+	draw_arc(
+		center,
+		radius,
+		0.0,
+		TAU,
+		28,
+		pulse_color,
+		2.5,
+		true
+	)
 
 
 func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:
@@ -1127,17 +1444,30 @@ func set_build_preview(
 	world_position: Vector2,
 	rotation: int
 ) -> Dictionary:
+	var snapped_origin := world_to_tile(world_position)
+	var snapped_rotation := rotation % 2
+	var changed := (
+		preview_mode != "build"
+		or preview_building_id != building_id
+		or preview_origin != snapped_origin
+		or preview_rotation != snapped_rotation
+	)
+
 	preview_mode = "build"
 	preview_ignore_uid = -1
 	preview_building_id = building_id
-	preview_origin = world_to_tile(world_position)
-	preview_rotation = rotation % 2
+	preview_origin = snapped_origin
+	preview_rotation = snapped_rotation
 	preview_status = _get_placement_status(
 		building_id,
 		preview_origin,
 		preview_rotation
 	)
-	queue_redraw()
+	preview_status["mode"] = "build"
+	if changed:
+		_trigger_preview_snap_feedback()
+	else:
+		queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
@@ -1183,7 +1513,7 @@ func begin_move_preview(uid: int) -> Dictionary:
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = uid
 	_refresh_building_labels()
-	queue_redraw()
+	_trigger_preview_snap_feedback()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
@@ -1195,8 +1525,15 @@ func set_move_preview(
 	if preview_mode != "move" or preview_ignore_uid < 0:
 		return {}
 
-	preview_origin = world_to_tile(world_position)
-	preview_rotation = rotation % 2
+	var snapped_origin := world_to_tile(world_position)
+	var snapped_rotation := rotation % 2
+	var changed := (
+		preview_origin != snapped_origin
+		or preview_rotation != snapped_rotation
+	)
+
+	preview_origin = snapped_origin
+	preview_rotation = snapped_rotation
 	preview_status = _get_placement_status(
 		preview_building_id,
 		preview_origin,
@@ -1205,7 +1542,10 @@ func set_move_preview(
 	)
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = preview_ignore_uid
-	queue_redraw()
+	if changed:
+		_trigger_preview_snap_feedback()
+	else:
+		queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
@@ -1213,23 +1553,66 @@ func set_move_preview(
 func refresh_build_preview(rotation: int) -> Dictionary:
 	if preview_building_id.is_empty():
 		return {}
-	preview_rotation = rotation % 2
+
+	var snapped_rotation := rotation % 2
+	var changed := preview_rotation != snapped_rotation
+	preview_rotation = snapped_rotation
 	preview_status = _get_placement_status(
 		preview_building_id,
 		preview_origin,
 		preview_rotation,
 		preview_ignore_uid
 	)
+	preview_status["mode"] = preview_mode
 	if preview_mode == "move":
-		preview_status["mode"] = "move"
 		preview_status["building_uid"] = preview_ignore_uid
-	queue_redraw()
+	if changed:
+		_trigger_preview_snap_feedback()
+	else:
+		queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
 
 
 func get_build_preview_status() -> Dictionary:
 	return preview_status.duplicate(true)
+
+
+func get_preview_visual_snapshot() -> Dictionary:
+	if not has_build_preview():
+		return {
+			"active": false,
+			"mode": preview_mode,
+			"snap_sequence": preview_snap_sequence,
+			"snap_active": false
+		}
+
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
+	var connection: Dictionary = preview_status.get(
+		"connection",
+		{}
+	)
+	var profile := PlacementVisualRules.profile(
+		preview_mode,
+		bool(preview_status.get("valid", false)),
+		bool(definition.get("rotatable", false)),
+		connection
+	)
+
+	return {
+		"active": true,
+		"mode": preview_mode,
+		"building_id": preview_building_id,
+		"origin": preview_origin,
+		"rotation": preview_rotation,
+		"valid": bool(preview_status.get("valid", false)),
+		"lift_px": float(profile.get("lift_px", 0.0)),
+		"snap_sequence": preview_snap_sequence,
+		"snap_active": preview_snap_feedback_remaining > 0.0,
+		"connection": connection.duplicate(true)
+	}
 
 
 func has_build_preview() -> bool:
@@ -1244,8 +1627,19 @@ func clear_build_preview() -> void:
 	preview_status = {}
 	preview_mode = "build"
 	preview_ignore_uid = -1
+	preview_snap_feedback_remaining = 0.0
+	set_process(false)
 	if was_move:
 		_refresh_building_labels()
+	queue_redraw()
+
+
+func _trigger_preview_snap_feedback() -> void:
+	preview_snap_sequence += 1
+	preview_snap_feedback_remaining = (
+		PlacementVisualRules.SNAP_FEEDBACK_DURATION
+	)
+	set_process(true)
 	queue_redraw()
 
 
@@ -1392,9 +1786,20 @@ func _get_placement_status(
 	}
 
 	if _needs_airside_connection(definition):
-		var preview_cells := _cells_for(origin, footprint)
-		if not _cells_touch_reachable_taxiway(preview_cells):
-			result["warning"] = "No taxiway connection to a runway yet."
+		var preview_cells := _cells_for(
+			origin,
+			footprint
+		)
+		var connection := _preview_airside_connection(
+			preview_cells
+		)
+		result["connection"] = connection
+		if not bool(
+			connection.get("connected", false)
+		):
+			result["warning"] = (
+				"No taxiway connection to a runway yet."
+			)
 
 	return result
 
@@ -2498,7 +2903,8 @@ func _recalculate_airside_network() -> void:
 		"hangars_connected": connected_hangars,
 		"connected_uids": connected_uids,
 		"disconnected": disconnected,
-		"reachable_taxiway_cells": reachable_taxiways.keys()
+		"reachable_taxiway_cells": reachable_taxiways.keys(),
+		"reachable_taxiway_positions": reachable_taxiways.values()
 	}
 	network_status_changed.emit(get_airside_status())
 	queue_redraw()
@@ -2526,6 +2932,54 @@ func _reachable_taxiway_cells(taxiway_cells: Dictionary, runway_cells: Dictionar
 				queue.append(neighbor)
 
 	return reachable
+
+
+func _preview_airside_connection(
+	cells: Array[Vector2i]
+) -> Dictionary:
+	var reachable_positions: Array = airside_status.get(
+		"reachable_taxiway_positions",
+		[]
+	)
+	if reachable_positions.is_empty():
+		return {
+			"required": true,
+			"connected": false,
+			"target_valid": false,
+			"distance": -1
+		}
+
+	var adjacent: Dictionary = {}
+	var nearest := Vector2i.ZERO
+	var nearest_valid := false
+	var nearest_distance := 999999
+
+	for cell in cells:
+		for reachable_variant in reachable_positions:
+			var reachable: Vector2i = reachable_variant
+			var distance := (
+				absi(cell.x - reachable.x)
+				+ absi(cell.y - reachable.y)
+			)
+			if distance == 1:
+				adjacent[_cell_key(reachable)] = reachable
+			if distance < nearest_distance:
+				nearest_distance = distance
+				nearest = reachable
+				nearest_valid = true
+
+	var target := nearest
+	if not adjacent.is_empty():
+		target = adjacent.values()[0]
+
+	return {
+		"required": true,
+		"connected": not adjacent.is_empty(),
+		"target_valid": nearest_valid,
+		"target_cell": target,
+		"distance": nearest_distance,
+		"adjacent_count": adjacent.size()
+	}
 
 
 func _cells_touch_reachable_taxiway(cells: Array[Vector2i]) -> bool:

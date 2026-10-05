@@ -235,7 +235,7 @@ func _build_ui() -> void:
 	panel.offset_bottom = -84
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel)
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, "context")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 14)
@@ -254,7 +254,7 @@ func _build_ui() -> void:
 
 	var preview := PanelContainer.new()
 	preview.custom_minimum_size = Vector2(112, 82)
-	GameUIStyle.apply_panel(preview, "dark")
+	GameUIStyle.apply_panel(preview, "context_preview")
 	header.add_child(preview)
 
 	aircraft_image = TextureRect.new()
@@ -331,7 +331,7 @@ func _build_ui() -> void:
 	actions.add_child(primary_button)
 
 	fleet_button = Button.new()
-	fleet_button.text = "FLEET"
+	fleet_button.text = "✈ FLEET"
 	fleet_button.custom_minimum_size = Vector2(100, 48)
 	fleet_button.pressed.connect(
 		_on_fleet_pressed

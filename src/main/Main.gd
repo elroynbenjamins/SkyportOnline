@@ -2855,6 +2855,9 @@ func _on_purchase_expansion_requested() -> void:
 		hud.show_parcel(parcel_data, player_level, coins)
 		return
 
+	var purchased_parcel_id := String(
+		parcel_data.get("id", "")
+	)
 	if not airport_grid.purchase_selected():
 		hud.show_parcel(
 			airport_grid.get_selected_parcel(),
@@ -2866,6 +2869,9 @@ func _on_purchase_expansion_requested() -> void:
 	coins -= cost
 	_persist_airport_layout()
 	hud.set_player_data(player_level, coins, gems)
+	_celebrate_parcel_expansion(
+		purchased_parcel_id
+	)
 	hud.show_parcel(
 		airport_grid.get_selected_parcel(),
 		player_level,
@@ -2948,6 +2954,7 @@ func _on_placement_expand_requested(
 	coins -= cost
 	_persist_airport_layout()
 	hud.set_player_data(player_level, coins, gems)
+	_celebrate_parcel_expansion(parcel_id)
 
 	var definition := BuildingCatalog.get_definition(
 		selected_building_id
@@ -2986,6 +2993,37 @@ func _on_placement_expand_requested(
 			"Parcel unlocked • this footprint also needs another expansion.",
 			"warning"
 		)
+
+
+func _celebrate_parcel_expansion(
+	parcel_id: String
+) -> void:
+	if parcel_id.is_empty():
+		return
+
+	var parcel := airport_grid.get_parcel(
+		parcel_id
+	)
+	if parcel.is_empty():
+		return
+
+	var display_name := parcel_id.replace(
+		"_",
+		" "
+	).capitalize()
+	camera_controller.focus_world_position(
+		airport_grid.get_parcel_world_center(
+			parcel_id
+		),
+		0.42,
+		0.72
+	)
+	hud.show_airport_expanded(
+		display_name,
+		airport_grid.get_parcel_tile_count(
+			parcel_id
+		)
+	)
 
 
 func _on_building_selected(building_id: String) -> void:

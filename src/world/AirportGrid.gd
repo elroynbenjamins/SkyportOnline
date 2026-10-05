@@ -40,6 +40,7 @@ const STOP_BAR_OFF := Color("6d5b3f")
 const RUNWAY_CLEAR := Color("76d39b")
 const RUNWAY_OCCUPIED := Color("ff5d62")
 const RUNWAY_PRIORITY := Color("ffbf47")
+const PARCEL_UNLOCK_FX_DURATION := 0.9
 
 var parcels: Dictionary = {}
 var selected_id := ""
@@ -55,6 +56,7 @@ var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
 var event_visual_snapshot: Dictionary = {}
 var event_owned_cosmetics: Dictionary = {}
+var parcel_unlock_fx: Dictionary = {}
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -71,7 +73,32 @@ func _ready() -> void:
 	_recalculate_airside_network()
 	_create_parcel_labels()
 	_refresh_building_labels()
+	set_process(false)
 	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	if parcel_unlock_fx.is_empty():
+		set_process(false)
+		return
+
+	var completed: Array[String] = []
+	for parcel_id_variant in parcel_unlock_fx.keys():
+		var parcel_id := String(parcel_id_variant)
+		var elapsed := float(
+			parcel_unlock_fx.get(parcel_id, 0.0)
+		) + delta
+		if elapsed >= PARCEL_UNLOCK_FX_DURATION:
+			completed.append(parcel_id)
+		else:
+			parcel_unlock_fx[parcel_id] = elapsed
+
+	for parcel_id in completed:
+		parcel_unlock_fx.erase(parcel_id)
+
+	queue_redraw()
+	if parcel_unlock_fx.is_empty():
+		set_process(false)
 
 
 func _initialize_parcels() -> void:
@@ -131,6 +158,7 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
+	_draw_parcel_unlock_fx()
 	_draw_buildings()
 	_draw_event_theme_overlay()
 	_draw_runway_hold_short_markings()
@@ -167,6 +195,103 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 					line = LOCKED_GRID_LINE
 			draw_colored_polygon(points, fill)
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
+
+
+func _draw_parcel_unlock_fx() -> void:
+	for parcel_id_variant in parcel_unlock_fx.keys():
+		var parcel_id := String(parcel_id_variant)
+		if not parcels.has(parcel_id):
+			continue
+
+		var elapsed := float(
+			parcel_unlock_fx.get(parcel_id, 0.0)
+		)
+		var progress := clampf(
+			elapsed / PARCEL_UNLOCK_FX_DURATION,
+			0.0,
+			1.0
+		)
+		var parcel: Dictionary = parcels[parcel_id]
+		var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
+		var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
+
+		var glow_alpha := (1.0 - progress) * 0.38
+		for y in range(sy, sy + PARCEL_SIZE):
+			for x in range(sx, sx + PARCEL_SIZE):
+				var center := tile_to_world(Vector2(x, y))
+				var points := _tile_points(center)
+				draw_colored_polygon(
+					points,
+					Color(1.0, 0.84, 0.35, glow_alpha)
+				)
+
+		var pulse_alpha := (1.0 - progress) * 0.95
+		var pulse_width := lerpf(4.5, 1.5, progress)
+		for y in range(sy, sy + PARCEL_SIZE):
+			for x in range(sx, sx + PARCEL_SIZE):
+				if not (
+					x == sx
+					or x == sx + PARCEL_SIZE - 1
+					or y == sy
+					or y == sy + PARCEL_SIZE - 1
+				):
+					continue
+				var p := _tile_points(
+					tile_to_world(Vector2(x, y))
+				)
+				draw_polyline(
+					PackedVector2Array([
+						p[0], p[1], p[2], p[3], p[0]
+					]),
+					Color(1.0, 0.86, 0.42, pulse_alpha),
+					pulse_width
+				)
+
+		var center := get_parcel_world_center(parcel_id)
+		for index in range(8):
+			var angle := float(index) * TAU / 8.0
+			var radius := 18.0 + progress * 52.0
+			var particle := center + Vector2(
+				cos(angle) * radius,
+				sin(angle) * radius * 0.42
+			)
+			var particle_size := lerpf(4.0, 1.5, progress)
+			draw_circle(
+				particle,
+				particle_size,
+				Color(
+					1.0,
+					0.88,
+					0.48,
+					(1.0 - progress) * 0.9
+				)
+			)
+
+
+func is_parcel_unlock_animation_active(
+	parcel_id: String
+) -> bool:
+	return parcel_unlock_fx.has(parcel_id)
+
+
+func get_parcel_world_center(parcel_id: String) -> Vector2:
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return Vector2.ZERO
+
+	var parcel: Dictionary = parcels[parcel_id]
+	var center_tile := Vector2(
+		int(parcel.get("px", 0)) * PARCEL_SIZE
+		+ (PARCEL_SIZE - 1) * 0.5,
+		int(parcel.get("py", 0)) * PARCEL_SIZE
+		+ (PARCEL_SIZE - 1) * 0.5
+	)
+	return tile_to_world(center_tile)
+
+
+func get_parcel_tile_count(parcel_id: String) -> int:
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return 0
+	return PARCEL_SIZE * PARCEL_SIZE
 
 
 func _draw_buildings() -> void:
@@ -1212,6 +1337,8 @@ func purchase_parcel(parcel_id: String) -> bool:
 		return false
 
 	parcels[parcel_id]["owned"] = true
+	parcel_unlock_fx[parcel_id] = 0.0
+	set_process(true)
 	_refresh_parcel_labels()
 	queue_redraw()
 	if selected_id == parcel_id:

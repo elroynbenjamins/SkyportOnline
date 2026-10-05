@@ -14,6 +14,7 @@ var multi_touch_active := false
 var mouse_left_down := false
 var mouse_left_start := Vector2.ZERO
 var placement_drag_enabled := false
+var focus_tween: Tween
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -29,6 +30,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _handle_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
+		_cancel_focus_tween()
 		touches[event.index] = event.position
 		touch_starts[event.index] = event.position
 		if touches.size() >= 2:
@@ -50,6 +52,7 @@ func _handle_touch(event: InputEventScreenTouch) -> void:
 
 
 func _handle_drag(event: InputEventScreenDrag) -> void:
+	_cancel_focus_tween()
 	touches[event.index] = event.position
 
 	if touches.size() == 1:
@@ -70,6 +73,9 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 
 
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
+	if event.pressed:
+		_cancel_focus_tween()
+
 	if event.button_index == MOUSE_BUTTON_LEFT:
 		mouse_left_down = event.pressed
 		if event.pressed:
@@ -88,6 +94,12 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 	if (
+		event.button_mask & MOUSE_BUTTON_MASK_LEFT
+		or event.button_mask & MOUSE_BUTTON_MASK_RIGHT
+	):
+		_cancel_focus_tween()
+
+	if (
 		placement_drag_enabled
 		and event.button_mask & MOUSE_BUTTON_MASK_LEFT
 	):
@@ -102,6 +114,44 @@ func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 
 func set_placement_drag_enabled(value: bool) -> void:
 	placement_drag_enabled = value
+
+
+func focus_world_position(
+	world_position: Vector2,
+	duration: float = 0.42,
+	strength: float = 0.72
+) -> void:
+	_cancel_focus_tween()
+	var target := position.lerp(
+		world_position,
+		clampf(strength, 0.0, 1.0)
+	)
+	if duration <= 0.0:
+		position = target
+		return
+
+	focus_tween = create_tween()
+	focus_tween.set_trans(
+		Tween.TRANS_QUAD
+	)
+	focus_tween.set_ease(
+		Tween.EASE_OUT
+	)
+	focus_tween.tween_property(
+		self,
+		"position",
+		target,
+		duration
+	)
+
+
+func _cancel_focus_tween() -> void:
+	if (
+		focus_tween != null
+		and focus_tween.is_valid()
+	):
+		focus_tween.kill()
+	focus_tween = null
 
 
 func _set_zoom_clamped(value: float) -> void:

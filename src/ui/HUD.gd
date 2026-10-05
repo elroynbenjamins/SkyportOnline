@@ -29,6 +29,10 @@ var atc_status_chip: Button
 var status_detail_panel: PanelContainer
 var status_detail_title: Label
 var status_detail_body: Label
+var expansion_banner: PanelContainer
+var expansion_banner_title: Label
+var expansion_banner_detail: Label
+var expansion_banner_tween: Tween
 var active_status_chip := ""
 var status_details: Dictionary = {}
 var current_operation_status_text := "Preparing airport..."
@@ -203,6 +207,8 @@ func _build_interface() -> void:
 	)
 	status_strip.add_child(atc_status_chip)
 
+	_build_expansion_banner(root)
+
 	status_detail_panel = PanelContainer.new()
 	status_detail_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	status_detail_panel.offset_left = 12
@@ -282,6 +288,65 @@ func _build_interface() -> void:
 	_build_storage_panel(root)
 	_build_catalog_panel(root)
 	_build_bottom_navigation(root)
+
+
+func _build_expansion_banner(root: Control) -> void:
+	expansion_banner = PanelContainer.new()
+	expansion_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	expansion_banner.offset_left = 360
+	expansion_banner.offset_top = 82
+	expansion_banner.offset_right = -360
+	expansion_banner.offset_bottom = 142
+	expansion_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	expansion_banner.visible = false
+	root.add_child(expansion_banner)
+	GameUIStyle.apply_panel(expansion_banner, "raised")
+
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	expansion_banner.add_child(row)
+
+	var icon := Label.new()
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.text = "✦"
+	icon.add_theme_font_size_override("font_size", 26)
+	icon.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
+	row.add_child(icon)
+
+	var text_box := VBoxContainer.new()
+	text_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(text_box)
+
+	expansion_banner_title = Label.new()
+	expansion_banner_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	expansion_banner_title.text = "AIRPORT EXPANDED"
+	expansion_banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	expansion_banner_title.add_theme_font_size_override(
+		"font_size",
+		18
+	)
+	expansion_banner_title.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
+	text_box.add_child(expansion_banner_title)
+
+	expansion_banner_detail = Label.new()
+	expansion_banner_detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	expansion_banner_detail.text = "New land unlocked"
+	expansion_banner_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	expansion_banner_detail.add_theme_font_size_override(
+		"font_size",
+		12
+	)
+	GameUIStyle.muted(expansion_banner_detail)
+	text_box.add_child(expansion_banner_detail)
 
 
 func _build_context_panel(root: Control) -> void:
@@ -1303,6 +1368,56 @@ func set_airport_edit_undo_available(
 ) -> void:
 	if undo_airport_edit_button != null:
 		undo_airport_edit_button.disabled = not can_undo
+
+
+func show_airport_expanded(
+	parcel_name: String,
+	tile_count: int = 64
+) -> void:
+	if expansion_banner == null:
+		return
+
+	if (
+		expansion_banner_tween != null
+		and expansion_banner_tween.is_valid()
+	):
+		expansion_banner_tween.kill()
+
+	expansion_banner_title.text = "AIRPORT EXPANDED"
+	expansion_banner_detail.text = "%s • +%d build tiles" % [
+		parcel_name.to_upper(),
+		tile_count
+	]
+	expansion_banner.visible = true
+	expansion_banner.modulate = Color(
+		1.0,
+		1.0,
+		1.0,
+		0.0
+	)
+
+	expansion_banner_tween = create_tween()
+	expansion_banner_tween.tween_property(
+		expansion_banner,
+		"modulate:a",
+		1.0,
+		0.16
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	expansion_banner_tween.tween_interval(0.72)
+	expansion_banner_tween.tween_property(
+		expansion_banner,
+		"modulate:a",
+		0.0,
+		0.24
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	expansion_banner_tween.tween_callback(
+		Callable(self, "_hide_expansion_banner")
+	)
+
+
+func _hide_expansion_banner() -> void:
+	if expansion_banner != null:
+		expansion_banner.visible = false
 
 
 func set_operation_status(

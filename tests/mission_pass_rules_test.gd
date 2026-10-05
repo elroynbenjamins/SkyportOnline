@@ -79,8 +79,10 @@ func _run() -> void:
 	pass_state = token_state.get("mission_pass", {})
 	check((pass_state.get("weekly", []) as Array).size() == 10, "A new week in the same month should append five missions instead of deleting unfinished catch-up missions.")
 
+	var pending_before_rollover := int(token_state.get("pending_passengers", 0))
 	MissionPassRules.ensure_state(token_state, NOV_01, 1)
 	pass_state = token_state.get("mission_pass", {})
+	check(int(token_state.get("pending_passengers", 0)) > pending_before_rollover, "Earned but unclaimed pass rewards should auto-claim before the month resets.")
 	check(int(pass_state.get("points", -1)) == 0, "New calendar month should start a fresh pass point total.")
 	check(not bool(pass_state.get("premium", true)), "Premium entitlement should reset for the new monthly pass.")
 	check((pass_state.get("weekly", []) as Array).size() == 5, "New month should start with only the current weekly set.")

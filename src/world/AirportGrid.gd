@@ -475,10 +475,47 @@ func _draw_buildings() -> void:
 			_draw_building_sprite(definition, origin, footprint, int(building["rotation"]))
 
 
+func _building_front_depth(building: Dictionary) -> int:
+	var origin: Vector2i = building.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return origin.x + origin.y
+
+	var footprint := _footprint_for(
+		definition,
+		int(building.get("rotation", 0))
+	)
+	return (
+		origin.x
+		+ origin.y
+		+ footprint.x
+		+ footprint.y
+		- 2
+	)
+
+
 func _sort_buildings_by_depth(a: Dictionary, b: Dictionary) -> bool:
-	var a_origin: Vector2i = a["origin"]
-	var b_origin: Vector2i = b["origin"]
-	return a_origin.x + a_origin.y < b_origin.x + b_origin.y
+	var a_depth := _building_front_depth(a)
+	var b_depth := _building_front_depth(b)
+	if a_depth != b_depth:
+		return a_depth < b_depth
+
+	var a_origin: Vector2i = a.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var b_origin: Vector2i = b.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	if a_origin.y != b_origin.y:
+		return a_origin.y < b_origin.y
+	return a_origin.x < b_origin.x
 
 
 func _draw_building_detail(building: Dictionary, definition: Dictionary, footprint: Vector2i) -> void:

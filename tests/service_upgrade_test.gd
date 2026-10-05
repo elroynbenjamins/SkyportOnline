@@ -59,22 +59,51 @@ func _run() -> void:
 	var ground_ops_definition := BuildingCatalog.get_definition(
 		"ground_ops_depot"
 	)
-	var ground_ops_path := String(
-		ground_ops_definition.get("world_sprite_path", "")
+	var ground_ops_atlas_path := String(
+		ground_ops_definition.get(
+			"world_sprite_atlas_path",
+			""
+		)
 	)
-	if ground_ops_path.is_empty():
-		_fail("Ground Ops should expose dedicated starter-v3 world art.")
+	if (
+		ground_ops_atlas_path
+		!= BuildingCatalog.PRODUCTION_BUILDING_ATLAS
+	):
+		_fail("Ground Ops should use the canonical v2 production atlas.")
 		return
-	if service_upgrade_panel.building_image.texture is AtlasTexture:
+	if not (
+		service_upgrade_panel.building_image.texture
+		is AtlasTexture
+	):
 		_fail(
-			"Ground Ops upgrade panel should use dedicated starter-v3 art, not the legacy atlas."
+			"Ground Ops upgrade panel should use canonical v2 atlas art."
 		)
 		return
-	if String(
-		service_upgrade_panel.building_image.texture.resource_path
-	) != ground_ops_path:
+	var ground_ops_preview := (
+		service_upgrade_panel.building_image.texture
+		as AtlasTexture
+	)
+	if (
+		ground_ops_preview.atlas == null
+		or String(
+			ground_ops_preview.atlas.resource_path
+		) != ground_ops_atlas_path
+	):
 		_fail(
-			"Ground Ops upgrade panel should preview the exact production world sprite."
+			"Ground Ops upgrade panel should retain the canonical production atlas."
+		)
+		return
+	var ground_ops_regions: Array = ground_ops_definition.get(
+		"world_sprite_regions",
+		[]
+	)
+	if (
+		ground_ops_regions.is_empty()
+		or ground_ops_preview.region
+		!= ground_ops_regions[0]
+	):
+		_fail(
+			"Ground Ops upgrade panel should preview its exact canonical atlas cell."
 		)
 		return
 	if (

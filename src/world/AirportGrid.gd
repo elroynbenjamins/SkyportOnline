@@ -1197,6 +1197,53 @@ func _draw_buildings() -> void:
 
 
 
+
+func get_apron_micro_detail_snapshot() -> Dictionary:
+	var stands := 0
+	var passenger_pads := 0
+	var service_pads := 0
+	var cart_bays := 0
+	var utility_cabinets := 0
+
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if definition.is_empty():
+			continue
+
+		var id := String(
+			definition.get("id", "")
+		)
+		var category := String(
+			definition.get("category", "")
+		)
+
+		if id.contains("stand"):
+			stands += 1
+			cart_bays += 1
+			continue
+
+		if category == "Passenger":
+			passenger_pads += 1
+			utility_cabinets += 1
+		elif category == "Services":
+			service_pads += 1
+			utility_cabinets += 1
+
+	return {
+		"stands": stands,
+		"stand_guidance": stands,
+		"stand_service_zones": stands * 2,
+		"cart_bays": cart_bays,
+		"passenger_pads": passenger_pads,
+		"pedestrian_crossings": passenger_pads,
+		"service_pads": service_pads,
+		"service_staging_zones": service_pads * 2,
+		"utility_cabinets": utility_cabinets
+	}
+
+
 func _micro_alpha(
 	color: Color,
 	strength: float

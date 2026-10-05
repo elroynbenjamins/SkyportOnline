@@ -39,9 +39,13 @@ func _run() -> void:
 			"world_sprite_size",
 			Vector2.ZERO
 		)
-		var offset: Vector2 = definition.get(
+		var fallback_offset: Vector2 = definition.get(
 			"world_sprite_offset",
 			Vector2.ZERO
+		)
+		var sprite_offsets: Array = definition.get(
+			"world_sprite_offsets",
+			[]
 		)
 		var base_footprint: Vector2i = definition.get(
 			"footprint",
@@ -50,6 +54,13 @@ func _run() -> void:
 
 		for rotation in range(regions.size()):
 			var source_rect: Rect2 = regions[rotation]
+			var offset := fallback_offset
+			if not sprite_offsets.is_empty():
+				var offset_value = sprite_offsets[
+					rotation % sprite_offsets.size()
+				]
+				if offset_value is Vector2:
+					offset = offset_value
 			var source_rect_i := Rect2i(
 				int(source_rect.position.x),
 				int(source_rect.position.y),
@@ -123,7 +134,60 @@ func _run() -> void:
 				width_ratio
 			]
 			print(diagnostic)
+
+			if absf(bottom_delta) > 1.25:
+				_fail(
+					"%s rotation %d visible base is %.2f px off its tile footprint."
+					% [
+						String(definition.get("id", "")),
+						rotation,
+						bottom_delta
+					]
+				)
+			if absf(visible_center_x) > 8.0:
+				_fail(
+					"%s rotation %d is horizontally miscentered by %.2f px."
+					% [
+						String(definition.get("id", "")),
+						rotation,
+						visible_center_x
+					]
+				)
+			if width_ratio > 1.80:
+				_fail(
+					"%s rotation %d is too wide for its gameplay footprint (%.2fx)."
+					% [
+						String(definition.get("id", "")),
+						rotation,
+						width_ratio
+					]
+				)
 			checked += 1
+
+
+	var grid := AirportGrid.new()
+	root.add_child(grid)
+	await process_frame
+	var large_behind := {
+		"definition_id": "small_terminal",
+		"origin": Vector2i(0, 0),
+		"rotation": 0
+	}
+	var small_in_front := {
+		"definition_id": "ground_ops_depot",
+		"origin": Vector2i(2, 0),
+		"rotation": 0
+	}
+	if grid._building_front_depth(large_behind) != 3:
+		_fail("Terminal front-depth should include its full 3x2 footprint.")
+	if grid._building_front_depth(small_in_front) != 2:
+		_fail("1x1 building front-depth should end at its occupied tile.")
+	if not grid._sort_buildings_by_depth(
+		small_in_front,
+		large_behind
+	):
+		_fail("Smaller front building should render before the deeper large building.")
+	grid.queue_free()
 
 	if checked < 16:
 		_fail("Expected at least 16 production building views; checked %d." % checked)

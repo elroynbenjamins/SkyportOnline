@@ -22,8 +22,8 @@ static func all() -> Array[Dictionary]:
 			"description": "Handles small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/runway_short.svg", "res://assets/pixel/airport_v1/runway_short_b.svg"]),
-			"world_sprite_size": Vector2(310, 132),
-			"world_sprite_offset": Vector2(0, -8)
+			"world_sprite_size": Vector2(310, 145),
+			"world_sprite_offset": Vector2(0, -5)
 		},
 		{
 			"id": "small_stand",
@@ -72,7 +72,7 @@ static func all() -> Array[Dictionary]:
 			"rotatable": false,
 			"sizes": PackedStringArray(["S", "M", "L"]),
 			"description": "Ground vehicles use service roads to reach aircraft.",
-			"icon_path": "res://assets/pixel/airport_v1/taxiway.svg"
+			"icon_path": "res://assets/pixel/airport_v1/service_road.svg"
 		},
 		{
 			"id": "small_terminal",
@@ -414,8 +414,8 @@ static func all() -> Array[Dictionary]:
 			"description": "Longer runway for small and medium aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/runway_short.svg", "res://assets/pixel/airport_v1/runway_short_b.svg"]),
-			"world_sprite_size": Vector2(410, 156),
-			"world_sprite_offset": Vector2(0, -12)
+			"world_sprite_size": Vector2(430, 202),
+			"world_sprite_offset": Vector2(0, -8)
 		},
 		{
 			"id": "autumn_event_flag",

@@ -230,9 +230,10 @@ func _run() -> void:
 		return
 
 	print(
-		"STAND_AIRCRAFT_VISUAL_OK pico=%.1f voyager=%.1f nimbus=%.1f "
-		+ "stand_angles=2 visitor_directional=true service_scale=true"
-		% [
+		(
+			"STAND_AIRCRAFT_VISUAL_OK pico=%.1f voyager=%.1f nimbus=%.1f "
+			+ "stand_angles=2 visitor_directional=true service_scale=true"
+		) % [
 			float(widths["pico_p8"]),
 			float(widths["voyager_v32"]),
 			float(widths["nimbus_n40"])

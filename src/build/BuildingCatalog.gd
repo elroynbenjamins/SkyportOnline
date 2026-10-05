@@ -95,17 +95,17 @@ static func all() -> Array[Dictionary]:
 			"synergy_radius_tiles": 5.0,
 			"synergy_bonus": 0.10,
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
-			"world_sprite_regions": [
-				Rect2(0, 0, 448, 448),
-				Rect2(448, 0, 448, 448)
-			],
-			"world_sprite_size": Vector2(300, 300),
+			"art_tier": "starter_v3",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/starter_v3/terminal_small_v3_a.svg",
+				"res://assets/production/starter_v3/terminal_small_v3_b.svg"
+			]),
+			"world_sprite_size": Vector2(326, 244),
 			"world_sprite_offsets": [
-				Vector2(0, -55),
-				Vector2(0, -60)
+				Vector2(0, -59),
+				Vector2(0, -59)
 			],
-			"world_sprite_offset": Vector2(0, -55)
+			"world_sprite_offset": Vector2(0, -59)
 		},
 		{
 			"id": "shuttle_station",
@@ -178,17 +178,13 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.05,
 			"local_service_radius_tiles": 5.0,
 			"icon_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
-			"world_sprite_regions": [
-				Rect2(0, 896, 448, 448),
-				Rect2(448, 896, 448, 448)
-			],
-			"world_sprite_size": Vector2(116, 116),
+			"art_tier": "starter_v3",
+			"world_sprite_path": "res://assets/production/starter_v3/ground_ops_depot_v3.svg",
+			"world_sprite_size": Vector2(132, 132),
 			"world_sprite_offsets": [
-				Vector2(0, -31),
-				Vector2(0, -29)
+				Vector2(0, -34)
 			],
-			"world_sprite_offset": Vector2(0, -31),
+			"world_sprite_offset": Vector2(0, -34),
 			"services": {
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},
@@ -381,17 +377,17 @@ static func all() -> Array[Dictionary]:
 			"service_speed": 1.0,
 			"vehicle_capacity": 1,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
-			"world_sprite_regions": [
-				Rect2(896, 448, 448, 448),
-				Rect2(1344, 448, 448, 448)
-			],
-			"world_sprite_size": Vector2(188, 188),
+			"art_tier": "starter_v3",
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/starter_v3/fuel_basic_v3_a.svg",
+				"res://assets/production/starter_v3/fuel_basic_v3_b.svg"
+			]),
+			"world_sprite_size": Vector2(206, 172),
 			"world_sprite_offsets": [
-				Vector2(0, -35),
-				Vector2(0, -45)
+				Vector2(0, -38),
+				Vector2(0, -38)
 			],
-			"world_sprite_offset": Vector2(0, -35)
+			"world_sprite_offset": Vector2(0, -38)
 		},
 		{
 			"id": "rapid_small_fuel",

@@ -76,6 +76,9 @@ const ENVIRONMENT_TREES := "res://assets/pixel/airport_v1/environment_tree_clust
 const ENVIRONMENT_HEDGE := "res://assets/pixel/airport_v1/environment_hedge_strip.svg"
 const ENVIRONMENT_ENTRANCE := "res://assets/pixel/airport_v1/environment_entrance_sign.svg"
 const PARCEL_UNLOCK_FX_DURATION := 0.9
+const PREVIEW_SNAP_FX_DURATION := 0.18
+const PLACEMENT_CONFIRM_FX_DURATION := 0.46
+const EDIT_DIM_MODULATE := Color(0.78, 0.82, 0.80, 0.70)
 
 var parcels: Dictionary = {}
 var selected_id := ""
@@ -93,6 +96,12 @@ var runway_visual_states: Dictionary = {}
 var event_visual_snapshot: Dictionary = {}
 var event_owned_cosmetics: Dictionary = {}
 var parcel_unlock_fx: Dictionary = {}
+var preview_snap_elapsed := -1.0
+var preview_snap_origin := Vector2i(-1, -1)
+var preview_snap_footprint := Vector2i.ONE
+var preview_snap_valid := false
+var placement_confirm_fx: Array[Dictionary] = []
+var hovered_building_uid := -1
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -116,26 +125,56 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if parcel_unlock_fx.is_empty():
-		set_process(false)
-		return
+	var active := false
 
-	var completed: Array[String] = []
-	for parcel_id_variant in parcel_unlock_fx.keys():
-		var parcel_id := String(parcel_id_variant)
-		var elapsed := float(
-			parcel_unlock_fx.get(parcel_id, 0.0)
-		) + delta
-		if elapsed >= PARCEL_UNLOCK_FX_DURATION:
-			completed.append(parcel_id)
-		else:
-			parcel_unlock_fx[parcel_id] = elapsed
+	if not parcel_unlock_fx.is_empty():
+		active = true
+		var completed: Array[String] = []
+		for parcel_id_variant in parcel_unlock_fx.keys():
+			var parcel_id := String(parcel_id_variant)
+			var elapsed := float(
+				parcel_unlock_fx.get(parcel_id, 0.0)
+			) + delta
+			if elapsed >= PARCEL_UNLOCK_FX_DURATION:
+				completed.append(parcel_id)
+			else:
+				parcel_unlock_fx[parcel_id] = elapsed
+		for parcel_id in completed:
+			parcel_unlock_fx.erase(parcel_id)
 
-	for parcel_id in completed:
-		parcel_unlock_fx.erase(parcel_id)
+	if preview_snap_elapsed >= 0.0:
+		active = true
+		preview_snap_elapsed += delta
+		if preview_snap_elapsed >= PREVIEW_SNAP_FX_DURATION:
+			preview_snap_elapsed = -1.0
 
-	queue_redraw()
-	if parcel_unlock_fx.is_empty():
+	if not placement_confirm_fx.is_empty():
+		active = true
+		for index in range(
+			placement_confirm_fx.size() - 1,
+			-1,
+			-1
+		):
+			var item: Dictionary = placement_confirm_fx[index]
+			var elapsed := float(
+				item.get("elapsed", 0.0)
+			) + delta
+			if elapsed >= PLACEMENT_CONFIRM_FX_DURATION:
+				placement_confirm_fx.remove_at(index)
+			else:
+				item["elapsed"] = elapsed
+				placement_confirm_fx[index] = item
+
+	if (
+		not parcel_unlock_fx.is_empty()
+		or preview_snap_elapsed >= 0.0
+		or not placement_confirm_fx.is_empty()
+	):
+		active = true
+
+	if active:
+		queue_redraw()
+	else:
 		set_process(false)
 
 
@@ -214,6 +253,8 @@ func _draw() -> void:
 	_draw_runway_operational_indicators()
 	_draw_airside_warnings()
 	_draw_build_preview()
+	_draw_preview_snap_fx()
+	_draw_placement_confirm_fx()
 	_draw_preview_expansion_outline()
 	_draw_selected_outline()
 
@@ -1069,6 +1110,8 @@ func _draw_buildings() -> void:
 				_draw_service_road_detail(origin)
 			continue
 
+		var dimmed := _placement_focus_active()
+
 		if _definition_has_world_sprite(definition):
 			_draw_world_art_ground_pad(
 				definition,
@@ -1079,7 +1122,8 @@ func _draw_buildings() -> void:
 				definition,
 				origin,
 				footprint,
-				int(building["rotation"])
+				int(building["rotation"]),
+				EDIT_DIM_MODULATE if dimmed else Color.WHITE
 			)
 		else:
 			var color: Color = definition["color"]
@@ -1096,6 +1140,16 @@ func _draw_buildings() -> void:
 				definition,
 				footprint
 			)
+			if dimmed:
+				var dim_polygon := _footprint_polygon(
+					origin,
+					footprint
+				)
+				if dim_polygon.size() >= 4:
+					draw_colored_polygon(
+						dim_polygon,
+						Color(0.05, 0.10, 0.10, 0.19)
+					)
 
 
 
@@ -2809,6 +2863,181 @@ func _draw_build_preview() -> void:
 		)
 
 
+func _placement_focus_active() -> bool:
+	return (
+		not preview_building_id.is_empty()
+		and preview_origin.x >= 0
+		and preview_origin.y >= 0
+	)
+
+
+func _start_preview_snap_fx(
+	origin: Vector2i,
+	footprint: Vector2i,
+	valid: bool
+) -> void:
+	if origin.x < 0 or origin.y < 0:
+		return
+	preview_snap_origin = origin
+	preview_snap_footprint = footprint
+	preview_snap_valid = valid
+	preview_snap_elapsed = 0.0
+	set_process(true)
+	queue_redraw()
+
+
+func _draw_preview_snap_fx() -> void:
+	if preview_snap_elapsed < 0.0:
+		return
+
+	var progress := clampf(
+		preview_snap_elapsed / PREVIEW_SNAP_FX_DURATION,
+		0.0,
+		1.0
+	)
+	var polygon := _footprint_polygon(
+		preview_snap_origin,
+		preview_snap_footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var base := (
+		Color("8ff0ae")
+		if preview_snap_valid
+		else Color("ff8c87")
+	)
+	var alpha := (1.0 - progress) * 0.72
+	var width := lerpf(4.2, 1.8, progress)
+	draw_polyline(
+		PackedVector2Array([
+			polygon[0],
+			polygon[1],
+			polygon[2],
+			polygon[3],
+			polygon[0]
+		]),
+		Color(base.r, base.g, base.b, alpha),
+		width
+	)
+
+	var center := _footprint_center_world(
+		preview_snap_origin,
+		preview_snap_footprint
+	)
+	draw_set_transform(
+		center,
+		0.0,
+		Vector2(1.0, 0.42)
+	)
+	draw_arc(
+		Vector2.ZERO,
+		lerpf(8.0, 25.0, progress),
+		0.0,
+		TAU,
+		24,
+		Color(base.r, base.g, base.b, alpha * 0.85),
+		2.0
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
+func _start_placement_confirm_fx(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> void:
+	placement_confirm_fx.append({
+		"origin": origin,
+		"footprint": footprint,
+		"elapsed": 0.0
+	})
+	set_process(true)
+	queue_redraw()
+
+
+func _draw_placement_confirm_fx() -> void:
+	for item in placement_confirm_fx:
+		var elapsed := float(item.get("elapsed", 0.0))
+		var progress := clampf(
+			elapsed / PLACEMENT_CONFIRM_FX_DURATION,
+			0.0,
+			1.0
+		)
+		var origin: Vector2i = item.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var footprint: Vector2i = item.get(
+			"footprint",
+			Vector2i.ONE
+		)
+		var polygon := _footprint_polygon(
+			origin,
+			footprint
+		)
+		if polygon.size() < 4:
+			continue
+
+		draw_colored_polygon(
+			polygon,
+			Color(
+				0.43,
+				0.93,
+				0.61,
+				(1.0 - progress) * 0.18
+			)
+		)
+		draw_polyline(
+			PackedVector2Array([
+				polygon[0],
+				polygon[1],
+				polygon[2],
+				polygon[3],
+				polygon[0]
+			]),
+			Color(
+				0.54,
+				0.96,
+				0.69,
+				(1.0 - progress) * 0.92
+			),
+			lerpf(4.0, 1.0, progress)
+		)
+
+		var center := _footprint_center_world(
+			origin,
+			footprint
+		)
+		draw_set_transform(
+			center,
+			0.0,
+			Vector2(1.0, 0.42)
+		)
+		draw_arc(
+			Vector2.ZERO,
+			lerpf(12.0, 42.0, progress),
+			0.0,
+			TAU,
+			30,
+			Color(
+				0.54,
+				0.96,
+				0.69,
+				(1.0 - progress) * 0.75
+			),
+			2.2
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+
+
 func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:
 	var center := tile_to_world(Vector2(tile.x, tile.y))
 	var points := _tile_points(center)
@@ -4037,16 +4266,22 @@ func _draw_selected_building_outline() -> void:
 		polygon,
 		SELECTED_BUILDING_FILL
 	)
+	var selected_loop := PackedVector2Array([
+		polygon[0],
+		polygon[1],
+		polygon[2],
+		polygon[3],
+		polygon[0]
+	])
 	draw_polyline(
-		PackedVector2Array([
-			polygon[0],
-			polygon[1],
-			polygon[2],
-			polygon[3],
-			polygon[0]
-		]),
+		selected_loop,
+		Color(0.02, 0.08, 0.11, 0.72),
+		5.2
+	)
+	draw_polyline(
+		selected_loop,
 		SELECTED_BUILDING_LINE,
-		2.4
+		2.5
 	)
 
 	for point_variant in polygon:

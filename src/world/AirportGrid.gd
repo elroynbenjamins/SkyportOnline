@@ -4136,23 +4136,14 @@ func _refresh_building_labels() -> void:
 		if id in ["taxiway", "service_road"]:
 			continue
 
-		var uid := int(building.get("uid", -1))
 		var warning_text := _world_building_warning_text(
 			building,
 			definition
 		)
-		var selected := uid == selected_synergy_uid
-		if not selected and warning_text.is_empty():
+		if warning_text.is_empty():
 			continue
 
 		var label_text := warning_text
-		if label_text.is_empty() and selected:
-			label_text = _building_label_text(
-				building,
-				definition
-			)
-		if label_text.is_empty():
-			continue
 
 		var footprint := _footprint_for(
 			definition,

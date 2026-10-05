@@ -1444,6 +1444,79 @@ func _refresh_operations_status() -> void:
 		)
 
 	var body := current_operation_status_text
+	var live_value = operations_analytics.get(
+		"live",
+		{}
+	)
+	if live_value is Dictionary:
+		var live: Dictionary = live_value
+		if not live.is_empty():
+			body += "\n\nLIVE TRAFFIC"
+			body += "\nStands %d/%d • Taxi %d • Airborne %d" % [
+				int(live.get("stands_occupied", 0)),
+				int(live.get("stands_total", 0)),
+				int(live.get("taxiing", 0)),
+				int(live.get("airborne", 0))
+			]
+			body += "\nRunway %d active • %d waiting • Ground %d active • %d waiting" % [
+				int(live.get("runway_active", 0)),
+				int(live.get("runway_waiting", 0)),
+				int(live.get("ground_active", 0)),
+				int(live.get("ground_waiting", 0))
+			]
+
+			var inbound_holding := int(
+				live.get("inbound_holding", 0)
+			)
+			var taxi_holds := int(
+				live.get("taxi_holds", 0)
+			)
+			var waiting_passengers := int(
+				live.get("waiting_passengers", 0)
+			)
+			if (
+				inbound_holding > 0
+				or taxi_holds > 0
+				or waiting_passengers > 0
+			):
+				body += "\nHolding: %d inbound • %d taxi • %d passenger" % [
+					inbound_holding,
+					taxi_holds,
+					waiting_passengers
+				]
+
+			var aircraft_value = live.get("aircraft", [])
+			if aircraft_value is Array:
+				var aircraft_rows: Array = aircraft_value
+				var aircraft_limit := mini(
+					aircraft_rows.size(),
+					4
+				)
+				if aircraft_limit > 0:
+					body += "\n\nAIRCRAFT"
+					for index in range(aircraft_limit):
+						var row: Dictionary = aircraft_rows[index]
+						var phase := String(
+							row.get("phase", "Operating")
+						)
+						var progress := float(
+							row.get("phase_progress", -1.0)
+						)
+						var line := "%s • %s" % [
+							String(row.get("label", "Aircraft")),
+							phase
+						]
+						if progress >= 0.0:
+							line += " • %d%%" % int(
+								round(progress * 100.0)
+							)
+						var blocked := String(
+							row.get("blocking_reason", "")
+						)
+						if not blocked.is_empty():
+							line += "\n  ↳ %s" % blocked
+						body += "\n" + line
+
 	var analysis_value = operations_analytics.get(
 		"analysis",
 		{}
@@ -1594,6 +1667,16 @@ func _refresh_operations_status() -> void:
 				]
 
 	var chip_tone := current_operation_status_tone
+	if chip_tone == "normal" and live_value is Dictionary:
+		var live_tone: Dictionary = live_value
+		if (
+			int(live_tone.get("inbound_holding", 0)) > 0
+			or int(live_tone.get("taxi_holds", 0)) > 0
+			or int(live_tone.get("runway_waiting", 0)) > 0
+			or int(live_tone.get("ground_waiting", 0)) > 0
+			or int(live_tone.get("waiting_passengers", 0)) > 0
+		):
+			chip_tone = "warning"
 	if chip_tone == "normal":
 		var tone_analysis_value = operations_analytics.get(
 			"analysis",

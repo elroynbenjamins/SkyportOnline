@@ -36,6 +36,45 @@ func _run() -> void:
 	if float(snapshot.get("draw_hz", 99.0)) > 15.0:
 		_fail("Ambient drawing should remain throttled below 15 Hz.")
 		return
+	if not bool(snapshot.get("art_atlas_ready", false)):
+		_fail("Ambient life should load the production ambient art atlas.")
+		return
+	if int(snapshot.get("baggage_train_cap", 99)) > 3:
+		_fail("Baggage ambience should stay tightly capped for mobile.")
+		return
+
+	var art_profile: Dictionary = snapshot.get(
+		"art_profile",
+		{}
+	)
+	if String(art_profile.get("atlas_path", "")).is_empty():
+		_fail("Ambient art profile should expose its production atlas path.")
+		return
+	if AirportAmbientLifeArt.texture() == null:
+		_fail("Production ambient-life atlas should resolve as a texture.")
+		return
+	for key in [
+		"crew_a",
+		"crew_b",
+		"marshaller_a",
+		"marshaller_b",
+		"civilian_a",
+		"civilian_b",
+		"utility_right",
+		"utility_left",
+		"baggage_right",
+		"baggage_left",
+		"windsock_a",
+		"windsock_b",
+		"flag_a",
+		"flag_b"
+	]:
+		var source := AirportAmbientLifeArt.source_rect(
+			String(key)
+		)
+		if source.size != Vector2(256, 256):
+			_fail("%s should occupy one 256x256 ambient atlas cell." % key)
+			return
 
 	var s_activity := AirportAmbientLife.behavior_profile_for_size("S")
 	var m_activity := AirportAmbientLife.behavior_profile_for_size("M")
@@ -103,6 +142,22 @@ func _run() -> void:
 	if int(live_snapshot.get("crew_count", 0)) < 1:
 		_fail("Servicing aircraft should create visible ground-crew activity.")
 		return
+	if int(live_snapshot.get("baggage_trains", 0)) != 0:
+		_fail("Generic servicing should not create baggage trains outside load/unload.")
+		return
+
+	npc.state = "LOADING"
+	var loading_snapshot := ambient.get_ambient_snapshot()
+	if int(loading_snapshot.get("baggage_trains", 0)) < 1:
+		_fail("Loading aircraft should create production-art baggage movement.")
+		return
+	if not ambient.has_method("_draw_baggage_activity"):
+		_fail("Ambient controller should retain dedicated baggage activity rendering.")
+		return
+	if not ambient.has_method("_draw_atlas_sprite"):
+		_fail("Ambient subjects should render through the shared production atlas.")
+		return
+
 	if int(live_snapshot.get("npc_aircraft", 0)) != 1:
 		_fail("NPC aircraft should be identified from their behavior metadata.")
 		return
@@ -115,13 +170,14 @@ func _run() -> void:
 		(
 			"AIRPORT_AMBIENT_LIFE_OK "
 			+ "stands=%d route=%d windsocks=%d draw_hz=%.0f "
-			+ "crew=%d npc_tier=%s"
+			+ "crew=%d baggage=%d atlas=true npc_tier=%s"
 		) % [
 			int(snapshot.get("stands", 0)),
 			int(snapshot.get("service_route_points", 0)),
 			int(snapshot.get("windsocks", 0)),
 			float(snapshot.get("draw_hz", 0.0)),
 			int(live_snapshot.get("crew_count", 0)),
+			int(loading_snapshot.get("baggage_trains", 0)),
 			String(applied.get("tier", ""))
 		]
 	)

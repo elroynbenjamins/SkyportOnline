@@ -136,6 +136,9 @@ jobs:
       - name: Test airport layout edit feedback
         run: timeout 20s godot --headless --path . --script res://tests/layout_edit_feedback_test.gd
 
+      - name: Test new-building construction feedback
+        run: timeout 20s godot --headless --path . --script res://tests/new_build_construction_feedback_test.gd
+
       - name: Test building storage
         run: timeout 20s godot --headless --path . --script res://tests/building_storage_test.gd
 

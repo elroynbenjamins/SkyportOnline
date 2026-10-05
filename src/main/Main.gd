@@ -63,6 +63,7 @@ func _process(delta: float) -> void:
 func _ready() -> void:
 	camera_controller.world_tapped.connect(_on_world_tapped)
 	camera_controller.world_dragged.connect(_on_world_dragged)
+	camera_controller.world_hovered.connect(_on_world_hovered)
 	airport_grid.parcel_selected.connect(_on_parcel_selected)
 	airport_grid.network_status_changed.connect(_on_network_status_changed)
 	airport_grid.building_selected_world.connect(_on_building_selected_world)
@@ -2157,6 +2158,20 @@ func _on_world_dragged(world_position: Vector2) -> void:
 		)
 
 
+func _on_world_hovered(world_position: Vector2) -> void:
+	if (
+		airport_edit_mode
+		and moving_building_uid < 0
+		and placing_stored_building_uid < 0
+		and selected_building_id.is_empty()
+	):
+		airport_grid.set_hover_world_position(
+			world_position
+		)
+	else:
+		airport_grid.clear_building_hover()
+
+
 func _aircraft_at_world_position(
 	world_position: Vector2
 ) -> AircraftPrototype:
@@ -2540,6 +2555,7 @@ func _on_building_context_move_requested(
 		)
 		return
 
+	airport_grid.clear_building_hover()
 	moving_building_uid = uid
 	selected_building_id = String(
 		building.get("definition_id", "")
@@ -3819,6 +3835,7 @@ func _confirm_building_move() -> void:
 	var moved_name := String(
 		definition.get("name", "Building")
 	)
+	airport_grid.clear_building_selection()
 	hud.show_airport_edit_mode(
 		true,
 		not last_move_undo.is_empty(),
@@ -4040,6 +4057,7 @@ func _cancel_building_move(
 	selected_building_rotation = 0
 	camera_controller.set_placement_drag_enabled(false)
 	if airport_edit_mode:
+		airport_grid.clear_building_selection()
 		hud.show_airport_edit_mode(
 			true,
 			not last_move_undo.is_empty(),
@@ -4065,6 +4083,7 @@ func _on_airport_edit_requested() -> void:
 
 	airport_edit_mode = true
 	last_move_undo = {}
+	airport_grid.clear_building_selection()
 	placing_stored_building_uid = -1
 	camera_controller.set_placement_drag_enabled(false)
 	if aircraft_context_card != null:
@@ -4176,6 +4195,7 @@ func _exit_airport_edit_mode(
 
 	airport_edit_mode = false
 	last_move_undo = {}
+	airport_grid.clear_building_selection()
 	selected_building_id = ""
 	selected_building_rotation = 0
 	placing_stored_building_uid = -1

@@ -23,6 +23,7 @@ const LOCKED_GRID_LINE := Color("84958d", 0.22)
 const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
+const PREVIEW_SNAP := Color("dff9ff")
 const AIRSIDE_WARNING := Color("ffb84d")
 const AIRSIDE_CONNECTED := Color("76d39b")
 const HOLD_SHORT_SOLID := Color("f5d76e")
@@ -54,15 +55,32 @@ var preview_rotation := 0
 var preview_status: Dictionary = {}
 var preview_mode := "build"
 var preview_ignore_uid := -1
+var preview_snap_feedback_remaining := 0.0
+var preview_snap_sequence := 0
 
 
 func _ready() -> void:
+	set_process(false)
 	_initialize_parcels()
 	_initialize_starter_airport()
 	_recalculate_airside_network()
 	_create_parcel_labels()
 	_refresh_building_labels()
 	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	if preview_snap_feedback_remaining <= 0.0:
+		set_process(false)
+		return
+
+	preview_snap_feedback_remaining = maxf(
+		preview_snap_feedback_remaining - delta,
+		0.0
+	)
+	queue_redraw()
+	if preview_snap_feedback_remaining <= 0.0:
+		set_process(false)
 
 
 func _initialize_parcels() -> void:

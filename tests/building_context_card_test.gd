@@ -95,6 +95,20 @@ func _run() -> void:
 	if card.building_image.texture == null:
 		_fail("Building card should load the building icon.")
 		return
+
+	if not (card.building_image.texture is AtlasTexture):
+		_fail(
+			"Basic Fuel context card should use the same production atlas art as the airport."
+		)
+		return
+	if (
+		card.building_image.texture_filter
+		!= CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	):
+		_fail(
+			"Building context art should use smooth mipmapped filtering."
+		)
+		return
 	if not card.stat_one_label.text.contains("x1.00"):
 		_fail("Building card should show service speed stat.")
 		return

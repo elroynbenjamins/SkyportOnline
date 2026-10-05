@@ -87,6 +87,9 @@ jobs:
       - name: Test aircraft turnaround rules
         run: timeout 20s godot --headless --path . --script res://tests/turnaround_rules_test.gd
 
+      - name: Test aircraft stand ambience
+        run: timeout 20s godot --headless --path . --script res://tests/aircraft_ambience_test.gd
+
 
       - name: Test ground service bottlenecks
         run: timeout 20s godot --headless --path . --script res://tests/ground_service_bottleneck_test.gd

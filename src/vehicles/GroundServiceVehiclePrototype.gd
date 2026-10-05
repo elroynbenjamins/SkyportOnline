@@ -124,7 +124,10 @@ func _process(delta: float) -> void:
 					tow_start_vehicle_position = global_position
 					tow_initialized = true
 					service_connection_target = (
-						tow_aircraft.global_position
+						tow_aircraft.get_service_connection_position(
+						"pushback",
+						"pushback"
+					)
 					)
 					has_service_connection_target = true
 				service_started.emit()
@@ -178,7 +181,10 @@ func _process(delta: float) -> void:
 					+ aircraft_delta * progress
 				)
 				service_connection_target = (
-					tow_aircraft.global_position
+					tow_aircraft.get_service_connection_position(
+					"pushback",
+					"pushback"
+				)
 				)
 				queue_redraw()
 			if service_remaining <= 0.0:
@@ -189,7 +195,10 @@ func _process(delta: float) -> void:
 						tow_end_aircraft_position
 					)
 					service_connection_target = (
-						tow_aircraft.global_position
+						tow_aircraft.get_service_connection_position(
+						"pushback",
+						"pushback"
+					)
 					)
 				phase = "RETURNING"
 				route_index = 0

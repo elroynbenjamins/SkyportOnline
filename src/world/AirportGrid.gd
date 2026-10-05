@@ -48,6 +48,8 @@ const TERRAIN_FLOWER := Color("f3d66b", 0.72)
 const SELECTED_LINE := Color("ffd166")
 const SELECTED_BUILDING_LINE := Color("7fd8ff")
 const SELECTED_BUILDING_FILL := Color("68bde8", 0.08)
+const HOVER_BUILDING_LINE := Color("b9edff", 0.72)
+const HOVER_BUILDING_FILL := Color("8bdcff", 0.045)
 const PREVIEW_VALID := Color("68d391", 0.38)
 const PREVIEW_INVALID := Color("ef6461", 0.46)
 const PREVIEW_EXPANSION_LINE := Color("ffd166", 0.95)
@@ -246,6 +248,7 @@ func _draw() -> void:
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
 	_draw_airside_props()
+	_draw_hovered_building_outline()
 	_draw_selected_building_outline()
 	_draw_synergy_overlay()
 	_draw_event_theme_overlay()
@@ -2871,6 +2874,18 @@ func _placement_focus_active() -> bool:
 	)
 
 
+func is_placement_focus_active() -> bool:
+	return _placement_focus_active()
+
+
+func is_preview_snap_feedback_active() -> bool:
+	return preview_snap_elapsed >= 0.0
+
+
+func get_placement_confirm_feedback_count() -> int:
+	return placement_confirm_fx.size()
+
+
 func _start_preview_snap_fx(
 	origin: Vector2i,
 	footprint: Vector2i,
@@ -4324,6 +4339,86 @@ func _size_text(definition: Dictionary) -> String:
 		result += sizes[index]
 	return result
 
+
+
+func set_hover_world_position(
+	world_position: Vector2
+) -> void:
+	if not preview_building_id.is_empty():
+		clear_building_hover()
+		return
+
+	var building := _building_at_visual_position(
+		world_position
+	)
+	var next_uid := int(
+		building.get("uid", -1)
+	)
+	if next_uid == hovered_building_uid:
+		return
+	hovered_building_uid = next_uid
+	queue_redraw()
+
+
+func clear_building_hover() -> void:
+	if hovered_building_uid < 0:
+		return
+	hovered_building_uid = -1
+	queue_redraw()
+
+
+func get_hovered_building_uid() -> int:
+	return hovered_building_uid
+
+
+func _hovered_building_polygon() -> PackedVector2Array:
+	if (
+		hovered_building_uid < 0
+		or hovered_building_uid == selected_synergy_uid
+		or not preview_building_id.is_empty()
+	):
+		return PackedVector2Array()
+
+	var building := _building_by_uid(
+		hovered_building_uid
+	)
+	if building.is_empty():
+		return PackedVector2Array()
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return PackedVector2Array()
+	return _footprint_polygon(
+		building.get("origin", Vector2i.ZERO),
+		_footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+	)
+
+
+func _draw_hovered_building_outline() -> void:
+	var polygon := _hovered_building_polygon()
+	if polygon.size() < 4:
+		return
+
+	draw_colored_polygon(
+		polygon,
+		HOVER_BUILDING_FILL
+	)
+	draw_polyline(
+		PackedVector2Array([
+			polygon[0],
+			polygon[1],
+			polygon[2],
+			polygon[3],
+			polygon[0]
+		]),
+		HOVER_BUILDING_LINE,
+		1.6
+	)
 
 
 func _selected_building_polygon() -> PackedVector2Array:

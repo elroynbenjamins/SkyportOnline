@@ -23,7 +23,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/runway_short.svg", "res://assets/pixel/airport_v1/runway_short_b.svg"]),
 			"world_sprite_size": Vector2(310, 145),
-			"world_sprite_offset": Vector2(0, -5)
+			"world_sprite_offsets": [Vector2(0, 34), Vector2(0, 34)],
+			"world_sprite_offset": Vector2(0, 34)
 		},
 		{
 			"id": "small_stand",
@@ -471,7 +472,8 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/runway_short.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/runway_short.svg", "res://assets/pixel/airport_v1/runway_short_b.svg"]),
 			"world_sprite_size": Vector2(430, 202),
-			"world_sprite_offset": Vector2(0, -8)
+			"world_sprite_offsets": [Vector2(0, 51), Vector2(0, 51)],
+			"world_sprite_offset": Vector2(0, 51)
 		},
 		{
 			"id": "autumn_event_flag",

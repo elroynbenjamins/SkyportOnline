@@ -60,6 +60,118 @@ static func free_ready_stands(grid: AirportGrid, size: String, occupied: Diction
 			result.append(uid)
 	return result
 
+static func behavior_profile_for_aircraft(
+	type_id: String
+) -> Dictionary:
+	var aircraft_profile := AircraftCatalog.get_profile(type_id)
+	var size := String(aircraft_profile.get("size", "S"))
+	var passengers := int(aircraft_profile.get("passengers", 0))
+
+	if size in ["L", "XL"]:
+		return {
+			"tier": "heavy",
+			"taxi_speed_scale": 0.86,
+			"taxi_accel_scale": 0.82,
+			"turn_rate_deg": 112.0,
+			"lineup_delay": 0.62,
+			"ground_activity_scale": 0.80,
+			"crew_bonus": 1
+		}
+	if size == "M":
+		return {
+			"tier": "regional",
+			"taxi_speed_scale": 0.92,
+			"taxi_accel_scale": 0.88,
+			"turn_rate_deg": 126.0,
+			"lineup_delay": 0.54,
+			"ground_activity_scale": 0.88,
+			"crew_bonus": 1
+		}
+	if passengers >= 24:
+		return {
+			"tier": "commuter",
+			"taxi_speed_scale": 0.99,
+			"taxi_accel_scale": 1.00,
+			"turn_rate_deg": 145.0,
+			"lineup_delay": 0.44,
+			"ground_activity_scale": 1.00,
+			"crew_bonus": 0
+		}
+
+	return {
+		"tier": "hopper",
+		"taxi_speed_scale": 1.06,
+		"taxi_accel_scale": 1.10,
+		"turn_rate_deg": 160.0,
+		"lineup_delay": 0.36,
+		"ground_activity_scale": 1.12,
+		"crew_bonus": 0
+	}
+
+
+static func apply_behavior(
+	aircraft: AircraftPrototype
+) -> Dictionary:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return {}
+
+	var profile := behavior_profile_for_aircraft(
+		aircraft.aircraft_type_id
+	)
+	var base_taxi_speed := float(
+		aircraft.get_meta(
+			"npc_base_taxi_speed",
+			aircraft.taxi_speed
+		)
+	)
+	var base_taxi_acceleration := float(
+		aircraft.get_meta(
+			"npc_base_taxi_acceleration",
+			aircraft.taxi_acceleration
+		)
+	)
+	if not aircraft.has_meta("npc_base_taxi_speed"):
+		aircraft.set_meta(
+			"npc_base_taxi_speed",
+			base_taxi_speed
+		)
+	if not aircraft.has_meta("npc_base_taxi_acceleration"):
+		aircraft.set_meta(
+			"npc_base_taxi_acceleration",
+			base_taxi_acceleration
+		)
+
+	aircraft.taxi_speed = base_taxi_speed * float(
+		profile.get("taxi_speed_scale", 1.0)
+	)
+	aircraft.taxi_acceleration = (
+		base_taxi_acceleration
+		* float(
+			profile.get(
+				"taxi_accel_scale",
+				1.0
+			)
+		)
+	)
+	aircraft.taxi_turn_rate_deg = float(
+		profile.get(
+			"turn_rate_deg",
+			aircraft.taxi_turn_rate_deg
+		)
+	)
+	aircraft.lineup_delay = float(
+		profile.get(
+			"lineup_delay",
+			aircraft.lineup_delay
+		)
+	)
+	aircraft.set_meta(
+		"npc_behavior",
+		profile.duplicate(true)
+	)
+	return profile.duplicate(true)
+
+
 func eligible(level: int, available_sizes: Array) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for contact in catalog():

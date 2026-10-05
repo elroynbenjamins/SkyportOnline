@@ -1,23 +1,23 @@
 class_name GameUIStyle
 extends RefCounted
 
-const COLOR_BG := Color("07151d")
-const COLOR_BG_SOFT := Color("0b202b")
-const COLOR_PANEL := Color("102b38")
-const COLOR_PANEL_RAISED := Color("173846")
-const COLOR_PANEL_DARK := Color("0b222d")
-const COLOR_BORDER := Color("3a6676")
-const COLOR_BORDER_SOFT := Color("274b59")
-const COLOR_TEXT := Color("f3f7f8")
-const COLOR_MUTED := Color("9fb8c1")
-const COLOR_ACCENT := Color("62c7dd")
-const COLOR_ACCENT_DARK := Color("23798d")
-const COLOR_GOLD := Color("f1c45e")
-const COLOR_GOLD_DARK := Color("a9782d")
-const COLOR_SUCCESS := Color("82d9a5")
-const COLOR_WARNING := Color("ffc66a")
-const COLOR_DANGER := Color("ff7d75")
-const COLOR_EVENT := Color("d97833")
+const COLOR_BG := Color("041521")
+const COLOR_BG_SOFT := Color("07283b")
+const COLOR_PANEL := Color("07334b")
+const COLOR_PANEL_RAISED := Color("0a3b57")
+const COLOR_PANEL_DARK := Color("061f30")
+const COLOR_BORDER := Color("168fbd")
+const COLOR_BORDER_SOFT := Color("155a78")
+const COLOR_TEXT := Color("f8fcff")
+const COLOR_MUTED := Color("b0cbd5")
+const COLOR_ACCENT := Color("28c9f5")
+const COLOR_ACCENT_DARK := Color("087fa6")
+const COLOR_GOLD := Color("f5b33b")
+const COLOR_GOLD_DARK := Color("b77412")
+const COLOR_SUCCESS := Color("78df77")
+const COLOR_WARNING := Color("f4a12a")
+const COLOR_DANGER := Color("ff7168")
+const COLOR_EVENT := Color("e7762d")
 
 
 static func panel(
@@ -44,9 +44,9 @@ static func panel(
 	style.content_margin_bottom = 10.0
 
 	if shadow:
-		style.shadow_color = Color(0, 0, 0, 0.26)
-		style.shadow_size = 7
-		style.shadow_offset = Vector2(0, 3)
+		style.shadow_color = Color(0, 0, 0, 0.34)
+		style.shadow_size = 9
+		style.shadow_offset = Vector2(0, 4)
 
 	return style
 
@@ -112,57 +112,57 @@ static func apply_panel(
 		"hud_top":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("0b2531", 0.98), Color("4d7a89"), 15, 1, true)
+				panel(Color("06314a", 0.985), Color("28bfe9"), 18, 2, true)
 			)
 		"hud_level":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("302919"), COLOR_GOLD, 12, 1, false)
+				panel(Color("073551"), Color("31c6ee"), 16, 2, false)
 			)
 		"hud_passenger":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("102f3a"), Color("58b9cf"), 12, 1, false)
+				panel(Color("073550"), Color("24bce8"), 16, 1, false)
 			)
 		"hud_coin":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("342c18"), COLOR_GOLD_DARK, 12, 1, false)
+				panel(Color("18364a"), Color("e99c28"), 16, 1, false)
 			)
 		"hud_premium":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("2a2038"), Color("a884d6"), 12, 1, false)
+				panel(Color("15344d"), Color("a776e0"), 16, 1, false)
 			)
 		"dock":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("081b24", 0.98), Color("365a68"), 16, 1, true)
+				panel(Color("05283d", 0.99), Color("1ba8da"), 20, 2, true)
 			)
 		"context":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("0c2733", 0.985), Color("62a7ba"), 14, 2, true)
+				panel(Color("062b42", 0.992), Color("25b5e2"), 18, 2, true)
 			)
 		"context_preview":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("081c25"), Color("2e5c6b"), 10, 1, false)
+				panel(Color("08283a"), Color("197ea4"), 12, 1, false)
 			)
 		"screen_top":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("0b2935", 0.99), Color("4b8191"), 15, 1, true)
+				panel(Color("06314a", 0.995), Color("28bfe9"), 18, 2, true)
 			)
 		"screen_section":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("0b222c", 0.985), Color("315866"), 13, 1, false)
+				panel(Color("07273a", 0.99), Color("18799f"), 14, 1, false)
 			)
 		"screen_focus":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("102f3b", 0.99), Color("62c7dd"), 14, 2, true)
+				panel(Color("083f5d", 0.995), Color("36d1f6"), 16, 2, true)
 			)
 		"reward_tile":
 			control.add_theme_stylebox_override(
@@ -234,11 +234,11 @@ static func apply_button(
 			pressed_bg = Color("226c7e")
 			pressed_border = Color("a3e9f5")
 		"gold":
-			normal_bg = Color("a56d27")
-			normal_border = COLOR_GOLD
-			hover_bg = Color("bf8131")
-			pressed_bg = Color("80531f")
-			pressed_border = Color("ffe59b")
+			normal_bg = Color("d67b12")
+			normal_border = Color("ffd263")
+			hover_bg = Color("ee941f")
+			pressed_bg = Color("af610b")
+			pressed_border = Color("fff0b2")
 		"danger":
 			normal_bg = Color("743b3d")
 			normal_border = Color("c96a6d")
@@ -246,17 +246,17 @@ static func apply_button(
 			pressed_bg = Color("5a2e31")
 			pressed_border = COLOR_DANGER
 		"nav":
-			normal_bg = Color("102b37")
-			normal_border = Color("284c59")
-			hover_bg = Color("183d4b")
-			pressed_bg = Color("1b4b5c")
+			normal_bg = Color("08314a")
+			normal_border = Color("197fa6")
+			hover_bg = Color("0b4565")
+			pressed_bg = Color("0b5777")
 			pressed_border = COLOR_ACCENT
 		"selected":
-			normal_bg = Color("1d4d5c")
-			normal_border = COLOR_ACCENT
-			hover_bg = Color("245e70")
-			pressed_bg = Color("173d4a")
-			pressed_border = Color("9ce6f3")
+			normal_bg = Color("075c83")
+			normal_border = Color("32d1f6")
+			hover_bg = Color("0876a6")
+			pressed_bg = Color("064f72")
+			pressed_border = Color("bdf5ff")
 		"event":
 			normal_bg = Color("7c421f")
 			normal_border = COLOR_EVENT
@@ -264,29 +264,29 @@ static func apply_button(
 			pressed_bg = Color("603319")
 			pressed_border = Color("ffb36a")
 		"dock":
-			normal_bg = Color("0d2631")
-			normal_border = Color("294d5a")
-			hover_bg = Color("143743")
-			pressed_bg = Color("183f4d")
+			normal_bg = Color("082b40")
+			normal_border = Color("176d91")
+			hover_bg = Color("0b3d59")
+			pressed_bg = Color("0b4c69")
 			pressed_border = COLOR_ACCENT
 		"dock_selected":
-			normal_bg = Color("1d5667")
-			normal_border = Color("79d6e8")
-			hover_bg = Color("246a7d")
-			pressed_bg = Color("194b5a")
-			pressed_border = Color("b5f1fb")
+			normal_bg = Color("0876aa")
+			normal_border = Color("41d9ff")
+			hover_bg = Color("0a8cc4")
+			pressed_bg = Color("06638f")
+			pressed_border = Color("d4f9ff")
 		"build_card":
-			normal_bg = Color("112c37")
-			normal_border = Color("315966")
-			hover_bg = Color("183d49")
-			pressed_bg = Color("1c4b59")
+			normal_bg = Color("0a3046")
+			normal_border = Color("176f95")
+			hover_bg = Color("0b405b")
+			pressed_bg = Color("0b506d")
 			pressed_border = COLOR_ACCENT
 		"build_card_selected":
-			normal_bg = Color("184653")
-			normal_border = Color("72d0e2")
-			hover_bg = Color("205967")
-			pressed_bg = Color("153d48")
-			pressed_border = Color("b4eff8")
+			normal_bg = Color("075d83")
+			normal_border = Color("3dd5fb")
+			hover_bg = Color("0876a1")
+			pressed_bg = Color("064f70")
+			pressed_border = Color("c8f7ff")
 		"build_card_locked":
 			normal_bg = Color("18242a")
 			normal_border = Color("34464d")

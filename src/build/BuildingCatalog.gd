@@ -211,6 +211,10 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/cleaning_center.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/cleaning_center.svg", "res://assets/pixel/airport_v1/cleaning_center_b.svg"]),
+			"world_sprite_size": Vector2(188, 157),
+			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
+			"world_sprite_offset": Vector2(0, -45),
 			"service": "cleaning",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -260,6 +264,10 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/baggage_depot.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/baggage_depot.svg", "res://assets/pixel/airport_v1/baggage_depot_b.svg"]),
+			"world_sprite_size": Vector2(188, 157),
+			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
+			"world_sprite_offset": Vector2(0, -45),
 			"service": "cargo",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -279,6 +287,10 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/catering_kitchen.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/catering_kitchen.svg", "res://assets/pixel/airport_v1/catering_kitchen_b.svg"]),
+			"world_sprite_size": Vector2(188, 157),
+			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
+			"world_sprite_offset": Vector2(0, -45),
 			"service": "catering",
 			"service_speed": 1.30,
 			"vehicle_capacity": 2
@@ -298,6 +310,10 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/tow_operations.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/tow_operations.svg", "res://assets/pixel/airport_v1/tow_operations_b.svg"]),
+			"world_sprite_size": Vector2(188, 157),
+			"world_sprite_offsets": [Vector2(0, -45), Vector2(0, -45)],
+			"world_sprite_offset": Vector2(0, -45),
 			"service": "pushback",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2
@@ -314,6 +330,11 @@ static func all() -> Array[Dictionary]:
 			"rotatable": true,
 			"sizes": PackedStringArray([]),
 			"description": "Reduces required separation between runway movements.",
+			"icon_path": "res://assets/pixel/airport_v1/atc_tower.svg",
+			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/atc_tower.svg", "res://assets/pixel/airport_v1/atc_tower_b.svg"]),
+			"world_sprite_size": Vector2(210, 240),
+			"world_sprite_offsets": [Vector2(0, -104), Vector2(0, -101)],
+			"world_sprite_offset": Vector2(0, -104),
 			"air_traffic_control": true
 		},
 		{

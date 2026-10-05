@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="640" viewBox="0 0 768 640">
+<defs>
+<linearGradient id="roof" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff7f0"/><stop offset="1" stop-color="#d2b7a1"/></linearGradient>
+<linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#efd9c7"/><stop offset="1" stop-color="#a97153"/></linearGradient>
+</defs>
+<polygon points="101,332 365,241 662,407 394,501 131,419" fill="#20343a" opacity=".24"/>
+<polygon points="91,312 364,219 671,392 396,488 119,402" fill="#d3cabc"/>
+<polygon points="109,309 363,231 650,391 395,474 138,397" fill="#e7dfd2"/>
+<polygon points="191,302 365,242 572,358 395,419" fill="url(#wall)"/>
+<polygon points="191,302 395,419 395,461 191,344" fill="#be8766"/>
+<polygon points="395,419 572,358 572,400 395,461" fill="#9b694f"/>
+<polygon points="177,289 365,224 591,350 395,417" fill="#fffaf5"/>
+<polygon points="194,289 365,234 572,348 395,402" fill="url(#roof)"/>
+<polygon points="220,319 273,350 273,405 220,374" fill="#76553f"/><polygon points="281,354 335,385 335,440 281,409" fill="#76553f"/>
+<polygon points="405,421 514,383 514,430 405,468" fill="#79553f"/><line x1="423" y1="423" x2="497" y2="398" stroke="#f1d8bd" stroke-width="4"/>
+<rect x="250" y="252" width="18" height="44" fill="#7f9095"/><ellipse cx="259" cy="252" rx="9" ry="5" fill="#a9b5b8"/>
+<rect x="458" y="308" width="18" height="44" fill="#7f9095"/><ellipse cx="467" cy="308" rx="9" ry="5" fill="#a9b5b8"/>
+<circle cx="367" cy="293" r="16" fill="#e6c35f"/><circle cx="367" cy="293" r="7" fill="#fff1b8"/>
+<polygon points="201,386 259,367 318,400 259,421" fill="#fff7ef"/><polygon points="214,385 259,373 304,398 259,414" fill="#e3b28c"/>
+<g fill="none" stroke="#f1c54e" stroke-width="5"><polygon points="202,421 247,406 289,430 245,445"/><polygon points="307,476 352,461 395,485 350,501"/></g>
+<circle cx="330" cy="465" r="6" fill="#d55d22"/><polygon points="324,463 330,441 336,463" fill="#ef7f32"/>
+<line x1="553" y1="366" x2="553" y2="300" stroke="#59666b" stroke-width="7"/>
+<rect x="526" y="274" width="54" height="38" rx="6" fill="#b98662"/>
+<path d="M541 284 l6 7 6-7 6 7 6-7" fill="none" stroke="#fff3e7" stroke-width="4"/>
+<text x="239" y="337" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#fff0e4" transform="rotate(30 239 337)">CATER</text>
+</svg>

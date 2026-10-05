@@ -80,6 +80,7 @@ func _start_gameplay() -> void:
 	mission_pass_screen.claim_all_requested.connect(_on_pass_claim_all_requested)
 	mission_pass_screen.product_purchase_requested.connect(_on_mission_product_purchase_requested)
 	mission_pass_screen.booster_activate_requested.connect(_on_booster_activate_requested)
+	mission_pass_screen.resource_choice_requested.connect(_on_pass_resource_choice_requested)
 	add_child(mission_pass_screen)
 	if rewarded_passenger_ad_bridge != null:
 		rewarded_passenger_ad_bridge.action_reward_granted.connect(_on_rewarded_action_completed)
@@ -89,6 +90,7 @@ func _start_gameplay() -> void:
 	_refresh_career_ui()
 	_refresh_mission_ui()
 	_drain_passenger_rewards()
+	_drain_resource_choice_grants()
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -119,6 +121,7 @@ func _process(delta: float) -> void:
 		career_refresh_elapsed = 0.0
 		_deploy_reserve_aircraft()
 		_drain_passenger_rewards()
+		_drain_resource_choice_grants()
 		_apply_live_boosters()
 		_refresh_career_ui()
 		_refresh_mission_ui()
@@ -370,7 +373,9 @@ func _mission_snapshot() -> Dictionary:
 		"level": player_level,
 		"week_key": current_week,
 		"unix_time": float(int(Time.get_unix_time_from_system() / 60.0) * 60),
-		"rewarded_ad_connected": rewarded_passenger_ad_bridge != null and rewarded_passenger_ad_bridge.provider_connected
+		"rewarded_ad_connected": rewarded_passenger_ad_bridge != null and rewarded_passenger_ad_bridge.provider_connected,
+		"resource_inventory": resource_inventory.duplicate(true),
+		"resource_choice_country_codes": _available_resource_choice_country_codes()
 	}
 
 func _refresh_mission_ui() -> void:
@@ -473,6 +478,92 @@ func _on_rewarded_action_unavailable(action_id: String) -> void:
 		return
 	pending_mission_ad_id = ""
 	hud.set_operation_status("Rewarded mission reroll is unavailable right now.", "warning")
+
+
+func _available_resource_choice_country_codes() -> Array[String]:
+	var seen := {}
+	var home_code := String(current_profile.get("country_id", ""))
+	if not CountryResourceCatalog.resources_for_country(home_code).is_empty():
+		seen[home_code] = true
+	for destination in DestinationCatalog.unlocked_for_level(player_level):
+		var country_code := String(destination.get("country_code", ""))
+		if not CountryResourceCatalog.resources_for_country(country_code).is_empty():
+			seen[country_code] = true
+	var result: Array[String] = []
+	for code_variant in seen.keys():
+		result.append(String(code_variant))
+	result.sort()
+	return result
+
+func _on_pass_resource_choice_requested(resource_id: String) -> void:
+	var resource := CountryResourceCatalog.get_resource(resource_id)
+	if resource.is_empty():
+		hud.set_operation_status("That country resource is not available.", "warning")
+		return
+	var allowed := _available_resource_choice_country_codes()
+	if not allowed.has(String(resource.get("country_code", ""))):
+		hud.set_operation_status("Unlock a route to that country before choosing its resource.", "warning")
+		return
+	var next := MissionPassRules.reserve_resource_choice(
+		_capture_state(),
+		resource_id,
+		1
+	)
+	if next.is_empty():
+		hud.set_operation_status("No Country Resource Crate is available.", "warning")
+		return
+	if not AirportProgressionStore.save_state(next):
+		hud.set_operation_status("Crate was not consumed because progress could not be saved.", "warning")
+		return
+	progression = next
+	_drain_resource_choice_grants()
+	_refresh_mission_ui()
+
+func _drain_resource_choice_grants() -> void:
+	if not progression_ready:
+		return
+	var pending: Array = progression.get("pending_resource_grants", [])
+	if pending.is_empty():
+		return
+	for grant_variant in pending.duplicate(true):
+		var grant: Dictionary = grant_variant
+		var grant_id := String(grant.get("id", ""))
+		var resource_id := String(grant.get("resource_id", ""))
+		var amount := maxi(int(grant.get("amount", 1)), 1)
+		if grant_id.is_empty() or CountryResourceCatalog.get_resource(resource_id).is_empty():
+			continue
+		var updated_profile := ProfileStore.apply_resource_reward_receipt(
+			grant_id,
+			resource_id,
+			amount
+		)
+		if updated_profile.is_empty():
+			hud.set_operation_status("Resource reward is safely queued and will retry after the profile can be saved.", "warning")
+			return
+		current_profile = updated_profile
+		resource_inventory = current_profile.get(
+			"resource_inventory",
+			{}
+		).duplicate(true)
+		var next := MissionPassRules.complete_resource_grant(
+			_capture_state(),
+			grant_id
+		)
+		if next.is_empty():
+			return
+		if not AirportProgressionStore.save_state(next):
+			# The profile receipt makes retrying this grant idempotent.
+			hud.set_operation_status("Resource granted; receipt cleanup will retry automatically.", "warning")
+			return
+		progression = next
+		var resource := CountryResourceCatalog.get_resource(resource_id)
+		hud.set_operation_status(
+			"Country Resource Crate • +%d %s" % [
+				amount,
+				String(resource.get("name", "resource"))
+			],
+			"success"
+		)
 
 func _on_pass_reward_claim_requested(tier_number: int, track: String) -> void:
 	var next := MissionPassRules.claim_pass_reward(_capture_state(), tier_number, track)

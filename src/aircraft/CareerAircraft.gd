@@ -27,6 +27,27 @@ func get_directional_draw_width() -> float:
 	return base_width * get_visual_scale()
 
 
+func get_interaction_radius() -> float:
+	return maxf(
+		super.get_interaction_radius(),
+		get_directional_draw_width() * 0.54
+	)
+
+
+func get_directional_badge_center_y() -> float:
+	return -maxf(
+		39.0,
+		get_directional_draw_width() * 0.40
+	)
+
+
+func get_directional_npc_badge_top_y() -> float:
+	return -maxf(
+		51.0,
+		get_directional_draw_width() * 0.46
+	)
+
+
 static func direction_for(angle: float) -> String:
 	var direction := Vector2.RIGHT.rotated(angle)
 	if direction.x >= 0.0:
@@ -78,25 +99,96 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_social_badge() -> void:
-	if String(social_visit_data.get("relationship", "")) != "npc":
-		super._draw_social_badge()
+	var relationship := String(
+		social_visit_data.get("relationship", "friend")
+	)
+	if relationship == "npc":
+		var badge_y := get_directional_npc_badge_top_y()
+		var rect := Rect2(
+			Vector2(-19, badge_y),
+			Vector2(38, 17)
+		)
+		draw_rect(rect, Color("203b35"))
+		draw_rect(rect, Color("82d9a5"), false, 1.0)
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(-18, badge_y + 13),
+			"NPC",
+			HORIZONTAL_ALIGNMENT_CENTER,
+			36,
+			11,
+			Color("b9f3cf")
+		)
 		return
-	var badge_y := -maxf(
-		51.0,
-		get_directional_draw_width() * 0.46
+
+	var center := Vector2(
+		-2,
+		get_directional_badge_center_y()
 	)
-	var rect := Rect2(
-		Vector2(-19, badge_y),
-		Vector2(38, 17)
+	var fill := (
+		Color("9b6bd6")
+		if relationship == "alliance"
+		else Color("4f9fc8")
 	)
-	draw_rect(rect, Color("203b35"))
-	draw_rect(rect, Color("82d9a5"), false, 1.0)
+	draw_circle(center, 9.0, Color(0, 0, 0, 0.35))
+	draw_circle(center, 7.0, fill)
+	draw_circle(
+		center,
+		7.0,
+		Color("eaf7ff"),
+		false,
+		2.0
+	)
 	draw_string(
 		ThemeDB.fallback_font,
-		Vector2(-18, badge_y + 13),
-		"NPC",
+		center + Vector2(-5, 4),
+		"A" if relationship == "alliance" else "F",
 		HORIZONTAL_ALIGNMENT_CENTER,
-		36,
-		11,
-		Color("b9f3cf")
+		10.0,
+		10,
+		Color("ffffff")
 	)
+
+
+func _draw_event_badge() -> void:
+	var center := Vector2(
+		-2,
+		get_directional_badge_center_y()
+	)
+	var fill := Color("e6a83f")
+	match event_theme:
+		"autumn":
+			fill = Color("d66d30")
+		"winter":
+			fill = Color("3f8ebd")
+
+	draw_circle(center, 9.0, Color(0, 0, 0, 0.35))
+	draw_circle(center, 7.0, fill)
+	draw_circle(
+		center,
+		7.0,
+		Color("ffe3a1"),
+		false,
+		2.0
+	)
+	var diamond := PackedVector2Array([
+		center + Vector2(0, -4),
+		center + Vector2(4, 0),
+		center + Vector2(0, 4),
+		center + Vector2(-4, 0)
+	])
+	draw_colored_polygon(
+		diamond,
+		Color("fff0bd")
+	)
+
+	if not event_marker_text.is_empty():
+		draw_string(
+			ThemeDB.fallback_font,
+			center + Vector2(-18, -11),
+			event_marker_text,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			36.0,
+			10,
+			Color("fff0bd")
+		)

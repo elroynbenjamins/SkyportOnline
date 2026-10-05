@@ -671,6 +671,16 @@ func _draw_buildings() -> void:
 
 		var footprint := _footprint_for(definition, int(building["rotation"]))
 		var origin: Vector2i = building["origin"]
+		var id := String(definition.get("id", ""))
+
+		if id == "taxiway" or id == "service_road":
+			_draw_pavement_tile(origin, id)
+			if id == "taxiway":
+				_draw_taxiway_detail(origin)
+			else:
+				_draw_service_road_detail(origin)
+			continue
+
 		var color: Color = definition["color"]
 		if _definition_has_world_sprite(definition):
 			color.a = 0.72
@@ -1391,6 +1401,120 @@ func _draw_building_sprite(
 		)
 	else:
 		draw_texture_rect(texture, rect, false, modulate)
+
+
+func _draw_pavement_tile(
+	origin: Vector2i,
+	kind: String
+) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var points := _tile_points(center)
+	var outer := TAXIWAY_OUTER
+	var inner := TAXIWAY_INNER
+	if kind == "service_road":
+		outer = SERVICE_ROAD_OUTER
+		inner = SERVICE_ROAD_INNER
+
+	draw_colored_polygon(points, outer)
+
+	var inner_points := PackedVector2Array()
+	for point_variant in points:
+		var point: Vector2 = point_variant
+		inner_points.append(
+			center + (point - center) * 0.88
+		)
+	draw_colored_polygon(inner_points, inner)
+
+	# Fixed upper-left sunlight: highlight the upper edges and darken
+	# the lower edges so these flat surfaces match the building art.
+	draw_line(
+		points[0],
+		points[1],
+		PAVEMENT_HIGHLIGHT,
+		1.8
+	)
+	draw_line(
+		points[0],
+		points[3],
+		Color("ffffff", 0.10),
+		1.2
+	)
+	draw_line(
+		points[2],
+		points[3],
+		PAVEMENT_SHADOW,
+		2.0
+	)
+	draw_line(
+		points[1],
+		points[2],
+		Color("182226", 0.16),
+		1.4
+	)
+
+	var seed := absi(origin.x * 29 + origin.y * 43)
+	if seed % 2 == 0:
+		var seam_color := (
+			Color("b8c1c3", 0.12)
+			if kind == "taxiway"
+			else Color("eee6dc", 0.14)
+		)
+		draw_line(
+			center + Vector2(-12, 6),
+			center + Vector2(12, -6),
+			seam_color,
+			1.0
+		)
+
+
+func _draw_service_road_detail(origin: Vector2i) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var directions: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
+	var connections := 0
+	for direction in directions:
+		var neighbor := origin + direction
+		if not _service_road_visually_connects_to(neighbor):
+			continue
+		connections += 1
+		var edge_tile := (
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.48
+		)
+		draw_dashed_line(
+			center,
+			tile_to_world(edge_tile),
+			Color("f2eee6", 0.85),
+			1.8,
+			5.0
+		)
+
+	if connections == 0:
+		draw_line(
+			center + Vector2(-8, 4),
+			center + Vector2(8, -4),
+			Color("f2eee6", 0.75),
+			1.8
+		)
+
+	# Small amber reflector at junctions reads clearly at default zoom.
+	if connections >= 2:
+		draw_circle(center, 3.0, Color(0.08, 0.10, 0.10, 0.55))
+		draw_circle(center, 1.8, Color("ffd77a"))
+
+
+func _service_road_visually_connects_to(cell: Vector2i) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+	var building := _building_by_uid(int(occupied_cells[key]))
+	if building.is_empty():
+		return false
+	return String(building.get("definition_id", "")) == "service_road"
 
 
 func _draw_taxiway_detail(origin: Vector2i) -> void:

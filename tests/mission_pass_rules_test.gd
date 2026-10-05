@@ -24,6 +24,12 @@ func _run() -> void:
 	check((pass_state.get("weekly", []) as Array).size() == 5, "Exactly five weekly missions should be created for the current week.")
 	check(int(pass_state.get("points", -1)) == 0, "Fresh monthly pass should start at zero points.")
 
+
+	check(MissionPassRules.seconds_until_daily_reset(OCT_05) == 43200, "Daily mission reset should be the next UTC midnight.")
+	check(MissionPassRules.seconds_until_next_week_set(OCT_05) == 216000, "October 5 should receive the next weekly set at October 8 UTC.")
+	check(MissionPassRules.seconds_until_month_reset(OCT_05) == 2289600, "October pass should end at November 1 UTC.")
+	check(MissionPassRules.format_remaining(216000) == "2d 12h", "Countdown formatting should stay compact for landscape UI.")
+
 	var daily: Array = pass_state.get("daily", [])
 	var original_first := String((daily[0] as Dictionary).get("template_id", ""))
 	var first_id := String((daily[0] as Dictionary).get("id", ""))

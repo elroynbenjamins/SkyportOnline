@@ -290,6 +290,62 @@ static func aero_tokens_for_level_range(old_level: int, new_level: int) -> int:
 	return total
 
 
+
+static func seconds_until_daily_reset(unix_time: float) -> int:
+	var now := maxi(int(unix_time), 0)
+	var elapsed_today := now % SECONDS_PER_DAY
+	return SECONDS_PER_DAY - elapsed_today if elapsed_today > 0 else SECONDS_PER_DAY
+
+static func seconds_until_next_week_set(unix_time: float) -> int:
+	var date := Time.get_datetime_dict_from_unix_time(int(unix_time))
+	var day := maxi(int(date.get("day", 1)), 1)
+	if day >= 29:
+		return seconds_until_month_reset(unix_time)
+	var boundary_day := 8
+	if day >= 22:
+		boundary_day = 29
+	elif day >= 15:
+		boundary_day = 22
+	elif day >= 8:
+		boundary_day = 15
+	var target := {
+		"year": int(date.get("year", 1970)),
+		"month": int(date.get("month", 1)),
+		"day": boundary_day,
+		"hour": 0,
+		"minute": 0,
+		"second": 0
+	}
+	return maxi(int(Time.get_unix_time_from_datetime_dict(target)) - int(unix_time), 0)
+
+static func seconds_until_month_reset(unix_time: float) -> int:
+	var date := Time.get_datetime_dict_from_unix_time(int(unix_time))
+	var year := int(date.get("year", 1970))
+	var month := int(date.get("month", 1)) + 1
+	if month > 12:
+		month = 1
+		year += 1
+	var target := {
+		"year": year,
+		"month": month,
+		"day": 1,
+		"hour": 0,
+		"minute": 0,
+		"second": 0
+	}
+	return maxi(int(Time.get_unix_time_from_datetime_dict(target)) - int(unix_time), 0)
+
+static func format_remaining(seconds: int) -> String:
+	var remaining := maxi(seconds, 0)
+	var days := int(remaining / SECONDS_PER_DAY)
+	var hours := int((remaining % SECONDS_PER_DAY) / 3600)
+	var minutes := int((remaining % 3600) / 60)
+	if days > 0:
+		return "%dd %02dh" % [days, hours]
+	if hours > 0:
+		return "%dh %02dm" % [hours, minutes]
+	return "%dm" % minutes
+
 static func pass_level(state: Dictionary) -> int:
 	var pass_state: Dictionary = state.get("mission_pass", {})
 	return mini(

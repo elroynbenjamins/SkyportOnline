@@ -19,6 +19,9 @@ static func ensure_state(state: Dictionary, unix_time: float, level: int) -> boo
 	if not state.has("booster_inventory"):
 		state["booster_inventory"] = {}
 		changed = true
+	if not state.has("active_boosters"):
+		state["active_boosters"] = {}
+		changed = true
 	if not state.has("resource_choice_crates"):
 		state["resource_choice_crates"] = 0
 		changed = true

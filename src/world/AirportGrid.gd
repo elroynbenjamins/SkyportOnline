@@ -1366,6 +1366,7 @@ func _draw_starter_apron_surface() -> void:
 	_draw_starter_terminal_forecourt(
 		int(snapshot.get("terminal_uid", -1))
 	)
+	_draw_starter_service_support(snapshot)
 	var stand_uids: Array = snapshot.get("stand_uids", [])
 	for stand_uid_variant in stand_uids:
 		_draw_starter_stand_dressing(
@@ -1454,6 +1455,115 @@ func _draw_starter_terminal_forecourt(
 			3.6,
 			Color("78b65f")
 		)
+
+
+func _draw_starter_service_support(
+	snapshot: Dictionary
+) -> void:
+	var apron_origin: Vector2i = snapshot.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var apron_footprint: Vector2i = snapshot.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var min_x := apron_origin.x
+	var min_y := apron_origin.y
+	var max_x := min_x + apron_footprint.x - 1
+	var max_y := min_y + apron_footprint.y - 1
+
+	for building in placed_buildings:
+		var id := String(building.get("definition_id", ""))
+		if id not in ["basic_fuel", "ground_ops_depot"]:
+			continue
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		if (
+			origin.x < min_x
+			or origin.x > max_x
+			or origin.y < min_y
+			or origin.y > max_y
+		):
+			continue
+
+		var definition := BuildingCatalog.get_definition(id)
+		var footprint := _footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+		var center := _footprint_center_world(
+			origin,
+			footprint
+		)
+
+		if id == "basic_fuel":
+			# Amber hazard box + bollards visually separates fuel operations.
+			var fuel_box := Rect2(
+				center + Vector2(-30, 11),
+				Vector2(60, 18)
+			)
+			draw_rect(
+				fuel_box,
+				Color(0, 0, 0, 0),
+				false,
+				2.0
+			)
+			draw_rect(
+				fuel_box,
+				Color("e1ac36", 0.88),
+				false,
+				1.7
+			)
+			for x in [-23.0, -8.0, 8.0, 23.0]:
+				draw_line(
+					center + Vector2(float(x), 12),
+					center + Vector2(float(x) + 8, 20),
+					Color("5e5140", 0.52),
+					1.5
+				)
+			for x in [-26.0, 26.0]:
+				draw_circle(
+					center + Vector2(float(x), 7),
+					3.0,
+					Color(0.03, 0.06, 0.07, 0.28)
+				)
+				draw_circle(
+					center + Vector2(float(x), 6),
+					2.1,
+					Color("f3c348")
+				)
+		else:
+			# Compact vehicle slots for the starter service fleet.
+			for index in range(3):
+				var bay_center := center + Vector2(
+					-26.0 + float(index) * 26.0,
+					19.0
+				)
+				var bay := Rect2(
+					bay_center + Vector2(-9, -5),
+					Vector2(18, 10)
+				)
+				draw_rect(
+					bay,
+					Color(0, 0, 0, 0),
+					false,
+					1.2
+				)
+				draw_rect(
+					bay,
+					Color("dce8ea", 0.66),
+					false,
+					1.0
+				)
+				draw_line(
+					bay_center + Vector2(-5, 0),
+					bay_center + Vector2(5, 0),
+					Color("65b5cc", 0.65),
+					2.0
+				)
 
 
 func _draw_starter_stand_dressing(

@@ -139,6 +139,16 @@ static func apply_panel(
 				"panel",
 				panel(Color("081b24", 0.98), Color("365a68"), 16, 1, true)
 			)
+		"context":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("0c2733", 0.985), Color("62a7ba"), 14, 2, true)
+			)
+		"context_preview":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("081c25"), Color("2e5c6b"), 10, 1, false)
+			)
 		"toast_success":
 			control.add_theme_stylebox_override(
 				"panel",
@@ -240,6 +250,24 @@ static func apply_button(
 			hover_bg = Color("246a7d")
 			pressed_bg = Color("194b5a")
 			pressed_border = Color("b5f1fb")
+		"build_card":
+			normal_bg = Color("112c37")
+			normal_border = Color("315966")
+			hover_bg = Color("183d49")
+			pressed_bg = Color("1c4b59")
+			pressed_border = COLOR_ACCENT
+		"build_card_selected":
+			normal_bg = Color("184653")
+			normal_border = Color("72d0e2")
+			hover_bg = Color("205967")
+			pressed_bg = Color("153d48")
+			pressed_border = Color("b4eff8")
+		"build_card_locked":
+			normal_bg = Color("18242a")
+			normal_border = Color("34464d")
+			hover_bg = Color("18242a")
+			pressed_bg = Color("18242a")
+			pressed_border = Color("34464d")
 
 	var radius := 10 if compact else 12
 	button.add_theme_stylebox_override(

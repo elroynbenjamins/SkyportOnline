@@ -5,6 +5,7 @@ signal building_selected(building_id: String)
 signal rotate_building_requested
 signal confirm_building_requested
 signal cancel_building_requested
+signal placement_expand_requested(parcel_id: String)
 signal store_building_requested
 signal stored_building_selected(building_uid: int)
 signal airport_edit_requested
@@ -44,6 +45,7 @@ var build_title: Label
 var build_status: Label
 var rotate_button: Button
 var store_button: Button
+var expand_here_button: Button
 var place_button: Button
 
 var build_hint: Label
@@ -69,6 +71,7 @@ var current_coins := 0
 var current_gems := 0
 var active_building_id := ""
 var active_build_mode := ""
+var active_expand_parcel_id := ""
 var event_nav_button: Button
 var nav_buttons: Dictionary = {}
 
@@ -366,6 +369,20 @@ func _build_context_panel(root: Control) -> void:
 	cancel_button.pressed.connect(_on_cancel_building_pressed)
 	GameUIStyle.apply_button(cancel_button, "danger", true)
 	build_row.add_child(cancel_button)
+
+	expand_here_button = Button.new()
+	expand_here_button.custom_minimum_size = Vector2(166, 72)
+	expand_here_button.text = "EXPAND HERE"
+	expand_here_button.visible = false
+	expand_here_button.disabled = true
+	expand_here_button.pressed.connect(
+		_on_expand_here_pressed
+	)
+	GameUIStyle.apply_button(
+		expand_here_button,
+		"gold"
+	)
+	build_row.add_child(expand_here_button)
 
 	place_button = Button.new()
 	place_button.custom_minimum_size = Vector2(150, 72)
@@ -855,6 +872,7 @@ func enter_building_mode(definition: Dictionary) -> void:
 		_service_text(definition)
 	]
 	store_button.visible = false
+	_reset_expand_here_action()
 	rotate_button.visible = bool(definition.get("rotatable", false))
 	place_button.text = "TAP LAND"
 	place_button.disabled = true
@@ -876,6 +894,7 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	build_action_panel.visible = true
 	build_title.text = String(definition["name"]).to_upper()
 	store_button.visible = false
+	_update_placement_expand_action(status)
 	rotate_button.visible = bool(definition.get("rotatable", false))
 
 	var required_level := int(definition["level"])
@@ -938,6 +957,7 @@ func enter_move_mode(definition: Dictionary) -> void:
 		"Drag or tap a new position • Moving is free"
 	)
 	store_button.visible = true
+	_reset_expand_here_action()
 	rotate_button.visible = bool(
 		definition.get("rotatable", false)
 	)
@@ -962,6 +982,7 @@ func show_move_preview(
 		definition.get("name", "BUILDING")
 	).to_upper()
 	store_button.visible = true
+	_update_placement_expand_action(status)
 	rotate_button.visible = bool(
 		definition.get("rotatable", false)
 	)
@@ -1017,6 +1038,7 @@ func enter_stored_building_mode(
 	).to_upper()
 	build_status.text = "Tap owned land to place • FREE"
 	store_button.visible = false
+	_reset_expand_here_action()
 	rotate_button.visible = bool(
 		definition.get("rotatable", false)
 	)
@@ -1043,6 +1065,7 @@ func show_stored_building_preview(
 		definition.get("name", "BUILDING")
 	).to_upper()
 	store_button.visible = false
+	_update_placement_expand_action(status)
 	rotate_button.visible = bool(
 		definition.get("rotatable", false)
 	)
@@ -1141,6 +1164,54 @@ func set_stored_buildings(
 		storage_list.add_child(button)
 
 
+func _reset_expand_here_action() -> void:
+	active_expand_parcel_id = ""
+	if expand_here_button == null:
+		return
+	expand_here_button.visible = false
+	expand_here_button.disabled = true
+
+
+func _update_placement_expand_action(
+	status: Dictionary
+) -> void:
+	_reset_expand_here_action()
+	if status.is_empty() or expand_here_button == null:
+		return
+
+	var parcel_id := String(
+		status.get("locked_parcel_id", "")
+	)
+	if parcel_id.is_empty():
+		return
+
+	active_expand_parcel_id = parcel_id
+	expand_here_button.visible = true
+
+	var required_level := int(
+		status.get("locked_parcel_level", 1)
+	)
+	var cost := int(
+		status.get("locked_parcel_cost", 0)
+	)
+	if current_level < required_level:
+		expand_here_button.text = "EXPAND HERE\nLV %d" % required_level
+		expand_here_button.disabled = true
+		return
+
+	if current_coins < cost:
+		expand_here_button.text = "NEED 🪙 %s" % _format_number(
+			cost - current_coins
+		)
+		expand_here_button.disabled = true
+		return
+
+	expand_here_button.text = "EXPAND HERE\n🪙 %s" % _format_number(
+		cost
+	)
+	expand_here_button.disabled = false
+
+
 func show_airport_edit_mode(
 	active: bool,
 	can_undo: bool = false,
@@ -1149,6 +1220,7 @@ func show_airport_edit_mode(
 	active_building_id = ""
 	active_build_mode = "airport_edit" if active else ""
 	build_action_panel.visible = false
+	_reset_expand_here_action()
 	airport_edit_panel.visible = active
 	if storage_panel != null:
 		storage_panel.visible = false
@@ -1768,6 +1840,7 @@ func _refresh_all_status_chip_styles() -> void:
 func exit_building_mode() -> void:
 	active_building_id = ""
 	active_build_mode = ""
+	_reset_expand_here_action()
 	build_action_panel.visible = false
 	if airport_edit_panel != null:
 		airport_edit_panel.visible = false
@@ -1863,6 +1936,18 @@ func _size_text(definition: Dictionary) -> String:
 			result += "/"
 		result += sizes[index]
 	return result
+
+
+func _on_expand_here_pressed() -> void:
+	if (
+		expand_here_button == null
+		or expand_here_button.disabled
+		or active_expand_parcel_id.is_empty()
+	):
+		return
+	placement_expand_requested.emit(
+		active_expand_parcel_id
+	)
 
 
 func _on_store_building_pressed() -> void:

@@ -222,7 +222,7 @@ func _draw_grass_detail(tile: Vector2i, center: Vector2) -> void:
 		return
 	var offset := Vector2(
 		float((seed % 17) - 8),
-		float(((seed / 3) as int) % 9 - 4)
+		float((seed / 3) % 9 - 4)
 	)
 	var tuft := center + offset
 	draw_line(
@@ -236,6 +236,181 @@ func _draw_grass_detail(tile: Vector2i, center: Vector2) -> void:
 		tuft + Vector2(0.0, -2.0),
 		Color("4e7f43", 0.28),
 		1.0
+	)
+
+
+func _draw_owned_airport_environment() -> void:
+	for parcel_variant in parcels.values():
+		var parcel: Dictionary = parcel_variant
+		if not bool(parcel.get("owned", false)):
+			continue
+
+		var px := int(parcel.get("px", 0))
+		var py := int(parcel.get("py", 0))
+		if not _parcel_owned_at(px - 1, py):
+			_draw_owned_parcel_edge(parcel, "x_min")
+		if not _parcel_owned_at(px + 1, py):
+			_draw_owned_parcel_edge(parcel, "x_max")
+		if not _parcel_owned_at(px, py - 1):
+			_draw_owned_parcel_edge(parcel, "y_min")
+		if not _parcel_owned_at(px, py + 1):
+			_draw_owned_parcel_edge(parcel, "y_max")
+
+
+func _parcel_owned_at(px: int, py: int) -> bool:
+	var parcel := _parcel_at(px, py)
+	return (
+		not parcel.is_empty()
+		and bool(parcel.get("owned", false))
+	)
+
+
+func _draw_owned_parcel_edge(
+	parcel: Dictionary,
+	edge_name: String
+) -> void:
+	var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
+	var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
+	var ex := sx + PARCEL_SIZE - 1
+	var ey := sy + PARCEL_SIZE - 1
+	var parcel_center := get_parcel_world_center(
+		String(parcel.get("id", ""))
+	)
+
+	for index in range(PARCEL_SIZE):
+		var tile := Vector2i.ZERO
+		match edge_name:
+			"x_min":
+				tile = Vector2i(sx, sy + index)
+			"x_max":
+				tile = Vector2i(ex, sy + index)
+			"y_min":
+				tile = Vector2i(sx + index, sy)
+			_:
+				tile = Vector2i(sx + index, ey)
+
+		var points := _tile_points(
+			tile_to_world(Vector2(tile.x, tile.y))
+		)
+		var a := Vector2.ZERO
+		var b := Vector2.ZERO
+		match edge_name:
+			"x_min":
+				a = points[0]
+				b = points[3]
+			"x_max":
+				a = points[1]
+				b = points[2]
+			"y_min":
+				a = points[0]
+				b = points[1]
+			_:
+				a = points[3]
+				b = points[2]
+
+		_draw_fence_segment(a, b)
+
+		var midpoint := a.lerp(b, 0.5)
+		var outward := (midpoint - parcel_center).normalized()
+		if index % 4 == 1:
+			_draw_perimeter_light(midpoint - outward * 3.0)
+		if index % 6 == 4:
+			_draw_perimeter_tree(midpoint + outward * 20.0)
+
+
+func _draw_fence_segment(a: Vector2, b: Vector2) -> void:
+	draw_line(
+		a + Vector2(2, 3),
+		b + Vector2(2, 3),
+		Color(0.03, 0.07, 0.08, 0.22),
+		3.0
+	)
+	draw_line(a, b, FENCE_COLOR, 2.2)
+	for fraction in [0.0, 0.5, 1.0]:
+		var base := a.lerp(b, float(fraction))
+		draw_line(
+			base,
+			base + Vector2(0, -13),
+			FENCE_COLOR.lightened(0.18),
+			2.0
+		)
+	if a.distance_to(b) > 1.0:
+		var top_a := a + Vector2(0, -10)
+		var top_b := b + Vector2(0, -10)
+		draw_line(top_a, top_b, FENCE_MESH, 1.0)
+		for fraction in [0.25, 0.5, 0.75]:
+			var low := a.lerp(b, float(fraction))
+			var high := top_a.lerp(top_b, float(fraction))
+			draw_line(low, high, FENCE_MESH, 0.7)
+
+
+func _draw_perimeter_light(base: Vector2) -> void:
+	draw_line(
+		base + Vector2(2, 3),
+		base + Vector2(2, -28),
+		Color(0.02, 0.05, 0.06, 0.25),
+		4.0
+	)
+	draw_line(
+		base,
+		base + Vector2(0, -31),
+		Color("56666c"),
+		3.0
+	)
+	var head := base + Vector2(0, -33)
+	draw_rect(
+		Rect2(head + Vector2(-7, -3), Vector2(14, 6)),
+		Color("48585e"),
+		true
+	)
+	draw_circle(
+		head + Vector2(-4, 0),
+		2.2,
+		PERIMETER_LIGHT
+	)
+	draw_circle(
+		head + Vector2(4, 0),
+		2.2,
+		PERIMETER_LIGHT
+	)
+
+
+func _draw_perimeter_tree(base: Vector2) -> void:
+	draw_set_transform(
+		base + Vector2(4, 5),
+		0.0,
+		Vector2(1.0, 0.42)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		10.0,
+		Color(0.03, 0.08, 0.04, 0.18)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_rect(
+		Rect2(base + Vector2(-2, -16), Vector2(4, 18)),
+		Color("71543a"),
+		true
+	)
+	draw_circle(
+		base + Vector2(-5, -22),
+		9.0,
+		Color("3f7f46")
+	)
+	draw_circle(
+		base + Vector2(5, -23),
+		10.0,
+		Color("4e9953")
+	)
+	draw_circle(
+		base + Vector2(0, -31),
+		10.0,
+		Color("5aa95d")
+	)
+	draw_circle(
+		base + Vector2(-3, -33),
+		4.0,
+		Color("83be68", 0.75)
 	)
 
 

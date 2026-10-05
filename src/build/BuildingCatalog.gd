@@ -138,6 +138,9 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.05,
 			"local_service_radius_tiles": 5.0,
 			"icon_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
+			"world_sprite_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
+			"world_sprite_size": Vector2(116, 116),
+			"world_sprite_offset": Vector2(0, -35),
 			"services": {
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},
@@ -269,8 +272,8 @@ static func all() -> Array[Dictionary]:
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/hangar_small.svg", "res://assets/pixel/airport_v1/hangar_small_b.svg"]),
-			"world_sprite_size": Vector2(205, 154),
-			"world_sprite_offset": Vector2(0, -44)
+			"world_sprite_size": Vector2(292, 256),
+			"world_sprite_offset": Vector2(0, -70)
 		},
 		{
 			"id": "basic_fuel",
@@ -291,8 +294,8 @@ static func all() -> Array[Dictionary]:
 			"vehicle_capacity": 1,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
 			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_basic.svg", "res://assets/pixel/airport_v1/fuel_basic_b.svg"]),
-			"world_sprite_size": Vector2(155, 122),
-			"world_sprite_offset": Vector2(0, -36)
+			"world_sprite_size": Vector2(188, 157),
+			"world_sprite_offset": Vector2(0, -45)
 		},
 		{
 			"id": "rapid_small_fuel",

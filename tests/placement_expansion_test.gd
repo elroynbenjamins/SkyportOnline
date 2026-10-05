@@ -76,6 +76,27 @@ func _run() -> void:
 	root.add_child(multi_grid)
 	await process_frame
 
+	var future_only := multi_grid.set_build_preview(
+		"basic_fuel",
+		multi_grid.tile_to_world(Vector2(3, 3)),
+		0
+	)
+	if String(
+		future_only.get("locked_parcel_id", "")
+	) != "north_west":
+		_fail("Future-only placement should identify north-west.")
+		return
+	if String(
+		future_only.get("locked_parcel_state", "")
+	) != "future":
+		_fail("Disconnected placement land should report future state.")
+		return
+	if bool(
+		future_only.get("locked_parcel_adjacent", true)
+	):
+		_fail("Future-only parcel should not report owned adjacency.")
+		return
+
 	var multi_target := Vector2i(5, 6)
 	var multi_status := multi_grid.set_build_preview(
 		"short_runway",

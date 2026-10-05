@@ -14,12 +14,13 @@ jobs:
         with:
           ref: feature/pass5-npc-career-progression
           fetch-depth: 0
-      - name: Fix misplaced terminal summary return
+      - name: Fix legacy controller integration
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p = Path('src/main/Main.gd')
           s = p.read_text()
+          s = s.replace('@onready var airport_grid = $AirportGrid', '@onready var airport_grid: AirportGrid = $AirportGrid')
           block = '\tif String(\n\t\tdefinition.get("synergy_provider", "")\n\t) == "passenger_hub":\n\t\treturn _passenger_hub_context_summary(\n\t\t\tbuilding,\n\t\t\tdefinition,\n\t\t\tsummary\n\t\t)\n\n'
           a = s.index('func _open_building_management(')
           b = s.index('func _close_building_management_panels()', a)
@@ -34,12 +35,12 @@ jobs:
               marker = '\tif building_id.contains("runway"):\n'
               assert handler.count(marker) == 1
               s = s[:a] + handler.replace(marker, block + marker, 1) + s[b:]
-              p.write_text(s)
+          p.write_text(s)
           PY
           if git diff --quiet -- src/main/Main.gd; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/main/Main.gd
-          git commit -m 'Fix terminal summary in building management and context'
+          git commit -m 'Type the airport grid and fix terminal context integration'
           git pull --rebase origin feature/pass5-npc-career-progression
           git push origin HEAD:feature/pass5-npc-career-progression

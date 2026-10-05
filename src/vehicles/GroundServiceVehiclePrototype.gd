@@ -125,9 +125,9 @@ func _process(delta: float) -> void:
 					tow_initialized = true
 					service_connection_target = (
 						tow_aircraft.get_service_connection_position(
-						"pushback",
-						"pushback"
-					)
+							"pushback",
+							"pushback"
+						)
 					)
 					has_service_connection_target = true
 				service_started.emit()
@@ -182,9 +182,9 @@ func _process(delta: float) -> void:
 				)
 				service_connection_target = (
 					tow_aircraft.get_service_connection_position(
-					"pushback",
-					"pushback"
-				)
+						"pushback",
+						"pushback"
+					)
 				)
 				queue_redraw()
 			if service_remaining <= 0.0:

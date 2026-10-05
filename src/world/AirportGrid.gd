@@ -1489,8 +1489,9 @@ func _draw_passenger_pad_detail(
 		Color("f7f3e8", 0.72),
 		strength
 	)
-	for offset in [-16.0, -8.0, 0.0, 8.0, 16.0]:
-		var stripe_center := (
+	for offset_value in [-16.0, -8.0, 0.0, 8.0, 16.0]:
+		var offset: float = float(offset_value)
+		var stripe_center: Vector2 = (
 			crossing_center
 			+ direction * offset
 			+ Vector2(0, -2)

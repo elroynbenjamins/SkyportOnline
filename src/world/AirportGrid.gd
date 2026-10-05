@@ -3174,6 +3174,17 @@ func select_world_position(world_position: Vector2) -> void:
 		select_parcel(String(parcel["id"]))
 
 
+func clear_building_selection() -> void:
+	var changed := (
+		selected_synergy_uid >= 0
+		or hovered_building_uid >= 0
+	)
+	selected_synergy_uid = -1
+	hovered_building_uid = -1
+	if changed:
+		queue_redraw()
+
+
 func select_parcel(parcel_id: String) -> void:
 	if not parcels.has(parcel_id):
 		return
@@ -4354,6 +4365,16 @@ func set_hover_world_position(
 	var next_uid := int(
 		building.get("uid", -1)
 	)
+	if (
+		next_uid >= 0
+		and not bool(
+			get_move_eligibility(next_uid).get(
+				"movable",
+				false
+			)
+		)
+	):
+		next_uid = -1
 	if next_uid == hovered_building_uid:
 		return
 	hovered_building_uid = next_uid

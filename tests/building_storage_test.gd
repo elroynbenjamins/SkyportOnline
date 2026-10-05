@@ -144,6 +144,44 @@ func _run() -> void:
 		_fail("Stored building identity should stay stable.")
 		return
 
+	var effect_grid := AirportGrid.new()
+	root.add_child(effect_grid)
+	await process_frame
+	var travel_office := _find_building(
+		effect_grid,
+		"travel_office"
+	)
+	if travel_office.is_empty():
+		_fail("Starter airport should contain a Travel Office.")
+		return
+
+	var passenger_economy := PassengerEconomy.new()
+	root.add_child(passenger_economy)
+	passenger_economy.configure(effect_grid, 0.0)
+	var capacity_before := passenger_economy.get_capacity()
+	var production_before := (
+		passenger_economy.get_production_per_minute()
+	)
+	if capacity_before <= 0 or production_before <= 0.0:
+		_fail("Travel Office should contribute passenger capacity and production.")
+		return
+
+	var travel_uid := int(travel_office.get("uid", -1))
+	var travel_store := effect_grid.store_building(travel_uid)
+	if not bool(travel_store.get("valid", false)):
+		_fail("Travel Office should be storable for pause-effect testing.")
+		return
+	passenger_economy.refresh_building_stats()
+	if passenger_economy.get_capacity() >= capacity_before:
+		_fail("Stored passenger building should stop contributing capacity.")
+		return
+	if (
+		passenger_economy.get_production_per_minute()
+		>= production_before
+	):
+		_fail("Stored passenger building should stop producing passengers.")
+		return
+
 	print(
 		"Building storage passed: eligibility, store, cancel, place, "
 		+ "upgrade preservation and save/restore."

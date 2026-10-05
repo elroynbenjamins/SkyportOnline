@@ -65,6 +65,7 @@ var preview_status: Dictionary = {}
 var preview_mode := "build"
 var preview_ignore_uid := -1
 var preview_stored_uid := -1
+var selected_synergy_uid := -1
 
 
 func _ready() -> void:
@@ -164,6 +165,7 @@ func _draw() -> void:
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
+	_draw_synergy_overlay()
 	_draw_event_theme_overlay()
 	_draw_runway_hold_short_markings()
 	_draw_runway_operational_indicators()
@@ -1417,9 +1419,13 @@ func select_world_position(world_position: Vector2) -> void:
 	if occupied_cells.has(key):
 		var building := get_building(int(occupied_cells[key]))
 		if not building.is_empty():
+			selected_synergy_uid = int(building.get("uid", -1))
+			queue_redraw()
 			building_selected_world.emit(building)
 			return
 
+	selected_synergy_uid = -1
+	queue_redraw()
 	var parcel := _parcel_for_tile(tile)
 	if not parcel.is_empty():
 		select_parcel(String(parcel["id"]))
@@ -2076,6 +2082,15 @@ func _get_placement_status(
 		if not _cells_touch_reachable_taxiway(preview_cells):
 			result["warning"] = "No taxiway connection to a runway yet."
 
+	var synergy := get_preview_synergy_summary(
+		building_id,
+		origin,
+		rotation,
+		ignore_uid
+	)
+	if not synergy.is_empty():
+		result["synergy"] = synergy
+
 	return result
 
 
@@ -2400,6 +2415,65 @@ func _size_text(definition: Dictionary) -> String:
 		result += sizes[index]
 	return result
 
+
+
+func get_passenger_synergy(
+	building_uid: int
+) -> Dictionary:
+	return BuildingSynergyResolver.passenger_for_building(
+		self,
+		building_uid
+	)
+
+
+func get_service_synergy(
+	station_uid: int,
+	stand_uid: int,
+	_service_type: String = ""
+) -> Dictionary:
+	return BuildingSynergyResolver.service_for(
+		self,
+		station_uid,
+		stand_uid
+	)
+
+
+func get_service_coverage_summary(
+	station_uid: int
+) -> Dictionary:
+	return BuildingSynergyResolver.service_coverage(
+		self,
+		station_uid
+	)
+
+
+func get_building_synergy_summary(
+	building_uid: int
+) -> Dictionary:
+	return BuildingSynergyResolver.building_summary(
+		self,
+		building_uid
+	)
+
+
+func get_preview_synergy_summary(
+	building_id: String,
+	origin: Vector2i,
+	rotation: int,
+	ignore_uid: int = -1
+) -> Dictionary:
+	return BuildingSynergyResolver.preview_summary(
+		self,
+		building_id,
+		origin,
+		rotation,
+		ignore_uid
+	)
+
+
+func clear_synergy_selection() -> void:
+	selected_synergy_uid = -1
+	queue_redraw()
 
 
 func get_airside_status() -> Dictionary:

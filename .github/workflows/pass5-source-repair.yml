@@ -1,0 +1,45 @@
+name: Repair legacy terminal handler
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pass5-source-repair.yml'
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'feature/pass5-npc-career-progression' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/pass5-npc-career-progression
+          fetch-depth: 0
+      - name: Fix misplaced terminal summary return
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/main/Main.gd')
+          s = p.read_text()
+          block = '\tif String(\n\t\tdefinition.get("synergy_provider", "")\n\t) == "passenger_hub":\n\t\treturn _passenger_hub_context_summary(\n\t\t\tbuilding,\n\t\t\tdefinition,\n\t\t\tsummary\n\t\t)\n\n'
+          a = s.index('func _open_building_management(')
+          b = s.index('func _close_building_management_panels()', a)
+          handler = s[a:b]
+          if block in handler:
+              assert handler.count(block) == 1
+              s = s[:a] + handler.replace(block, '', 1) + s[b:]
+              a = s.index('func _building_context_summary(')
+              b = s.index('func _building_move_state(', a)
+              handler = s[a:b]
+              assert block not in handler
+              marker = '\tif building_id.contains("runway"):\n'
+              assert handler.count(marker) == 1
+              s = s[:a] + handler.replace(marker, block + marker, 1) + s[b:]
+              p.write_text(s)
+          PY
+          if git diff --quiet -- src/main/Main.gd; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/Main.gd
+          git commit -m 'Fix terminal summary in building management and context'
+          git pull --rebase origin feature/pass5-npc-career-progression
+          git push origin HEAD:feature/pass5-npc-career-progression

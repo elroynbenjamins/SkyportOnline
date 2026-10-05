@@ -151,6 +151,8 @@ func receive_passenger_gift(
 ) -> int:
 	if economy == null:
 		return 0
+	if economy.get_passengers() >= economy.get_capacity():
+		return 0
 	var profile := ProfileStore.record_friend_passenger_gift(
 		day_key
 	)

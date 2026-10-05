@@ -112,6 +112,9 @@ jobs:
       - name: Diagnose production building art alignment
         run: timeout 30s godot --headless --path . --script res://tests/building_art_alignment_test.gd
 
+      - name: Test starter airport visual integration
+        run: timeout 35s godot --headless --path . --script res://tests/starter_visual_integration_test.gd
+
       - name: Test aircraft context card
         run: timeout 20s godot --headless --path . --script res://tests/aircraft_context_card_test.gd
 

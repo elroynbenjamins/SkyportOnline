@@ -16,13 +16,13 @@ const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
 
-const OWNED_A := Color("5e965f")
-const OWNED_B := Color("579059")
+const OWNED_A := Color("75ae58")
+const OWNED_B := Color("70a854")
 const LOCKED_A := Color("384c45")
 const LOCKED_B := Color("334640")
 const AVAILABLE_A := Color("676b49")
 const AVAILABLE_B := Color("5f6343")
-const GRID_LINE := Color("8fbc86", 0.32)
+const GRID_LINE := Color("b8d6a9", 0.12)
 const LOCKED_GRID_LINE := Color("84958d", 0.22)
 const AVAILABLE_GRID_LINE := Color("e2c46b", 0.55)
 const SELECTED_LINE := Color("ffd166")
@@ -153,7 +153,7 @@ func _add_parcel(id: String, px: int, py: int, level: int, cost: int, owned: boo
 
 
 func _draw() -> void:
-	draw_rect(Rect2(-1800, -700, 3600, 2600), Color("203c3d"))
+	draw_rect(Rect2(-1800, -700, 3600, 2600), Color("456f49"))
 
 	for py in range(PARCEL_ROWS):
 		for px in range(PARCEL_COLUMNS):

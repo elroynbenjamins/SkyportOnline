@@ -672,7 +672,16 @@ func _live_operations_snapshot() -> Dictionary:
 	var waiting_passengers := 0
 	var ready_departures := 0
 
-	for aircraft in aircraft_demos:
+	var operational_aircraft: Array[AircraftPrototype] = (
+		aircraft_demos.duplicate()
+	)
+	for visitor_variant in social_visitor_aircraft.values():
+		var visitor := visitor_variant as AircraftPrototype
+		if visitor == null or not is_instance_valid(visitor):
+			continue
+		operational_aircraft.append(visitor)
+
+	for aircraft in operational_aircraft:
 		if aircraft == null or not is_instance_valid(aircraft):
 			continue
 
@@ -767,7 +776,8 @@ func _live_operations_snapshot() -> Dictionary:
 			"queue_positions": queue_positions,
 			"stand_uid": aircraft.stand_uid,
 			"runway_uid": aircraft.runway_uid,
-			"taxi_hold": aircraft.is_taxi_holding()
+			"taxi_hold": aircraft.is_taxi_holding(),
+			"social_visitor": aircraft.is_social_visitor()
 		})
 
 	var runway_waiting := 0
@@ -1447,6 +1457,14 @@ func _on_social_snapshot_changed(
 ) -> void:
 	if social_airport_screen != null:
 		social_airport_screen.set_snapshot(snapshot)
+	if hud != null:
+		var active_visits: Array = snapshot.get(
+			"active_visits",
+			[]
+		)
+		hud.set_social_attention(
+			not active_visits.is_empty()
+		)
 
 
 func _on_social_screen_visit_requested(

@@ -15,8 +15,12 @@ signal navigation_requested(tab: String)
 
 var interface_root: Control
 var title_label: Label
+var airport_meta_label: Label
 var level_label: Label
+var xp_progress: ProgressBar
+var xp_label: Label
 var passenger_label: Label
+var passenger_rate_label: Label
 var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
@@ -33,6 +37,10 @@ var expansion_banner: PanelContainer
 var expansion_banner_title: Label
 var expansion_banner_detail: Label
 var expansion_banner_tween: Tween
+var operation_toast_panel: PanelContainer
+var operation_toast_label: Label
+var operation_toast_tween: Tween
+var bottom_nav_panel: PanelContainer
 var active_status_chip := ""
 var status_details: Dictionary = {}
 var current_operation_status_text := "Preparing airport..."
@@ -95,73 +103,110 @@ func _build_interface() -> void:
 	var top_panel := PanelContainer.new()
 	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	top_panel.offset_left = 12
-	top_panel.offset_top = 12
+	top_panel.offset_top = 10
 	top_panel.offset_right = -12
-	top_panel.offset_bottom = 72
+	top_panel.offset_bottom = 92
 	root.add_child(top_panel)
-	GameUIStyle.apply_panel(top_panel, "top")
+	GameUIStyle.apply_panel(top_panel, "hud_top")
+
+	var top_margin := MarginContainer.new()
+	top_margin.add_theme_constant_override("margin_left", 8)
+	top_margin.add_theme_constant_override("margin_right", 8)
+	top_margin.add_theme_constant_override("margin_top", 6)
+	top_margin.add_theme_constant_override("margin_bottom", 6)
+	top_panel.add_child(top_margin)
 
 	var top_row := HBoxContainer.new()
-	top_row.add_theme_constant_override("separation", 18)
-	top_panel.add_child(top_row)
+	top_row.add_theme_constant_override("separation", 8)
+	top_margin.add_child(top_row)
+
+	var level_card := PanelContainer.new()
+	level_card.custom_minimum_size = Vector2(126, 0)
+	GameUIStyle.apply_panel(level_card, "hud_level")
+	top_row.add_child(level_card)
+	var level_box := VBoxContainer.new()
+	level_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	level_box.add_theme_constant_override("separation", 2)
+	level_card.add_child(level_box)
 
 	level_label = Label.new()
-	level_label.custom_minimum_size = Vector2(90, 0)
+	level_label.text = "LV 1"
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level_label.add_theme_font_size_override("font_size", 20)
-	level_label.add_theme_color_override(
-		"font_color",
-		GameUIStyle.COLOR_GOLD
-	)
-	top_row.add_child(level_label)
+	level_label.add_theme_font_size_override("font_size", 18)
+	level_label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+	level_box.add_child(level_label)
+
+	xp_progress = ProgressBar.new()
+	xp_progress.custom_minimum_size = Vector2(104, 8)
+	xp_progress.show_percentage = false
+	xp_progress.min_value = 0.0
+	xp_progress.max_value = 1.0
+	xp_progress.value = 0.0
+	GameUIStyle.apply_progress(xp_progress, true)
+	level_box.add_child(xp_progress)
+
+	xp_label = Label.new()
+	xp_label.text = "0 / 100 XP"
+	xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	xp_label.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.muted(xp_label)
+	level_box.add_child(xp_label)
+
+	var identity_box := VBoxContainer.new()
+	identity_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	identity_box.add_theme_constant_override("separation", 1)
+	top_row.add_child(identity_box)
 
 	title_label = Label.new()
-	title_label.text = "✈ SKYPORT ONLINE"
-	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_label.text = "SKYPORT"
 	title_label.add_theme_font_size_override("font_size", 21)
-	title_label.add_theme_color_override(
-		"font_color",
-		GameUIStyle.COLOR_TEXT
-	)
-	top_row.add_child(title_label)
+	title_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
+	identity_box.add_child(title_label)
 
-	passenger_label = Label.new()
-	passenger_label.custom_minimum_size = Vector2(175, 0)
-	passenger_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	passenger_label.add_theme_font_size_override("font_size", 17)
-	passenger_label.text = "👥 0 / 0"
-	passenger_label.add_theme_color_override(
-		"font_color",
-		GameUIStyle.COLOR_ACCENT
-	)
-	top_row.add_child(passenger_label)
+	airport_meta_label = Label.new()
+	airport_meta_label.text = "✈ APT  •  AIRPORT OPERATIONS"
+	airport_meta_label.add_theme_font_size_override("font_size", 11)
+	GameUIStyle.muted(airport_meta_label)
+	identity_box.add_child(airport_meta_label)
 
-	coins_label = Label.new()
-	coins_label.custom_minimum_size = Vector2(130, 0)
-	coins_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	coins_label.add_theme_font_size_override("font_size", 19)
-	coins_label.add_theme_color_override(
-		"font_color",
-		GameUIStyle.COLOR_GOLD
+	var passenger_chip := _build_hud_resource_chip(
+		top_row,
+		"👥  PASSENGERS",
+		"0 / 0",
+		"+0.0 / MIN",
+		"hud_passenger",
+		190
 	)
-	top_row.add_child(coins_label)
+	passenger_label = passenger_chip["value"] as Label
+	passenger_rate_label = passenger_chip["detail"] as Label
 
-	gems_label = Label.new()
-	gems_label.custom_minimum_size = Vector2(140, 0)
-	gems_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	gems_label.add_theme_font_size_override("font_size", 19)
-	gems_label.add_theme_color_override(
-		"font_color",
-		Color("d8b9ff")
+	var coin_chip := _build_hud_resource_chip(
+		top_row,
+		"🪙  COINS",
+		"0",
+		"AIRPORT FUNDS",
+		"hud_coin",
+		145
 	)
-	top_row.add_child(gems_label)
+	coins_label = coin_chip["value"] as Label
+
+	var aero_chip := _build_hud_resource_chip(
+		top_row,
+		"✦  AERO",
+		"0",
+		"PREMIUM",
+		"hud_premium",
+		145
+	)
+	gems_label = aero_chip["value"] as Label
 
 	var objective_panel := PanelContainer.new()
 	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	objective_panel.offset_left = -250
-	objective_panel.offset_top = 82
+	objective_panel.offset_left = -320
+	objective_panel.offset_top = 100
 	objective_panel.offset_right = -12
-	objective_panel.offset_bottom = 146
+	objective_panel.offset_bottom = 166
 	root.add_child(objective_panel)
 	GameUIStyle.apply_panel(objective_panel, "raised")
 
@@ -175,9 +220,9 @@ func _build_interface() -> void:
 	var status_strip := HBoxContainer.new()
 	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	status_strip.offset_left = 12
-	status_strip.offset_top = 82
-	status_strip.offset_right = 680
-	status_strip.offset_bottom = 128
+	status_strip.offset_top = 100
+	status_strip.offset_right = 660
+	status_strip.offset_bottom = 146
 	status_strip.add_theme_constant_override("separation", 6)
 	root.add_child(status_strip)
 
@@ -209,13 +254,14 @@ func _build_interface() -> void:
 	status_strip.add_child(atc_status_chip)
 
 	_build_expansion_banner(root)
+	_build_operation_toast(root)
 
 	status_detail_panel = PanelContainer.new()
 	status_detail_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	status_detail_panel.offset_left = 12
-	status_detail_panel.offset_top = 134
-	status_detail_panel.offset_right = 680
-	status_detail_panel.offset_bottom = 216
+	status_detail_panel.offset_top = 152
+	status_detail_panel.offset_right = 660
+	status_detail_panel.offset_bottom = 236
 	status_detail_panel.visible = false
 	root.add_child(status_detail_panel)
 	GameUIStyle.apply_panel(status_detail_panel, "raised")
@@ -294,13 +340,60 @@ func _build_interface() -> void:
 	_build_bottom_navigation(root)
 
 
+
+func _build_hud_resource_chip(
+	parent: HBoxContainer,
+	caption: String,
+	value_text: String,
+	detail_text: String,
+	panel_variant: String,
+	minimum_width: int
+) -> Dictionary:
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(minimum_width, 0)
+	GameUIStyle.apply_panel(panel, panel_variant)
+	parent.add_child(panel)
+
+	var box := VBoxContainer.new()
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_theme_constant_override("separation", 0)
+	panel.add_child(box)
+
+	var caption_label := Label.new()
+	caption_label.text = caption
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption_label.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.muted(caption_label)
+	box.add_child(caption_label)
+
+	var value_label := Label.new()
+	value_label.text = value_text
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", 18)
+	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
+	box.add_child(value_label)
+
+	var detail_label := Label.new()
+	detail_label.text = detail_text
+	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detail_label.add_theme_font_size_override("font_size", 9)
+	GameUIStyle.muted(detail_label)
+	box.add_child(detail_label)
+
+	return {
+		"panel": panel,
+		"value": value_label,
+		"detail": detail_label
+	}
+
+
 func _build_expansion_banner(root: Control) -> void:
 	expansion_banner = PanelContainer.new()
 	expansion_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	expansion_banner.offset_left = 360
-	expansion_banner.offset_top = 82
+	expansion_banner.offset_top = 100
 	expansion_banner.offset_right = -360
-	expansion_banner.offset_bottom = 158
+	expansion_banner.offset_bottom = 176
 	expansion_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner.visible = false
 	root.add_child(expansion_banner)
@@ -353,6 +446,71 @@ func _build_expansion_banner(root: Control) -> void:
 	)
 	GameUIStyle.muted(expansion_banner_detail)
 	text_box.add_child(expansion_banner_detail)
+
+
+
+func _build_operation_toast(root: Control) -> void:
+	operation_toast_panel = PanelContainer.new()
+	operation_toast_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	operation_toast_panel.offset_left = -285
+	operation_toast_panel.offset_top = -162
+	operation_toast_panel.offset_right = 285
+	operation_toast_panel.offset_bottom = -104
+	operation_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	operation_toast_panel.visible = false
+	operation_toast_panel.modulate.a = 0.0
+	root.add_child(operation_toast_panel)
+	GameUIStyle.apply_panel(operation_toast_panel, "toast_success")
+
+	operation_toast_label = Label.new()
+	operation_toast_label.text = "Airport update"
+	operation_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	operation_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	operation_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	operation_toast_label.max_lines_visible = 2
+	operation_toast_label.add_theme_font_size_override("font_size", 14)
+	operation_toast_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
+	operation_toast_panel.add_child(operation_toast_label)
+
+
+func _show_operation_toast(text: String, tone: String) -> void:
+	if operation_toast_panel == null or operation_toast_label == null:
+		return
+	if operation_toast_tween != null and operation_toast_tween.is_valid():
+		operation_toast_tween.kill()
+
+	var prefix := "✓ "
+	var variant := "toast_success"
+	match tone:
+		"warning":
+			prefix = "⚠ "
+			variant = "toast_warning"
+		"danger":
+			prefix = "✕ "
+			variant = "toast_danger"
+	operation_toast_label.text = prefix + text
+	GameUIStyle.apply_panel(operation_toast_panel, variant)
+	operation_toast_panel.visible = true
+	operation_toast_panel.modulate.a = 0.0
+
+	operation_toast_tween = create_tween()
+	operation_toast_tween.tween_property(
+		operation_toast_panel,
+		"modulate:a",
+		1.0,
+		0.12
+	)
+	operation_toast_tween.tween_interval(2.0)
+	operation_toast_tween.tween_property(
+		operation_toast_panel,
+		"modulate:a",
+		0.0,
+		0.24
+	)
+	operation_toast_tween.tween_callback(
+		func() -> void:
+			operation_toast_panel.visible = false
+	)
 
 
 func _build_context_panel(root: Control) -> void:
@@ -675,36 +833,37 @@ func _build_catalog_panel(root: Control) -> void:
 
 
 func _build_bottom_navigation(root: Control) -> void:
-	var bottom_nav := PanelContainer.new()
-	bottom_nav.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_nav.offset_left = 8
-	bottom_nav.offset_top = -72
-	bottom_nav.offset_right = -8
-	bottom_nav.offset_bottom = -8
-	root.add_child(bottom_nav)
-	GameUIStyle.apply_panel(bottom_nav, "top")
+	bottom_nav_panel = PanelContainer.new()
+	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_nav_panel.offset_left = 92
+	bottom_nav_panel.offset_top = -82
+	bottom_nav_panel.offset_right = -92
+	bottom_nav_panel.offset_bottom = -10
+	root.add_child(bottom_nav_panel)
+	GameUIStyle.apply_panel(bottom_nav_panel, "dock")
 
 	var nav_row := HBoxContainer.new()
-	nav_row.add_theme_constant_override("separation", 4)
-	bottom_nav.add_child(nav_row)
+	nav_row.add_theme_constant_override("separation", 6)
+	bottom_nav_panel.add_child(nav_row)
 
 	for item in ["🔨\nBUILD", "✈\nFLEET", "🌍\nWORLD", "🎉\nEVENT", "👥\nSOCIAL", "☰\nMORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0, 54)
+		button.custom_minimum_size = Vector2(0, 60)
 		button.add_theme_font_size_override("font_size", 15)
 
 		var parts: PackedStringArray = item.split("\n")
 		var tab: String = String(parts[1]).to_lower()
 		GameUIStyle.apply_button(
 			button,
-			"selected" if tab == "build" else "nav",
+			"dock_selected" if tab == "build" else "dock",
 			true
 		)
 		nav_buttons[tab] = button
 		if tab == "build":
-			button.disabled = true
+			button.tooltip_text = "Airport home • building and layout tools"
+			button.pressed.connect(_on_build_navigation_pressed)
 		else:
 			button.pressed.connect(_on_navigation_pressed.bind(tab))
 
@@ -738,7 +897,7 @@ func set_event_attention(claimable: bool) -> void:
 		GameUIStyle.apply_button(event_nav_button, "event", true)
 	else:
 		event_nav_button.text = "🎉\nEVENT"
-		GameUIStyle.apply_button(event_nav_button, "nav", true)
+		GameUIStyle.apply_button(event_nav_button, "dock", true)
 
 
 func set_social_attention(active: bool) -> void:
@@ -755,7 +914,7 @@ func set_social_attention(active: bool) -> void:
 		social_nav_button.text = "👥\nSOCIAL"
 		GameUIStyle.apply_button(
 			social_nav_button,
-			"nav",
+			"dock",
 			true
 		)
 
@@ -774,11 +933,14 @@ func set_airport_identity(
 	if title_label == null:
 		return
 
-	title_label.text = "✈ %s  •  %s  •  %s" % [
-		airport_name.to_upper(),
-		airport_code.to_upper(),
-		country_name
-	]
+	title_label.text = airport_name.to_upper()
+	if airport_meta_label != null:
+		var account_label := "GUEST AIRPORT" if account_type == "guest" else "LINKED AIRPORT"
+		airport_meta_label.text = "✈ %s  •  %s  •  %s" % [
+			airport_code.to_upper(),
+			country_name.to_upper(),
+			account_label
+		]
 	if account_type == "guest":
 		title_label.tooltip_text = (
 			"Guest airport • secure or link later without losing progress."
@@ -869,8 +1031,8 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 	current_coins = coins
 	current_gems = gems
 	level_label.text = "LV %d" % level
-	coins_label.text = "🪙 %s" % _format_number(coins)
-	gems_label.text = "✦ AERO %s" % _format_number(gems)
+	coins_label.text = _format_number(coins)
+	gems_label.text = _format_number(gems)
 	_update_catalog_buttons()
 
 	if (
@@ -889,6 +1051,32 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 
 
 
+
+func set_level_progress(
+	xp: int,
+	level_start_xp: int,
+	next_level_xp: int,
+	max_level: bool = false
+) -> void:
+	if xp_progress == null or xp_label == null:
+		return
+	if max_level or next_level_xp <= level_start_xp:
+		xp_progress.min_value = 0.0
+		xp_progress.max_value = 1.0
+		xp_progress.value = 1.0
+		xp_label.text = "MAX LEVEL"
+		return
+	var span := maxi(next_level_xp - level_start_xp, 1)
+	var earned := clampi(xp - level_start_xp, 0, span)
+	xp_progress.min_value = 0.0
+	xp_progress.max_value = float(span)
+	xp_progress.value = float(earned)
+	xp_label.text = "%s / %s XP" % [
+		_format_number(earned),
+		_format_number(span)
+	]
+
+
 func set_passenger_data(
 	passengers: int,
 	capacity: int,
@@ -896,11 +1084,12 @@ func set_passenger_data(
 ) -> void:
 	if passenger_label == null:
 		return
-	passenger_label.text = "👥 %d / %d  +%.1f/m" % [
+	passenger_label.text = "%d / %d" % [
 		passengers,
-		capacity,
-		per_minute
+		capacity
 	]
+	if passenger_rate_label != null:
+		passenger_rate_label.text = "+%.1f / MIN" % per_minute
 
 
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:
@@ -1488,9 +1677,15 @@ func set_operation_status(
 	text: String,
 	tone: String = "normal"
 ) -> void:
+	var changed := (
+		text != current_operation_status_text
+		or tone != current_operation_status_tone
+	)
 	current_operation_status_text = text
 	current_operation_status_tone = tone
 	_refresh_operations_status()
+	if changed and tone in ["success", "warning", "danger"]:
+		_show_operation_toast(text, tone)
 
 
 func set_operations_analytics(
@@ -2344,6 +2539,15 @@ func _format_number(value: int) -> String:
 		count += 1
 	return result
 
+
+func _on_build_navigation_pressed() -> void:
+	if catalog_panel != null:
+		catalog_panel.visible = true
+	if storage_panel != null:
+		storage_panel.visible = false
+	if status_detail_panel != null:
+		_close_status_detail()
+	set_operation_status("Build tray ready • choose infrastructure or edit your airport.")
 
 func _on_navigation_pressed(tab: String) -> void:
 	navigation_requested.emit(tab)

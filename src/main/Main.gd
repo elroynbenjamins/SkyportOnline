@@ -3025,6 +3025,22 @@ func _on_store_building_requested() -> void:
 	var definition := BuildingCatalog.get_definition(
 		String(building.get("definition_id", ""))
 	)
+	var passenger_block := _passenger_storage_block_reason(
+		building,
+		definition
+	)
+	if not passenger_block.is_empty():
+		hud.show_airport_edit_mode(
+			true,
+			not last_move_undo.is_empty(),
+			passenger_block
+		)
+		hud.set_operation_status(
+			passenger_block,
+			"warning"
+		)
+		return
+
 	var uid := moving_building_uid
 	var result := airport_grid.store_building(uid)
 	if not bool(result.get("valid", false)):
@@ -3338,6 +3354,55 @@ func _exit_airport_edit_mode(
 		)
 
 
+func _passenger_storage_block_reason(
+	building: Dictionary,
+	definition: Dictionary
+) -> String:
+	if (
+		passenger_economy == null
+		or definition.is_empty()
+		or not bool(
+			definition.get(
+				"passenger_generator",
+				false
+			)
+		)
+	):
+		return ""
+
+	var building_id := String(
+		building.get("definition_id", "")
+	)
+	var level := int(
+		building.get("upgrade_level", 1)
+	)
+	var stats := PassengerUpgradeCatalog.passenger_stats(
+		building_id,
+		level
+	)
+	var removed_capacity := maxi(
+		int(stats.get("storage", 0)),
+		0
+	)
+	var remaining_capacity := maxi(
+		passenger_economy.get_capacity()
+		- removed_capacity,
+		0
+	)
+	var passenger_stock := passenger_economy.get_passengers()
+	if passenger_stock <= remaining_capacity:
+		return ""
+
+	return (
+		"Use %d passenger%s first • storage capacity would drop to %d."
+		% [
+			passenger_stock - remaining_capacity,
+			"" if passenger_stock - remaining_capacity == 1 else "s",
+			remaining_capacity
+		]
+	)
+
+
 func _refresh_layout_dependent_systems() -> void:
 	if passenger_economy != null:
 		passenger_economy.refresh_building_stats()
@@ -3349,6 +3414,8 @@ func _refresh_layout_dependent_systems() -> void:
 				{}
 			)
 		)
+	if ground_services != null:
+		ground_services.refresh_after_layout_change()
 	_refresh_operations_analytics()
 
 

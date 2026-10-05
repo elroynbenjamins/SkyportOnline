@@ -4362,6 +4362,15 @@ func set_hover_world_position(
 	var building := _building_at_visual_position(
 		world_position
 	)
+	if building.is_empty():
+		var tile := world_to_tile(world_position)
+		if _tile_in_world(tile):
+			var key := _cell_key(tile)
+			if occupied_cells.has(key):
+				building = get_building(
+					int(occupied_cells[key])
+				)
+
 	var next_uid := int(
 		building.get("uid", -1)
 	)

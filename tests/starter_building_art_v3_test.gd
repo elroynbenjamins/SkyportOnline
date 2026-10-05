@@ -1,23 +1,39 @@
 extends SceneTree
 
 
-const STARTER_DEDICATED := {
+const CANONICAL_V2 := {
 	"small_terminal": {
-		"rotations": 2,
-		"size": Vector2(326, 244)
+		"regions": [
+			Rect2(0, 0, 448, 448),
+			Rect2(448, 0, 448, 448)
+		],
+		"size": Vector2(300, 300),
+		"offsets": [
+			Vector2(0, -55),
+			Vector2(0, -60)
+		]
 	},
 	"basic_fuel": {
-		"rotations": 2,
-		"size": Vector2(206, 172)
-	}
-}
-
-const CANONICAL_V2 := {
+		"regions": [
+			Rect2(896, 448, 448, 448),
+			Rect2(1344, 448, 448, 448)
+		],
+		"size": Vector2(188, 188),
+		"offsets": [
+			Vector2(0, -35),
+			Vector2(0, -45)
+		]
+	},
 	"ground_ops_depot": {
-		"regions": 2,
+		"regions": [
+			Rect2(0, 896, 448, 448),
+			Rect2(448, 896, 448, 448)
+		],
 		"size": Vector2(116, 116),
-		"first_region": Rect2(0, 896, 448, 448),
-		"first_offset": Vector2(0, -31)
+		"offsets": [
+			Vector2(0, -31),
+			Vector2(0, -29)
+		]
 	}
 }
 
@@ -31,77 +47,24 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 
-	for building_id_variant in STARTER_DEDICATED.keys():
-		var building_id := String(building_id_variant)
-		var expected: Dictionary = STARTER_DEDICATED[building_id_variant]
-		var definition := BuildingCatalog.get_definition(building_id)
-		if definition.is_empty():
-			_fail("%s definition should exist." % building_id)
-			return
+	var atlas = load(BuildingCatalog.PRODUCTION_BUILDING_ATLAS)
+	if not (atlas is Texture2D):
+		_fail("Canonical production building atlas should load.")
+		return
+	if atlas.get_width() != 1792 or atlas.get_height() != 1792:
+		_fail("Canonical v2 building atlas should remain 1792x1792.")
+		return
 
-		if String(definition.get("art_tier", "")) != "starter_v3":
-			_fail("%s should retain its dedicated starter-v3 art." % building_id)
-			return
-		if not String(
-			definition.get("world_sprite_atlas_path", "")
-		).is_empty():
-			_fail("%s should use its newer dedicated world art." % building_id)
-			return
-
-		var rotations := int(expected.get("rotations", 1))
-		var paths: PackedStringArray = definition.get(
-			"world_sprite_paths",
-			PackedStringArray()
-		)
-		if paths.size() != rotations:
-			_fail(
-				"%s should expose %d distinct orientations."
-				% [building_id, rotations]
-			)
-			return
-		if paths[0] == paths[1]:
-			_fail("%s orientations must use distinct art files." % building_id)
-			return
-		for rotation in range(rotations):
-			var sprite_path := String(paths[rotation])
-			if not ResourceLoader.exists(sprite_path):
-				_fail(
-					"%s rotation %d art should exist."
-					% [building_id, rotation]
-				)
-				return
-			var texture = load(sprite_path)
-			if not (texture is Texture2D):
-				_fail(
-					"%s rotation %d should import as Texture2D."
-					% [building_id, rotation]
-				)
-				return
-			if grid._sprite_path_for_rotation(
-				definition,
-				rotation
-			) != sprite_path:
-				_fail(
-					"%s rotation %d should resolve to its dedicated sprite."
-					% [building_id, rotation]
-				)
-				return
-
-		var draw_size: Vector2 = definition.get(
-			"world_sprite_size",
-			Vector2.ZERO
-		)
-		if draw_size != expected.get("size", Vector2.ZERO):
-			_fail(
-				"%s should retain its tuned dedicated draw size."
-				% building_id
-			)
-			return
-
+	var definitions: Array[Dictionary] = []
 	for building_id_variant in CANONICAL_V2.keys():
 		var building_id := String(building_id_variant)
 		var expected: Dictionary = CANONICAL_V2[building_id_variant]
 		var definition := BuildingCatalog.get_definition(building_id)
+		if definition.is_empty():
+			_fail("%s definition should exist." % building_id)
+			return
+		definitions.append(definition)
+
 		if String(definition.get("art_tier", "")) != "canonical_v2":
 			_fail("%s should use the canonical v2 quality tier." % building_id)
 			return
@@ -110,49 +73,72 @@ func _run() -> void:
 		) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
 			_fail("%s should resolve to the canonical production atlas." % building_id)
 			return
-		var regions: Array = definition.get(
-			"world_sprite_regions",
-			[]
+		if not String(
+			definition.get("world_sprite_path", "")
+		).is_empty():
+			_fail("%s should not fall back to standalone legacy world art." % building_id)
+			return
+		var legacy_paths: PackedStringArray = definition.get(
+			"world_sprite_paths",
+			PackedStringArray()
 		)
-		if regions.size() != int(expected.get("regions", 0)):
-			_fail("%s should retain both canonical atlas views." % building_id)
+		if not legacy_paths.is_empty():
+			_fail("%s should not fall back to starter-v3/v4 world art." % building_id)
 			return
-		if regions[0] != expected.get("first_region", Rect2()):
-			_fail("%s should use its approved canonical atlas cell." % building_id)
+
+		var expected_regions: Array = expected.get("regions", [])
+		var regions: Array = definition.get("world_sprite_regions", [])
+		if regions.size() != expected_regions.size():
+			_fail("%s should expose its approved canonical atlas views." % building_id)
 			return
-		var atlas = load(BuildingCatalog.PRODUCTION_BUILDING_ATLAS)
-		if not (atlas is Texture2D):
-			_fail("Canonical production building atlas should load.")
-			return
-		if definition.get("world_sprite_size", Vector2.ZERO) != expected.get(
-			"size",
+		for rotation in range(expected_regions.size()):
+			if regions[rotation] != expected_regions[rotation]:
+				_fail(
+					"%s rotation %d should use its approved canonical atlas cell."
+					% [building_id, rotation]
+				)
+				return
+			if grid._sprite_path_for_rotation(
+				definition,
+				rotation
+			) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+				_fail(
+					"%s rotation %d should resolve to the canonical atlas."
+					% [building_id, rotation]
+				)
+				return
+			if grid._sprite_region_for_rotation(
+				definition,
+				rotation
+			) != expected_regions[rotation]:
+				_fail(
+					"%s rotation %d should resolve to its canonical atlas region."
+					% [building_id, rotation]
+				)
+				return
+
+		if definition.get(
+			"world_sprite_size",
 			Vector2.ZERO
-		):
+		) != expected.get("size", Vector2.ZERO):
 			_fail("%s should retain its measured canonical draw size." % building_id)
 			return
-		if grid._sprite_offset_for_rotation(
-			definition,
-			0
-		) != expected.get("first_offset", Vector2.ZERO):
-			_fail("%s should retain its measured tile alignment." % building_id)
-			return
+
+		var expected_offsets: Array = expected.get("offsets", [])
+		for rotation in range(expected_offsets.size()):
+			if grid._sprite_offset_for_rotation(
+				definition,
+				rotation
+			) != expected_offsets[rotation]:
+				_fail(
+					"%s rotation %d should retain measured tile alignment."
+					% [building_id, rotation]
+				)
+				return
 
 	var hud := preload("res://src/ui/HUD.gd").new()
 	root.add_child(hud)
 	await process_frame
-	var definitions: Array[Dictionary] = []
-	for building_id_variant in STARTER_DEDICATED.keys():
-		definitions.append(
-			BuildingCatalog.get_definition(
-				String(building_id_variant)
-			)
-		)
-	for building_id_variant in CANONICAL_V2.keys():
-		definitions.append(
-			BuildingCatalog.get_definition(
-				String(building_id_variant)
-			)
-		)
 	hud.set_build_catalog(definitions)
 	await process_frame
 
@@ -163,42 +149,28 @@ func _run() -> void:
 			return
 		var button: Button = hud.catalog_buttons[building_id]
 		if button.icon == null:
-			_fail("%s Build Tray card should show production art." % building_id)
+			_fail("%s Build Tray card should show canonical production art." % building_id)
+			return
+		if not (button.icon is AtlasTexture):
+			_fail("%s Build Tray should use canonical v2 atlas art." % building_id)
+			return
+		var atlas_texture := button.icon as AtlasTexture
+		if atlas_texture.atlas == null:
+			_fail("%s atlas preview should retain its atlas texture." % building_id)
+			return
+		if String(
+			atlas_texture.atlas.resource_path
+		) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
+			_fail("%s Build Tray should preview the canonical atlas." % building_id)
+			return
+		var regions: Array = definition.get("world_sprite_regions", [])
+		if regions.is_empty() or atlas_texture.region != regions[0]:
+			_fail("%s Build Tray should use its exact first atlas region." % building_id)
 			return
 
-		var atlas_path := String(
-			definition.get("world_sprite_atlas_path", "")
-		)
-		if not atlas_path.is_empty():
-			if not (button.icon is AtlasTexture):
-				_fail("%s Build Tray should use canonical atlas art." % building_id)
-				return
-			var atlas_texture := button.icon as AtlasTexture
-			if atlas_texture.atlas == null:
-				_fail("%s atlas preview should retain its atlas texture." % building_id)
-				return
-			if String(atlas_texture.atlas.resource_path) != atlas_path:
-				_fail("%s Build Tray should preview the canonical atlas." % building_id)
-				return
-			var regions: Array = definition.get("world_sprite_regions", [])
-			if regions.is_empty() or atlas_texture.region != regions[0]:
-				_fail("%s Build Tray should use its exact first atlas region." % building_id)
-				return
-		else:
-			if button.icon is AtlasTexture:
-				_fail("%s should use its newer dedicated sprite." % building_id)
-				return
-			var paths: PackedStringArray = definition.get(
-				"world_sprite_paths",
-				PackedStringArray()
-			)
-			if paths.is_empty() or String(button.icon.resource_path) != String(paths[0]):
-				_fail("%s Build Tray should preview its exact world sprite." % building_id)
-				return
-
 	print(
-		"STARTER_BUILDING_ART_OK terminal=dedicated fuel=dedicated "
-		+ "ground_ops=canonical_v2 build_tray=production_art"
+		"STARTER_BUILDING_ART_OK terminal=canonical_v2 fuel=canonical_v2 "
+		+ "ground_ops=canonical_v2 build_tray=canonical_atlas"
 	)
 	quit(0)
 

@@ -37,14 +37,28 @@ func _start_gameplay() -> void:
 			hud.set_operation_status("Cannot save airport progression. Check device storage.", "warning")
 			return
 	var stored_level := AirportProgressionRules.level_for_xp(int(progression.get("xp", 0)))
-	if MissionPassRules.ensure_state(progression, Time.get_unix_time_from_system(), stored_level):
+	var mission_state_changed := MissionPassRules.ensure_state(
+		progression,
+		Time.get_unix_time_from_system(),
+		stored_level
+	)
+	var updated_level := AirportProgressionRules.level_for_xp(int(progression.get("xp", 0)))
+	var rollover_aero := MissionPassRules.aero_tokens_for_level_range(
+		stored_level,
+		updated_level
+	)
+	if rollover_aero > 0:
+		progression["aero_tokens"] = int(progression.get("aero_tokens", 0)) + rollover_aero
+		progression["gems"] = int(progression["aero_tokens"])
+		mission_state_changed = true
+	if mission_state_changed:
 		if not AirportProgressionStore.save_state(progression):
 			hud.set_operation_status("Mission progress could not be initialized safely.", "warning")
 			return
 	coins = int(progression.get("coins", coins))
 	gems = int(progression.get("aero_tokens", progression.get("gems", gems)))
 	player_xp = int(progression.get("xp", 0))
-	player_level = AirportProgressionRules.level_for_xp(player_xp)
+	player_level = updated_level
 	progression_ready = true
 	npc_director.remaining = maxf(float(progression.get("npc_remaining", 90.0)), 0.0)
 	npc_director.last_npc = String(progression.get("npc_last", ""))
@@ -589,11 +603,10 @@ func _update_level() -> void:
 	var old_level := player_level
 	player_level = AirportProgressionRules.level_for_xp(player_xp)
 	if player_level > old_level:
-		var aero_awarded := 0
-		for reached_level in range(old_level + 1, player_level + 1):
-			aero_awarded += 1
-			if reached_level % 5 == 0:
-				aero_awarded += 2
+		var aero_awarded := MissionPassRules.aero_tokens_for_level_range(
+			old_level,
+			player_level
+		)
 		if aero_awarded > 0:
 			gems += aero_awarded
 			progression["aero_tokens"] = gems

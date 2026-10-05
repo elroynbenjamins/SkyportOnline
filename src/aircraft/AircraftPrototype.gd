@@ -251,6 +251,56 @@ func get_service_docking_position(
 	)
 
 
+func get_service_connection_position(
+	service_type: String,
+	service_key: String = ""
+) -> Vector2:
+	return to_global(
+		get_service_connection_local_offset(
+			service_type,
+			service_key
+		)
+	)
+
+
+func get_service_connection_local_offset(
+	service_type: String,
+	service_key: String = ""
+) -> Vector2:
+	var overrides: Dictionary = aircraft_profile.get(
+		"service_connection_anchors",
+		{}
+	)
+	if overrides.has(service_key):
+		var key_value = overrides[service_key]
+		if key_value is Vector2:
+			return key_value
+	if overrides.has(service_type):
+		var type_value = overrides[service_type]
+		if type_value is Vector2:
+			return type_value
+
+	var scale := get_visual_scale()
+	var base := Vector2.ZERO
+	match service_type:
+		"passenger":
+			base = Vector2(11, -7)
+		"cargo":
+			base = Vector2(-11, 7)
+		"cleaning":
+			base = Vector2(-13, -6)
+		"catering":
+			base = Vector2(13, 7)
+		"fuel":
+			base = Vector2(-4, -13)
+		"pushback":
+			base = Vector2(23, 0)
+		_:
+			base = Vector2(0, 9)
+
+	return base * scale
+
+
 func get_service_docking_local_offset(
 	service_type: String,
 	service_key: String = ""

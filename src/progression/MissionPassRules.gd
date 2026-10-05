@@ -337,9 +337,9 @@ static func seconds_until_month_reset(unix_time: float) -> int:
 
 static func format_remaining(seconds: int) -> String:
 	var remaining := maxi(seconds, 0)
-	var days := remaining / SECONDS_PER_DAY
-	var hours := (remaining % SECONDS_PER_DAY) / 3600
-	var minutes := (remaining % 3600) / 60
+	var days := int(remaining / SECONDS_PER_DAY)
+	var hours := int((remaining % SECONDS_PER_DAY) / 3600)
+	var minutes := int((remaining % 3600) / 60)
 	if days > 0:
 		return "%dd %02dh" % [days, hours]
 	if hours > 0:

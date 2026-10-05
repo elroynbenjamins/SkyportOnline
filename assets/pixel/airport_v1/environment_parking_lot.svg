@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+<defs>
+ <linearGradient id="pave" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6d7374"/><stop offset="1" stop-color="#454d50"/></linearGradient>
+ <linearGradient id="curb" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ddd8cf"/><stop offset="1" stop-color="#aaa79f"/></linearGradient>
+</defs>
+<polygon points="92,318 416,128 807,249 478,447" fill="#20343a" opacity=".22"/>
+<polygon points="71,288 413,95 829,224 478,426" fill="url(#curb)"/>
+<polygon points="92,283 414,112 804,234 478,406" fill="url(#pave)"/>
+<g stroke="#ece9df" stroke-width="6" opacity=".92">
+ <line x1="171" y1="253" x2="241" y2="214"/><line x1="250" y1="278" x2="320" y2="239"/>
+ <line x1="329" y1="303" x2="399" y2="264"/><line x1="487" y1="353" x2="557" y2="314"/>
+ <line x1="566" y1="378" x2="636" y2="339"/><line x1="645" y1="403" x2="715" y2="364"/>
+</g>
+<g stroke="#f1c54e" stroke-width="5" opacity=".95">
+ <polyline points="121,279 414,126 772,238"/><polyline points="180,350 475,194 748,280"/>
+</g>
+<g>
+ <g transform="translate(210 225)"><polygon points="0,20 52,-8 93,5 41,34" fill="#3e7bb3"/><polygon points="12,17 52,-2 79,7 39,26" fill="#84b6d5"/><circle cx="25" cy="30" r="7" fill="#252c31"/><circle cx="68" cy="14" r="7" fill="#252c31"/></g>
+ <g transform="translate(381 280)"><polygon points="0,20 52,-8 93,5 41,34" fill="#d76042"/><polygon points="12,17 52,-2 79,7 39,26" fill="#f2ad78"/><circle cx="25" cy="30" r="7" fill="#252c31"/><circle cx="68" cy="14" r="7" fill="#252c31"/></g>
+ <g transform="translate(558 334)"><polygon points="0,20 52,-8 93,5 41,34" fill="#d7b44d"/><polygon points="12,17 52,-2 79,7 39,26" fill="#f3dc86"/><circle cx="25" cy="30" r="7" fill="#252c31"/><circle cx="68" cy="14" r="7" fill="#252c31"/></g>
+</g>
+<g>
+ <line x1="143" y1="244" x2="143" y2="181" stroke="#59686d" stroke-width="8"/><rect x="126" y="166" width="34" height="14" rx="5" fill="#48585d"/><circle cx="132" cy="174" r="4" fill="#fff0bd"/><circle cx="154" cy="174" r="4" fill="#fff0bd"/>
+ <line x1="739" y1="306" x2="739" y2="243" stroke="#59686d" stroke-width="8"/><rect x="722" y="228" width="34" height="14" rx="5" fill="#48585d"/><circle cx="728" cy="236" r="4" fill="#fff0bd"/><circle cx="750" cy="236" r="4" fill="#fff0bd"/>
+</g>
+</svg>

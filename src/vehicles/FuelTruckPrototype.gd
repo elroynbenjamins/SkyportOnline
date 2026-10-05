@@ -158,8 +158,41 @@ func _draw() -> void:
 		draw_circle(Vector2(10, 8), 3.0, Color("292f32"))
 
 	if phase == "SERVICING":
-		draw_circle(Vector2(-1, -14), 4.0, Color("ffd166"))
+		_draw_service_beacon()
 		_draw_fuel_hose()
+
+
+func _draw_service_beacon() -> void:
+	var draw_size := GroundServiceVehicleArt.world_size(
+		"fuel"
+	)
+	var height := maxf(draw_size.y * 0.36, 15.0)
+	draw_set_transform(
+		Vector2.ZERO,
+		-global_rotation,
+		Vector2.ONE
+	)
+	var beacon_position := Vector2(0, -height)
+	draw_circle(
+		beacon_position + Vector2(1, 2),
+		4.2,
+		Color(0.03, 0.06, 0.07, 0.32)
+	)
+	draw_circle(
+		beacon_position,
+		3.6,
+		Color("ffd166")
+	)
+	draw_circle(
+		beacon_position + Vector2(-1, -1),
+		1.3,
+		Color("fff0b2")
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
 
 
 func _draw_fuel_hose() -> void:
@@ -192,6 +225,25 @@ func _draw_fuel_hose() -> void:
 
 
 func _draw_shadow() -> void:
-	draw_set_transform(Vector2(2, 4), 0.0, Vector2(1.0, 0.45))
-	draw_circle(Vector2.ZERO, 13.0, Color(0, 0, 0, 0.22))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var radius := GroundServiceVehicleArt.shadow_radius(
+		"fuel"
+	)
+	var world_offset := Vector2(3, 5)
+	var local_offset := world_offset.rotated(
+		-global_rotation
+	)
+	draw_set_transform(
+		local_offset,
+		-global_rotation,
+		Vector2(1.0, 0.42)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		radius,
+		Color(0, 0, 0, 0.20)
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)

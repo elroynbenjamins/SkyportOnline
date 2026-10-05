@@ -36,13 +36,16 @@ var purchase_button: Button
 
 var build_action_panel: PanelContainer
 var build_title: Label
+var build_meta_label: Label
 var build_status: Label
+var build_preview_icon: TextureRect
 var rotate_button: Button
 var place_button: Button
 
 var catalog_buttons: Dictionary = {}
 var catalog_definitions: Array[Dictionary] = []
 var catalog_filter_buttons: Dictionary = {}
+var catalog_summary_label: Label
 var selected_catalog_category := "ALL"
 
 var current_parcel: Dictionary = {}
@@ -310,14 +313,31 @@ func _build_context_panel(root: Control) -> void:
 	build_row.add_theme_constant_override("separation", 10)
 	build_action_panel.add_child(build_row)
 
+	build_preview_icon = TextureRect.new()
+	build_preview_icon.custom_minimum_size = Vector2(86, 72)
+	build_preview_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	build_preview_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	build_preview_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	build_row.add_child(build_preview_icon)
+
 	var build_text := VBoxContainer.new()
 	build_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	build_text.add_theme_constant_override("separation", 2)
 	build_row.add_child(build_text)
 
 	build_title = Label.new()
 	build_title.text = "PLACE BUILDING"
 	build_title.add_theme_font_size_override("font_size", 19)
 	build_text.add_child(build_title)
+
+	build_meta_label = Label.new()
+	build_meta_label.text = "SELECT A BUILDING"
+	build_meta_label.add_theme_font_size_override("font_size", 12)
+	build_meta_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	build_text.add_child(build_meta_label)
 
 	build_status = Label.new()
 	build_status.text = "Tap owned land to preview placement."
@@ -366,6 +386,13 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(catalog_header, 15)
 	catalog_wrapper.add_child(catalog_header)
+
+	catalog_summary_label = Label.new()
+	catalog_summary_label.text = "Choose a category"
+	catalog_summary_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	catalog_summary_label.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(catalog_summary_label)
+	catalog_wrapper.add_child(catalog_summary_label)
 
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 4)

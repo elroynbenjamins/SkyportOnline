@@ -2568,17 +2568,51 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 			return "STAND  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
 		return "STAND  •  " + _size_text(definition) + "  ✓"
 	if id.contains("terminal"):
-		return "TERMINAL"
-	if id == "travel_office":
-		return "PASSENGERS  •  LV %d" % int(
+		var terminal_text := "TERMINAL"
+		var terminal_synergy := get_building_synergy_summary(
+			int(building.get("uid", -1))
+		)
+		if int(
+			terminal_synergy.get("covered_count", 0)
+		) > 0:
+			terminal_text += "  ✦ %d" % int(
+				terminal_synergy.get(
+					"covered_count",
+					0
+				)
+			)
+		return terminal_text
+	if id in ["travel_office", "shuttle_station"]:
+		var passenger_text := "PASSENGERS  •  LV %d" % int(
 			building.get("upgrade_level", 1)
 		)
+		var passenger_synergy := get_passenger_synergy(
+			int(building.get("uid", -1))
+		)
+		if bool(
+			passenger_synergy.get("active", false)
+		):
+			passenger_text += "  ✦ +%d%%" % int(
+				passenger_synergy.get("bonus_pct", 0)
+			)
+		return passenger_text
 	if id.contains("hangar"):
 		if not _is_airside_building_connected(int(building["uid"])):
 			return "HANGAR  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
 		return "HANGAR  •  " + _size_text(definition) + "  ✓"
 	if ServiceUpgradeCatalog.is_upgradeable(id):
-		return "%s  •  LV %d" % [String(definition["menu_name"]).to_upper(), int(building.get("upgrade_level", 1))]
+		var service_text := "%s  •  LV %d" % [
+			String(definition["menu_name"]).to_upper(),
+			int(building.get("upgrade_level", 1))
+		]
+		var coverage := get_service_coverage_summary(
+			int(building.get("uid", -1))
+		)
+		if int(coverage.get("covered_count", 0)) > 0:
+			service_text += "  ✦ %d" % int(
+				coverage.get("covered_count", 0)
+			)
+		return service_text
 	return String(definition["name"]).to_upper()
 
 
@@ -2591,6 +2625,161 @@ func _size_text(definition: Dictionary) -> String:
 		result += sizes[index]
 	return result
 
+
+
+func _draw_synergy_overlay() -> void:
+	var summary: Dictionary = {}
+	var source_world := Vector2.ZERO
+	var has_source := false
+
+	if (
+		not preview_building_id.is_empty()
+		and preview_origin.x >= 0
+		and preview_origin.y >= 0
+	):
+		var preview_value = preview_status.get(
+			"synergy",
+			{}
+		)
+		if preview_value is Dictionary:
+			summary = preview_value
+		if not summary.is_empty():
+			var definition := BuildingCatalog.get_definition(
+				preview_building_id
+			)
+			if not definition.is_empty():
+				source_world = _footprint_center_world(
+					preview_origin,
+					_footprint_for(
+						definition,
+						preview_rotation
+					)
+				)
+				has_source = true
+	elif selected_synergy_uid >= 0:
+		var selected := _building_by_uid(
+			selected_synergy_uid
+		)
+		if not selected.is_empty():
+			summary = get_building_synergy_summary(
+				selected_synergy_uid
+			)
+			var definition := BuildingCatalog.get_definition(
+				String(
+					selected.get(
+						"definition_id",
+						""
+					)
+				)
+			)
+			if (
+				not definition.is_empty()
+				and not summary.is_empty()
+			):
+				source_world = _footprint_center_world(
+					selected.get(
+						"origin",
+						Vector2i.ZERO
+					),
+					_footprint_for(
+						definition,
+						int(
+							selected.get(
+								"rotation",
+								0
+							)
+						)
+					)
+				)
+				has_source = true
+
+	if not has_source or summary.is_empty():
+		return
+
+	var kind := String(summary.get("kind", ""))
+	var color := Color("68d6c5")
+	if kind == "service":
+		color = Color("f2c566")
+
+	draw_circle(
+		source_world,
+		18.0,
+		Color(
+			color.r,
+			color.g,
+			color.b,
+			0.12
+		)
+	)
+	draw_arc(
+		source_world,
+		20.0,
+		0.0,
+		TAU,
+		28,
+		color,
+		2.2
+	)
+
+	var targets_value = summary.get(
+		"target_uids",
+		[]
+	)
+	if not (targets_value is Array):
+		return
+
+	for target_uid_variant in targets_value:
+		var target_uid := int(target_uid_variant)
+		if target_uid < 0:
+			continue
+		var target := _building_by_uid(target_uid)
+		if target.is_empty():
+			continue
+		var target_definition := (
+			BuildingCatalog.get_definition(
+				String(
+					target.get(
+						"definition_id",
+						""
+					)
+				)
+			)
+		)
+		if target_definition.is_empty():
+			continue
+		var target_world := _footprint_center_world(
+			target.get("origin", Vector2i.ZERO),
+			_footprint_for(
+				target_definition,
+				int(target.get("rotation", 0))
+			)
+		)
+		draw_dashed_line(
+			source_world,
+			target_world,
+			color,
+			2.0,
+			8.0
+		)
+		draw_circle(
+			target_world,
+			15.0,
+			Color(
+				color.r,
+				color.g,
+				color.b,
+				0.12
+			)
+		)
+		draw_arc(
+			target_world,
+			16.0,
+			0.0,
+			TAU,
+			24,
+			color,
+			2.0
+		)
 
 
 func get_passenger_synergy(

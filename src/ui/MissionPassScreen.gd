@@ -142,10 +142,12 @@ func _daily(state: Dictionary) -> void:
 	var completed := MissionPassRules.completed_daily_count(state)
 	var intro := _card()
 	_text(intro, "DAILY MISSIONS  •  %d / %d" % [completed, daily.size()], true)
-	_text(intro, "Each completed mission awards %d Pass Points. Complete all four for +%d bonus points. Daily missions refresh at the next UTC day." % [
+	_text(intro, "Each completed mission awards %d Pass Points. Complete all four for +%d bonus points." % [
 		MissionPassCatalog.DAILY_MISSION_POINTS,
 		MissionPassCatalog.DAILY_COMPLETION_BONUS
 	])
+	var now := float(data.get("unix_time", Time.get_unix_time_from_system()))
+	_text(intro, "UTC refresh in %s • rerolls reset with the daily missions." % MissionPassRules.format_remaining(MissionPassRules.seconds_until_daily_reset(now)))
 	var reroll_status := "1 free reroll available"
 	if bool(pass_state.get("free_reroll_used", false)):
 		reroll_status = "Free reroll used • rewarded-ad reroll available" if not bool(pass_state.get("ad_reroll_used", false)) else "All daily rerolls used"
@@ -210,6 +212,8 @@ func _weekly(state: Dictionary) -> void:
 		MissionPassCatalog.WEEKLY_MISSION_POINTS,
 		MissionPassCatalog.WEEKLY_COMPLETION_BONUS
 	])
+	var now := float(data.get("unix_time", Time.get_unix_time_from_system()))
+	_text(intro, "Next weekly set in %s • older sets remain as catch-up missions." % MissionPassRules.format_remaining(MissionPassRules.seconds_until_next_week_set(now)))
 	var current_key := String(data.get("week_key", ""))
 	var groups: Dictionary = {}
 	for mission_variant in weekly:
@@ -273,12 +277,22 @@ func _pass(state: Dictionary) -> void:
 	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(text_box)
 	_text(text_box, "MONTHLY AIRPORT PASS  •  %s" % String(pass_state.get("month_key", "")), true)
+	var pass_level := MissionPassRules.pass_level(state)
 	_text(text_box, "%d / %d points • Tier %d / %d" % [
 		points,
 		MissionPassCatalog.TIERS * MissionPassCatalog.POINTS_PER_TIER,
-		MissionPassRules.pass_level(state),
+		pass_level,
 		MissionPassCatalog.TIERS
 	])
+	if pass_level < MissionPassCatalog.TIERS:
+		var tier_progress := points % MissionPassCatalog.POINTS_PER_TIER
+		_progress(text_box, tier_progress, MissionPassCatalog.POINTS_PER_TIER)
+		_text(text_box, "%d points to Tier %d" % [MissionPassCatalog.POINTS_PER_TIER - tier_progress, pass_level + 1])
+	else:
+		_progress(text_box, MissionPassCatalog.POINTS_PER_TIER, MissionPassCatalog.POINTS_PER_TIER)
+		_text(text_box, "All 30 Airport Pass tiers unlocked.")
+	var now := float(data.get("unix_time", Time.get_unix_time_from_system()))
+	_text(text_box, "Season ends in %s • earned unclaimed rewards auto-claim at rollover." % MissionPassRules.format_remaining(MissionPassRules.seconds_until_month_reset(now)))
 	_text(text_box, "Free track is always active. Premium adds extra rewards and retroactively unlocks earned premium tiers.")
 	var claimable := MissionPassRules.claimable_count(state)
 	var claim_all := Button.new()

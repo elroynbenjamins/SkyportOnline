@@ -7,6 +7,7 @@ const DRAW_INTERVAL := 1.0 / 12.0
 const LAYOUT_REFRESH_INTERVAL := 0.75
 const MAX_CREW := 12
 const MAX_AMBIENT_CARTS := 2
+const MAX_BAGGAGE_TRAINS := 3
 const AMBIENT_CART_ACTIVE_FRACTION := 0.68
 
 var airport_grid: AirportGrid
@@ -23,6 +24,7 @@ var service_route := PackedVector2Array()
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	AirportAmbientLifeArt.texture()
 	set_process(true)
 
 
@@ -57,6 +59,7 @@ func _draw() -> void:
 	_draw_terminal_activity()
 	_draw_operations_activity()
 	_draw_ambient_service_traffic()
+	_draw_baggage_activity()
 	_draw_ground_crew()
 
 
@@ -260,11 +263,14 @@ static func behavior_profile_for_size(
 func get_ambient_snapshot() -> Dictionary:
 	var live_aircraft := _collect_live_aircraft()
 	var crew_count := 0
+	var baggage_trains := 0
 	var npc_aircraft := 0
 	var npc_tiers: Dictionary = {}
 
 	for aircraft in live_aircraft:
 		crew_count += _crew_count_for_aircraft(aircraft)
+		if aircraft.state in ["UNLOADING", "LOADING"]:
+			baggage_trains += 1
 		if aircraft.has_meta("npc_behavior"):
 			npc_aircraft += 1
 			var npc_profile: Dictionary = aircraft.get_meta(
@@ -285,9 +291,16 @@ func get_ambient_snapshot() -> Dictionary:
 		"windsocks": windsock_anchors.size(),
 		"service_route_points": service_route.size(),
 		"ambient_cart_cap": MAX_AMBIENT_CARTS,
+		"baggage_train_cap": MAX_BAGGAGE_TRAINS,
 		"draw_hz": 1.0 / DRAW_INTERVAL,
 		"live_aircraft": live_aircraft.size(),
 		"crew_count": mini(crew_count, MAX_CREW),
+		"baggage_trains": mini(
+			baggage_trains,
+			MAX_BAGGAGE_TRAINS
+		),
+		"art_atlas_ready": AirportAmbientLifeArt.texture() != null,
+		"art_profile": AirportAmbientLifeArt.visual_profile(),
 		"npc_aircraft": npc_aircraft,
 		"npc_tiers": npc_tiers.duplicate(true)
 	}
@@ -467,21 +480,37 @@ func _crew_offset(
 	return normalized * radius * crowd_scale
 
 
-func _draw_ground_crew_member(
+func _draw_atlas_sprite(
 	position: Vector2,
-	marshaller: bool,
-	phase: float
+	key: String,
+	size: Vector2,
+	ground_anchor: float = 0.75,
+	mirror_x: bool = false,
+	modulate: Color = Color.WHITE
 ) -> void:
-	var shadow := position + Vector2(2, 3)
+	var atlas := AirportAmbientLifeArt.texture()
+	if atlas == null:
+		return
+
 	draw_set_transform(
-		shadow,
+		position,
 		0.0,
-		Vector2(1.0, 0.42)
+		Vector2(
+			-1.0 if mirror_x else 1.0,
+			1.0
+		)
 	)
-	draw_circle(
-		Vector2.ZERO,
-		4.2,
-		Color(0, 0, 0, 0.18)
+	draw_texture_rect_region(
+		Rect2(
+			Vector2(
+				-size.x * 0.5,
+				-size.y * ground_anchor
+			),
+			size
+		),
+		atlas,
+		AirportAmbientLifeArt.source_rect(key),
+		modulate
 	)
 	draw_set_transform(
 		Vector2.ZERO,
@@ -489,71 +518,36 @@ func _draw_ground_crew_member(
 		Vector2.ONE
 	)
 
-	var bob := sin(phase * 2.2) * 0.55
-	var body := position + Vector2(0, bob)
-	draw_line(
-		body + Vector2(-1, 4),
-		body + Vector2(-3, 8),
-		Color("33414b"),
-		2.0
-	)
-	draw_line(
-		body + Vector2(1, 4),
-		body + Vector2(3, 8),
-		Color("33414b"),
-		2.0
-	)
-	draw_rect(
-		Rect2(
-			body + Vector2(-3, -2),
-			Vector2(6, 7)
-		),
-		Color("f0c64e")
-	)
-	draw_line(
-		body + Vector2(-3, 0),
-		body + Vector2(3, 0),
-		Color("fff4b8"),
-		1.0
-	)
-	draw_circle(
-		body + Vector2(0, -5),
-		2.4,
-		Color("e6bc94")
-	)
-	draw_line(
-		body + Vector2(-2, -7),
-		body + Vector2(2, -7),
-		Color("e8d355"),
-		2.0
-	)
 
-	if marshaller:
-		var wave := sin(phase * 2.8) * 2.0
-		draw_line(
-			body + Vector2(-3, -1),
-			body + Vector2(-8, -6 - wave),
-			Color("d9e5e9"),
-			1.5
-		)
-		draw_line(
-			body + Vector2(3, -1),
-			body + Vector2(8, -6 + wave),
-			Color("d9e5e9"),
-			1.5
-		)
-		draw_line(
-			body + Vector2(-8, -6 - wave),
-			body + Vector2(-10, -9 - wave),
-			Color("ff7c4d"),
-			2.2
-		)
-		draw_line(
-			body + Vector2(8, -6 + wave),
-			body + Vector2(10, -9 + wave),
-			Color("ff7c4d"),
-			2.2
-		)
+func _draw_ground_crew_member(
+	position: Vector2,
+	marshaller: bool,
+	phase: float
+) -> void:
+	var frame := AirportAmbientLifeArt.animation_frame(
+		motion_clock,
+		2.35 if marshaller else 3.15,
+		phase * 0.12
+	)
+	var key := AirportAmbientLifeArt.crew_key(
+		marshaller,
+		frame
+	)
+	var size := AirportAmbientLifeArt.world_size(
+		"marshaller" if marshaller else "crew"
+	)
+	var mirror_x := (
+		sin(phase * 0.61) < 0.0
+		and not marshaller
+	)
+	var bob := sin(phase * 2.2) * 0.35
+	_draw_atlas_sprite(
+		position + Vector2(0, bob),
+		key,
+		size,
+		0.76,
+		mirror_x
+	)
 
 
 func _draw_windsocks() -> void:
@@ -564,59 +558,16 @@ func _draw_windsocks() -> void:
 			"position",
 			Vector2.ZERO
 		)
-		var top := base + Vector2(0, -34)
-		draw_line(
-			base + Vector2(2, 3),
-			top + Vector2(2, 3),
-			Color(0, 0, 0, 0.14),
-			3.0
+		var frame := AirportAmbientLifeArt.animation_frame(
+			motion_clock,
+			0.82,
+			float(index) * 0.55
 		)
-		draw_line(
-			base,
-			top,
-			Color("d8e0df"),
-			2.0
-		)
-		draw_circle(
-			base + Vector2(0, 2),
-			4.0,
-			Color("707c78")
-		)
-
-		var sway := sin(
-			motion_clock * 0.75 + float(index)
-		) * 0.12
-		var length := 28.0
-		var direction := Vector2.RIGHT.rotated(
-			sway
-		)
-		var normal := Vector2(
-			-direction.y,
-			direction.x
-		)
-		var mouth := top + direction * 3.0
-		var tail := top + direction * length
-		var sock := PackedVector2Array([
-			mouth + normal * 4.5,
-			mouth - normal * 4.5,
-			tail - normal * 1.7,
-			tail + normal * 1.7
-		])
-		draw_colored_polygon(
-			sock,
-			Color("f08b45")
-		)
-		draw_line(
-			mouth + normal * 1.4,
-			mouth - normal * 1.4,
-			Color("fff4df"),
-			2.0
-		)
-		draw_line(
-			top,
-			mouth,
-			Color("ccd4d3"),
-			1.0
+		_draw_atlas_sprite(
+			base + Vector2(0, 4),
+			AirportAmbientLifeArt.windsock_key(frame),
+			AirportAmbientLifeArt.world_size("windsock"),
+			0.82
 		)
 
 
@@ -626,6 +577,7 @@ func _draw_terminal_activity() -> void:
 			"position",
 			Vector2.ZERO
 		)
+		var uid := int(terminal.get("uid", 0))
 		var orientation := (
 			-1.0
 			if int(terminal.get("rotation", 0)) == 1
@@ -635,10 +587,12 @@ func _draw_terminal_activity() -> void:
 			0.55
 			+ 0.45 * sin(
 				motion_clock * 1.45
-				+ float(int(terminal.get("uid", 0)) % 7)
+				+ float(uid % 7)
 			)
 		)
 
+		# Keep the subtle window/entrance glow as a light effect, while
+		# people and flags use the same production atlas as the apron.
 		for offset in [
 			Vector2(-18 * orientation, 7),
 			Vector2(0, 11),
@@ -647,28 +601,41 @@ func _draw_terminal_activity() -> void:
 			draw_circle(
 				center + offset,
 				2.2,
-				Color(0.60, 0.88, 1.0, 0.24 + pulse * 0.20)
+				Color(
+					0.60,
+					0.88,
+					1.0,
+					0.24 + pulse * 0.20
+				)
 			)
 
 		for index in range(2):
 			var walk_phase := fmod(
-				motion_clock * (0.055 + float(index) * 0.012)
+				motion_clock * (
+					0.055 + float(index) * 0.012
+				)
 				+ float(index) * 0.52,
 				1.0
 			)
 			var pedestrian := center + Vector2(
-				lerpf(-30.0, 30.0, walk_phase) * orientation,
+				lerpf(
+					-30.0,
+					30.0,
+					walk_phase
+				) * orientation,
 				18.0 + float(index) * 5.0
 			)
-			draw_circle(
-				pedestrian + Vector2(1, 2),
-				2.3,
-				Color(0, 0, 0, 0.12)
+			var key := AirportAmbientLifeArt.civilian_key(
+				index + uid
 			)
-			draw_circle(
+			_draw_atlas_sprite(
 				pedestrian,
-				1.8,
-				Color("dce9ef")
+				key,
+				AirportAmbientLifeArt.world_size(
+					"civilian"
+				),
+				0.76,
+				orientation < 0.0
 			)
 
 		_draw_terminal_flag(
@@ -676,36 +643,27 @@ func _draw_terminal_activity() -> void:
 				44.0 * orientation,
 				17.0
 			),
-			orientation
+			orientation,
+			uid
 		)
 
 
 func _draw_terminal_flag(
 	base: Vector2,
-	orientation: float
+	orientation: float,
+	uid: int
 ) -> void:
-	var top := base + Vector2(0, -31)
-	draw_line(
-		base,
-		top,
-		Color("d5dcdb"),
-		1.8
+	var frame := AirportAmbientLifeArt.animation_frame(
+		motion_clock,
+		0.76,
+		float(uid % 5) * 0.3
 	)
-	var wave := sin(motion_clock * 1.1) * 2.0
-	var flag := PackedVector2Array([
-		top,
-		top + Vector2(18.0 * orientation, 4 + wave),
-		top + Vector2(2.0 * orientation, 11)
-	])
-	draw_colored_polygon(
-		flag,
-		Color("4f94bd")
-	)
-	draw_line(
-		top + Vector2(2.0 * orientation, 4),
-		top + Vector2(12.0 * orientation, 6 + wave * 0.4),
-		Color("f1d36d"),
-		1.4
+	_draw_atlas_sprite(
+		base + Vector2(0, 2),
+		AirportAmbientLifeArt.flag_key(frame),
+		AirportAmbientLifeArt.world_size("flag"),
+		0.82,
+		orientation < 0.0
 	)
 
 
@@ -815,62 +773,72 @@ func _sample_service_route(
 	return {}
 
 
+func _draw_baggage_activity() -> void:
+	var drawn := 0
+	for aircraft in _collect_live_aircraft():
+		if drawn >= MAX_BAGGAGE_TRAINS:
+			break
+		if aircraft.state not in ["UNLOADING", "LOADING"]:
+			continue
+
+		var profile := _activity_profile_for_aircraft(
+			aircraft
+		)
+		var radius := float(
+			profile.get("service_radius", 31.0)
+		)
+		var center := to_local(
+			aircraft.global_position
+		)
+		var heading := aircraft.global_rotation
+		var forward := Vector2.RIGHT.rotated(heading)
+		var side := Vector2(
+			-forward.y,
+			forward.x
+		)
+		var phase := (
+			motion_clock * 0.95
+			+ float(aircraft.get_instance_id() % 17)
+		)
+		var position := (
+			center
+			+ side * radius * 0.92
+			+ forward * sin(phase) * 7.0
+		)
+		_draw_atlas_sprite(
+			position,
+			AirportAmbientLifeArt.baggage_key(
+				heading
+			),
+			AirportAmbientLifeArt.world_size(
+				"baggage"
+			),
+			0.75
+		)
+		drawn += 1
+
+
 func _draw_ambient_cart(
 	position: Vector2,
 	heading: float,
 	index: int
 ) -> void:
-	draw_set_transform(
-		position + Vector2(2, 4),
-		heading,
-		Vector2(1.0, 0.45)
-	)
-	draw_circle(
-		Vector2.ZERO,
-		8.0,
-		Color(0, 0, 0, 0.16)
-	)
-	draw_set_transform(
-		position,
-		heading,
-		Vector2.ONE
+	var bob := sin(
+		motion_clock * 4.6 + float(index)
+	) * 0.45
+	_draw_atlas_sprite(
+		position + Vector2(0, bob),
+		AirportAmbientLifeArt.utility_key(
+			heading
+		),
+		AirportAmbientLifeArt.world_size(
+			"utility"
+		),
+		0.73
 	)
 
-	draw_rect(
-		Rect2(
-			Vector2(-7, -4),
-			Vector2(14, 8)
-		),
-		Color("6f8d91")
-	)
-	draw_rect(
-		Rect2(
-			Vector2(2, -3),
-			Vector2(5, 6)
-		),
-		Color("dbe7e7")
-	)
-	draw_circle(
-		Vector2(-4, -5),
-		1.7,
-		Color("2e3638")
-	)
-	draw_circle(
-		Vector2(4, -5),
-		1.7,
-		Color("2e3638")
-	)
-	draw_circle(
-		Vector2(-4, 5),
-		1.7,
-		Color("2e3638")
-	)
-	draw_circle(
-		Vector2(4, 5),
-		1.7,
-		Color("2e3638")
-	)
-
+	# The amber beacon remains procedural so it can genuinely pulse rather
+	# than forcing a large multi-frame vehicle atlas.
 	var pulse := (
 		0.5
 		+ 0.5 * sin(
@@ -879,13 +847,23 @@ func _draw_ambient_cart(
 		)
 	)
 	draw_circle(
-		Vector2(0, -6),
-		1.6,
-		Color(1.0, 0.72, 0.20, 0.65 + pulse * 0.30)
+		position + Vector2(0, -14),
+		2.8 + pulse * 0.7,
+		Color(
+			1.0,
+			0.72,
+			0.20,
+			0.08 + pulse * 0.08
+		)
+	)
+	draw_circle(
+		position + Vector2(0, -14),
+		1.2,
+		Color(
+			1.0,
+			0.78,
+			0.26,
+			0.72 + pulse * 0.25
+		)
 	)
 
-	draw_set_transform(
-		Vector2.ZERO,
-		0.0,
-		Vector2.ONE
-	)

@@ -986,7 +986,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(195, 74)
+		button.custom_minimum_size = Vector2(205, 88)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 12)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -994,7 +994,7 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 		button.expand_icon = true
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		button.tooltip_text = String(definition.get("description", ""))
-		GameUIStyle.apply_button(button, "secondary", true)
+		GameUIStyle.apply_button(button, "build_card", true)
 		var icon := _catalog_icon_for(definition)
 		if icon != null:
 			button.icon = icon
@@ -1020,18 +1020,28 @@ func _on_catalog_filter_pressed(category: String) -> void:
 
 
 func _apply_catalog_filter() -> void:
+	var visible_total := 0
+	var available_total := 0
 	for definition in catalog_definitions:
 		var id := String(definition.get("id", ""))
 		if not catalog_buttons.has(id):
 			continue
 		var button: Button = catalog_buttons[id]
-		var category := String(
-			definition.get("category", "")
-		)
-		button.visible = (
+		var category := String(definition.get("category", ""))
+		var visible := (
 			selected_catalog_category == "ALL"
 			or category == selected_catalog_category
 		)
+		button.visible = visible
+		if visible:
+			visible_total += 1
+			if current_level >= int(definition.get("level", 1)):
+				available_total += 1
+	if catalog_count_label != null:
+		catalog_count_label.text = "%d/%d AVAILABLE" % [
+			available_total,
+			visible_total
+		]
 
 
 func _catalog_icon_for(definition: Dictionary) -> Texture2D:
@@ -1624,7 +1634,7 @@ func show_airport_edit_mode(
 		)
 	else:
 		build_hint.text = (
-			"BUILD MODE  •  Tap a building, then tap owned land"
+			"AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
 		)
 		airport_edit_status.text = (
 			"Tap a movable building • changes save when confirmed"
@@ -2374,6 +2384,7 @@ func exit_building_mode() -> void:
 		storage_panel.visible = false
 	if catalog_panel != null:
 		catalog_panel.visible = true
+	build_hint.text = "AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
 	parcel_panel.visible = true
 	show_parcel(current_parcel, current_level, current_coins)
 
@@ -2388,24 +2399,28 @@ func _update_catalog_buttons() -> void:
 		var cost := int(definition["cost"])
 
 		if current_level < required_level:
-			GameUIStyle.apply_button(button, "secondary", true)
-			button.text = "%s\n🔒 LV %d" % [
+			GameUIStyle.apply_button(button, "build_card_locked", true)
+			button.text = "%s\n🔒 UNLOCK LV %d" % [
 				String(definition["menu_name"]),
 				required_level
 			]
 			button.disabled = true
 		else:
+			var selected := id == active_building_id
 			GameUIStyle.apply_button(
 				button,
-				"selected" if id == active_building_id else "secondary",
+				"build_card_selected" if selected else "build_card",
 				true
 			)
-			button.text = "%s\n🪙 %s • %s" % [
+			button.text = "%s%s\n🪙 %s  •  LV %d  •  %s" % [
+				"✓ " if selected else "",
 				String(definition["menu_name"]),
 				_format_number(cost),
+				required_level,
 				_size_text(definition)
 			]
 			button.disabled = false
+	_apply_catalog_filter()
 
 
 func _service_text(definition: Dictionary) -> String:
@@ -2514,7 +2529,15 @@ func _on_purchase_pressed() -> void:
 
 
 func _on_building_button_pressed(building_id: String) -> void:
+	if catalog_panel != null:
+		catalog_panel.visible = false
+	build_hint.text = "PLACING BUILDING  •  Tap owned land • use Rotate / Place / Cancel below"
 	building_selected.emit(building_id)
+
+func _on_catalog_close_pressed() -> void:
+	if catalog_panel != null:
+		catalog_panel.visible = false
+	build_hint.text = "AIRPORT VIEW  •  BUILD reopens construction"
 
 
 func _on_rotate_pressed() -> void:
@@ -2572,7 +2595,8 @@ func _on_build_navigation_pressed() -> void:
 		storage_panel.visible = false
 	if status_detail_panel != null:
 		_close_status_detail()
-	set_operation_status("Build tray ready • choose infrastructure or edit your airport.")
+	build_hint.text = "BUILD AIRPORT  •  Choose a building from the drawer"
+	set_operation_status("Construction drawer opened • choose a building to place.")
 
 func _on_navigation_pressed(tab: String) -> void:
 	navigation_requested.emit(tab)

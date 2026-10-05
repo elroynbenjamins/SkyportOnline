@@ -2,6 +2,7 @@ class_name MissionPassScreen
 extends CanvasLayer
 
 signal reroll_requested(mission_id: String, use_ad: bool)
+signal guidance_requested(mission: Dictionary)
 signal pass_reward_claim_requested(tier_number: int, track: String)
 signal claim_all_requested
 signal product_purchase_requested(product_id: String)
@@ -159,6 +160,7 @@ func _daily(state: Dictionary) -> void:
 		var details := VBoxContainer.new()
 		details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(details)
+		_text(details, _mission_tag(String(mission.get("metric", ""))))
 		_text(details, String(mission.get("title", "Mission")), true)
 		_text(details, String(mission.get("description", "")))
 		_progress(details, int(mission.get("progress", 0)), int(mission.get("target", 1)))
@@ -169,6 +171,15 @@ func _daily(state: Dictionary) -> void:
 		])
 		if done:
 			continue
+		var actions := VBoxContainer.new()
+		actions.add_theme_constant_override("separation", 6)
+		row.add_child(actions)
+		var go_button := Button.new()
+		go_button.text = "GO"
+		go_button.custom_minimum_size = Vector2(150, 38)
+		GameUIStyle.apply_button(go_button, "primary", true)
+		go_button.pressed.connect(_guide.bind(mission))
+		actions.add_child(go_button)
 		var free_used := bool(pass_state.get("free_reroll_used", false))
 		var ad_used := bool(pass_state.get("ad_reroll_used", false))
 		var button := Button.new()
@@ -188,7 +199,7 @@ func _daily(state: Dictionary) -> void:
 			button.disabled = true
 			GameUIStyle.apply_button(button, "secondary", true)
 		button.custom_minimum_size = Vector2(210, 46)
-		row.add_child(button)
+		actions.add_child(button)
 
 func _weekly(state: Dictionary) -> void:
 	var pass_state: Dictionary = state.get("mission_pass", {})
@@ -228,13 +239,27 @@ func _weekly(state: Dictionary) -> void:
 		for mission_variant in missions:
 			var mission: Dictionary = mission_variant
 			var card := _card()
-			_text(card, String(mission.get("title", "Mission")), true)
-			_text(card, String(mission.get("description", "")))
-			_progress(card, int(mission.get("progress", 0)), int(mission.get("target", 1)))
-			_text(card, "COMPLETE • +%d PASS POINTS" % MissionPassCatalog.WEEKLY_MISSION_POINTS if bool(mission.get("awarded", false)) else "PROGRESS %d / %d" % [
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 12)
+			card.add_child(row)
+			var details := VBoxContainer.new()
+			details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(details)
+			_text(details, _mission_tag(String(mission.get("metric", ""))))
+			_text(details, String(mission.get("title", "Mission")), true)
+			_text(details, String(mission.get("description", "")))
+			_progress(details, int(mission.get("progress", 0)), int(mission.get("target", 1)))
+			_text(details, "COMPLETE • +%d PASS POINTS" % MissionPassCatalog.WEEKLY_MISSION_POINTS if bool(mission.get("awarded", false)) else "PROGRESS %d / %d" % [
 				int(mission.get("progress", 0)),
 				int(mission.get("target", 1))
 			])
+			if not bool(mission.get("awarded", false)):
+				var go_button := Button.new()
+				go_button.text = "GO"
+				go_button.custom_minimum_size = Vector2(120, 42)
+				GameUIStyle.apply_button(go_button, "primary", true)
+				go_button.pressed.connect(_guide.bind(mission))
+				row.add_child(go_button)
 
 func _pass(state: Dictionary) -> void:
 	var pass_state: Dictionary = state.get("mission_pass", {})
@@ -450,6 +475,28 @@ func _progress(parent: Node, value: int, maximum: int) -> void:
 
 func _reroll(mission_id: String, use_ad: bool) -> void:
 	reroll_requested.emit(mission_id, use_ad)
+
+func _guide(mission: Dictionary) -> void:
+	guidance_requested.emit(mission)
+
+func _mission_tag(metric: String) -> String:
+	match metric:
+		"flights", "flight_minutes", "flight_distance", "mastery_minutes":
+			return "✈ FLIGHT OPS"
+		"passengers", "passive_passengers":
+			return "👥 PASSENGERS"
+		"unique_countries":
+			return "◎ ROUTES"
+		"resources":
+			return "◆ COUNTRY RESOURCES"
+		"coins":
+			return "● ECONOMY"
+		"xp":
+			return "★ PROGRESSION"
+		"npc_services":
+			return "◇ VISITORS"
+		_:
+			return "MISSION"
 
 func _claim_reward(tier_number: int, track: String) -> void:
 	pass_reward_claim_requested.emit(tier_number, track)

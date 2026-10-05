@@ -34,6 +34,9 @@ static func ensure_state(state: Dictionary, unix_time: float, level: int) -> boo
 	if not state.has("pass_cosmetics"):
 		state["pass_cosmetics"] = {}
 		changed = true
+	if not state.has("purchase_receipts"):
+		state["purchase_receipts"] = {}
+		changed = true
 
 	var day_key := _day_key(unix_time)
 	var week_key := _week_key(unix_time)
@@ -317,9 +320,17 @@ static func complete_resource_grant(
 	next["pending_resource_grants"] = next_pending
 	return next
 
-static func grant_verified_product(state: Dictionary, product_id: String) -> Dictionary:
+static func grant_verified_product(
+	state: Dictionary,
+	product_id: String,
+	purchase_token: String
+) -> Dictionary:
+	var token := purchase_token.strip_edges()
 	var product := MissionPassCatalog.product(product_id)
-	if product.is_empty():
+	if product.is_empty() or token.is_empty():
+		return {}
+	var receipts: Dictionary = state.get("purchase_receipts", {})
+	if receipts.has(token):
 		return {}
 	var next := state.duplicate(true)
 	if bool(product.get("premium_pass", false)):
@@ -330,6 +341,14 @@ static func grant_verified_product(state: Dictionary, product_id: String) -> Dic
 		next["aero_tokens"] = int(next.get("aero_tokens", next.get("gems", 0))) + int(product["aero_tokens"])
 	else:
 		return {}
+	var next_receipts: Dictionary = next.get("purchase_receipts", {})
+	next_receipts[token] = {
+		"product_id": product_id,
+		"month_key": String((next.get("mission_pass", {}) as Dictionary).get("month_key", ""))
+	}
+	while next_receipts.size() > 512:
+		next_receipts.erase(next_receipts.keys()[0])
+	next["purchase_receipts"] = next_receipts
 	_sync_aero_wallet(next)
 	return next
 

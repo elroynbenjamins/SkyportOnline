@@ -88,6 +88,19 @@ func _run() -> void:
 	check((pass_state.get("weekly", []) as Array).size() == 5, "New month should start with only the current weekly set.")
 	check((pass_state.get("daily", []) as Array).size() == 4, "New month should still create four daily missions.")
 
+	var booster_state := AirportProgressionRules.new_state("booster-test", 1)
+	booster_state["booster_inventory"] = {"booster_tailwind": 2, "booster_gold": 1}
+	check(MissionBoosterRules.activate(booster_state, "booster_tailwind", OCT_05), "Owned Tailwind booster should activate.")
+	check(int((booster_state.get("booster_inventory", {}) as Dictionary).get("booster_tailwind", -1)) == 1, "Activating a booster should consume exactly one copy.")
+	check(MissionBoosterRules.remaining_seconds(booster_state, "booster_tailwind", OCT_05) == 7200, "First booster copy should grant exactly two hours.")
+	check(MissionBoosterRules.activate(booster_state, "booster_tailwind", OCT_05 + 60.0), "Second Tailwind copy should extend the active timer.")
+	check(MissionBoosterRules.remaining_seconds(booster_state, "booster_tailwind", OCT_05 + 60.0) == 14340, "Using another active booster should add two hours to remaining duration.")
+	var active_boosts := MissionBoosterRules.active_profile(booster_state, OCT_05 + 60.0)
+	check(is_equal_approx(float(active_boosts.get("flight_duration", 1.0)), 0.90), "Tailwind should apply a 10% travel-time reduction.")
+	check(is_equal_approx(float(active_boosts.get("flight_gold", 1.0)), 1.0), "Unactivated Gold booster should not affect flight rewards.")
+	active_boosts = MissionBoosterRules.active_profile(booster_state, OCT_05 + 15000.0)
+	check(is_equal_approx(float(active_boosts.get("flight_duration", 0.0)), 1.0), "Expired boosters should automatically stop affecting gameplay.")
+
 	var bridge := RewardedPassengerAdBridge.new()
 	root.add_child(bridge)
 	bridge.action_reward_granted.connect(_on_action_reward)

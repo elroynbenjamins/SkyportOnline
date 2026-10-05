@@ -214,7 +214,10 @@ func _draw() -> void:
 		)
 		draw_set_transform(
 			Vector2.ZERO,
-			-global_rotation,
+			-global_rotation
+			+ GroundServiceVehicleArt.turn_lean(
+				global_rotation
+			),
 			Vector2.ONE
 		)
 		draw_texture_rect_region(
@@ -327,7 +330,10 @@ func _draw_service_beacon(
 	)
 	draw_set_transform(
 		Vector2.ZERO,
-		-global_rotation,
+		-global_rotation
+		+ GroundServiceVehicleArt.turn_lean(
+			global_rotation
+		),
 		Vector2.ONE
 	)
 	var beacon_position := Vector2(
@@ -473,7 +479,10 @@ func _draw_shadow() -> void:
 	)
 	draw_set_transform(
 		local_offset,
-		-global_rotation,
+		-global_rotation
+		+ GroundServiceVehicleArt.turn_lean(
+			global_rotation
+		),
 		Vector2(1.0, aspect)
 	)
 	draw_circle(

@@ -16,15 +16,35 @@ const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
 
-const OWNED_A := Color("75ae58")
-const OWNED_B := Color("70a854")
-const LOCKED_A := Color("384c45")
-const LOCKED_B := Color("334640")
-const AVAILABLE_A := Color("676b49")
-const AVAILABLE_B := Color("5f6343")
-const GRID_LINE := Color("b8d6a9", 0.12)
-const LOCKED_GRID_LINE := Color("84958d", 0.22)
-const AVAILABLE_GRID_LINE := Color("e2c46b", 0.55)
+const TERRAIN_BACKGROUND := Color("557f4b")
+const OWNED_GRASS_VARIANTS := [
+	Color("6fa557"),
+	Color("73aa5b"),
+	Color("69a052"),
+	Color("78ad60"),
+	Color("65994f"),
+	Color("70a85a")
+]
+const AVAILABLE_GRASS_VARIANTS := [
+	Color("747b50"),
+	Color("7a8054"),
+	Color("70784d"),
+	Color("81865a")
+]
+const LOCKED_GRASS_VARIANTS := [
+	Color("3b5046"),
+	Color("40564a"),
+	Color("384c43"),
+	Color("455a4e")
+]
+const GRID_LINE := Color("d9efc8", 0.025)
+const LOCKED_GRID_LINE := Color("97aaa0", 0.11)
+const AVAILABLE_GRID_LINE := Color("e4c96d", 0.16)
+const TERRAIN_PATCH_LIGHT := Color("9ac875", 0.08)
+const TERRAIN_PATCH_DARK := Color("3f773f", 0.08)
+const TERRAIN_SOIL := Color("9b825c", 0.10)
+const TERRAIN_STONE := Color("d4d0c4", 0.26)
+const TERRAIN_FLOWER := Color("f3d66b", 0.72)
 const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.38)
 const PREVIEW_INVALID := Color("ef6461", 0.46)
@@ -169,7 +189,7 @@ func _add_parcel(id: String, px: int, py: int, level: int, cost: int, owned: boo
 
 
 func _draw() -> void:
-	draw_rect(Rect2(-1800, -700, 3600, 2600), Color("456f49"))
+	_draw_world_terrain_background()
 
 	for py in range(PARCEL_ROWS):
 		for px in range(PARCEL_COLUMNS):
@@ -193,6 +213,63 @@ func _draw() -> void:
 	_draw_selected_outline()
 
 
+func _draw_world_terrain_background() -> void:
+	draw_rect(
+		Rect2(-1800, -700, 3600, 2600),
+		TERRAIN_BACKGROUND
+	)
+
+	var landscape_patches := [
+		[
+			Vector2(-920, 220),
+			Vector2(1.0, 0.38),
+			430.0,
+			Color("73a85c", 0.22)
+		],
+		[
+			Vector2(780, 80),
+			Vector2(1.0, 0.34),
+			520.0,
+			Color("477943", 0.17)
+		],
+		[
+			Vector2(-360, 860),
+			Vector2(1.0, 0.31),
+			620.0,
+			Color("7eaa5f", 0.14)
+		],
+		[
+			Vector2(760, 980),
+			Vector2(1.0, 0.36),
+			520.0,
+			Color("4b7742", 0.16)
+		],
+		[
+			Vector2(-1120, 1120),
+			Vector2(1.0, 0.42),
+			460.0,
+			Color("9a865d", 0.08)
+		]
+	]
+	for patch_variant in landscape_patches:
+		var patch: Array = patch_variant
+		draw_set_transform(
+			patch[0],
+			0.0,
+			patch[1]
+		)
+		draw_circle(
+			Vector2.ZERO,
+			float(patch[2]),
+			patch[3]
+		)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
 func _draw_parcel_tiles(parcel: Dictionary) -> void:
 	var start_x: int = int(parcel["px"]) * PARCEL_SIZE
 	var start_y: int = int(parcel["py"]) * PARCEL_SIZE
@@ -202,48 +279,220 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 			String(parcel.get("id", ""))
 		).get("progression_state", "future")
 	)
+	var terrain_state := "owned"
+	if not owned:
+		terrain_state = (
+			"available"
+			if progression_state == "available"
+			else "locked"
+		)
 
 	for y in range(start_y, start_y + PARCEL_SIZE):
 		for x in range(start_x, start_x + PARCEL_SIZE):
+			var tile := Vector2i(x, y)
 			var center := tile_to_world(Vector2(x, y))
 			var points := _tile_points(center)
-			var checker := (x + y) % 2 == 0
-			var fill := OWNED_A if checker else OWNED_B
-			var line := GRID_LINE
-			if not owned:
-				if progression_state == "available":
-					fill = AVAILABLE_A if checker else AVAILABLE_B
-					line = AVAILABLE_GRID_LINE
-				else:
-					fill = LOCKED_A if checker else LOCKED_B
-					line = LOCKED_GRID_LINE
+			var fill := _terrain_color_for(
+				tile,
+				terrain_state
+			)
+			var line := _terrain_line_for_state(
+				terrain_state
+			)
+
 			draw_colored_polygon(points, fill)
-			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
-			if owned:
-				_draw_grass_detail(Vector2i(x, y), center)
+			if line.a > 0.0:
+				draw_polyline(
+					PackedVector2Array([
+						points[0],
+						points[1],
+						points[2],
+						points[3],
+						points[0]
+					]),
+					line,
+					1.0
+				)
+			_draw_terrain_detail(
+				tile,
+				center,
+				terrain_state
+			)
 
 
-func _draw_grass_detail(tile: Vector2i, center: Vector2) -> void:
-	var seed := absi(tile.x * 37 + tile.y * 53)
-	if seed % 3 != 0:
-		return
-	var offset := Vector2(
-		float((seed % 17) - 8),
-		float((int(seed / 3.0) % 9) - 4)
+func _terrain_hash(
+	tile: Vector2i,
+	salt: int = 0
+) -> int:
+	return absi(
+		tile.x * 92837111
+		+ tile.y * 689287499
+		+ salt * 283923481
 	)
-	var tuft := center + offset
-	draw_line(
-		tuft + Vector2(-2.0, 2.0),
-		tuft + Vector2(0.0, -2.0),
-		Color("d9efb7", 0.30),
-		1.0
+
+
+func _terrain_color_for(
+	tile: Vector2i,
+	state: String
+) -> Color:
+	var variants: Array = OWNED_GRASS_VARIANTS
+	if state == "available":
+		variants = AVAILABLE_GRASS_VARIANTS
+	elif state == "locked":
+		variants = LOCKED_GRASS_VARIANTS
+
+	var index := (
+		_terrain_hash(tile, 7)
+		% variants.size()
 	)
-	draw_line(
-		tuft + Vector2(2.0, 2.0),
-		tuft + Vector2(0.0, -2.0),
-		Color("4e7f43", 0.28),
-		1.0
+	return variants[index]
+
+
+func _terrain_line_for_state(
+	state: String
+) -> Color:
+	match state:
+		"available":
+			return AVAILABLE_GRID_LINE
+		"locked":
+			return LOCKED_GRID_LINE
+		_:
+			return GRID_LINE
+
+
+func _draw_terrain_detail(
+	tile: Vector2i,
+	center: Vector2,
+	state: String
+) -> void:
+	var seed := _terrain_hash(tile, 19)
+	var patch_kind := seed % 13
+
+	if state == "owned":
+		if patch_kind in [1, 7]:
+			_draw_terrain_soft_patch(
+				center
+				+ Vector2(
+					float((seed % 19) - 9),
+					float((int(seed / 7) % 9) - 4)
+				),
+				10.0 + float(seed % 6),
+				TERRAIN_PATCH_LIGHT
+				if patch_kind == 1
+				else TERRAIN_PATCH_DARK
+			)
+		elif patch_kind == 10:
+			_draw_terrain_soft_patch(
+				center + Vector2(-5, 2),
+				8.0,
+				TERRAIN_SOIL
+			)
+	elif state == "available":
+		if patch_kind in [3, 8, 11]:
+			_draw_terrain_soft_patch(
+				center
+				+ Vector2(
+					float((seed % 15) - 7),
+					float((int(seed / 5) % 7) - 3)
+				),
+				9.0 + float(seed % 5),
+				Color("b59a62", 0.10)
+			)
+	else:
+		if patch_kind in [2, 5, 9]:
+			_draw_terrain_soft_patch(
+				center
+				+ Vector2(
+					float((seed % 13) - 6),
+					float((int(seed / 11) % 7) - 3)
+				),
+				8.0 + float(seed % 5),
+				Color("243c36", 0.12)
+			)
+
+	var tuft_count := 1
+	if state == "owned" and seed % 5 == 0:
+		tuft_count = 2
+	elif state == "locked" and seed % 4 == 0:
+		tuft_count = 2
+
+	for index in range(tuft_count):
+		var local_seed := _terrain_hash(
+			tile,
+			31 + index * 17
+		)
+		var tuft := center + Vector2(
+			float((local_seed % 25) - 12),
+			float((int(local_seed / 7) % 13) - 6)
+		)
+		var light := Color("c8e7a9", 0.26)
+		var dark := Color("416f3c", 0.30)
+		if state == "available":
+			light = Color("d5c58c", 0.24)
+			dark = Color("625f3f", 0.28)
+		elif state == "locked":
+			light = Color("82998a", 0.18)
+			dark = Color("263f36", 0.30)
+
+		draw_line(
+			tuft + Vector2(-2.0, 2.0),
+			tuft + Vector2(0.0, -2.5),
+			light,
+			1.0
+		)
+		draw_line(
+			tuft + Vector2(2.0, 2.0),
+			tuft + Vector2(0.0, -2.5),
+			dark,
+			1.0
+		)
+
+	if state == "owned" and seed % 29 == 0:
+		draw_circle(
+			center + Vector2(9, -2),
+			1.5,
+			TERRAIN_FLOWER
+		)
+		draw_circle(
+			center + Vector2(7, -1),
+			1.0,
+			Color("f5f0d6", 0.72)
+		)
+	elif seed % 23 == 0:
+		draw_circle(
+			center + Vector2(-10, 3),
+			2.2,
+			Color(0.10, 0.13, 0.10, 0.10)
+		)
+		draw_circle(
+			center + Vector2(-10, 2),
+			1.6,
+			TERRAIN_STONE
+		)
+
+
+func _draw_terrain_soft_patch(
+	position: Vector2,
+	radius: float,
+	color: Color
+) -> void:
+	draw_set_transform(
+		position,
+		0.0,
+		Vector2(1.0, 0.42)
 	)
+	draw_circle(
+		Vector2.ZERO,
+		radius,
+		color
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
 
 
 func _draw_owned_airport_environment() -> void:

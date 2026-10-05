@@ -70,6 +70,13 @@ const SERVICE_ROAD_OUTER := Color("6b655e")
 const SERVICE_ROAD_INNER := Color("837a70")
 const PAVEMENT_HIGHLIGHT := Color("ffffff", 0.16)
 const PAVEMENT_SHADOW := Color("182226", 0.24)
+const APRON_CONCRETE := Color("d8d4cb")
+const APRON_CONCRETE_LIGHT := Color("ebe7df")
+const APRON_CONCRETE_DARK := Color("aaa79f")
+const APRON_JOINT := Color("747b7c", 0.18)
+const APRON_YELLOW := Color("f1c84c")
+const APRON_RED := Color("d85f58")
+const APRON_LIGHT := Color("fff2bd")
 const FENCE_COLOR := Color("53656b")
 const FENCE_MESH := Color("91a4aa", 0.52)
 const PERIMETER_LIGHT := Color("fff0bd")
@@ -248,6 +255,7 @@ func _draw() -> void:
 	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
+	_draw_starter_apron_surface()
 	_draw_buildings()
 	_draw_airside_props()
 	_draw_hovered_building_outline()
@@ -1112,6 +1120,407 @@ func get_parcel_tile_count(parcel_id: String) -> int:
 	return PARCEL_SIZE * PARCEL_SIZE
 
 
+func get_starter_apron_visual_snapshot() -> Dictionary:
+	var terminal: Dictionary = {}
+	var stands: Array[Dictionary] = []
+	for building in placed_buildings:
+		var id := String(building.get("definition_id", ""))
+		if id == "small_terminal" and terminal.is_empty():
+			terminal = building.duplicate(true)
+		elif id == "small_stand":
+			stands.append(building.duplicate(true))
+
+	if terminal.is_empty() or stands.is_empty():
+		return {
+			"active": false,
+			"stand_count": stands.size()
+		}
+
+	var terminal_definition := BuildingCatalog.get_definition(
+		"small_terminal"
+	)
+	var terminal_center := _building_center_tile(
+		terminal,
+		terminal_definition,
+		_footprint_for(
+			terminal_definition,
+			int(terminal.get("rotation", 0))
+		)
+	)
+	var nearby_stands: Array[Dictionary] = []
+	for stand in stands:
+		var stand_definition := BuildingCatalog.get_definition(
+			"small_stand"
+		)
+		var stand_center := _building_center_tile(
+			stand,
+			stand_definition,
+			_footprint_for(
+				stand_definition,
+				int(stand.get("rotation", 0))
+			)
+		)
+		if terminal_center.distance_to(stand_center) <= 7.5:
+			nearby_stands.append(stand)
+
+	if nearby_stands.is_empty():
+		return {
+			"active": false,
+			"stand_count": 0
+		}
+
+	var min_x := int(terminal.get("origin", Vector2i.ZERO).x)
+	var min_y := int(terminal.get("origin", Vector2i.ZERO).y)
+	var terminal_fp := _footprint_for(
+		terminal_definition,
+		int(terminal.get("rotation", 0))
+	)
+	var max_x := min_x + terminal_fp.x - 1
+	var max_y := min_y + terminal_fp.y - 1
+
+	for stand in nearby_stands:
+		var stand_definition := BuildingCatalog.get_definition(
+			"small_stand"
+		)
+		var stand_fp := _footprint_for(
+			stand_definition,
+			int(stand.get("rotation", 0))
+		)
+		var stand_origin: Vector2i = stand.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		min_x = mini(min_x, stand_origin.x)
+		min_y = mini(min_y, stand_origin.y)
+		max_x = maxi(max_x, stand_origin.x + stand_fp.x - 1)
+		max_y = maxi(max_y, stand_origin.y + stand_fp.y - 1)
+
+	min_x -= 1
+	min_y -= 1
+	max_x += 1
+	max_y += 1
+
+	var origin := Vector2i(min_x, min_y)
+	var footprint := Vector2i(
+		max_x - min_x + 1,
+		max_y - min_y + 1
+	)
+	if footprint.x > 10 or footprint.y > 9:
+		return {
+			"active": false,
+			"stand_count": nearby_stands.size()
+		}
+
+	for y in range(origin.y, origin.y + footprint.y):
+		for x in range(origin.x, origin.x + footprint.x):
+			var parcel := _parcel_for_tile(Vector2i(x, y))
+			if (
+				parcel.is_empty()
+				or not bool(parcel.get("owned", false))
+			):
+				return {
+					"active": false,
+					"stand_count": nearby_stands.size()
+				}
+
+	return {
+		"active": true,
+		"terminal_uid": int(terminal.get("uid", -1)),
+		"stand_count": nearby_stands.size(),
+		"stand_uids": nearby_stands.map(
+			func(item: Dictionary) -> int:
+				return int(item.get("uid", -1))
+		),
+		"origin": origin,
+		"footprint": footprint,
+		"floodlights": 4,
+		"service_bays": nearby_stands.size() * 2
+	}
+
+
+func _draw_starter_apron_surface() -> void:
+	var snapshot := get_starter_apron_visual_snapshot()
+	if not bool(snapshot.get("active", false)):
+		return
+
+	var origin: Vector2i = snapshot.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var footprint: Vector2i = snapshot.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var polygon := _footprint_polygon(origin, footprint)
+	if polygon.size() < 4:
+		return
+
+	var shadow := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shadow.append(point + Vector2(6, 8))
+	draw_colored_polygon(
+		shadow,
+		Color(0.03, 0.07, 0.08, 0.24)
+	)
+
+	var shoulder := PackedVector2Array()
+	var center := Vector2.ZERO
+	for point_variant in polygon:
+		center += point_variant as Vector2
+	center /= float(polygon.size())
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shoulder.append(
+			center + (point - center) * 1.018
+		)
+	draw_colored_polygon(
+		shoulder,
+		Color("b9b5ad")
+	)
+	draw_colored_polygon(
+		polygon,
+		APRON_CONCRETE
+	)
+
+	# The apron is one visual slab; sparse expansion joints suggest large
+	# concrete panels without bringing back a visible placement grid.
+	for fraction in [0.25, 0.50, 0.75]:
+		draw_line(
+			polygon[0].lerp(polygon[1], float(fraction)),
+			polygon[3].lerp(polygon[2], float(fraction)),
+			APRON_JOINT,
+			1.0
+		)
+	for fraction in [0.33, 0.66]:
+		draw_line(
+			polygon[0].lerp(polygon[3], float(fraction)),
+			polygon[1].lerp(polygon[2], float(fraction)),
+			APRON_JOINT,
+			1.0
+		)
+
+	draw_line(
+		polygon[0],
+		polygon[1],
+		Color("ffffff", 0.32),
+		2.0
+	)
+	draw_line(
+		polygon[0],
+		polygon[3],
+		Color("fffdf7", 0.18),
+		1.4
+	)
+	draw_line(
+		polygon[2],
+		polygon[3],
+		Color("5d6261", 0.28),
+		2.4
+	)
+	draw_line(
+		polygon[1],
+		polygon[2],
+		Color("535b5c", 0.20),
+		1.8
+	)
+
+	_draw_starter_terminal_forecourt(
+		int(snapshot.get("terminal_uid", -1))
+	)
+	var stand_uids: Array = snapshot.get("stand_uids", [])
+	for stand_uid_variant in stand_uids:
+		_draw_starter_stand_dressing(
+			int(stand_uid_variant)
+		)
+
+	var lights := [
+		polygon[0].lerp(polygon[1], 0.18),
+		polygon[0].lerp(polygon[1], 0.78),
+		polygon[3].lerp(polygon[2], 0.22),
+		polygon[3].lerp(polygon[2], 0.82)
+	]
+	for base_variant in lights:
+		_draw_apron_floodlight(
+			(base_variant as Vector2) + Vector2(0, -2)
+		)
+
+
+func _draw_starter_terminal_forecourt(
+	terminal_uid: int
+) -> void:
+	var terminal := _building_by_uid(terminal_uid)
+	if terminal.is_empty():
+		return
+	var definition := BuildingCatalog.get_definition(
+		"small_terminal"
+	)
+	var footprint := _footprint_for(
+		definition,
+		int(terminal.get("rotation", 0))
+	)
+	var polygon := _footprint_polygon(
+		terminal.get("origin", Vector2i.ZERO),
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var front_a := polygon[3]
+	var front_b := polygon[2]
+	draw_line(
+		front_a.lerp(front_b, 0.08),
+		front_a.lerp(front_b, 0.92),
+		Color("4a5559", 0.78),
+		13.0
+	)
+	draw_dashed_line(
+		front_a.lerp(front_b, 0.10),
+		front_a.lerp(front_b, 0.90),
+		Color("f5d16b", 0.92),
+		1.7,
+		10.0
+	)
+
+	for fraction in [0.24, 0.50, 0.76]:
+		var bay_center := front_a.lerp(
+			front_b,
+			float(fraction)
+		) + Vector2(0, -1)
+		draw_line(
+			bay_center + Vector2(-8, 4),
+			bay_center + Vector2(8, -4),
+			Color("f6f2e8", 0.64),
+			1.2
+		)
+
+	# Small planted forecourt pockets make the terminal read as a campus,
+	# not a building dropped directly onto a placement tile.
+	for fraction in [0.14, 0.86]:
+		var planter := front_a.lerp(
+			front_b,
+			float(fraction)
+		) + Vector2(0, 10)
+		draw_circle(
+			planter + Vector2(2, 3),
+			7.5,
+			Color(0.04, 0.08, 0.06, 0.20)
+		)
+		draw_circle(
+			planter,
+			6.5,
+			Color("4e8d4d")
+		)
+		draw_circle(
+			planter + Vector2(-2, -2),
+			3.6,
+			Color("78b65f")
+		)
+
+
+func _draw_starter_stand_dressing(
+	stand_uid: int
+) -> void:
+	var stand := _building_by_uid(stand_uid)
+	if stand.is_empty():
+		return
+	var definition := BuildingCatalog.get_definition(
+		"small_stand"
+	)
+	var footprint := _footprint_for(
+		definition,
+		int(stand.get("rotation", 0))
+	)
+	var center := _footprint_center_world(
+		stand.get("origin", Vector2i.ZERO),
+		footprint
+	)
+
+	# Equipment staging boxes sit outside the aircraft safety envelope.
+	for side in [-1.0, 1.0]:
+		var bay_center := center + Vector2(
+			38.0 * float(side),
+			15.0
+		)
+		var box := Rect2(
+			bay_center + Vector2(-10, -5),
+			Vector2(20, 10)
+		)
+		draw_rect(
+			box,
+			Color(0, 0, 0, 0),
+			false,
+			1.4
+		)
+		draw_rect(
+			box,
+			Color("f5efe2", 0.72),
+			false,
+			1.2
+		)
+		_draw_safety_cone(
+			bay_center + Vector2(
+				-7.0 * float(side),
+				-7
+			)
+		)
+
+	# Red clearance ticks and yellow guide marks provide the denser apron
+	# language from the target concept while remaining subordinate to planes.
+	draw_line(
+		center + Vector2(-49, -9),
+		center + Vector2(-31, -18),
+		Color(APRON_RED, 0.84),
+		2.0
+	)
+	draw_line(
+		center + Vector2(49, -9),
+		center + Vector2(31, -18),
+		Color(APRON_RED, 0.84),
+		2.0
+	)
+	draw_line(
+		center + Vector2(0, 25),
+		center + Vector2(0, 40),
+		Color(APRON_YELLOW, 0.88),
+		2.4
+	)
+
+
+func _draw_apron_floodlight(
+	base: Vector2
+) -> void:
+	draw_line(
+		base + Vector2(3, 4),
+		base + Vector2(3, -35),
+		Color(0.02, 0.05, 0.06, 0.20),
+		4.0
+	)
+	draw_line(
+		base,
+		base + Vector2(0, -38),
+		Color("69777c"),
+		3.0
+	)
+	var head := base + Vector2(0, -40)
+	draw_rect(
+		Rect2(head + Vector2(-8, -3), Vector2(16, 6)),
+		Color("4f5e63"),
+		true
+	)
+	for x in [-4.5, 4.5]:
+		draw_circle(
+			head + Vector2(float(x), 0),
+			2.2,
+			Color(0.02, 0.04, 0.05, 0.32)
+		)
+		draw_circle(
+			head + Vector2(float(x), -1),
+			1.5,
+			APRON_LIGHT
+		)
+
+
 func _draw_buildings() -> void:
 	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
 	buildings_to_draw.sort_custom(Callable(self, "_sort_buildings_by_depth"))
@@ -1191,7 +1600,13 @@ func _building_ground_color(
 	if id.contains("runway"):
 		return Color("596167", 0.80)
 	if id.contains("stand"):
-		return Color("d3ccc1", 0.66)
+		return Color(APRON_CONCRETE, 0.26)
+	if id in [
+		"small_terminal",
+		"basic_fuel",
+		"ground_ops_depot"
+	]:
+		return Color(APRON_CONCRETE, 0.20)
 
 	var category := String(
 		definition.get("category", "")

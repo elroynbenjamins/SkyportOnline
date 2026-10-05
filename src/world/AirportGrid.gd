@@ -129,6 +129,7 @@ var preview_ignore_uid := -1
 var preview_stored_uid := -1
 var selected_synergy_uid := -1
 var charter_visual_state: Dictionary = {}
+var charter_move_preview: Dictionary = {}
 var charter_turnaround_visual: CharterTurnaroundVisual
 
 
@@ -301,6 +302,7 @@ func _draw() -> void:
 	_draw_runway_hold_short_markings()
 	_draw_runway_operational_indicators()
 	_draw_airside_warnings()
+	_draw_charter_structure_preview()
 	_draw_build_preview()
 	_draw_preview_snap_fx()
 	_draw_placement_confirm_fx()
@@ -3175,7 +3177,8 @@ func _draw_charter_visual_item(
 	definition: Dictionary,
 	origin: Vector2i,
 	footprint: Vector2i,
-	rotation: int
+	rotation: int,
+	modulate: Color = Color.WHITE
 ) -> void:
 	if String(
 		definition.get(
@@ -3187,7 +3190,8 @@ func _draw_charter_visual_item(
 			definition,
 			origin,
 			footprint,
-			rotation
+			rotation,
+			modulate
 		)
 		return
 
@@ -3239,7 +3243,128 @@ func _draw_charter_visual_item(
 	draw_texture_rect(
 		texture,
 		rect,
-		false
+		false,
+		modulate
+	)
+
+
+func set_charter_structure_preview(
+	visual_id: String,
+	world_origin: Vector2i,
+	rotation: int = 0
+) -> Dictionary:
+	var status := get_charter_structure_placement_status(
+		visual_id,
+		world_origin,
+		rotation
+	)
+	charter_move_preview = {
+		"visual_id": visual_id,
+		"origin": world_origin,
+		"rotation": rotation % 2,
+		"status": status.duplicate(true)
+	}
+	queue_redraw()
+	return status
+
+
+func clear_charter_structure_preview() -> void:
+	if charter_move_preview.is_empty():
+		return
+	charter_move_preview = {}
+	queue_redraw()
+
+
+func _draw_charter_structure_preview() -> void:
+	if (
+		charter_move_preview.is_empty()
+		or not _charter_district_visible()
+	):
+		return
+
+	var visual_id := String(
+		charter_move_preview.get(
+			"visual_id",
+			""
+		)
+	)
+	var definition := CharterVisualCatalog.visual_for(
+		visual_id
+	)
+	if definition.is_empty():
+		return
+
+	var origin: Vector2i = charter_move_preview.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var rotation := int(
+		charter_move_preview.get(
+			"rotation",
+			0
+		)
+	) % 2
+	var item := {
+		"id": visual_id,
+		"origin": (
+			origin
+			- _charter_district_base_tile()
+		),
+		"rotation": rotation
+	}
+	var footprint := CharterDistrictLayout.footprint_for_item(
+		item
+	)
+	var status: Dictionary = charter_move_preview.get(
+		"status",
+		{}
+	)
+	var valid := bool(
+		status.get(
+			"valid",
+			false
+		)
+	)
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var fill := PREVIEW_VALID if valid else PREVIEW_INVALID
+	draw_colored_polygon(
+		polygon,
+		fill
+	)
+	var outline := (
+		Color("8ff0ae", 0.98)
+		if valid
+		else Color("ff6f69", 0.98)
+	)
+	draw_polyline(
+		PackedVector2Array([
+			polygon[0],
+			polygon[1],
+			polygon[2],
+			polygon[3],
+			polygon[0]
+		]),
+		outline,
+		3.0
+	)
+
+	var ghost := (
+		Color(0.92, 1.0, 0.95, 0.76)
+		if valid
+		else Color(1.0, 0.56, 0.54, 0.72)
+	)
+	_draw_charter_visual_item(
+		definition,
+		origin,
+		footprint,
+		rotation,
+		ghost
 	)
 
 

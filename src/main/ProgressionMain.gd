@@ -884,6 +884,7 @@ func _on_social_visit_requested(request: Dictionary) -> void:
 		return
 	var aircraft := CareerAircraft.new()
 	aircraft.configure_aircraft_type(String(request.get("aircraft_type_id", "pico_p8")))
+	NpcTrafficDirector.apply_behavior(aircraft)
 	aircraft.configure_taxi_traffic(taxi_traffic)
 	aircraft.configure_social_visit(request)
 	aircraft.assign_flight_plan(SocialFlightRules.create_social_flight_plan(request))

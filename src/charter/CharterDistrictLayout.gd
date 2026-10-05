@@ -28,7 +28,7 @@ static func structure_items() -> Array[Dictionary]:
 		{
 			"id": "logistics_gate_checkpoint",
 			"origin": Vector2i(6, 0),
-			"rotation": 1,
+			"rotation": 0,
 			"layer": 34
 		}
 	]

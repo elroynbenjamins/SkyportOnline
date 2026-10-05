@@ -145,9 +145,68 @@ func _run() -> void:
 		_fail("Restored layout should keep the moved building upgrade level.")
 		return
 
+
+	var atc := grid._place_building_internal(
+		"atc_tower",
+		Vector2i(2, 2),
+		0
+	)
+	grid._rebuild_occupied_cells()
+	var atc_definition := BuildingCatalog.get_definition(
+		"atc_tower"
+	)
+	var atc_footprint := grid._footprint_for(
+		atc_definition,
+		0
+	)
+	var atc_center := grid._footprint_center_world(
+		Vector2i(2, 2),
+		atc_footprint
+	)
+	var tower_cab_point := atc_center + Vector2(0, -70)
+	var cab_tile := grid.world_to_tile(tower_cab_point)
+	if grid.occupied_cells.has(
+		grid._cell_key(cab_tile)
+	):
+		_fail(
+			"ATC visual-hit test point must sit above its ground footprint."
+		)
+		return
+
+	var visual_hit := grid._building_at_visual_position(
+		tower_cab_point
+	)
+	if int(visual_hit.get("uid", -1)) != int(
+		atc.get("uid", -2)
+	):
+		_fail(
+			"Tapping the visible upper ATC artwork should select the tower."
+		)
+		return
+
+	var selected_visual_uids: Array[int] = []
+	grid.building_selected_world.connect(
+		func(selected: Dictionary) -> void:
+			selected_visual_uids.append(
+				int(selected.get("uid", -1))
+			)
+	)
+	grid.select_world_position(tower_cab_point)
+	if (
+		selected_visual_uids.is_empty()
+		or selected_visual_uids[-1] != int(
+			atc.get("uid", -2)
+		)
+	):
+		_fail(
+			"World selection should use visible sprite art before ground-tile fallback."
+		)
+		return
+
 	print(
 		"Building move mode passed: eligibility, self-overlap, collision, "
-		+ "cancel, confirm, upgrade preservation and layout restore."
+		+ "cancel, confirm, upgrade preservation, layout restore and "
+		+ "high-detail visual hit selection."
 	)
 	quit(0)
 

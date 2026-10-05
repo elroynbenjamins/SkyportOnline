@@ -145,20 +145,23 @@ func _install_career_pin() -> void:
 			if label is Label and label.text.begins_with("BUILD YOUR AIRPORT"):
 				child.remove_child(label)
 				label.queue_free()
-				child.offset_left = -430
+				child.offset_left = -500
 				var actions := HBoxContainer.new()
-				actions.add_theme_constant_override("separation", 6)
+				actions.add_theme_constant_override("separation", 7)
 				child.add_child(actions)
 				career_pin = Button.new()
 				career_pin.clip_text = true
 				career_pin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				career_pin.custom_minimum_size = Vector2(245, 50)
 				career_pin.add_theme_font_size_override("font_size", 12)
+				GameUIStyle.apply_button(career_pin, "primary", true)
 				career_pin.pressed.connect(_open_career)
 				actions.add_child(career_pin)
 				mission_pin = Button.new()
 				mission_pin.clip_text = true
-				mission_pin.custom_minimum_size.x = 155
+				mission_pin.custom_minimum_size = Vector2(170, 50)
 				mission_pin.add_theme_font_size_override("font_size", 12)
+				GameUIStyle.apply_button(mission_pin, "primary", true)
 				mission_pin.pressed.connect(_open_missions)
 				actions.add_child(mission_pin)
 				return
@@ -395,8 +398,14 @@ func _refresh_mission_ui() -> void:
 		var claimable := MissionPassRules.claimable_count(progression)
 		var completed := MissionPassRules.completed_daily_count(progression)
 		mission_pin.text = "MISSIONS\n%d REWARD%s READY" % [claimable, "" if claimable == 1 else "S"] if claimable > 0 else "MISSIONS\nDAILY %d / 4" % completed
-		GameUIStyle.apply_button(mission_pin, "gold" if claimable > 0 else "nav", true)
+		GameUIStyle.apply_button(mission_pin, "gold" if claimable > 0 else "primary", true)
 	hud.set_player_data(player_level, coins, gems)
+	hud.set_level_progress(
+		player_xp,
+		AirportProgressionRules.xp_for_level(player_level),
+		AirportProgressionRules.xp_for_level(mini(player_level + 1, AirportProgressionRules.MAX_LEVEL)),
+		player_level >= AirportProgressionRules.MAX_LEVEL
+	)
 
 func _open_missions() -> void:
 	if career_screen != null:
@@ -724,8 +733,14 @@ func _refresh_career_ui() -> void:
 		var quest: Dictionary = status.get("quest", {})
 		career_pin.text = "CAREER COMPLETE" if quest.is_empty() else "%s\n%s" % [
 			"CAREER • REWARD READY" if bool(status.get("ready", false)) else "CAREER %d / %d" % [int(status.get("count", 0)), int(status.get("target", 1))], String(quest.get("title", ""))]
-		GameUIStyle.apply_button(career_pin, "gold" if bool(status.get("ready", false)) else "nav", true)
+		GameUIStyle.apply_button(career_pin, "gold" if bool(status.get("ready", false)) else "primary", true)
 	hud.set_player_data(player_level, coins, gems)
+	hud.set_level_progress(
+		player_xp,
+		AirportProgressionRules.xp_for_level(player_level),
+		AirportProgressionRules.xp_for_level(mini(player_level + 1, AirportProgressionRules.MAX_LEVEL)),
+		player_level >= AirportProgressionRules.MAX_LEVEL
+	)
 
 func _open_career() -> void:
 	if mission_pass_screen != null:

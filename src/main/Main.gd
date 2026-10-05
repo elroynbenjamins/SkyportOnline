@@ -2880,7 +2880,7 @@ func _on_placement_expand_requested(
 		return
 	if coins < cost:
 		hud.set_operation_status(
-			"Need 🪙 %s more to expand here." % _format_number(
+			"Need 🪙 %d more to expand here." % (
 				cost - coins
 			),
 			"warning"

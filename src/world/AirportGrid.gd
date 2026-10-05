@@ -288,6 +288,12 @@ func get_parcel_world_center(parcel_id: String) -> Vector2:
 	return tile_to_world(center_tile)
 
 
+func get_parcel_tile_count(parcel_id: String) -> int:
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return 0
+	return PARCEL_SIZE * PARCEL_SIZE
+
+
 func _draw_buildings() -> void:
 	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
 	buildings_to_draw.sort_custom(Callable(self, "_sort_buildings_by_depth"))

@@ -8,6 +8,7 @@ var career_screen: AirportCareerScreen
 var career_pin: Button
 var mission_pass_screen: MissionPassScreen
 var mission_pin: Button
+var mission_billing_bridge: MissionProductBillingBridge
 var pending_mission_ad_id := ""
 var npc_director := NpcTrafficDirector.new()
 var deployed_owned: Dictionary = {}
@@ -82,6 +83,10 @@ func _start_gameplay() -> void:
 	mission_pass_screen.booster_activate_requested.connect(_on_booster_activate_requested)
 	mission_pass_screen.resource_choice_requested.connect(_on_pass_resource_choice_requested)
 	add_child(mission_pass_screen)
+	mission_billing_bridge = MissionProductBillingBridge.new()
+	mission_billing_bridge.purchase_verified.connect(_on_mission_purchase_verified)
+	mission_billing_bridge.unavailable.connect(_on_mission_billing_unavailable)
+	add_child(mission_billing_bridge)
 	if rewarded_passenger_ad_bridge != null:
 		rewarded_passenger_ad_bridge.action_reward_granted.connect(_on_rewarded_action_completed)
 		rewarded_passenger_ad_bridge.action_unavailable.connect(_on_rewarded_action_unavailable)
@@ -375,7 +380,8 @@ func _mission_snapshot() -> Dictionary:
 		"unix_time": float(int(Time.get_unix_time_from_system() / 60.0) * 60),
 		"rewarded_ad_connected": rewarded_passenger_ad_bridge != null and rewarded_passenger_ad_bridge.provider_connected,
 		"resource_inventory": resource_inventory.duplicate(true),
-		"resource_choice_country_codes": _available_resource_choice_country_codes()
+		"resource_choice_country_codes": _available_resource_choice_country_codes(),
+		"billing_connected": mission_billing_bridge != null and mission_billing_bridge.provider_connected
 	}
 
 func _refresh_mission_ui() -> void:
@@ -633,21 +639,67 @@ func _apply_live_boosters(force: bool = false) -> void:
 
 
 func _on_mission_product_purchase_requested(product_id: String) -> void:
-	var product := MissionPassCatalog.product(product_id)
-	if product.is_empty():
+	if mission_billing_bridge == null:
+		_on_mission_billing_unavailable(product_id)
 		return
+	mission_billing_bridge.request_purchase(product_id)
+
+func _on_mission_billing_unavailable(product_id: String) -> void:
+	var product := MissionPassCatalog.product(product_id)
+	var title := String(product.get("title", "Store purchase"))
 	hud.set_operation_status(
-		"%s is configured at %s. Platform billing must confirm the purchase before rewards are granted." % [
-			String(product.get("title", "Product")),
-			String(product.get("price_label", ""))
-		],
+		"%s is unavailable until the platform billing provider is connected." % title,
 		"warning"
 	)
 
-func grant_verified_mission_product(product_id: String) -> bool:
-	# Billing adapters call this only after platform-side purchase verification.
+func _on_mission_purchase_verified(
+	product_id: String,
+	purchase_token: String
+) -> void:
+	if grant_verified_mission_product(product_id, purchase_token):
+		var product := MissionPassCatalog.product(product_id)
+		hud.set_operation_status(
+			"Purchase verified • %s" % String(product.get("title", "reward granted")),
+			"success"
+		)
+
+func set_mission_billing_provider_connected(value: bool) -> void:
+	if mission_billing_bridge == null:
+		return
+	mission_billing_bridge.set_provider_connected(value)
+	_refresh_mission_ui()
+
+func complete_mission_purchase_from_provider(
+	store_product_id: String,
+	purchase_token: String
+) -> void:
+	if mission_billing_bridge != null:
+		mission_billing_bridge.complete_purchase_from_provider(
+			store_product_id,
+			purchase_token
+		)
+
+func complete_mission_restore_from_provider(
+	store_product_id: String,
+	purchase_token: String
+) -> void:
+	if mission_billing_bridge != null:
+		mission_billing_bridge.complete_restore_from_provider(
+			store_product_id,
+			purchase_token
+		)
+
+func grant_verified_mission_product(
+	product_id: String,
+	purchase_token: String
+) -> bool:
+	# Billing adapters call this only after platform-side verification.
 	MissionPassRules.ensure_state(progression, Time.get_unix_time_from_system(), player_level)
-	var next := MissionPassRules.grant_verified_product(_capture_state(), product_id)
+	var next := MissionPassRules.grant_verified_product(
+		_capture_state(),
+		product_id,
+		purchase_token
+	)
 	if next.is_empty() or not AirportProgressionStore.save_state(next):
 		return false
 	progression = next

@@ -73,15 +73,21 @@ static func mission_text(metric: String, target: int) -> String:
 
 static func product_catalog() -> Array[Dictionary]:
 	return [
-		{"id": "aero_small", "title": "Aero Tokens • Small", "price_eur": 1.99, "price_label": "€1.99", "aero_tokens": 120},
-		{"id": "aero_medium", "title": "Aero Tokens • Medium", "price_eur": 4.99, "price_label": "€4.99", "aero_tokens": 350},
-		{"id": "aero_large", "title": "Aero Tokens • Large", "price_eur": 9.99, "price_label": "€9.99", "aero_tokens": 800},
-		{"id": "airport_pass", "title": "Airport Pass", "price_eur": 4.99, "price_label": "€4.99", "premium_pass": true}
+		{"id": "aero_small", "store_product_id": "skyport_aero_small", "consumable": true, "title": "Aero Tokens • Small", "price_eur": 1.99, "price_label": "€1.99", "aero_tokens": 120},
+		{"id": "aero_medium", "store_product_id": "skyport_aero_medium", "consumable": true, "title": "Aero Tokens • Medium", "price_eur": 4.99, "price_label": "€4.99", "aero_tokens": 350},
+		{"id": "aero_large", "store_product_id": "skyport_aero_large", "consumable": true, "title": "Aero Tokens • Large", "price_eur": 9.99, "price_label": "€9.99", "aero_tokens": 800},
+		{"id": "airport_pass", "store_product_id": "skyport_airport_pass", "consumable": true, "title": "Airport Pass", "price_eur": 4.99, "price_label": "€4.99", "premium_pass": true}
 	]
 
 static func product(product_id: String) -> Dictionary:
 	for item in product_catalog():
 		if String(item.get("id", "")) == product_id:
+			return item.duplicate(true)
+	return {}
+
+static func product_for_store_id(store_product_id: String) -> Dictionary:
+	for item in product_catalog():
+		if String(item.get("store_product_id", "")) == store_product_id:
 			return item.duplicate(true)
 	return {}
 

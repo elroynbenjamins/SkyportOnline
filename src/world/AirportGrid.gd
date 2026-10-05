@@ -522,7 +522,7 @@ func get_landside_scenery_layout() -> Array[Dictionary]:
 		{
 			"id": "trees_west",
 			"path": ENVIRONMENT_TREES,
-			"position": Vector2(-685, 350),
+			"position": Vector2(-770, 350),
 			"size": Vector2(205, 165)
 		},
 		{

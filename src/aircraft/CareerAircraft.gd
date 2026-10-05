@@ -8,7 +8,7 @@ var last_heading := INF
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
 	direction_textures.clear()
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	for direction in ["ne", "se", "sw", "nw"]:
 		var path := "res://assets/pixel/aircraft/%s/%s_%s.png" % [type_id, type_id, direction]
 		if ResourceLoader.exists(path):

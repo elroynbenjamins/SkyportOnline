@@ -91,11 +91,16 @@ func _run() -> void:
 			)
 
 	var before_layout := grid.export_airport_layout()
-	grid._draw_landside_environment()
+	for item_variant in before_layout:
+		var item: Dictionary = item_variant
+		if String(item.get("definition_id", "")).begins_with("environment_"):
+			_fail(
+				"Decorative landside scenery must never enter the player airport layout."
+			)
 	var after_layout := grid.export_airport_layout()
 	if before_layout != after_layout:
 		_fail(
-			"Decorative landside scenery must never mutate the player airport layout."
+			"Reading landside scenery metadata must never mutate the player airport layout."
 		)
 
 	var terminal := {}

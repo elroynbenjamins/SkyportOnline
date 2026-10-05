@@ -2623,15 +2623,6 @@ func _open_building_management(
 		)
 		return
 
-	if String(
-		definition.get("synergy_provider", "")
-	) == "passenger_hub":
-		return _passenger_hub_context_summary(
-			building,
-			definition,
-			summary
-		)
-
 	if bool(
 		definition.get(
 			"passenger_generator",
@@ -2708,6 +2699,15 @@ func _building_context_summary(
 	summary["move_reason"] = String(
 		move_state.get("move_reason", "")
 	)
+
+	if String(
+		definition.get("synergy_provider", "")
+	) == "passenger_hub":
+		return _passenger_hub_context_summary(
+			building,
+			definition,
+			summary
+		)
 
 	if building_id.contains("runway"):
 		return _runway_context_summary(

@@ -126,6 +126,29 @@ func _run() -> void:
 	check(MissionPassRules.aero_tokens_for_level_range(4, 5) == 3, "Every fifth level should grant 1 normal + 2 bonus Aero Tokens.")
 	check(MissionPassRules.aero_tokens_for_level_range(5, 5) == 0, "No level gain should grant no Aero Tokens.")
 
+
+	var crate_state := AirportProgressionRules.new_state("crate-rules-test", 2)
+	crate_state["resource_choice_crates"] = 2
+	MissionPassRules.ensure_state(crate_state, OCT_05, 2)
+	var reserved := MissionPassRules.reserve_resource_choice(crate_state, "be_chocolate", 1)
+	check(not reserved.is_empty(), "An owned Country Resource Crate should reserve a valid resource choice.")
+	check(int(reserved.get("resource_choice_crates", -1)) == 1, "Reserving a resource should consume exactly one crate.")
+	check((reserved.get("pending_resource_grants", []) as Array).size() == 1, "Reserved crate reward should stay pending until profile delivery is confirmed.")
+	check(MissionPassRules.reserve_resource_choice(crate_state, "missing_resource", 1).is_empty(), "Unknown resources must not consume a crate.")
+	var grant_id := String(((reserved.get("pending_resource_grants", []) as Array)[0] as Dictionary).get("id", ""))
+	var completed_grant := MissionPassRules.complete_resource_grant(reserved, grant_id)
+	check(not completed_grant.is_empty() and (completed_grant.get("pending_resource_grants", []) as Array).is_empty(), "Confirmed resource reward should clear its pending grant.")
+
+	_cleanup_profile()
+	var crate_profile := ProfileStore.create_guest_airport("Crate Test", "CRT", "NL")
+	check(not crate_profile.is_empty(), "Resource receipt test profile should be created.")
+	var first_receipt := ProfileStore.apply_resource_reward_receipt("receipt-1", "be_chocolate", 1)
+	check(int((first_receipt.get("resource_inventory", {}) as Dictionary).get("be_chocolate", 0)) == 1, "First resource receipt should add the selected country resource.")
+	var repeated_receipt := ProfileStore.apply_resource_reward_receipt("receipt-1", "be_chocolate", 1)
+	check(int((repeated_receipt.get("resource_inventory", {}) as Dictionary).get("be_chocolate", 0)) == 1, "Replaying the same resource receipt must not duplicate the reward.")
+	check(ProfileStore.apply_resource_reward_receipt("receipt-invalid", "missing_resource", 1).is_empty(), "Invalid resources must not create reward receipts.")
+	_cleanup_profile()
+
 	var booster_state := AirportProgressionRules.new_state("booster-test", 1)
 	booster_state["booster_inventory"] = {"booster_tailwind": 2, "booster_gold": 1}
 	check(MissionBoosterRules.activate(booster_state, "booster_tailwind", OCT_05), "Owned Tailwind booster should activate.")
@@ -153,11 +176,14 @@ func _run() -> void:
 
 	var screen := MissionPassScreen.new()
 	root.add_child(screen)
+	token_state["resource_choice_crates"] = 1
 	screen.open_screen({
 		"state": token_state,
 		"level": 1,
 		"week_key": String((((pass_state.get("weekly", []) as Array)[0] as Dictionary).get("period_key", ""))),
-		"rewarded_ad_connected": true
+		"rewarded_ad_connected": true,
+		"resource_inventory": {"be_chocolate": 2},
+		"resource_choice_country_codes": ["BE"]
 	})
 	await process_frame
 	check(screen.is_open(), "Mission/pass screen should open with a valid snapshot.")
@@ -165,6 +191,12 @@ func _run() -> void:
 		screen.open_tab(tab)
 		await process_frame
 		check(screen.body.get_child_count() > 0, "Mission/pass tab should render content: " + tab)
+	screen.open_tab("Airport Pass")
+	screen._open_resource_choice()
+	await process_frame
+	check(screen.resource_choice_overlay.visible, "Owned pass crate should open the resource selector overlay.")
+	check(screen.resource_choice_list.get_child_count() >= 4, "Unlocked country should show its heading and three selectable resources.")
+	screen._close_resource_choice()
 
 	if not errors.is_empty():
 		for error in errors:
@@ -173,6 +205,10 @@ func _run() -> void:
 		return
 	print("MISSION_PASS_TEST_OK: daily, weekly catch-up, varied flight telemetry, monthly pass, Aero wallet, rerolls, products and UI")
 	quit(0)
+
+func _cleanup_profile() -> void:
+	if FileAccess.file_exists(ProfileStore.SAVE_PATH):
+		DirAccess.remove_absolute(ProfileStore.SAVE_PATH)
 
 func _on_action_reward(action_id: String) -> void:
 	action_reward = action_id

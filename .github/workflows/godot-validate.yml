@@ -106,6 +106,12 @@ jobs:
       - name: Test building context card
         run: timeout 20s godot --headless --path . --script res://tests/building_context_card_test.gd
 
+      - name: Test building move mode
+        run: timeout 20s godot --headless --path . --script res://tests/building_move_mode_test.gd
+
+      - name: Test placement game feel
+        run: timeout 20s godot --headless --path . --script res://tests/placement_game_feel_test.gd
+
 
       - name: Test aircraft taxi traffic
         run: timeout 20s godot --headless --path . --script res://tests/taxi_traffic_test.gd

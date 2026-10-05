@@ -101,7 +101,7 @@ func _build_ui() -> void:
 	building_image.custom_minimum_size = Vector2(108, 78)
 	building_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	building_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	building_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	building_image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	preview_card.add_child(building_image)
 
 	var header_text := VBoxContainer.new()
@@ -300,21 +300,67 @@ func _apply_status_tone(tone: String) -> void:
 func _building_texture(
 	definition: Dictionary
 ) -> Texture2D:
-	var path := String(definition.get("icon_path", ""))
-	if path.is_empty():
-		var variants: PackedStringArray = definition.get(
-			"world_sprite_paths",
-			PackedStringArray()
-		)
-		if not variants.is_empty():
-			path = variants[0]
+	# Match the airport/build drawer: show the exact production world art
+	# before falling back to a legacy menu icon.
+	var atlas_path := String(
+		definition.get("world_sprite_atlas_path", "")
+	)
+	var regions: Array = definition.get(
+		"world_sprite_regions",
+		[]
+	)
+	if (
+		not atlas_path.is_empty()
+		and not regions.is_empty()
+		and ResourceLoader.exists(atlas_path)
+	):
+		var atlas_resource := load(atlas_path)
+		var first_region = regions[0]
+		if (
+			atlas_resource is Texture2D
+			and first_region is Rect2
+		):
+			var atlas_texture := AtlasTexture.new()
+			atlas_texture.atlas = atlas_resource as Texture2D
+			atlas_texture.region = first_region
+			return atlas_texture
 
-	if path.is_empty() or not ResourceLoader.exists(path):
+	var variants: PackedStringArray = definition.get(
+		"world_sprite_paths",
+		PackedStringArray()
+	)
+	if not variants.is_empty():
+		var world_path := String(variants[0])
+		if ResourceLoader.exists(world_path):
+			var world_resource := load(world_path)
+			if world_resource is Texture2D:
+				return world_resource as Texture2D
+
+	var single_world_path := String(
+		definition.get("world_sprite_path", "")
+	)
+	if (
+		not single_world_path.is_empty()
+		and ResourceLoader.exists(single_world_path)
+	):
+		var single_world_resource := load(
+			single_world_path
+		)
+		if single_world_resource is Texture2D:
+			return single_world_resource as Texture2D
+
+	var icon_path := String(
+		definition.get("icon_path", "")
+	)
+	if (
+		icon_path.is_empty()
+		or not ResourceLoader.exists(icon_path)
+	):
 		return null
 
-	var resource := load(path)
-	if resource is Texture2D:
-		return resource as Texture2D
+	var icon_resource := load(icon_path)
+	if icon_resource is Texture2D:
+		return icon_resource as Texture2D
 	return null
 
 

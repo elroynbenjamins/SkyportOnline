@@ -250,6 +250,28 @@ static func placement_status(
 			"%d:%d" % [cell.x, cell.y]
 		] = true
 
+	var occupied_keys: Dictionary = {}
+	for item in all_visual_items():
+		if String(item.get("id", "")) == visual_id:
+			continue
+		var item_origin: Vector2i = item.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var item_footprint := footprint_for_item(item)
+		for item_y in range(item_footprint.y):
+			for item_x in range(item_footprint.x):
+				var occupied_cell := (
+					item_origin
+					+ Vector2i(item_x, item_y)
+				)
+				occupied_keys[
+					"%d:%d" % [
+						occupied_cell.x,
+						occupied_cell.y
+					]
+				] = true
+
 	for y in range(footprint.y):
 		for x in range(footprint.x):
 			var cell := relative_origin + Vector2i(x, y)
@@ -270,6 +292,12 @@ static func placement_status(
 					"valid": false,
 					"reason": "Reserved for future Charter logistics buildings.",
 					"future_reserved": true
+				}
+			if occupied_keys.has(key):
+				return {
+					"valid": false,
+					"reason": "Another Charter facility occupies this space.",
+					"charter_collision": true
 				}
 
 	return {

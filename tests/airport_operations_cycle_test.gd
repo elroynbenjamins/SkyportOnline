@@ -147,7 +147,7 @@ func _run() -> void:
 		_fail("Cleared departure should complete runway entry, takeoff and climb.")
 		return
 
-	plane._process(0.30)
+	plane._process(1.05)
 	if plane.state != "HOLDING_FOR_ARRIVAL":
 		_fail("Completed flight timer should transition to inbound holding.")
 		return

@@ -23,7 +23,9 @@ var stand_approach_active: Dictionary = {}
 var turnaround_jobs: Dictionary = {}
 var active_jobs := 0
 var service_analytics: Dictionary = {}
+var dispatch_retry_accumulator := 0.0
 
+const DISPATCH_RETRY_INTERVAL := 0.25
 const ANALYTICS_SERVICE_TYPES: Array[String] = [
 	"fuel",
 	"passenger",
@@ -306,6 +308,17 @@ func get_turnaround_snapshots() -> Array[Dictionary]:
 
 func _process(delta: float) -> void:
 	_tick_service_analytics(delta)
+
+	# Capacity and taxi conflicts can clear independently of a ground
+	# vehicle return event. Retry queued work at a small cadence so a
+	# pushback held for crossing traffic automatically resumes.
+	if pending_requests.is_empty():
+		dispatch_retry_accumulator = 0.0
+	else:
+		dispatch_retry_accumulator += delta
+		if dispatch_retry_accumulator >= DISPATCH_RETRY_INTERVAL:
+			dispatch_retry_accumulator = 0.0
+			_try_dispatch()
 
 	if turnaround_jobs.is_empty():
 		return
@@ -1256,6 +1269,14 @@ func _turnaround_blocking_reason(
 		"WAITING_DESTINATION":
 			return "Destination required"
 
+	var aircraft := job.get("aircraft") as AircraftPrototype
+	if (
+		aircraft != null
+		and is_instance_valid(aircraft)
+		and aircraft.is_taxi_holding()
+	):
+		return "Pushback held • %s" % aircraft.get_taxi_hold_reason()
+
 	if int(metrics.get("queued_count", 0)) > 0:
 		return "Waiting for ground-service capacity"
 	if int(metrics.get("en_route_count", 0)) > 0:
@@ -1276,6 +1297,12 @@ func _profile_for_aircraft(
 
 
 func _remove_job(job_id: int) -> void:
+	if turnaround_jobs.has(job_id):
+		var job: Dictionary = turnaround_jobs[job_id]
+		if String(job.get("stage", "")) == "PUSHBACK_PREP":
+			var aircraft := job.get("aircraft") as AircraftPrototype
+			if aircraft != null and is_instance_valid(aircraft):
+				aircraft.release_pushback_path()
 	turnaround_jobs.erase(job_id)
 
 	for index in range(

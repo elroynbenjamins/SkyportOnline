@@ -279,6 +279,17 @@ static func grant_verified_product(state: Dictionary, product_id: String) -> Dic
 	_sync_aero_wallet(next)
 	return next
 
+static func aero_tokens_for_level_range(old_level: int, new_level: int) -> int:
+	if new_level <= old_level:
+		return 0
+	var total := 0
+	for reached_level in range(maxi(old_level + 1, 2), new_level + 1):
+		total += 1
+		if reached_level % 5 == 0:
+			total += 2
+	return total
+
+
 static func pass_level(state: Dictionary) -> int:
 	var pass_state: Dictionary = state.get("mission_pass", {})
 	return mini(

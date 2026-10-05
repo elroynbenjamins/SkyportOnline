@@ -282,11 +282,16 @@ static func apply_button(
 		"pressed",
 		panel(pressed_bg, pressed_border, radius, 2, false)
 	)
+	var disabled_bg := Color("16252c")
+	var disabled_border := Color("2b3d44")
+	if kind == "build_card_locked":
+		disabled_bg = Color("131e24")
+		disabled_border = Color("41525a")
 	button.add_theme_stylebox_override(
 		"disabled",
 		panel(
-			Color("16252c"),
-			Color("2b3d44"),
+			disabled_bg,
+			disabled_border,
 			radius,
 			1,
 			false

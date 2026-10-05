@@ -311,10 +311,13 @@ func _pass(state: Dictionary) -> void:
 	top.add_child(claim_all)
 	if not premium:
 		var buy := Button.new()
-		buy.text = "GET PREMIUM • €4.99"
+		var billing_ready := bool(data.get("billing_connected", false))
+		buy.text = "GET PREMIUM • €4.99" if billing_ready else "BILLING OFFLINE"
+		buy.disabled = not billing_ready
 		buy.custom_minimum_size = Vector2(210, 48)
-		GameUIStyle.apply_button(buy, "gold", true)
-		buy.pressed.connect(_purchase.bind("airport_pass"))
+		GameUIStyle.apply_button(buy, "gold" if billing_ready else "secondary", true)
+		if billing_ready:
+			buy.pressed.connect(_purchase.bind("airport_pass"))
 		top.add_child(buy)
 	else:
 		var owned := Label.new()
@@ -399,7 +402,9 @@ func _store(state: Dictionary) -> void:
 	var intro := _card()
 	_text(intro, "AERO TOKENS  •  ✦ %d" % int(state.get("aero_tokens", state.get("gems", 0))), true)
 	_text(intro, "Aero Tokens are the premium currency. They can also be earned slowly through gameplay and the free Airport Pass. Store purchases are capped at €9.99.")
+	var billing_ready := bool(data.get("billing_connected", false))
 	_text(intro, "Purchases are granted only after the platform billing provider confirms payment. This screen never grants currency locally from the buy button.")
+	_text(intro, "STORE READY" if billing_ready else "STORE OFFLINE • platform billing provider not connected.")
 	for product_variant in MissionPassCatalog.product_catalog():
 		var product: Dictionary = product_variant
 		if bool(product.get("premium_pass", false)):
@@ -414,10 +419,12 @@ func _store(state: Dictionary) -> void:
 		_text(details, String(product.get("title", "Aero Tokens")), true)
 		_text(details, "✦ %d Aero Tokens" % int(product.get("aero_tokens", 0)))
 		var button := Button.new()
-		button.text = String(product.get("price_label", ""))
+		button.text = String(product.get("price_label", "")) if billing_ready else "OFFLINE"
+		button.disabled = not billing_ready
 		button.custom_minimum_size = Vector2(150, 48)
-		GameUIStyle.apply_button(button, "gold", true)
-		button.pressed.connect(_purchase.bind(String(product.get("id", ""))))
+		GameUIStyle.apply_button(button, "gold" if billing_ready else "secondary", true)
+		if billing_ready:
+			button.pressed.connect(_purchase.bind(String(product.get("id", ""))))
 		row.add_child(button)
 
 func _reward_row(

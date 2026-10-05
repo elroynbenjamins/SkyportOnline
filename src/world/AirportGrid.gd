@@ -48,6 +48,8 @@ const TERRAIN_FLOWER := Color("f3d66b", 0.72)
 const SELECTED_LINE := Color("ffd166")
 const SELECTED_BUILDING_LINE := Color("7fd8ff")
 const SELECTED_BUILDING_FILL := Color("68bde8", 0.08)
+const HOVER_BUILDING_LINE := Color("b9edff", 0.72)
+const HOVER_BUILDING_FILL := Color("8bdcff", 0.045)
 const PREVIEW_VALID := Color("68d391", 0.38)
 const PREVIEW_INVALID := Color("ef6461", 0.46)
 const PREVIEW_EXPANSION_LINE := Color("ffd166", 0.95)
@@ -78,6 +80,9 @@ const ENVIRONMENT_ENTRANCE := "res://assets/pixel/airport_v1/environment_entranc
 const ENVIRONMENT_CONIFERS := "res://assets/pixel/airport_v1/environment_conifer_cluster.svg"
 const ENVIRONMENT_FIELDS := "res://assets/pixel/airport_v1/environment_distant_fields.svg"
 const PARCEL_UNLOCK_FX_DURATION := 0.9
+const PREVIEW_SNAP_FX_DURATION := 0.18
+const PLACEMENT_CONFIRM_FX_DURATION := 0.46
+const EDIT_DIM_MODULATE := Color(0.78, 0.82, 0.80, 0.70)
 
 var parcels: Dictionary = {}
 var selected_id := ""
@@ -95,6 +100,12 @@ var runway_visual_states: Dictionary = {}
 var event_visual_snapshot: Dictionary = {}
 var event_owned_cosmetics: Dictionary = {}
 var parcel_unlock_fx: Dictionary = {}
+var preview_snap_elapsed := -1.0
+var preview_snap_origin := Vector2i(-1, -1)
+var preview_snap_footprint := Vector2i.ONE
+var preview_snap_valid := false
+var placement_confirm_fx: Array[Dictionary] = []
+var hovered_building_uid := -1
 
 var preview_building_id := ""
 var preview_origin := Vector2i(-1, -1)
@@ -118,26 +129,56 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if parcel_unlock_fx.is_empty():
-		set_process(false)
-		return
+	var active := false
 
-	var completed: Array[String] = []
-	for parcel_id_variant in parcel_unlock_fx.keys():
-		var parcel_id := String(parcel_id_variant)
-		var elapsed := float(
-			parcel_unlock_fx.get(parcel_id, 0.0)
-		) + delta
-		if elapsed >= PARCEL_UNLOCK_FX_DURATION:
-			completed.append(parcel_id)
-		else:
-			parcel_unlock_fx[parcel_id] = elapsed
+	if not parcel_unlock_fx.is_empty():
+		active = true
+		var completed: Array[String] = []
+		for parcel_id_variant in parcel_unlock_fx.keys():
+			var parcel_id := String(parcel_id_variant)
+			var elapsed := float(
+				parcel_unlock_fx.get(parcel_id, 0.0)
+			) + delta
+			if elapsed >= PARCEL_UNLOCK_FX_DURATION:
+				completed.append(parcel_id)
+			else:
+				parcel_unlock_fx[parcel_id] = elapsed
+		for parcel_id in completed:
+			parcel_unlock_fx.erase(parcel_id)
 
-	for parcel_id in completed:
-		parcel_unlock_fx.erase(parcel_id)
+	if preview_snap_elapsed >= 0.0:
+		active = true
+		preview_snap_elapsed += delta
+		if preview_snap_elapsed >= PREVIEW_SNAP_FX_DURATION:
+			preview_snap_elapsed = -1.0
 
-	queue_redraw()
-	if parcel_unlock_fx.is_empty():
+	if not placement_confirm_fx.is_empty():
+		active = true
+		for index in range(
+			placement_confirm_fx.size() - 1,
+			-1,
+			-1
+		):
+			var item: Dictionary = placement_confirm_fx[index]
+			var elapsed := float(
+				item.get("elapsed", 0.0)
+			) + delta
+			if elapsed >= PLACEMENT_CONFIRM_FX_DURATION:
+				placement_confirm_fx.remove_at(index)
+			else:
+				item["elapsed"] = elapsed
+				placement_confirm_fx[index] = item
+
+	if (
+		not parcel_unlock_fx.is_empty()
+		or preview_snap_elapsed >= 0.0
+		or not placement_confirm_fx.is_empty()
+	):
+		active = true
+
+	if active:
+		queue_redraw()
+	else:
 		set_process(false)
 
 
@@ -209,6 +250,7 @@ func _draw() -> void:
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
 	_draw_airside_props()
+	_draw_hovered_building_outline()
 	_draw_selected_building_outline()
 	_draw_synergy_overlay()
 	_draw_event_theme_overlay()
@@ -216,6 +258,8 @@ func _draw() -> void:
 	_draw_runway_operational_indicators()
 	_draw_airside_warnings()
 	_draw_build_preview()
+	_draw_preview_snap_fx()
+	_draw_placement_confirm_fx()
 	_draw_preview_expansion_outline()
 	_draw_selected_outline()
 
@@ -1095,6 +1139,8 @@ func _draw_buildings() -> void:
 				_draw_service_road_detail(origin)
 			continue
 
+		var dimmed := _placement_focus_active()
+
 		if _definition_has_world_sprite(definition):
 			_draw_world_art_ground_pad(
 				definition,
@@ -1105,7 +1151,8 @@ func _draw_buildings() -> void:
 				definition,
 				origin,
 				footprint,
-				int(building["rotation"])
+				int(building["rotation"]),
+				EDIT_DIM_MODULATE if dimmed else Color.WHITE
 			)
 		else:
 			var color: Color = definition["color"]
@@ -1122,6 +1169,16 @@ func _draw_buildings() -> void:
 				definition,
 				footprint
 			)
+			if dimmed:
+				var dim_polygon := _footprint_polygon(
+					origin,
+					footprint
+				)
+				if dim_polygon.size() >= 4:
+					draw_colored_polygon(
+						dim_polygon,
+						Color(0.05, 0.10, 0.10, 0.19)
+					)
 
 
 
@@ -3081,6 +3138,193 @@ func _draw_build_preview() -> void:
 		)
 
 
+func _placement_focus_active() -> bool:
+	return (
+		not preview_building_id.is_empty()
+		and preview_origin.x >= 0
+		and preview_origin.y >= 0
+	)
+
+
+func is_placement_focus_active() -> bool:
+	return _placement_focus_active()
+
+
+func is_preview_snap_feedback_active() -> bool:
+	return preview_snap_elapsed >= 0.0
+
+
+func get_placement_confirm_feedback_count() -> int:
+	return placement_confirm_fx.size()
+
+
+func _start_preview_snap_fx(
+	origin: Vector2i,
+	footprint: Vector2i,
+	valid: bool
+) -> void:
+	if origin.x < 0 or origin.y < 0:
+		return
+	preview_snap_origin = origin
+	preview_snap_footprint = footprint
+	preview_snap_valid = valid
+	preview_snap_elapsed = 0.0
+	set_process(true)
+	queue_redraw()
+
+
+func _draw_preview_snap_fx() -> void:
+	if preview_snap_elapsed < 0.0:
+		return
+
+	var progress := clampf(
+		preview_snap_elapsed / PREVIEW_SNAP_FX_DURATION,
+		0.0,
+		1.0
+	)
+	var polygon := _footprint_polygon(
+		preview_snap_origin,
+		preview_snap_footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var base := (
+		Color("8ff0ae")
+		if preview_snap_valid
+		else Color("ff8c87")
+	)
+	var alpha := (1.0 - progress) * 0.72
+	var width := lerpf(4.2, 1.8, progress)
+	draw_polyline(
+		PackedVector2Array([
+			polygon[0],
+			polygon[1],
+			polygon[2],
+			polygon[3],
+			polygon[0]
+		]),
+		Color(base.r, base.g, base.b, alpha),
+		width
+	)
+
+	var center := _footprint_center_world(
+		preview_snap_origin,
+		preview_snap_footprint
+	)
+	draw_set_transform(
+		center,
+		0.0,
+		Vector2(1.0, 0.42)
+	)
+	draw_arc(
+		Vector2.ZERO,
+		lerpf(8.0, 25.0, progress),
+		0.0,
+		TAU,
+		24,
+		Color(base.r, base.g, base.b, alpha * 0.85),
+		2.0
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
+func _start_placement_confirm_fx(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> void:
+	placement_confirm_fx.append({
+		"origin": origin,
+		"footprint": footprint,
+		"elapsed": 0.0
+	})
+	set_process(true)
+	queue_redraw()
+
+
+func _draw_placement_confirm_fx() -> void:
+	for item in placement_confirm_fx:
+		var elapsed := float(item.get("elapsed", 0.0))
+		var progress := clampf(
+			elapsed / PLACEMENT_CONFIRM_FX_DURATION,
+			0.0,
+			1.0
+		)
+		var origin: Vector2i = item.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var footprint: Vector2i = item.get(
+			"footprint",
+			Vector2i.ONE
+		)
+		var polygon := _footprint_polygon(
+			origin,
+			footprint
+		)
+		if polygon.size() < 4:
+			continue
+
+		draw_colored_polygon(
+			polygon,
+			Color(
+				0.43,
+				0.93,
+				0.61,
+				(1.0 - progress) * 0.18
+			)
+		)
+		draw_polyline(
+			PackedVector2Array([
+				polygon[0],
+				polygon[1],
+				polygon[2],
+				polygon[3],
+				polygon[0]
+			]),
+			Color(
+				0.54,
+				0.96,
+				0.69,
+				(1.0 - progress) * 0.92
+			),
+			lerpf(4.0, 1.0, progress)
+		)
+
+		var center := _footprint_center_world(
+			origin,
+			footprint
+		)
+		draw_set_transform(
+			center,
+			0.0,
+			Vector2(1.0, 0.42)
+		)
+		draw_arc(
+			Vector2.ZERO,
+			lerpf(12.0, 42.0, progress),
+			0.0,
+			TAU,
+			30,
+			Color(
+				0.54,
+				0.96,
+				0.69,
+				(1.0 - progress) * 0.75
+			),
+			2.2
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+
+
 func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: float) -> void:
 	var center := tile_to_world(Vector2(tile.x, tile.y))
 	var points := _tile_points(center)
@@ -3202,6 +3446,17 @@ func select_world_position(world_position: Vector2) -> void:
 		select_parcel(String(parcel["id"]))
 
 
+func clear_building_selection() -> void:
+	var changed := (
+		selected_synergy_uid >= 0
+		or hovered_building_uid >= 0
+	)
+	selected_synergy_uid = -1
+	hovered_building_uid = -1
+	if changed:
+		queue_redraw()
+
+
 func select_parcel(parcel_id: String) -> void:
 	if not parcels.has(parcel_id):
 		return
@@ -3279,11 +3534,40 @@ func purchase_selected() -> bool:
 	return purchase_parcel(selected_id)
 
 
+func _refresh_preview_snap_feedback(
+	previous_origin: Vector2i,
+	previous_rotation: int
+) -> void:
+	if preview_building_id.is_empty():
+		return
+	if (
+		previous_origin == preview_origin
+		and previous_rotation == preview_rotation
+	):
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
+	if definition.is_empty():
+		return
+	_start_preview_snap_fx(
+		preview_origin,
+		_footprint_for(
+			definition,
+			preview_rotation
+		),
+		bool(preview_status.get("valid", false))
+	)
+
+
 func set_build_preview(
 	building_id: String,
 	world_position: Vector2,
 	rotation: int
 ) -> Dictionary:
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_mode = "build"
 	preview_ignore_uid = -1
 	preview_stored_uid = -1
@@ -3294,6 +3578,10 @@ func set_build_preview(
 		building_id,
 		preview_origin,
 		preview_rotation
+	)
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
 	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
@@ -3354,6 +3642,8 @@ func set_move_preview(
 	if preview_mode != "move" or preview_ignore_uid < 0:
 		return {}
 
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_origin = world_to_tile(world_position)
 	preview_rotation = rotation % 2
 	preview_status = _get_placement_status(
@@ -3364,6 +3654,10 @@ func set_move_preview(
 	)
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = preview_ignore_uid
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
+	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -3403,6 +3697,8 @@ func set_stored_building_preview(
 	if preview_mode != "stored" or preview_stored_uid < 0:
 		return {}
 
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_origin = world_to_tile(world_position)
 	preview_rotation = rotation % 2
 	preview_status = _get_placement_status(
@@ -3412,6 +3708,10 @@ func set_stored_building_preview(
 	)
 	preview_status["mode"] = "stored"
 	preview_status["building_uid"] = preview_stored_uid
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
+	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -3420,6 +3720,8 @@ func set_stored_building_preview(
 func refresh_build_preview(rotation: int) -> Dictionary:
 	if preview_building_id.is_empty():
 		return {}
+	var previous_origin := preview_origin
+	var previous_rotation := preview_rotation
 	preview_rotation = rotation % 2
 	preview_status = _get_placement_status(
 		preview_building_id,
@@ -3433,6 +3735,10 @@ func refresh_build_preview(rotation: int) -> Dictionary:
 	elif preview_mode == "stored":
 		preview_status["mode"] = "stored"
 		preview_status["building_uid"] = preview_stored_uid
+	_refresh_preview_snap_feedback(
+		previous_origin,
+		previous_rotation
+	)
 	queue_redraw()
 	build_preview_changed.emit(preview_status.duplicate(true))
 	return preview_status.duplicate(true)
@@ -3455,6 +3761,8 @@ func clear_build_preview() -> void:
 	preview_mode = "build"
 	preview_ignore_uid = -1
 	preview_stored_uid = -1
+	preview_snap_elapsed = -1.0
+	preview_snap_origin = Vector2i(-1, -1)
 	if was_move:
 		_refresh_building_labels()
 	queue_redraw()
@@ -3466,6 +3774,14 @@ func confirm_build_preview() -> Dictionary:
 	if not bool(preview_status.get("valid", false)):
 		return {}
 
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
+	var confirmed_origin := preview_origin
+	var confirmed_footprint := _footprint_for(
+		definition,
+		preview_rotation
+	)
 	var placed := _place_building_internal(
 		preview_building_id,
 		preview_origin,
@@ -3475,6 +3791,10 @@ func confirm_build_preview() -> Dictionary:
 	_recalculate_airside_network()
 	_refresh_building_labels()
 	clear_build_preview()
+	_start_placement_confirm_fx(
+		confirmed_origin,
+		confirmed_footprint
+	)
 	queue_redraw()
 	building_placed.emit(placed.duplicate(true))
 	return placed
@@ -3494,6 +3814,14 @@ func confirm_stored_building_preview() -> Dictionary:
 		) != preview_stored_uid:
 			continue
 
+		var definition := BuildingCatalog.get_definition(
+			preview_building_id
+		)
+		var confirmed_origin := preview_origin
+		var confirmed_footprint := _footprint_for(
+			definition,
+			preview_rotation
+		)
 		var restored := stored_buildings[index].duplicate(true)
 		restored["origin"] = preview_origin
 		restored["rotation"] = preview_rotation
@@ -3503,6 +3831,10 @@ func confirm_stored_building_preview() -> Dictionary:
 		_rebuild_occupied_cells()
 		_recalculate_airside_network()
 		clear_build_preview()
+		_start_placement_confirm_fx(
+			confirmed_origin,
+			confirmed_footprint
+		)
 		_refresh_building_labels()
 		queue_redraw()
 		building_restored.emit(restored.duplicate(true))
@@ -3525,6 +3857,14 @@ func confirm_move_preview() -> Dictionary:
 		) != preview_ignore_uid:
 			continue
 
+		var definition := BuildingCatalog.get_definition(
+			preview_building_id
+		)
+		var confirmed_origin := preview_origin
+		var confirmed_footprint := _footprint_for(
+			definition,
+			preview_rotation
+		)
 		var previous := placed_buildings[index].duplicate(true)
 		placed_buildings[index]["origin"] = preview_origin
 		placed_buildings[index]["rotation"] = preview_rotation
@@ -3533,6 +3873,10 @@ func confirm_move_preview() -> Dictionary:
 		_rebuild_occupied_cells()
 		_recalculate_airside_network()
 		clear_build_preview()
+		_start_placement_confirm_fx(
+			confirmed_origin,
+			confirmed_footprint
+		)
 		_refresh_building_labels()
 		queue_redraw()
 		building_moved.emit(
@@ -3605,6 +3949,15 @@ func restore_building_position(
 		_rebuild_occupied_cells()
 		_recalculate_airside_network()
 		_refresh_building_labels()
+		_start_placement_confirm_fx(
+			target_origin,
+			_footprint_for(
+				BuildingCatalog.get_definition(
+					definition_id
+				),
+				target_rotation
+			)
+		)
 		queue_redraw()
 		building_moved.emit(
 			restored.duplicate(true),
@@ -4271,6 +4624,107 @@ func _size_text(definition: Dictionary) -> String:
 
 
 
+func set_hover_world_position(
+	world_position: Vector2
+) -> void:
+	if not preview_building_id.is_empty():
+		clear_building_hover()
+		return
+
+	var building: Dictionary = {}
+	var tile := world_to_tile(world_position)
+	if _tile_in_world(tile):
+		var key := _cell_key(tile)
+		if occupied_cells.has(key):
+			building = get_building(
+				int(occupied_cells[key])
+			)
+
+	if building.is_empty():
+		building = _building_at_visual_position(
+			world_position
+		)
+
+	var next_uid := int(
+		building.get("uid", -1)
+	)
+	if (
+		next_uid >= 0
+		and not bool(
+			get_move_eligibility(next_uid).get(
+				"movable",
+				false
+			)
+		)
+	):
+		next_uid = -1
+	if next_uid == hovered_building_uid:
+		return
+	hovered_building_uid = next_uid
+	queue_redraw()
+
+
+func clear_building_hover() -> void:
+	if hovered_building_uid < 0:
+		return
+	hovered_building_uid = -1
+	queue_redraw()
+
+
+func get_hovered_building_uid() -> int:
+	return hovered_building_uid
+
+
+func _hovered_building_polygon() -> PackedVector2Array:
+	if (
+		hovered_building_uid < 0
+		or hovered_building_uid == selected_synergy_uid
+		or not preview_building_id.is_empty()
+	):
+		return PackedVector2Array()
+
+	var building := _building_by_uid(
+		hovered_building_uid
+	)
+	if building.is_empty():
+		return PackedVector2Array()
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return PackedVector2Array()
+	return _footprint_polygon(
+		building.get("origin", Vector2i.ZERO),
+		_footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+	)
+
+
+func _draw_hovered_building_outline() -> void:
+	var polygon := _hovered_building_polygon()
+	if polygon.size() < 4:
+		return
+
+	draw_colored_polygon(
+		polygon,
+		HOVER_BUILDING_FILL
+	)
+	draw_polyline(
+		PackedVector2Array([
+			polygon[0],
+			polygon[1],
+			polygon[2],
+			polygon[3],
+			polygon[0]
+		]),
+		HOVER_BUILDING_LINE,
+		1.6
+	)
+
+
 func _selected_building_polygon() -> PackedVector2Array:
 	if (
 		selected_synergy_uid < 0
@@ -4309,16 +4763,22 @@ func _draw_selected_building_outline() -> void:
 		polygon,
 		SELECTED_BUILDING_FILL
 	)
+	var selected_loop := PackedVector2Array([
+		polygon[0],
+		polygon[1],
+		polygon[2],
+		polygon[3],
+		polygon[0]
+	])
 	draw_polyline(
-		PackedVector2Array([
-			polygon[0],
-			polygon[1],
-			polygon[2],
-			polygon[3],
-			polygon[0]
-		]),
+		selected_loop,
+		Color(0.02, 0.08, 0.11, 0.72),
+		5.2
+	)
+	draw_polyline(
+		selected_loop,
 		SELECTED_BUILDING_LINE,
-		2.4
+		2.5
 	)
 
 	for point_variant in polygon:

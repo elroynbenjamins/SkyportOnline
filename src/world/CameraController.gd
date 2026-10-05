@@ -30,6 +30,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _handle_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
+		_cancel_focus_tween()
 		touches[event.index] = event.position
 		touch_starts[event.index] = event.position
 		if touches.size() >= 2:
@@ -72,11 +73,7 @@ func _handle_drag(event: InputEventScreenDrag) -> void:
 
 
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
-	if event.pressed and event.button_index in [
-		MOUSE_BUTTON_RIGHT,
-		MOUSE_BUTTON_WHEEL_UP,
-		MOUSE_BUTTON_WHEEL_DOWN
-	]:
+	if event.pressed:
 		_cancel_focus_tween()
 
 	if event.button_index == MOUSE_BUTTON_LEFT:

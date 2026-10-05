@@ -8,6 +8,10 @@ signal arrival_requested
 signal arrival_completed
 signal state_changed(state: String)
 
+const WORLD_SPRITE_BASE_SIZE := 94.0
+const ISO_HEADING_ANGLE := 0.463647609
+static var _world_sprite_cache: Dictionary = {}
+
 @export var taxi_speed: float = 105.0
 @export var takeoff_speed: float = 235.0
 @export var approach_speed: float = 185.0
@@ -73,13 +77,259 @@ func get_taxi_hold_reason() -> String:
 func get_interaction_radius() -> float:
 	match aircraft_size:
 		"M":
-			return 44.0
+			return 62.0
 		"L":
-			return 54.0
+			return 74.0
 		"XL":
-			return 64.0
+			return 86.0
 		_:
-			return 36.0
+			return 46.0
+
+
+
+func get_world_sprite_direction(
+	heading: float = rotation
+) -> String:
+	var candidates: Array = [
+		["ne", -ISO_HEADING_ANGLE],
+		["se", ISO_HEADING_ANGLE],
+		["sw", PI - ISO_HEADING_ANGLE],
+		["nw", -PI + ISO_HEADING_ANGLE]
+	]
+	var best_direction := "ne"
+	var best_difference := INF
+	for candidate_variant in candidates:
+		var candidate: Array = candidate_variant
+		var direction := String(candidate[0])
+		var candidate_heading := float(candidate[1])
+		var difference := absf(
+			wrapf(
+				heading - candidate_heading,
+				-PI,
+				PI
+			)
+		)
+		if difference < best_difference:
+			best_difference = difference
+			best_direction = direction
+	return best_direction
+
+
+func get_world_sprite_path(
+	direction: String = ""
+) -> String:
+	if aircraft_type_id.is_empty():
+		return ""
+	var resolved_direction := direction
+	if resolved_direction.is_empty():
+		resolved_direction = get_world_sprite_direction()
+	if resolved_direction not in ["ne", "nw", "se", "sw"]:
+		return ""
+	return (
+		"res://assets/pixel/aircraft/%s/%s_%s.png"
+		% [
+			aircraft_type_id,
+			aircraft_type_id,
+			resolved_direction
+		]
+	)
+
+
+func has_world_sprite_set() -> bool:
+	if aircraft_type_id.is_empty():
+		return false
+	for direction in ["ne", "nw", "se", "sw"]:
+		if not ResourceLoader.exists(
+			get_world_sprite_path(direction)
+		):
+			return false
+	return true
+
+
+func get_world_sprite_draw_size() -> Vector2:
+	var diameter := (
+		WORLD_SPRITE_BASE_SIZE
+		* get_visual_scale()
+	)
+	return Vector2(diameter, diameter)
+
+
+func _get_world_sprite_texture(
+	direction: String
+) -> Texture2D:
+	var path := get_world_sprite_path(direction)
+	if path.is_empty():
+		return null
+	if _world_sprite_cache.has(path):
+		var cached = _world_sprite_cache[path]
+		if cached is Texture2D:
+			return cached as Texture2D
+	if not ResourceLoader.exists(path):
+		return null
+	var resource = load(path)
+	if resource is Texture2D:
+		_world_sprite_cache[path] = resource
+		return resource as Texture2D
+	return null
+
+
+func _draw_world_aircraft_sprite() -> bool:
+	if not has_world_sprite_set():
+		return false
+
+	var direction := get_world_sprite_direction()
+	var texture := _get_world_sprite_texture(
+		direction
+	)
+	if texture == null:
+		return false
+
+	var draw_size := get_world_sprite_draw_size()
+	var aspect := (
+		float(texture.get_width())
+		/ maxf(float(texture.get_height()), 1.0)
+	)
+	draw_size.x *= aspect
+
+	var modulate := Color.WHITE
+	if event_livery_enabled:
+		match event_theme:
+			"autumn":
+				modulate = Color(1.0, 0.94, 0.86, 1.0)
+			"winter":
+				modulate = Color(0.93, 0.98, 1.0, 1.0)
+
+	# The PNGs are already authored at the four isometric headings.
+	# Counter-rotate the Node2D so the chosen sprite stays screen-aligned;
+	# physics/service geometry continues to use the true continuous heading.
+	draw_set_transform(
+		Vector2.ZERO,
+		-rotation,
+		Vector2.ONE
+	)
+	draw_texture_rect(
+		texture,
+		Rect2(
+			-draw_size * 0.5,
+			draw_size
+		),
+		false,
+		modulate
+	)
+	_draw_world_sprite_overlay(
+		draw_size
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+	return true
+
+
+func _draw_world_sprite_overlay(
+	draw_size: Vector2
+) -> void:
+	var top_y := -draw_size.y * 0.40
+	var badge_center := Vector2(
+		-draw_size.x * 0.27,
+		top_y
+	)
+
+	if (
+		event_featured
+		and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]
+	):
+		var fill := Color("e6a83f")
+		match event_theme:
+			"autumn":
+				fill = Color("d66d30")
+			"winter":
+				fill = Color("3f8ebd")
+		draw_circle(
+			badge_center,
+			9.0,
+			Color(0, 0, 0, 0.35)
+		)
+		draw_circle(
+			badge_center,
+			7.0,
+			fill
+		)
+		draw_circle(
+			badge_center,
+			7.0,
+			Color("ffe3a1"),
+			false,
+			2.0
+		)
+	elif (
+		social_visit
+		and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]
+	):
+		var relationship := String(
+			social_visit_data.get(
+				"relationship",
+				"friend"
+			)
+		)
+		var fill := (
+			Color("9b6bd6")
+			if relationship == "alliance"
+			else Color("4f9fc8")
+		)
+		draw_circle(
+			badge_center,
+			9.0,
+			Color(0, 0, 0, 0.35)
+		)
+		draw_circle(
+			badge_center,
+			7.0,
+			fill
+		)
+		draw_circle(
+			badge_center,
+			7.0,
+			Color("eaf7ff"),
+			false,
+			2.0
+		)
+
+	var indicator_color := Color(0, 0, 0, 0)
+	match state:
+		"WAITING_FUEL", "SERVICING":
+			indicator_color = Color("f4c95d")
+		"UNLOADING", "HOLDING_FOR_ARRIVAL":
+			indicator_color = Color("d6a3ff")
+		"LOADING":
+			indicator_color = Color("69c9dd")
+		"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
+			indicator_color = Color("76d39b")
+		"READY_FOR_DESTINATION":
+			indicator_color = Color("f0a6ff")
+		"WAITING_PASSENGERS":
+			indicator_color = Color("ff9f68")
+		"HOLD_SHORT":
+			indicator_color = Color("f3c969")
+		"CLEARED", "ENTERING_RUNWAY", "LINE_UP":
+			indicator_color = Color("78b7e8")
+
+	if indicator_color.a > 0.0:
+		var indicator := Vector2(
+			draw_size.x * 0.24,
+			top_y
+		)
+		draw_circle(
+			indicator,
+			6.0,
+			Color(0, 0, 0, 0.34)
+		)
+		draw_circle(
+			indicator,
+			4.5,
+			indicator_color
+		)
 
 
 func get_visual_scale() -> float:
@@ -1333,6 +1583,9 @@ func _set_state(new_state: String) -> void:
 
 func _draw() -> void:
 	_draw_shadow()
+
+	if _draw_world_aircraft_sprite():
+		return
 
 	var visual_scale := get_visual_scale()
 	var design := get_visual_design()

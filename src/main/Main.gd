@@ -1348,6 +1348,7 @@ func _on_navigation_requested(tab: String) -> void:
 		aircraft_context_card.close_card()
 	if building_context_card != null:
 		building_context_card.close_card()
+	airport_grid.clear_synergy_selection()
 
 	match tab:
 		"world":
@@ -1753,6 +1754,7 @@ func _on_world_tapped(world_position: Vector2) -> void:
 		world_position
 	)
 	if tapped_aircraft != null:
+		airport_grid.clear_synergy_selection()
 		_show_aircraft_context(tapped_aircraft)
 		return
 
@@ -2261,6 +2263,15 @@ func _open_building_management(
 		)
 		return
 
+	if String(
+		definition.get("synergy_provider", "")
+	) == "passenger_hub":
+		return _passenger_hub_context_summary(
+			building,
+			definition,
+			summary
+		)
+
 	if bool(
 		definition.get(
 			"passenger_generator",
@@ -2394,6 +2405,19 @@ func _building_context_summary(
 		summary["stat_one"] = "AIRCRAFT\n%s" % (
 			_context_size_text(definition)
 		)
+		if building_id.contains("stand"):
+			var local_synergy := airport_grid.get_building_synergy_summary(
+				uid
+			)
+			var local_count := int(
+				local_synergy.get("covered_count", 0)
+			)
+			if local_count > 0:
+				summary["stat_two"] = "LOCAL BOOSTS\n%d" % local_count
+				summary["status"] += " • %d service zone%s" % [
+					local_count,
+					"" if local_count == 1 else "s"
+				]
 
 	return summary
 
@@ -2450,6 +2474,49 @@ func _building_move_state(
 	}
 
 
+func _passenger_hub_context_summary(
+	building: Dictionary,
+	definition: Dictionary,
+	summary: Dictionary
+) -> Dictionary:
+	var result := summary.duplicate(true)
+	var synergy := airport_grid.get_building_synergy_summary(
+		int(building.get("uid", -1))
+	)
+	var covered := int(
+		synergy.get("covered_count", 0)
+	)
+	var bonus := maxi(
+		int(
+			round(
+				float(
+					definition.get(
+						"synergy_bonus",
+						0.0
+					)
+				) * 100.0
+			)
+		),
+		0
+	)
+	result["role"] = "Passenger hub"
+	result["stat_one"] = "PROXIMITY BOOST\n+%d%%" % bonus
+	result["stat_two"] = "COVERAGE\n%d building%s" % [
+		covered,
+		"" if covered == 1 else "s"
+	]
+	if covered > 0:
+		result["status"] = "Passenger synergy active • %d building%s boosted" % [
+			covered,
+			"" if covered == 1 else "s"
+		]
+		result["tone"] = "success"
+	else:
+		result["status"] = "No passenger generator in synergy range"
+		result["tone"] = "warning"
+	return result
+
+
 func _passenger_building_context_summary(
 	building: Dictionary,
 	definition: Dictionary,
@@ -2462,13 +2529,38 @@ func _passenger_building_context_summary(
 		building_id,
 		level
 	)
-	result["role"] = "Passenger generation"
-	result["stat_one"] = "PRODUCTION\n+%.1f/min" % float(
+	var base_rate := float(
 		stats.get("passengers_per_minute", 0.0)
 	)
+	var synergy := airport_grid.get_passenger_synergy(
+		int(building.get("uid", -1))
+	)
+	var multiplier := maxf(
+		float(synergy.get("multiplier", 1.0)),
+		1.0
+	)
+	var effective_rate := base_rate * multiplier
+	var bonus_pct := int(
+		synergy.get("bonus_pct", 0)
+	)
+
+	result["role"] = "Passenger generation"
+	result["stat_one"] = "PRODUCTION\n+%.1f/min" % effective_rate
 	result["stat_two"] = "STORAGE\n%d" % int(
 		stats.get("storage", 0)
 	)
+	if bool(synergy.get("active", false)):
+		result["status"] = "Terminal synergy • +%d%% production" % bonus_pct
+		result["tone"] = "success"
+		result["description"] = "%s Base %.1f/min • effective %.1f/min." % [
+			String(result.get("description", "")),
+			base_rate,
+			effective_rate
+		]
+	else:
+		result["status"] = "Outside terminal synergy range"
+		result["tone"] = "warning"
+
 	if not PassengerUpgradeCatalog.get_next_level(
 		building_id,
 		level
@@ -2476,8 +2568,7 @@ func _passenger_building_context_summary(
 		result["primary_label"] = "UPGRADE"
 		result["primary_kind"] = "primary"
 	else:
-		result["status"] = "Maximum upgrade level"
-		result["tone"] = "success"
+		result["status"] += " • maximum upgrade level"
 	return result
 
 
@@ -2520,8 +2611,35 @@ func _service_building_context_summary(
 		)
 
 	result["role"] = "Ground service"
-	result["stat_one"] = "SERVICE SPEED\nx%.2f" % max_speed
-	result["stat_two"] = "VEHICLES\n%d" % max_capacity
+	var coverage := airport_grid.get_service_coverage_summary(
+		int(building.get("uid", -1))
+	)
+	var covered_stands := int(
+		coverage.get("covered_count", 0)
+	)
+	var local_multiplier := maxf(
+		float(coverage.get("multiplier", 1.0)),
+		1.0
+	)
+	var bonus_pct := int(
+		coverage.get("bonus_pct", 0)
+	)
+	var local_speed := max_speed * local_multiplier
+	result["stat_one"] = (
+		"LOCAL SPEED\nx%.2f" % local_speed
+		if covered_stands > 0
+		else "SERVICE SPEED\nx%.2f" % max_speed
+	)
+	result["stat_two"] = "ZONE / VEHICLES\n%d • %d" % [
+		covered_stands,
+		max_capacity
+	]
+	if covered_stands > 0:
+		result["description"] = "%s Nearby stands receive +%d%% service speed." % [
+			String(result.get("description", "")),
+			bonus_pct
+		]
+
 	if waiting > 0:
 		result["status"] = "%d service request%s waiting" % [
 			waiting,
@@ -2531,6 +2649,8 @@ func _service_building_context_summary(
 	else:
 		result["status"] = "No queue • service available"
 		result["tone"] = "success"
+	if covered_stands > 0:
+		result["status"] += " • +%d%% local zone" % bonus_pct
 
 	if not ServiceUpgradeCatalog.get_next_level(
 		building_id,
@@ -3197,6 +3317,7 @@ func _celebrate_parcel_expansion(
 
 
 func _on_building_selected(building_id: String) -> void:
+	airport_grid.clear_synergy_selection()
 	if airport_edit_mode:
 		_exit_airport_edit_mode(false)
 	elif moving_building_uid >= 0:

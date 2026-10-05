@@ -137,6 +137,14 @@ func _run() -> void:
 		_fail(
 			"Smaller front building should render before the deeper large building."
 		)
+
+	# These starter integration checks were added with the production-art pass
+	# but must be executed here to make the green CI signal meaningful.
+	_check_starter_world_art(grid)
+	await _check_starter_layout_reload(grid)
+	_check_ground_service_art()
+	await _check_build_drawer_art()
+
 	grid.queue_free()
 
 	var checked := checked_atlas + checked_paths

@@ -291,8 +291,8 @@ func _pass(state: Dictionary) -> void:
 	else:
 		_progress(text_box, MissionPassCatalog.POINTS_PER_TIER, MissionPassCatalog.POINTS_PER_TIER)
 		_text(text_box, "All 30 Airport Pass tiers unlocked.")
-	var now := float(data.get("unix_time", Time.get_unix_time_from_system()))
-	_text(text_box, "Season ends in %s • earned unclaimed rewards auto-claim at rollover." % MissionPassRules.format_remaining(MissionPassRules.seconds_until_month_reset(now)))
+	var season_now := float(data.get("unix_time", Time.get_unix_time_from_system()))
+	_text(text_box, "Season ends in %s • earned unclaimed rewards auto-claim at rollover." % MissionPassRules.format_remaining(MissionPassRules.seconds_until_month_reset(season_now)))
 	_text(text_box, "Free track is always active. Premium adds extra rewards and retroactively unlocks earned premium tiers.")
 	var claimable := MissionPassRules.claimable_count(state)
 	var claim_all := Button.new()
@@ -320,9 +320,9 @@ func _pass(state: Dictionary) -> void:
 	var inventory := _card()
 	_text(inventory, "PASS REWARD INVENTORY", true)
 	_text(inventory, "Boosters last 2 hours. Using another copy while active adds 2 more hours instead of increasing the percentage.")
-	var now := float(data.get("unix_time", Time.get_unix_time_from_system()))
+	var booster_now := float(data.get("unix_time", Time.get_unix_time_from_system()))
 	for booster_id in MissionBoosterRules.all_ids():
-		_booster_row(inventory, state, booster_id, now)
+		_booster_row(inventory, state, booster_id, booster_now)
 	_text(inventory, "Country resource choice crates • %d" % int(state.get("resource_choice_crates", 0)))
 
 	var track_panel := PanelContainer.new()

@@ -1,5 +1,7 @@
 extends SceneTree
 
+var social_emitted := false
+
 
 func _init() -> void:
 	call_deferred("_run")
@@ -87,11 +89,58 @@ func _run() -> void:
 		_fail("Aircraft context card should close cleanly.")
 		return
 
+	var visitor := AircraftPrototype.new()
+	root.add_child(visitor)
+	visitor.name = "FR-BRU"
+	visitor.configure_aircraft_type("pico_p8")
+	var visit := SocialFlightRules.create_visit_request(
+		SocialContactCatalog.get_contact("system_brussels"),
+		1
+	)
+	visitor.configure_social_visit(visit)
+	visitor.assign_flight_plan(
+		SocialFlightRules.create_social_flight_plan(visit)
+	)
+	visitor.state = "PARKED"
+	visitor.visible = true
+
+	card.social_requested.connect(_on_social_requested)
+	card.show_aircraft(
+		visitor,
+		{},
+		7,
+		40
+	)
+	if not card.primary_button.text.contains("SOCIAL NETWORK"):
+		_fail("Visiting aircraft card should open the Social Network, not route assignment.")
+		return
+	if not card.route_label.text.contains("Brussels Link"):
+		_fail("Visitor aircraft card should show its source airport.")
+		return
+	if not card.passenger_label.text.contains("VISITOR"):
+		_fail("Visitor aircraft card should explain host passengers are not consumed.")
+		return
+	card._on_primary_pressed()
+	if not social_emitted:
+		_fail("Visitor aircraft primary action should emit social navigation.")
+		return
+
+	card.close_card()
+	if card.is_open():
+		_fail("Visitor aircraft context card should close cleanly.")
+		return
+
 	print(
 		"Aircraft context passed: world hit-test, sprite, route, passengers, "
 		+ "Mastery, live refresh and contextual actions."
 	)
 	quit(0)
+
+
+func _on_social_requested(
+	_aircraft: AircraftPrototype
+) -> void:
+	social_emitted = true
 
 
 func _fail(message: String) -> void:

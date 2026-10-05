@@ -45,6 +45,10 @@ func _run() -> void:
 			"passengers": 1000,
 			"coins": 10000,
 			"xp": 1000,
+			"flight_minutes": 1000,
+			"distance_km": 10000,
+			"mastery_minutes": 1000,
+			"resources": 10,
 			"country": "C%02d" % index
 		}, OCT_05, 1)
 	MissionPassRules.record_event(state, "passive_passengers", {"amount": 1000}, OCT_05, 1)

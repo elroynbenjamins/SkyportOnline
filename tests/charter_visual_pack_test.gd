@@ -147,6 +147,61 @@ func _run() -> void:
 		)
 		return
 
+	var fixed_stand_move := CharterDistrictLayout.placement_status(
+		"cargo_aircraft_stand",
+		Vector2i(1, 0),
+		0
+	)
+	if bool(fixed_stand_move.get("valid", true)):
+		_fail(
+			"Cargo Charter aircraft stand must remain static."
+		)
+		return
+
+	var outside_move := CharterDistrictLayout.placement_status(
+		"cargo_warehouse",
+		Vector2i(7, 7),
+		0
+	)
+	if bool(outside_move.get("valid", true)):
+		_fail(
+			"Charter buildings must reject movement outside the Logistics District."
+		)
+		return
+
+	var future_move := CharterDistrictLayout.placement_status(
+		"cargo_charter_office",
+		Vector2i(0, 6),
+		0
+	)
+	if bool(future_move.get("valid", true)):
+		_fail(
+			"Existing Charter structures must not consume future Kitchen/Workshop/Packing pads."
+		)
+		return
+
+	var overlap_move := CharterDistrictLayout.placement_status(
+		"cargo_charter_office",
+		Vector2i(0, 0),
+		0
+	)
+	if bool(overlap_move.get("valid", true)):
+		_fail(
+			"Charter move rules must reject overlap with the cargo stand."
+		)
+		return
+
+	for structure in CharterVisualCatalog.building_visuals():
+		var structure_id := String(structure.get("id", ""))
+		if structure_id == "cargo_aircraft_stand":
+			continue
+		if String(structure.get("anchor", "")) != "bottom_center":
+			_fail(
+				"%s should use a bottom-center transparent-sprite anchor."
+				% structure_id
+			)
+			return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame

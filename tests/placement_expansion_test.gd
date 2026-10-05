@@ -72,6 +72,57 @@ func _run() -> void:
 		_fail("Confirmed building should remain at the previewed target.")
 		return
 
+	var multi_grid := AirportGrid.new()
+	root.add_child(multi_grid)
+	await process_frame
+
+	var multi_target := Vector2i(5, 6)
+	var multi_status := multi_grid.set_build_preview(
+		"short_runway",
+		multi_grid.tile_to_world(
+			Vector2(multi_target.x, multi_target.y)
+		),
+		0
+	)
+	if int(multi_status.get("locked_parcel_count", 0)) != 2:
+		_fail("Large footprint should report both locked parcels.")
+		return
+
+	var first_locked := String(
+		multi_status.get("locked_parcel_id", "")
+	)
+	if first_locked.is_empty():
+		_fail("Multi-parcel placement should expose the first expansion.")
+		return
+	if not multi_grid.purchase_parcel(first_locked):
+		_fail("First required parcel should be purchasable.")
+		return
+
+	multi_status = multi_grid.refresh_build_preview(0)
+	if bool(multi_status.get("valid", false)):
+		_fail("One expansion should not unlock a two-parcel footprint.")
+		return
+	var second_locked := String(
+		multi_status.get("locked_parcel_id", "")
+	)
+	if (
+		second_locked.is_empty()
+		or second_locked == first_locked
+	):
+		_fail("Revalidation should advance to the next locked parcel.")
+		return
+	if not multi_grid.purchase_parcel(second_locked):
+		_fail("Second required parcel should be purchasable.")
+		return
+
+	multi_status = multi_grid.refresh_build_preview(0)
+	if not bool(multi_status.get("valid", false)):
+		_fail("Preview should become valid after both parcels unlock.")
+		return
+	if multi_status.get("origin", Vector2i.ZERO) != multi_target:
+		_fail("Sequential expansion must preserve the large preview origin.")
+		return
+
 	print(
 		"Placement expansion passed: locked parcel metadata, purchase, "
 		+ "preview preservation and immediate confirmation."

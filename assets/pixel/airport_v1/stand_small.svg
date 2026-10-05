@@ -1,13 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="160" viewBox="0 0 192 160" shape-rendering="crispEdges">
-<polygon points="18,98 91,55 175,83 101,128" fill="#162126" opacity=".55"/>
-<polygon points="18,88 91,46 175,74 101,118" fill="#747e82"/>
-<polygon points="27,86 91,51 166,76 101,112" fill="none" stroke="#d9ded8" stroke-width="3"/>
-<path d="M48 94 L83 74 L119 86 L84 106 Z" fill="none" stroke="#eef0e8" stroke-width="3"/>
-<path d="M61 89 L91 72 L137 87" fill="none" stroke="#e6c642" stroke-width="3"/>
-<path d="M91 72 L91 91" fill="none" stroke="#e6c642" stroke-width="3"/>
-<path d="M80 95 L101 83" fill="none" stroke="#f1f0e7" stroke-width="4"/>
-<rect x="55" y="72" width="4" height="21" fill="#efc84a"/>
-<rect x="143" y="75" width="4" height="21" fill="#efc84a"/>
-<rect x="37" y="86" width="5" height="5" fill="#e96c42"/>
-<rect x="155" y="82" width="5" height="5" fill="#e96c42"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="384" viewBox="0 0 640 384">
+<defs><linearGradient id="apron" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eee8dd"/><stop offset="1" stop-color="#c7c0b6"/></linearGradient></defs>
+<polygon points="78,205 302,80 562,160 335,292" fill="#23343a" opacity=".20"/>
+<polygon points="62,185 300,55 577,144 334,287" fill="#f5f1e9"/>
+<polygon points="79,181 300,66 557,148 333,274" fill="url(#apron)"/>
+<g stroke="#b9b2a9" stroke-width="3" opacity=".65">
+<line x1="190" y1="123" x2="430" y2="201"/><line x1="255" y1="88" x2="498" y2="166"/>
+<line x1="145" y1="215" x2="367" y2="94"/><line x1="272" y1="259" x2="496" y2="138"/>
+</g>
+<polygon points="120,188 300,89 515,158 333,262" fill="none" stroke="#e76f66" stroke-width="7" stroke-linejoin="round"/>
+<path d="M333 244 L333 191 Q334 164 304 147 L249 130" fill="none" stroke="#f1c54e" stroke-width="8" stroke-linecap="round"/>
+<line x1="294" y1="174" x2="377" y2="146" stroke="#f1c54e" stroke-width="7"/>
+<line x1="307" y1="188" x2="389" y2="159" stroke="#f1c54e" stroke-width="4"/>
+<polygon points="251,231 315,196 369,213 306,249" fill="#59636a"/>
+<text x="287" y="227" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#f1c54e" transform="rotate(-29 287 227)">A1</text>
+<g fill="none" stroke="#f1c54e" stroke-width="4" opacity=".9">
+<polygon points="405,206 451,181 493,194 447,221"/><polygon points="157,201 198,178 234,190 194,214"/>
+</g>
+<g><circle cx="173" cy="220" r="6" fill="#d55d22"/><polygon points="167,218 173,194 179,218" fill="#f07b2f"/>
+<circle cx="485" cy="214" r="6" fill="#d55d22"/><polygon points="479,212 485,188 491,212" fill="#f07b2f"/></g>
 </svg>

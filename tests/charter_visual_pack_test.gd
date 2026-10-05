@@ -129,9 +129,119 @@ func _run() -> void:
 		)
 		return
 
+	var layout_validation := CharterDistrictLayout.layout_validation()
+	if not bool(layout_validation.get("valid", false)):
+		_fail(
+			"Charter district layout is invalid: %s"
+			% str(layout_validation.get("errors", []))
+		)
+		return
+	if int(layout_validation.get("future_pads", 0)) != 3:
+		_fail(
+			"Charter district should preserve three future logistics pads."
+		)
+		return
+	if int(layout_validation.get("future_cells", 0)) != 12:
+		_fail(
+			"Three future 2x2 logistics pads should preserve 12 cells."
+		)
+		return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame
+
+	grid.set_charter_visual_state({
+		"unlocked": true,
+		"turnaround_active": true,
+		"phase": "LOADING",
+		"pallet_count": 3
+	})
+	if bool(
+		grid.get_charter_district_visual_snapshot().get(
+			"active",
+			true
+		)
+	):
+		_fail(
+			"Charter district must stay hidden until the Logistics parcel is owned."
+		)
+		return
+
+	grid.parcels[CharterDistrictLayout.PARCEL_ID]["owned"] = true
+	grid.set_charter_visual_state({
+		"unlocked": true,
+		"turnaround_active": true,
+		"phase": "LOADING",
+		"pallet_count": 3
+	})
+	var district_snapshot := grid.get_charter_district_visual_snapshot()
+	if not bool(district_snapshot.get("active", false)):
+		_fail(
+			"Owned Logistics parcel + Charter unlock should activate the visual district."
+		)
+		return
+	if int(district_snapshot.get("future_pads", 0)) != 3:
+		_fail(
+			"Active Charter district should still expose three future pads."
+		)
+		return
+	if (
+		grid.charter_turnaround_visual == null
+		or not grid.charter_turnaround_visual.visible
+	):
+		_fail(
+			"Active Charter turnaround should appear on the cargo stand."
+		)
+		return
+
+	var base_tile := grid._charter_district_base_tile()
+	var reserved_status := grid._get_placement_status(
+		"ground_ops_depot",
+		base_tile + Vector2i(3, 5),
+		0
+	)
+	if bool(reserved_status.get("valid", true)):
+		_fail(
+			"Active Charter road/yard cells must reject normal building placement."
+		)
+		return
+	if not bool(
+		reserved_status.get(
+			"charter_reserved",
+			false
+		)
+	):
+		_fail(
+			"Reserved Charter placement rejection should identify the district reason."
+		)
+		return
+
+	var future_status := grid._get_placement_status(
+		"ground_ops_depot",
+		base_tile + Vector2i(0, 6),
+		0
+	)
+	if not bool(future_status.get("valid", false)):
+		_fail(
+			"Future Logistics pads must remain usable by later Charter buildings."
+		)
+		return
+
+	grid.set_charter_visual_state({
+		"unlocked": false
+	})
+	if bool(
+		grid.get_charter_district_visual_snapshot().get(
+			"active",
+			true
+		)
+	):
+		_fail(
+			"Charter district must disappear again when progression says it is locked."
+		)
+		return
+
 	var office_visual := CharterVisualCatalog.visual_for(
 		"cargo_charter_office"
 	)
@@ -149,10 +259,10 @@ func _run() -> void:
 		return
 
 	print(
-		"Charter visual pack passed: %d images indexed; logistics buildings, "
+		"Charter visual pack passed: %d images indexed; fixed Logistics gate, "
 		% files.size()
-		+ "support surfaces and airport renderer bridge are ready while the "
-		+ "district remains progression-gated."
+		+ "service-road spine, cargo apron, warehouse/office handling yard, "
+		+ "three future logistics pads and live turnaround state are progression-gated."
 	)
 	quit(0)
 

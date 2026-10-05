@@ -39,6 +39,9 @@ func _run() -> void:
 	var event := EventScreen.new()
 	root.add_child(event)
 
+	var social := SocialAirportScreen.new()
+	root.add_child(social)
+
 	var inventory := ResourceInventoryScreen.new()
 	root.add_child(inventory)
 
@@ -116,6 +119,7 @@ func _run() -> void:
 		world.root,
 		fleet.root,
 		event.root,
+		social.root,
 		inventory.root,
 		passenger_upgrade.root,
 		service_upgrade.root,
@@ -148,7 +152,7 @@ func _run() -> void:
 
 	print(
 		"UI modernization passed: compact airport chips, build tray, "
-		+ "World Map cards, upgrade comparisons, reward tiles, and "
+		+ "World Map/Social cards, upgrade comparisons, reward tiles, and "
 		+ "shared game styling."
 	)
 	quit(0)

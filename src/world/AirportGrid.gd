@@ -4031,14 +4031,6 @@ func confirm_build_preview() -> Dictionary:
 	if not bool(preview_status.get("valid", false)):
 		return {}
 
-	var definition := BuildingCatalog.get_definition(
-		preview_building_id
-	)
-	var confirmed_origin := preview_origin
-	var confirmed_footprint := _footprint_for(
-		definition,
-		preview_rotation
-	)
 	var placed := _place_building_internal(
 		preview_building_id,
 		preview_origin,

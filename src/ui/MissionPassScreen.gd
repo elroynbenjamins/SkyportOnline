@@ -7,6 +7,7 @@ signal pass_reward_claim_requested(tier_number: int, track: String)
 signal claim_all_requested
 signal product_purchase_requested(product_id: String)
 signal booster_activate_requested(booster_id: String)
+signal resource_choice_requested(resource_id: String)
 signal closed
 
 var root: Control
@@ -17,6 +18,9 @@ var tabs: Dictionary = {}
 var selected_tab := "Daily"
 var data: Dictionary = {}
 var current_signature := 0
+var resource_choice_overlay: Control
+var resource_choice_list: VBoxContainer
+var resource_choice_title: Label
 
 func _ready() -> void:
 	layer = 39
@@ -77,6 +81,7 @@ func _ready() -> void:
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 10)
 	scroll.add_child(body)
+	_build_resource_choice_overlay()
 	root.visible = false
 
 func open_screen(snapshot: Dictionary, tab: String = "Daily") -> void:
@@ -91,6 +96,7 @@ func open_tab(tab: String) -> void:
 	_refresh()
 
 func close_screen() -> void:
+	_close_resource_choice()
 	root.visible = false
 	closed.emit()
 
@@ -323,7 +329,30 @@ func _pass(state: Dictionary) -> void:
 	var booster_now := float(data.get("unix_time", Time.get_unix_time_from_system()))
 	for booster_id in MissionBoosterRules.all_ids():
 		_booster_row(inventory, state, booster_id, booster_now)
-	_text(inventory, "Country resource choice crates • %d" % int(state.get("resource_choice_crates", 0)))
+	var crate_row := HBoxContainer.new()
+	crate_row.add_theme_constant_override("separation", 10)
+	inventory.add_child(crate_row)
+	var crate_details := VBoxContainer.new()
+	crate_details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	crate_row.add_child(crate_details)
+	var crate_count := int(state.get("resource_choice_crates", 0))
+	_text(crate_details, "◆ COUNTRY RESOURCE CHOICE CRATES", true)
+	_text(crate_details, "%d available • choose one resource from a country currently connected to your airport." % crate_count)
+	var pending_grants: Array = state.get("pending_resource_grants", [])
+	if not pending_grants.is_empty():
+		_text(crate_details, "%d resource reward%s safely queued for delivery." % [
+			pending_grants.size(),
+			"" if pending_grants.size() == 1 else "s"
+		])
+	var crate_button := Button.new()
+	crate_button.custom_minimum_size = Vector2(175, 46)
+	var available_codes: Array = data.get("resource_choice_country_codes", [])
+	crate_button.disabled = crate_count <= 0 or available_codes.is_empty()
+	crate_button.text = "OPEN CRATE • %d" % crate_count if crate_count > 0 else "NO CRATES"
+	GameUIStyle.apply_button(crate_button, "event" if not crate_button.disabled else "secondary", true)
+	if not crate_button.disabled:
+		crate_button.pressed.connect(_open_resource_choice)
+	crate_row.add_child(crate_button)
 
 	var track_panel := PanelContainer.new()
 	track_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -345,13 +374,24 @@ func _pass(state: Dictionary) -> void:
 		var number := int(tier.get("tier", 0))
 		var unlocked := points >= int(tier.get("points", 0))
 		var tier_card := PanelContainer.new()
-		tier_card.custom_minimum_size = Vector2(220, 225)
-		GameUIStyle.apply_panel(tier_card, "gold" if unlocked else "raised")
+		var milestone := number % 5 == 0
+		tier_card.custom_minimum_size = Vector2(235 if milestone else 220, 235 if milestone else 225)
+		var panel_variant := "raised"
+		if milestone:
+			panel_variant = "event"
+		elif unlocked:
+			panel_variant = "gold"
+		GameUIStyle.apply_panel(tier_card, panel_variant)
 		row.add_child(tier_card)
 		var column := VBoxContainer.new()
 		column.add_theme_constant_override("separation", 7)
 		tier_card.add_child(column)
-		_text(column, "TIER %02d  •  %d PTS" % [number, int(tier.get("points", 0))], true)
+		var tier_heading := "TIER %02d  •  %d PTS" % [number, int(tier.get("points", 0))]
+		if number == MissionPassCatalog.TIERS:
+			tier_heading = "✦ SEASON FINALE • TIER %02d" % number
+		elif milestone:
+			tier_heading = "★ MILESTONE • TIER %02d" % number
+		_text(column, tier_heading, true)
 		_reward_row(column, number, "free", tier.get("free", {}), unlocked, bool(claimed_free.get(str(number), false)), true)
 		_reward_row(column, number, "premium", tier.get("premium", {}), unlocked, bool(claimed_premium.get(str(number), false)), premium)
 
@@ -394,7 +434,7 @@ func _reward_row(
 	parent.add_child(section)
 	var name := "FREE" if track == "free" else "PREMIUM"
 	var label := Label.new()
-	label.text = "%s • %s" % [name, String(reward.get("label", "Reward"))]
+	label.text = "%s  %s • %s" % [_reward_icon(reward), name, String(reward.get("label", "Reward"))]
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", 13)
 	label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD if track == "premium" else GameUIStyle.COLOR_TEXT)
@@ -453,6 +493,126 @@ func _booster_row(
 		use_button.pressed.connect(_activate_booster.bind(booster_id))
 	row.add_child(use_button)
 
+
+
+func _build_resource_choice_overlay() -> void:
+	resource_choice_overlay = ColorRect.new()
+	resource_choice_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	resource_choice_overlay.color = Color("061017", 0.965)
+	resource_choice_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	resource_choice_overlay.z_index = 140
+	resource_choice_overlay.visible = false
+	root.add_child(resource_choice_overlay)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 125
+	panel.offset_top = 65
+	panel.offset_right = -125
+	panel.offset_bottom = -65
+	GameUIStyle.apply_panel(panel, "event")
+	resource_choice_overlay.add_child(panel)
+
+	var margin := MarginContainer.new()
+	for edge in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + edge, 16)
+	panel.add_child(margin)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 9)
+	margin.add_child(column)
+
+	var header_row := HBoxContainer.new()
+	column.add_child(header_row)
+	resource_choice_title = Label.new()
+	resource_choice_title.text = "COUNTRY RESOURCE CHOICE CRATE"
+	resource_choice_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	GameUIStyle.heading(resource_choice_title, 21)
+	resource_choice_title.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+	header_row.add_child(resource_choice_title)
+
+	var cancel := Button.new()
+	cancel.text = "✕  CANCEL"
+	cancel.custom_minimum_size = Vector2(120, 40)
+	GameUIStyle.apply_button(cancel, "secondary", true)
+	cancel.pressed.connect(_close_resource_choice)
+	header_row.add_child(cancel)
+
+	var hint := Label.new()
+	hint.text = "Choose one resource. One crate is reserved only after your selection is safely saved; interrupted delivery retries without duplicating the reward."
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	GameUIStyle.muted(hint)
+	column.add_child(hint)
+
+	var scroll_choice := ScrollContainer.new()
+	scroll_choice.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_choice.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column.add_child(scroll_choice)
+	resource_choice_list = VBoxContainer.new()
+	resource_choice_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resource_choice_list.add_theme_constant_override("separation", 6)
+	scroll_choice.add_child(resource_choice_list)
+
+func _open_resource_choice() -> void:
+	if resource_choice_overlay == null:
+		return
+	for child in resource_choice_list.get_children():
+		child.queue_free()
+	var inventory: Dictionary = data.get("resource_inventory", {})
+	var codes: Array = data.get("resource_choice_country_codes", [])
+	for code_variant in codes:
+		var country_code := String(code_variant)
+		var country := CountryCatalog.get_country(country_code)
+		if country.is_empty():
+			continue
+		var country_label := Label.new()
+		country_label.text = String(country.get("name", country_code)).to_upper()
+		GameUIStyle.heading(country_label, 14)
+		country_label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+		resource_choice_list.add_child(country_label)
+		for resource in CountryResourceCatalog.resources_for_country(country_code):
+			var resource_id := String(resource.get("id", ""))
+			if resource_id.is_empty():
+				continue
+			var selected_id := resource_id
+			var button := Button.new()
+			button.text = "◆ %s  •  Owned %d" % [
+				String(resource.get("name", resource_id)),
+				int(inventory.get(resource_id, 0))
+			]
+			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			button.custom_minimum_size = Vector2(0, 44)
+			GameUIStyle.apply_button(button, "secondary", true)
+			button.pressed.connect(
+				func() -> void:
+					_close_resource_choice()
+					resource_choice_requested.emit(selected_id)
+			)
+			resource_choice_list.add_child(button)
+	resource_choice_overlay.visible = true
+
+func _close_resource_choice() -> void:
+	if resource_choice_overlay != null:
+		resource_choice_overlay.visible = false
+
+func _reward_icon(reward: Dictionary) -> String:
+	var grants: Dictionary = reward.get("grants", {})
+	if int(grants.get("cosmetic_free", 0)) > 0 or int(grants.get("cosmetic_premium", 0)) > 0:
+		return "✦"
+	if int(grants.get("resource_crates", 0)) > 0:
+		return "◆"
+	if int(grants.get("aero_tokens", 0)) > 0:
+		return "✦"
+	if int(grants.get("passengers", 0)) > 0:
+		return "👥"
+	if int(grants.get("coins", 0)) > 0:
+		return "●"
+	if int(grants.get("xp", 0)) > 0:
+		return "★"
+	for key in ["booster_ground_crew", "booster_tailwind", "booster_gold", "booster_xp", "booster_passengers"]:
+		if int(grants.get(key, 0)) > 0:
+			return "⚡"
+	return "•"
 
 func _card() -> VBoxContainer:
 	var panel := PanelContainer.new()

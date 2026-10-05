@@ -283,6 +283,39 @@ func _run() -> void:
 		)
 		return
 
+	var valid_charter_preview := grid.set_charter_structure_preview(
+		"cargo_charter_office",
+		base_tile + Vector2i(6, 4),
+		1
+	)
+	if not bool(valid_charter_preview.get("valid", false)):
+		_fail(
+			"Charter office should have a valid green-footprint position in its default Logistics slot."
+		)
+		return
+
+	var invalid_charter_preview := grid.set_charter_structure_preview(
+		"cargo_charter_office",
+		base_tile + Vector2i(0, 6),
+		0
+	)
+	if bool(invalid_charter_preview.get("valid", true)):
+		_fail(
+			"Future Charter pads should produce an invalid/red move footprint for current structures."
+		)
+		return
+	if grid.charter_move_preview.is_empty():
+		_fail(
+			"Charter move preview state should remain available to the renderer."
+		)
+		return
+	grid.clear_charter_structure_preview()
+	if not grid.charter_move_preview.is_empty():
+		_fail(
+			"Charter move preview should clear cleanly."
+		)
+		return
+
 	grid.set_charter_visual_state({
 		"unlocked": false
 	})

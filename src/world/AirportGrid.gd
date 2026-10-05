@@ -71,6 +71,10 @@ const PAVEMENT_SHADOW := Color("182226", 0.24)
 const FENCE_COLOR := Color("53656b")
 const FENCE_MESH := Color("91a4aa", 0.52)
 const PERIMETER_LIGHT := Color("fff0bd")
+const ENVIRONMENT_PARKING := "res://assets/pixel/airport_v1/environment_parking_lot.svg"
+const ENVIRONMENT_TREES := "res://assets/pixel/airport_v1/environment_tree_cluster.svg"
+const ENVIRONMENT_HEDGE := "res://assets/pixel/airport_v1/environment_hedge_strip.svg"
+const ENVIRONMENT_ENTRANCE := "res://assets/pixel/airport_v1/environment_entrance_sign.svg"
 const PARCEL_UNLOCK_FX_DURATION := 0.9
 
 var parcels: Dictionary = {}
@@ -187,6 +191,9 @@ func _add_parcel(id: String, px: int, py: int, level: int, cost: int, owned: boo
 
 func _draw() -> void:
 	_draw_world_terrain_background()
+	# Landside art is a background layer. Drawing it before parcel terrain
+	# guarantees decorative scenery can never cover buildable placement tiles.
+	_draw_landside_environment()
 
 	for py in range(PARCEL_ROWS):
 		for px in range(PARCEL_COLUMNS):
@@ -488,6 +495,135 @@ func _draw_terrain_soft_patch(
 		Vector2.ZERO,
 		0.0,
 		Vector2.ONE
+	)
+
+
+
+func get_landside_scenery_layout() -> Array[Dictionary]:
+	return [
+		{
+			"id": "parking_west",
+			"path": ENVIRONMENT_PARKING,
+			"position": Vector2(-585, 570),
+			"size": Vector2(330, 191)
+		},
+		{
+			"id": "entrance_south_west",
+			"path": ENVIRONMENT_ENTRANCE,
+			"position": Vector2(-420, 676),
+			"size": Vector2(190, 154)
+		},
+		{
+			"id": "trees_east",
+			"path": ENVIRONMENT_TREES,
+			"position": Vector2(630, 455),
+			"size": Vector2(245, 198)
+		},
+		{
+			"id": "trees_west",
+			"path": ENVIRONMENT_TREES,
+			"position": Vector2(-770, 350),
+			"size": Vector2(205, 165)
+		},
+		{
+			"id": "hedge_south",
+			"path": ENVIRONMENT_HEDGE,
+			"position": Vector2(40, 758),
+			"size": Vector2(350, 120)
+		}
+	]
+
+
+func get_landside_access_road_points() -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(-980, 592),
+		Vector2(-805, 554),
+		Vector2(-655, 575),
+		Vector2(-520, 624),
+		Vector2(-365, 682),
+		Vector2(-205, 728)
+	])
+
+
+func _draw_landside_environment() -> void:
+	_draw_landside_access_road()
+	for item in get_landside_scenery_layout():
+		_draw_environment_sprite(
+			String(item.get("path", "")),
+			item.get("position", Vector2.ZERO),
+			item.get("size", Vector2.ZERO)
+		)
+
+
+func _draw_landside_access_road() -> void:
+	var road := get_landside_access_road_points()
+	var shadow := PackedVector2Array()
+	for point in road:
+		shadow.append(point + Vector2(4, 6))
+
+	draw_polyline(
+		shadow,
+		Color(0.03, 0.07, 0.08, 0.24),
+		48.0,
+		true
+	)
+	draw_polyline(
+		road,
+		Color("b9b2a8"),
+		44.0,
+		true
+	)
+	draw_polyline(
+		road,
+		Color("625f5a"),
+		34.0,
+		true
+	)
+	draw_polyline(
+		road,
+		Color("f0ece3", 0.80),
+		2.2,
+		true
+	)
+
+	for index in range(road.size() - 1):
+		var a := road[index]
+		var b := road[index + 1]
+		var length := a.distance_to(b)
+		if length <= 1.0:
+			continue
+		var direction := (b - a).normalized()
+		var dash_start := a + direction * 24.0
+		var dash_end := b - direction * 24.0
+		if dash_start.distance_to(dash_end) > 8.0:
+			draw_dashed_line(
+				dash_start,
+				dash_end,
+				Color("e6d16b", 0.78),
+				2.0,
+				14.0
+			)
+
+
+func _draw_environment_sprite(
+	path: String,
+	position: Vector2,
+	size: Vector2
+) -> void:
+	if path.is_empty() or size.x <= 0.0 or size.y <= 0.0:
+		return
+	var texture := _get_building_texture(path)
+	if texture == null:
+		return
+	var rect := Rect2(
+		position - size * 0.5,
+		size
+	)
+	draw_texture_rect(
+		texture,
+		rect,
+		false,
+		Color.WHITE
 	)
 
 
@@ -1045,6 +1181,59 @@ func _draw_world_art_ground_pad(
 		Color("263238", 0.09),
 		1.0
 	)
+	_draw_hardscape_curb_and_drainage(
+		polygon,
+		definition
+	)
+
+
+func _draw_hardscape_curb_and_drainage(
+	polygon: PackedVector2Array,
+	definition: Dictionary
+) -> void:
+	if polygon.size() < 4:
+		return
+	var id := String(definition.get("id", ""))
+	if id.contains("runway") or id.contains("stand"):
+		return
+
+	var front_a := polygon[3]
+	var front_b := polygon[2]
+	draw_line(
+		front_a + Vector2(0, -1),
+		front_b + Vector2(0, -1),
+		Color("eee9df", 0.28),
+		1.3
+	)
+	draw_line(
+		front_a + Vector2(0, 2),
+		front_b + Vector2(0, 2),
+		Color("3a4447", 0.20),
+		1.6
+	)
+
+	var edge := front_b - front_a
+	var edge_length := edge.length()
+	if edge_length < 70.0:
+		return
+	var direction := edge.normalized()
+	for fraction in [0.30, 0.70]:
+		var center := front_a.lerp(
+			front_b,
+			float(fraction)
+		) + Vector2(0, 1)
+		draw_line(
+			center - direction * 7.0,
+			center + direction * 7.0,
+			Color("4b5558", 0.64),
+			3.0
+		)
+		for slot in [-4.0, 0.0, 4.0]:
+			draw_circle(
+				center + direction * slot,
+				0.9,
+				Color("1f292c", 0.80)
+			)
 
 
 func _footprint_polygon(

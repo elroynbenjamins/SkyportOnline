@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="500" viewBox="0 0 620 500">
+<g opacity=".22" fill="#20343a"><ellipse cx="303" cy="397" rx="188" ry="48"/><ellipse cx="164" cy="372" rx="76" ry="28"/></g>
+<g>
+ <rect x="142" y="258" width="18" height="118" rx="6" fill="#6d5137"/><rect x="316" y="218" width="20" height="155" rx="7" fill="#674a34"/><rect x="442" y="270" width="17" height="105" rx="6" fill="#72523a"/>
+ <g fill="#2f7442"><circle cx="124" cy="241" r="64"/><circle cx="174" cy="220" r="72"/><circle cx="149" cy="177" r="68"/></g>
+ <g fill="#3f8b49"><circle cx="286" cy="216" r="75"/><circle cx="352" cy="201" r="82"/><circle cx="326" cy="145" r="72"/></g>
+ <g fill="#4f9851"><circle cx="422" cy="265" r="58"/><circle cx="473" cy="249" r="62"/><circle cx="454" cy="210" r="57"/></g>
+ <g fill="#78b765" opacity=".7"><circle cx="134" cy="161" r="20"/><circle cx="318" cy="125" r="23"/><circle cx="449" cy="194" r="16"/></g>
+</g>
+<g>
+ <ellipse cx="270" cy="384" rx="128" ry="30" fill="#456d40"/><ellipse cx="278" cy="374" rx="123" ry="25" fill="#5c8f4d"/>
+ <g fill="#759f56"><circle cx="196" cy="361" r="30"/><circle cx="236" cy="351" r="35"/><circle cx="287" cy="356" r="32"/><circle cx="337" cy="350" r="36"/><circle cx="379" cy="361" r="28"/></g>
+ <g fill="#f2cf5a"><circle cx="225" cy="346" r="5"/><circle cx="305" cy="350" r="5"/><circle cx="355" cy="345" r="5"/></g>
+</g>
+</svg>

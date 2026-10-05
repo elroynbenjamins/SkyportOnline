@@ -2,6 +2,7 @@ extends Camera2D
 
 signal world_tapped(world_position: Vector2)
 signal world_dragged(world_position: Vector2)
+signal world_hovered(world_position: Vector2)
 
 const MIN_ZOOM := 0.52
 const MAX_ZOOM := 1.45
@@ -98,6 +99,10 @@ func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 		or event.button_mask & MOUSE_BUTTON_MASK_RIGHT
 	):
 		_cancel_focus_tween()
+	elif not placement_drag_enabled:
+		world_hovered.emit(
+			_screen_to_world(event.position)
+		)
 
 	if (
 		placement_drag_enabled

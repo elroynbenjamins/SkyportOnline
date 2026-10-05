@@ -93,6 +93,34 @@ func _run() -> void:
 		_fail("Moving a building must preserve its upgrade level.")
 		return
 
+	var undo_result := grid.restore_building_position(original)
+	if not bool(undo_result.get("valid", false)):
+		_fail("Undo should restore the previous valid building position.")
+		return
+	var undone := grid.get_building(fuel_uid)
+	if undone.get("origin", Vector2i.ZERO) != original_origin:
+		_fail("Undo should return the building to its original origin.")
+		return
+	if int(undone.get("upgrade_level", 1)) != 3:
+		_fail("Undo must not roll back building upgrade progress.")
+		return
+
+	start_status = grid.begin_move_preview(fuel_uid)
+	if not bool(start_status.get("valid", false)):
+		_fail("Building should remain movable after an undo.")
+		return
+	target_status = grid.set_move_preview(
+		grid.tile_to_world(Vector2(target.x, target.y)),
+		0
+	)
+	if not bool(target_status.get("valid", false)):
+		_fail("Move target should remain valid after undo.")
+		return
+	moved_result = grid.confirm_move_preview()
+	if moved_result.is_empty():
+		_fail("Building should be movable again after undo.")
+		return
+
 	var saved_layout := grid.export_airport_layout()
 	var saved_parcels := grid.export_owned_parcels()
 	if not saved_parcels.has("north"):

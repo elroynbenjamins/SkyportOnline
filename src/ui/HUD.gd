@@ -340,13 +340,60 @@ func _build_interface() -> void:
 	_build_bottom_navigation(root)
 
 
+
+func _build_hud_resource_chip(
+	parent: HBoxContainer,
+	caption: String,
+	value_text: String,
+	detail_text: String,
+	panel_variant: String,
+	minimum_width: int
+) -> Dictionary:
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(minimum_width, 0)
+	GameUIStyle.apply_panel(panel, panel_variant)
+	parent.add_child(panel)
+
+	var box := VBoxContainer.new()
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_theme_constant_override("separation", 0)
+	panel.add_child(box)
+
+	var caption_label := Label.new()
+	caption_label.text = caption
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption_label.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.muted(caption_label)
+	box.add_child(caption_label)
+
+	var value_label := Label.new()
+	value_label.text = value_text
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", 18)
+	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
+	box.add_child(value_label)
+
+	var detail_label := Label.new()
+	detail_label.text = detail_text
+	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detail_label.add_theme_font_size_override("font_size", 9)
+	GameUIStyle.muted(detail_label)
+	box.add_child(detail_label)
+
+	return {
+		"panel": panel,
+		"value": value_label,
+		"detail": detail_label
+	}
+
+
 func _build_expansion_banner(root: Control) -> void:
 	expansion_banner = PanelContainer.new()
 	expansion_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	expansion_banner.offset_left = 360
-	expansion_banner.offset_top = 82
+	expansion_banner.offset_top = 100
 	expansion_banner.offset_right = -360
-	expansion_banner.offset_bottom = 158
+	expansion_banner.offset_bottom = 176
 	expansion_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner.visible = false
 	root.add_child(expansion_banner)
@@ -399,6 +446,71 @@ func _build_expansion_banner(root: Control) -> void:
 	)
 	GameUIStyle.muted(expansion_banner_detail)
 	text_box.add_child(expansion_banner_detail)
+
+
+
+func _build_operation_toast(root: Control) -> void:
+	operation_toast_panel = PanelContainer.new()
+	operation_toast_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	operation_toast_panel.offset_left = -285
+	operation_toast_panel.offset_top = -162
+	operation_toast_panel.offset_right = 285
+	operation_toast_panel.offset_bottom = -104
+	operation_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	operation_toast_panel.visible = false
+	operation_toast_panel.modulate.a = 0.0
+	root.add_child(operation_toast_panel)
+	GameUIStyle.apply_panel(operation_toast_panel, "toast_success")
+
+	operation_toast_label = Label.new()
+	operation_toast_label.text = "Airport update"
+	operation_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	operation_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	operation_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	operation_toast_label.max_lines_visible = 2
+	operation_toast_label.add_theme_font_size_override("font_size", 14)
+	operation_toast_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
+	operation_toast_panel.add_child(operation_toast_label)
+
+
+func _show_operation_toast(text: String, tone: String) -> void:
+	if operation_toast_panel == null or operation_toast_label == null:
+		return
+	if operation_toast_tween != null and operation_toast_tween.is_valid():
+		operation_toast_tween.kill()
+
+	var prefix := "✓ "
+	var variant := "toast_success"
+	match tone:
+		"warning":
+			prefix = "⚠ "
+			variant = "toast_warning"
+		"danger":
+			prefix = "✕ "
+			variant = "toast_danger"
+	operation_toast_label.text = prefix + text
+	GameUIStyle.apply_panel(operation_toast_panel, variant)
+	operation_toast_panel.visible = true
+	operation_toast_panel.modulate.a = 0.0
+
+	operation_toast_tween = create_tween()
+	operation_toast_tween.tween_property(
+		operation_toast_panel,
+		"modulate:a",
+		1.0,
+		0.12
+	)
+	operation_toast_tween.tween_interval(2.0)
+	operation_toast_tween.tween_property(
+		operation_toast_panel,
+		"modulate:a",
+		0.0,
+		0.24
+	)
+	operation_toast_tween.tween_callback(
+		func() -> void:
+			operation_toast_panel.visible = false
+	)
 
 
 func _build_context_panel(root: Control) -> void:

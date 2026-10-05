@@ -40,6 +40,15 @@ const STOP_BAR_OFF := Color("6d5b3f")
 const RUNWAY_CLEAR := Color("76d39b")
 const RUNWAY_OCCUPIED := Color("ff5d62")
 const RUNWAY_PRIORITY := Color("ffbf47")
+const TAXIWAY_OUTER := Color("38454b")
+const TAXIWAY_INNER := Color("4b575c")
+const SERVICE_ROAD_OUTER := Color("6b655e")
+const SERVICE_ROAD_INNER := Color("837a70")
+const PAVEMENT_HIGHLIGHT := Color("ffffff", 0.16)
+const PAVEMENT_SHADOW := Color("182226", 0.24)
+const FENCE_COLOR := Color("53656b")
+const FENCE_MESH := Color("91a4aa", 0.52)
+const PERIMETER_LIGHT := Color("fff0bd")
 const PARCEL_UNLOCK_FX_DURATION := 0.9
 
 var parcels: Dictionary = {}
@@ -163,6 +172,7 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
+	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
@@ -202,6 +212,31 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 					line = LOCKED_GRID_LINE
 			draw_colored_polygon(points, fill)
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
+			if owned:
+				_draw_grass_detail(Vector2i(x, y), center)
+
+
+func _draw_grass_detail(tile: Vector2i, center: Vector2) -> void:
+	var seed := absi(tile.x * 37 + tile.y * 53)
+	if seed % 3 != 0:
+		return
+	var offset := Vector2(
+		float((seed % 17) - 8),
+		float(((seed / 3) as int) % 9 - 4)
+	)
+	var tuft := center + offset
+	draw_line(
+		tuft + Vector2(-2.0, 2.0),
+		tuft + Vector2(0.0, -2.0),
+		Color("d9efb7", 0.30),
+		1.0
+	)
+	draw_line(
+		tuft + Vector2(2.0, 2.0),
+		tuft + Vector2(0.0, -2.0),
+		Color("4e7f43", 0.28),
+		1.0
+	)
 
 
 func _draw_expansion_boundary_visuals() -> void:

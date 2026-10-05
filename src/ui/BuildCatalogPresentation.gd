@@ -167,9 +167,10 @@ static func _size_label(definition: Dictionary) -> String:
 	if not (raw is PackedStringArray):
 		return ""
 	var sizes: PackedStringArray = raw
-	if sizes.is_empty():
-		return ""
-	return "/".join(Array(sizes))
+	var labels: Array[String] = []
+	for size in sizes:
+		labels.append(String(size))
+	return "/".join(labels)
 
 
 static func _service_label(definition: Dictionary) -> String:

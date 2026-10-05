@@ -22,6 +22,7 @@ var aircraft_demos: Array[AircraftPrototype] = []
 var ground_services: GroundServiceDispatcher
 var runway_dispatcher: RunwayDispatcher
 var taxi_traffic: TaxiTrafficController
+var ambient_life: AirportAmbientLife
 var stand_occupancy: Dictionary = {}
 var pending_arrivals: Array[Dictionary] = []
 var pending_passenger_departures: Array[Dictionary] = []
@@ -151,6 +152,7 @@ func _start_gameplay() -> void:
 	_setup_ground_services()
 	_setup_runway_dispatcher()
 	_setup_taxi_traffic()
+	_setup_ambient_life()
 	_setup_world_map()
 	_setup_fleet_screen()
 	_setup_aircraft_context_card()
@@ -214,6 +216,13 @@ func _setup_taxi_traffic() -> void:
 		_on_taxi_hold_changed
 	)
 	add_child(taxi_traffic)
+
+
+func _setup_ambient_life() -> void:
+	ambient_life = AirportAmbientLife.new()
+	ambient_life.z_index = 78
+	add_child(ambient_life)
+	ambient_life.configure(airport_grid)
 
 
 func _setup_world_map() -> void:

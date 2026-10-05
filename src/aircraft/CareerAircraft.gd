@@ -70,6 +70,7 @@ func _draw() -> void:
 	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
 		return
 	_draw_shadow()
+	_draw_motion_feedback()
 	# Directional artwork is already isometric: cancel node rotation instead of rotating the image twice.
 	draw_set_transform(Vector2.ZERO, -global_rotation, Vector2.ONE)
 	var width := get_directional_draw_width()

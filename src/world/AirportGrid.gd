@@ -64,6 +64,9 @@ const STOP_BAR_OFF := Color("6d5b3f")
 const RUNWAY_CLEAR := Color("76d39b")
 const RUNWAY_OCCUPIED := Color("ff5d62")
 const RUNWAY_PRIORITY := Color("ffbf47")
+const RUNWAY_EDGE_LIGHT_IDLE := Color("6d8f98")
+const RUNWAY_EDGE_LIGHT_ACTIVE := Color("c9f4ff")
+const RUNWAY_EDGE_LIGHT_PRIORITY := Color("ffd166")
 const TAXIWAY_OUTER := Color("38454b")
 const TAXIWAY_INNER := Color("4b575c")
 const SERVICE_ROAD_OUTER := Color("6b655e")
@@ -105,6 +108,7 @@ var building_textures: Dictionary = {}
 var building_texture_images: Dictionary = {}
 var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
+var runway_feedback_elapsed := 0.0
 var event_visual_snapshot: Dictionary = {}
 var event_owned_cosmetics: Dictionary = {}
 var parcel_unlock_fx: Dictionary = {}
@@ -194,6 +198,13 @@ func _process(delta: float) -> void:
 				new_build_construction_fx[uid] = fx
 		for uid in completed_builds:
 			new_build_construction_fx.erase(uid)
+
+	if _has_active_runway_feedback():
+		active = true
+		runway_feedback_elapsed = fmod(
+			runway_feedback_elapsed + delta,
+			TAU
+		)
 
 	if (
 		not parcel_unlock_fx.is_empty()
@@ -4097,6 +4108,8 @@ func set_runway_visual_state(
 	if runway_uid < 0:
 		return
 	runway_visual_states[runway_uid] = state.duplicate(true)
+	if _runway_state_has_active_feedback(state):
+		set_process(true)
 	queue_redraw()
 
 
@@ -4117,6 +4130,70 @@ func get_runway_visual_state(
 	return (
 		runway_visual_states[runway_uid] as Dictionary
 	).duplicate(true)
+
+
+func _runway_state_has_active_feedback(
+	state: Dictionary
+) -> bool:
+	var status := String(state.get("status", "clear"))
+	return (
+		not String(
+			state.get("active_operation", "")
+		).is_empty()
+		or status.begins_with("occupied")
+		or status in [
+			"departure_approaching",
+			"arrival_priority_spacing",
+			"runway_spacing"
+		]
+		or bool(state.get("arrival_priority", false))
+	)
+
+
+func _has_active_runway_feedback() -> bool:
+	for state_variant in runway_visual_states.values():
+		if _runway_state_has_active_feedback(
+			state_variant as Dictionary
+		):
+			return true
+	return false
+
+
+func _runway_feedback_pulse(
+	state: Dictionary
+) -> float:
+	if not _runway_state_has_active_feedback(state):
+		return 0.0
+	var operation := String(
+		state.get("active_operation", "")
+	)
+	var phase_offset := (
+		PI * 0.5
+		if operation == "arrival"
+		else 0.0
+	)
+	return 0.5 + 0.5 * sin(
+		runway_feedback_elapsed * 6.0 + phase_offset
+	)
+
+
+func get_runway_feedback_snapshot(
+	runway_uid: int
+) -> Dictionary:
+	var state := get_runway_visual_state(runway_uid)
+	return {
+		"active": _runway_state_has_active_feedback(state),
+		"pulse": _runway_feedback_pulse(state),
+		"operation": String(
+			state.get("active_operation", "")
+		),
+		"status": String(
+			state.get("status", "clear")
+		),
+		"arrival_priority": bool(
+			state.get("arrival_priority", false)
+		)
+	}
 
 
 func _stop_bar_color_for_state(
@@ -4150,6 +4227,14 @@ func _draw_runway_operational_indicators() -> void:
 		var center := _footprint_center_world(
 			building["origin"],
 			footprint
+		)
+		var polygon := _footprint_polygon(
+			building["origin"],
+			footprint
+		)
+		_draw_runway_activity_edge_lights(
+			polygon,
+			state
 		)
 		var indicator := center + Vector2(0, -34)
 		var color := RUNWAY_CLEAR
@@ -4190,6 +4275,92 @@ func _draw_runway_operational_indicators() -> void:
 				16,
 				RUNWAY_PRIORITY,
 				1.5
+			)
+
+
+func _draw_runway_activity_edge_lights(
+	polygon: PackedVector2Array,
+	state: Dictionary
+) -> void:
+	if polygon.size() < 4:
+		return
+
+	var active := _runway_state_has_active_feedback(
+		state
+	)
+	var arrival_priority := bool(
+		state.get("arrival_priority", false)
+	)
+	var operation := String(
+		state.get("active_operation", "")
+	)
+	var light_color := RUNWAY_EDGE_LIGHT_IDLE
+	if active:
+		light_color = (
+			RUNWAY_EDGE_LIGHT_PRIORITY
+			if arrival_priority
+			else RUNWAY_EDGE_LIGHT_ACTIVE
+		)
+
+	var edge_pairs := [
+		[polygon[0], polygon[1]],
+		[polygon[3], polygon[2]]
+	]
+	for pair_variant in edge_pairs:
+		var pair: Array = pair_variant
+		var a: Vector2 = pair[0]
+		var b: Vector2 = pair[1]
+		var edge := b - a
+		var length := edge.length()
+		if length <= 1.0:
+			continue
+
+		var light_count := maxi(
+			int(length / 44.0),
+			4
+		)
+		for index in range(1, light_count):
+			var fraction := float(index) / float(
+				light_count
+			)
+			var center := a.lerp(b, fraction)
+			var direction_sign := (
+				-1.0
+				if operation == "arrival"
+				else 1.0
+			)
+			var chase := (
+				0.5
+				+ 0.5 * sin(
+					runway_feedback_elapsed * 7.0
+					+ fraction * TAU * direction_sign
+				)
+			)
+			var glow_alpha := 0.08
+			var core_alpha := 0.34
+			if active:
+				glow_alpha = 0.20 + 0.18 * chase
+				core_alpha = 0.70 + 0.25 * chase
+
+			draw_circle(
+				center,
+				4.0,
+				Color(
+					light_color.r,
+					light_color.g,
+					light_color.b,
+					glow_alpha
+				)
+			)
+			draw_circle(
+				center,
+				1.6,
+				Color(
+					light_color.r,
+					light_color.g,
+					light_color.b,
+					core_alpha
+				)
 			)
 
 

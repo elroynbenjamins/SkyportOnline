@@ -17,6 +17,10 @@ signal state_changed(state: String)
 @export var taxi_acceleration: float = 95.0
 @export var taxi_deceleration: float = 150.0
 
+const MOTION_FX_DURATION := 0.72
+const TOUCHDOWN_FX_DURATION := 0.96
+const EXTERNAL_PUSHBACK_MIN_DISTANCE := 0.35
+
 
 var departure_route := PackedVector2Array()
 var arrival_route := PackedVector2Array()
@@ -48,10 +52,18 @@ var turnaround_label: Label
 var taxi_traffic_controller: TaxiTrafficController
 var taxi_holding := false
 var taxi_hold_reason := ""
+var motion_fx_kind := ""
+var motion_fx_elapsed := 99.0
+var motion_sample_position := Vector2.ZERO
+var motion_sample_initialized := false
+var externally_moving := false
+var external_motion_speed := 0.0
 
 
 func _ready() -> void:
 	_build_turnaround_status()
+	motion_sample_position = global_position
+	motion_sample_initialized = true
 
 
 func configure_taxi_traffic(
@@ -609,6 +621,13 @@ func begin_arrival_after_clearance() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_external_motion_feedback(delta)
+	if not motion_fx_kind.is_empty():
+		motion_fx_elapsed += delta
+		if motion_fx_elapsed >= _motion_fx_duration():
+			motion_fx_kind = ""
+		queue_redraw()
+
 	_sync_turnaround_status_transform()
 	match state:
 		"CLEARED":
@@ -648,6 +667,9 @@ func _process(delta: float) -> void:
 
 		"TAXIING_IN":
 			_process_taxi_in(delta)
+
+	motion_sample_position = global_position
+	motion_sample_initialized = true
 
 
 func _process_departure_taxi(delta: float) -> void:
@@ -1078,7 +1100,25 @@ func _refined_arrival_route(
 func _set_state(new_state: String) -> void:
 	if state == new_state:
 		return
+	var previous_state := state
 	state = new_state
+
+	match new_state:
+		"TAXIING_OUT":
+			_start_motion_fx("taxi_start")
+		"TAKEOFF_ROLL":
+			_start_motion_fx("takeoff_start")
+		"CLIMBING":
+			_start_motion_fx("rotation")
+		"LANDING_ROLL":
+			_start_motion_fx("touchdown")
+		"TAXIING_IN":
+			if previous_state == "LANDING_ROLL":
+				_start_motion_fx("runway_exit")
+		"PARKED":
+			if previous_state == "TAXIING_IN":
+				_start_motion_fx("stand_stop")
+
 	if new_state not in [
 		"TAXIING_OUT",
 		"TAXIING_IN",
@@ -1103,8 +1143,78 @@ func _set_state(new_state: String) -> void:
 	queue_redraw()
 
 
+func _start_motion_fx(kind: String) -> void:
+	motion_fx_kind = kind
+	motion_fx_elapsed = 0.0
+	queue_redraw()
+
+
+func _motion_fx_duration() -> float:
+	if motion_fx_kind == "touchdown":
+		return TOUCHDOWN_FX_DURATION
+	return MOTION_FX_DURATION
+
+
+func _update_external_motion_feedback(delta: float) -> void:
+	if not motion_sample_initialized:
+		motion_sample_position = global_position
+		motion_sample_initialized = true
+		externally_moving = false
+		external_motion_speed = 0.0
+		return
+
+	var distance := global_position.distance_to(
+		motion_sample_position
+	)
+	external_motion_speed = (
+		distance / maxf(delta, 0.001)
+	)
+	externally_moving = (
+		state == "PUSHBACK_PREP"
+		and distance >= EXTERNAL_PUSHBACK_MIN_DISTANCE
+	)
+	if externally_moving and motion_fx_kind != "pushback":
+		_start_motion_fx("pushback")
+
+
+func _airborne_shadow_factor() -> float:
+	if state == "APPROACH" and not arrival_route.is_empty():
+		return clampf(
+			position.distance_to(arrival_route[0]) / 220.0,
+			0.0,
+			1.0
+		)
+	if state == "CLIMBING" and not departure_route.is_empty():
+		var climb_target := departure_route[
+			departure_route.size() - 1
+		]
+		return 1.0 - clampf(
+			position.distance_to(climb_target) / 260.0,
+			0.0,
+			1.0
+		)
+	return 0.0
+
+
+func get_motion_feedback_snapshot() -> Dictionary:
+	return {
+		"kind": motion_fx_kind,
+		"elapsed": motion_fx_elapsed,
+		"active": not motion_fx_kind.is_empty(),
+		"pushback_motion": externally_moving,
+		"external_speed": external_motion_speed,
+		"shadow_airborne_factor": _airborne_shadow_factor(),
+		"takeoff_speed_ratio": clampf(
+			takeoff_velocity / maxf(takeoff_speed, 1.0),
+			0.0,
+			1.0
+		)
+	}
+
+
 func _draw() -> void:
 	_draw_shadow()
+	_draw_motion_feedback()
 
 	var visual_scale := get_visual_scale()
 	draw_set_transform(
@@ -1294,13 +1404,157 @@ func _draw_event_badge() -> void:
 		)
 
 
+func _draw_motion_feedback() -> void:
+	var visual_scale := get_visual_scale()
+	var progress := 1.0
+	if not motion_fx_kind.is_empty():
+		progress = clampf(
+			motion_fx_elapsed / maxf(_motion_fx_duration(), 0.01),
+			0.0,
+			1.0
+		)
+	var fade := 1.0 - progress
+	var main_gear_x := -4.0 * visual_scale
+	var gear_span := 10.0 * visual_scale
+	var tail_x := -get_visual_half_length() * 0.94
+
+	match motion_fx_kind:
+		"taxi_start":
+			for side in [-1.0, 1.0]:
+				var center := Vector2(
+					main_gear_x - 3.0 * progress,
+					gear_span * float(side)
+				)
+				draw_circle(
+					center,
+					(2.2 + 3.8 * progress) * visual_scale,
+					Color(0.80, 0.84, 0.82, 0.18 * fade)
+				)
+		"takeoff_start":
+			for offset in [-6.0, 0.0, 6.0]:
+				draw_line(
+					Vector2(tail_x - 4.0, offset * visual_scale * 0.45),
+					Vector2(
+						tail_x - (15.0 + 13.0 * progress) * visual_scale,
+						offset * visual_scale * 0.45
+					),
+					Color(0.80, 0.92, 0.96, 0.18 * fade),
+					1.5
+				)
+		"rotation":
+			for offset in [-8.0, 0.0, 8.0]:
+				draw_line(
+					Vector2(tail_x, offset * visual_scale * 0.38),
+					Vector2(
+						tail_x - (18.0 + 18.0 * progress) * visual_scale,
+						offset * visual_scale * 0.38
+					),
+					Color(0.74, 0.89, 0.96, 0.16 * fade),
+					1.2
+				)
+		"touchdown":
+			for side in [-1.0, 1.0]:
+				var smoke_center := Vector2(
+					main_gear_x - 7.0 * progress * visual_scale,
+					gear_span * float(side)
+				)
+				draw_circle(
+					smoke_center,
+					(4.0 + 8.0 * progress) * visual_scale,
+					Color(0.88, 0.90, 0.88, 0.30 * fade)
+				)
+				draw_circle(
+					smoke_center + Vector2(-5, -2) * visual_scale,
+					(2.5 + 5.0 * progress) * visual_scale,
+					Color(0.94, 0.95, 0.93, 0.22 * fade)
+				)
+		"runway_exit":
+			for side in [-1.0, 1.0]:
+				draw_circle(
+					Vector2(
+						main_gear_x - 2.0 * progress * visual_scale,
+						gear_span * float(side)
+					),
+					(1.8 + 2.8 * progress) * visual_scale,
+					Color(0.84, 0.86, 0.84, 0.13 * fade)
+				)
+		"stand_stop":
+			draw_circle(
+				Vector2(main_gear_x - 2.0, 0),
+				(2.0 + 3.0 * progress) * visual_scale,
+				Color(0.80, 0.84, 0.82, 0.12 * fade)
+			)
+		"pushback":
+			var pulse := 0.55 + 0.45 * sin(
+				motion_fx_elapsed * 14.0
+			)
+			for side in [-1.0, 1.0]:
+				draw_arc(
+					Vector2(
+						main_gear_x,
+						gear_span * float(side)
+					),
+					4.0 * visual_scale,
+					0.0,
+					TAU,
+					10,
+					Color(1.0, 0.82, 0.36, 0.24 + 0.12 * pulse),
+					1.4
+				)
+
+	if state == "TAKEOFF_ROLL":
+		var speed_ratio := clampf(
+			takeoff_velocity / maxf(takeoff_speed, 1.0),
+			0.0,
+			1.0
+		)
+		if speed_ratio > 0.24:
+			for offset in [-7.0, 0.0, 7.0]:
+				draw_line(
+					Vector2(
+						tail_x - 3.0 * visual_scale,
+						offset * visual_scale * 0.40
+					),
+					Vector2(
+						tail_x - (11.0 + 22.0 * speed_ratio) * visual_scale,
+						offset * visual_scale * 0.40
+					),
+					Color(
+						0.74,
+						0.89,
+						0.96,
+						0.07 + 0.11 * speed_ratio
+					),
+					1.1
+				)
+
+	if state == "PUSHBACK_PREP" and externally_moving:
+		var speed_amount := clampf(
+			external_motion_speed / 80.0,
+			0.0,
+			1.0
+		)
+		draw_line(
+			Vector2(12, 0) * visual_scale,
+			Vector2(23 + 7 * speed_amount, 0) * visual_scale,
+			Color(1.0, 0.78, 0.28, 0.34 + 0.18 * speed_amount),
+			2.0
+		)
+
+
 func _draw_shadow() -> void:
 	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
 		return
 
 	var visual_scale := get_visual_scale()
+	var airborne_factor := _airborne_shadow_factor()
+	var shadow_offset := Vector2(4, 7).lerp(
+		Vector2(18, 26),
+		airborne_factor
+	)
+	var shadow_alpha := lerpf(1.0, 0.34, airborne_factor)
 	draw_set_transform(
-		Vector2(4, 7) * visual_scale,
+		shadow_offset * visual_scale,
 		0.0,
 		Vector2(
 			visual_scale,
@@ -1310,6 +1564,7 @@ func _draw_shadow() -> void:
 
 	# Two-layer aircraft-shaped shadow reads far better on the pale apron
 	# than the old circular blob while remaining inexpensive to draw.
+	# Approach/climb offset and softness now make altitude readable too.
 	var soft_wing := PackedVector2Array([
 		Vector2(7, -4),
 		Vector2(-4, -23),
@@ -1322,7 +1577,7 @@ func _draw_shadow() -> void:
 	])
 	draw_colored_polygon(
 		soft_wing,
-		Color(0, 0, 0, 0.11)
+		Color(0, 0, 0, 0.11 * shadow_alpha)
 	)
 
 	var soft_fuselage := PackedVector2Array([
@@ -1335,12 +1590,12 @@ func _draw_shadow() -> void:
 	])
 	draw_colored_polygon(
 		soft_fuselage,
-		Color(0, 0, 0, 0.15)
+		Color(0, 0, 0, 0.15 * shadow_alpha)
 	)
 	draw_circle(
 		Vector2(-1, 1),
 		18.0,
-		Color(0, 0, 0, 0.06)
+		Color(0, 0, 0, 0.06 * shadow_alpha)
 	)
 
 	draw_set_transform(

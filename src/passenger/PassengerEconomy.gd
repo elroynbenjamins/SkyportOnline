@@ -8,6 +8,8 @@ var airport_grid: AirportGrid
 var passengers := 0.0
 var capacity := 0
 var production_per_minute := 0.0
+var base_production_per_minute := 0.0
+var synergy_bonus_per_minute := 0.0
 var persist_accumulator := 0.0
 
 
@@ -43,7 +45,9 @@ func refresh_building_stats() -> void:
 		return
 
 	capacity = 0
+	base_production_per_minute = 0.0
 	production_per_minute = 0.0
+	synergy_bonus_per_minute = 0.0
 
 	for building in airport_grid.get_passenger_generator_buildings():
 		var building_id := String(building.get("definition_id", ""))
@@ -52,11 +56,24 @@ func refresh_building_stats() -> void:
 			building_id,
 			level
 		)
-		capacity += int(stats.get("storage", 0))
-		production_per_minute += float(
+		var base_rate := float(
 			stats.get("passengers_per_minute", 0.0)
 		)
+		var synergy := airport_grid.get_passenger_synergy(
+			int(building.get("uid", -1))
+		)
+		var multiplier := maxf(
+			float(synergy.get("multiplier", 1.0)),
+			1.0
+		)
+		capacity += int(stats.get("storage", 0))
+		base_production_per_minute += base_rate
+		production_per_minute += base_rate * multiplier
 
+	synergy_bonus_per_minute = maxf(
+		production_per_minute - base_production_per_minute,
+		0.0
+	)
 	passengers = minf(passengers, float(capacity))
 	_emit_changed()
 
@@ -98,6 +115,14 @@ func get_capacity() -> int:
 
 func get_production_per_minute() -> float:
 	return production_per_minute
+
+
+func get_base_production_per_minute() -> float:
+	return base_production_per_minute
+
+
+func get_synergy_bonus_per_minute() -> float:
+	return synergy_bonus_per_minute
 
 
 func _emit_changed() -> void:

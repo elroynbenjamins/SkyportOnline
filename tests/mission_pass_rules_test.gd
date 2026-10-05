@@ -95,19 +95,23 @@ func _run() -> void:
 	check(int(claimed_free.get("pending_passengers", 0)) == int(state.get("pending_passengers", 0)) + 25, "Tier 1 free reward should reserve 25 passengers.")
 	check(MissionPassRules.claim_pass_reward(claimed_free, 1, "free").is_empty(), "The same free tier must not be claimable twice.")
 
-	var premium_state := MissionPassRules.grant_verified_product(claimed_free, "airport_pass")
+	var premium_state := MissionPassRules.grant_verified_product(claimed_free, "airport_pass", "purchase-pass-1")
 	check(bool((premium_state.get("mission_pass", {}) as Dictionary).get("premium", false)), "Verified Airport Pass purchase should activate premium for the month.")
 	var claimed_premium := MissionPassRules.claim_pass_reward(premium_state, 1, "premium")
 	check(int(claimed_premium.get("pending_passengers", 0)) == int(premium_state.get("pending_passengers", 0)) + 50, "Tier 1 premium reward should reserve 50 passengers.")
 
-	var token_state := MissionPassRules.grant_verified_product(claimed_premium, "aero_large")
+	var token_state := MissionPassRules.grant_verified_product(claimed_premium, "aero_large", "purchase-aero-1")
 	check(int(token_state.get("aero_tokens", 0)) == int(claimed_premium.get("aero_tokens", 0)) + 800, "Largest verified pack should grant 800 Aero Tokens.")
 	check(int(token_state.get("gems", -1)) == int(token_state.get("aero_tokens", 0)), "Legacy gems field should mirror Aero Tokens for compatibility.")
+	check(MissionPassRules.grant_verified_product(token_state, "aero_large", "purchase-aero-1").is_empty(), "The same verified purchase token must never grant Aero Tokens twice.")
+	check(MissionPassRules.grant_verified_product(token_state, "aero_large", "").is_empty(), "Products cannot be granted without a verified purchase token.")
 	var max_price := 0.0
 	for product in MissionPassCatalog.product_catalog():
 		max_price = maxf(max_price, float(product.get("price_eur", 0.0)))
 	check(is_equal_approx(max_price, 9.99), "Store catalog must cap purchases at €9.99.")
 	check(String(MissionPassCatalog.product("airport_pass").get("price_label", "")) == "€4.99", "Monthly Airport Pass should cost €4.99.")
+	check(String(MissionPassCatalog.product("airport_pass").get("store_product_id", "")) == "skyport_airport_pass", "Airport Pass should expose its platform store product id.")
+	check(String(MissionPassCatalog.product_for_store_id("skyport_aero_small").get("id", "")) == "aero_small", "Store product ids should map back to internal products.")
 
 	MissionPassRules.ensure_state(token_state, OCT_12, 1)
 	pass_state = token_state.get("mission_pass", {})
@@ -174,6 +178,34 @@ func _run() -> void:
 	bridge.complete_reward_from_provider()
 	check(action_reward == "mission_reroll", "Provider completion should return the mission reroll action id.")
 
+
+	var billing_requests: Array = []
+	var billing_verified: Array = []
+	var billing_unavailable: Array = []
+	var billing_bridge := MissionProductBillingBridge.new()
+	root.add_child(billing_bridge)
+	billing_bridge.purchase_requested.connect(
+		func(product_id: String, store_product_id: String) -> void:
+			billing_requests.append({"product_id": product_id, "store_product_id": store_product_id})
+	)
+	billing_bridge.purchase_verified.connect(
+		func(product_id: String, purchase_token: String) -> void:
+			billing_verified.append({"product_id": product_id, "purchase_token": purchase_token})
+	)
+	billing_bridge.unavailable.connect(
+		func(product_id: String) -> void:
+			billing_unavailable.append(product_id)
+	)
+	billing_bridge.request_purchase("aero_small")
+	check(billing_unavailable.has("aero_small"), "Disconnected billing provider should reject purchase requests.")
+	billing_bridge.set_provider_connected(true)
+	billing_bridge.request_purchase("aero_small")
+	check(billing_requests.size() == 1, "Connected billing bridge should emit exactly one provider purchase request.")
+	check(String((billing_requests[0] as Dictionary).get("store_product_id", "")) == "skyport_aero_small", "Provider request should use the configured store product id.")
+	billing_bridge.complete_purchase_from_provider("skyport_aero_small", "provider-token-1")
+	check(billing_verified.size() == 1, "Verified provider completion should emit one grant callback.")
+	check(String((billing_verified[0] as Dictionary).get("purchase_token", "")) == "provider-token-1", "Verified purchase callback must preserve the platform purchase token.")
+
 	var screen := MissionPassScreen.new()
 	root.add_child(screen)
 	token_state["resource_choice_crates"] = 1
@@ -183,7 +215,8 @@ func _run() -> void:
 		"week_key": String((((pass_state.get("weekly", []) as Array)[0] as Dictionary).get("period_key", ""))),
 		"rewarded_ad_connected": true,
 		"resource_inventory": {"be_chocolate": 2},
-		"resource_choice_country_codes": ["BE"]
+		"resource_choice_country_codes": ["BE"],
+		"billing_connected": true
 	})
 	await process_frame
 	check(screen.is_open(), "Mission/pass screen should open with a valid snapshot.")

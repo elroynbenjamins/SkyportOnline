@@ -48,6 +48,32 @@ func _run() -> void:
 	var building := grid.get_building(building_uid)
 	var building_key := grid.get_building_key(building)
 
+	var service_upgrade_panel := ServiceUpgradePanel.new()
+	root.add_child(service_upgrade_panel)
+	await process_frame
+	service_upgrade_panel.open_building(
+		building,
+		{},
+		0
+	)
+	if not (
+		service_upgrade_panel.building_image.texture
+		is AtlasTexture
+	):
+		_fail(
+			"Ground Ops upgrade panel should use production atlas art."
+		)
+		return
+	if (
+		service_upgrade_panel.building_image.texture_filter
+		!= CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	):
+		_fail(
+			"Service upgrade building art should use smooth filtering."
+		)
+		return
+	service_upgrade_panel.close_panel()
+
 	var level_2 := ServiceUpgradeCatalog.get_next_level(
 		"ground_ops_depot",
 		1

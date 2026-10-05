@@ -148,14 +148,14 @@ func _run() -> void:
 	grid.queue_free()
 
 	var checked := checked_atlas + checked_paths
-	if checked_atlas < 16:
+	if checked_atlas < 28:
 		_fail(
-			"Expected at least 10 canonical/retained atlas building views; checked %d."
+			"Expected at least 28 canonical/retained atlas building views after the service-v2 migration; checked %d."
 			% checked_atlas
 		)
-	if checked_paths < 20:
+	if checked_paths < 8:
 		_fail(
-			"Expected at least 26 standalone building views after Ground Ops returns to the canonical atlas; checked %d."
+			"Expected at least 8 standalone building views after the service-v2 migration; checked %d."
 			% checked_paths
 		)
 

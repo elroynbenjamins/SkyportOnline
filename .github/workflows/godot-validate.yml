@@ -109,6 +109,9 @@ jobs:
       - name: Test UI modernization
         run: timeout 20s godot --headless --path . --script res://tests/ui_modernization_test.gd
 
+      - name: Test time-of-day visuals
+        run: timeout 20s godot --headless --path . --script res://tests/time_of_day_visuals_test.gd
+
       - name: Test aircraft context card
         run: timeout 20s godot --headless --path . --script res://tests/aircraft_context_card_test.gd
 

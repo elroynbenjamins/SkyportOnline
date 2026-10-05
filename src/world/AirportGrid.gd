@@ -3865,6 +3865,9 @@ func begin_move_preview(uid: int) -> Dictionary:
 			"reason": "Building not found."
 		}
 
+	if new_build_construction_fx.has(uid):
+		new_build_construction_fx.erase(uid)
+
 	preview_mode = "move"
 	preview_ignore_uid = uid
 	preview_stored_uid = -1
@@ -4259,6 +4262,9 @@ func store_building(uid: int) -> Dictionary:
 			placed_buildings[index].get("uid", -1)
 		) != uid:
 			continue
+
+		if new_build_construction_fx.has(uid):
+			new_build_construction_fx.erase(uid)
 
 		if preview_mode == "move" and preview_ignore_uid == uid:
 			clear_build_preview()

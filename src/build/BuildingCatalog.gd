@@ -102,10 +102,10 @@ static func all() -> Array[Dictionary]:
 			]),
 			"world_sprite_size": Vector2(326, 244),
 			"world_sprite_offsets": [
-				Vector2(0, -62),
-				Vector2(0, -62)
+				Vector2(0, -67),
+				Vector2(0, -67)
 			],
-			"world_sprite_offset": Vector2(0, -62)
+			"world_sprite_offset": Vector2(0, -67)
 		},
 		{
 			"id": "shuttle_station",

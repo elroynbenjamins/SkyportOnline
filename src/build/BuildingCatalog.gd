@@ -102,10 +102,10 @@ static func all() -> Array[Dictionary]:
 			]),
 			"world_sprite_size": Vector2(326, 244),
 			"world_sprite_offsets": [
-				Vector2(0, -67),
-				Vector2(0, -67)
+				Vector2(0, -59),
+				Vector2(0, -59)
 			],
-			"world_sprite_offset": Vector2(0, -67)
+			"world_sprite_offset": Vector2(0, -59)
 		},
 		{
 			"id": "shuttle_station",
@@ -182,9 +182,9 @@ static func all() -> Array[Dictionary]:
 			"world_sprite_path": "res://assets/production/starter_v3/ground_ops_depot_v3.svg",
 			"world_sprite_size": Vector2(132, 132),
 			"world_sprite_offsets": [
-				Vector2(0, -38)
+				Vector2(0, -34)
 			],
-			"world_sprite_offset": Vector2(0, -38),
+			"world_sprite_offset": Vector2(0, -34),
 			"services": {
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},
@@ -384,10 +384,10 @@ static func all() -> Array[Dictionary]:
 			]),
 			"world_sprite_size": Vector2(206, 172),
 			"world_sprite_offsets": [
-				Vector2(0, -43),
-				Vector2(0, -43)
+				Vector2(0, -38),
+				Vector2(0, -38)
 			],
-			"world_sprite_offset": Vector2(0, -43)
+			"world_sprite_offset": Vector2(0, -38)
 		},
 		{
 			"id": "rapid_small_fuel",

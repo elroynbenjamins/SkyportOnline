@@ -40,6 +40,15 @@ const STOP_BAR_OFF := Color("6d5b3f")
 const RUNWAY_CLEAR := Color("76d39b")
 const RUNWAY_OCCUPIED := Color("ff5d62")
 const RUNWAY_PRIORITY := Color("ffbf47")
+const TAXIWAY_OUTER := Color("38454b")
+const TAXIWAY_INNER := Color("4b575c")
+const SERVICE_ROAD_OUTER := Color("6b655e")
+const SERVICE_ROAD_INNER := Color("837a70")
+const PAVEMENT_HIGHLIGHT := Color("ffffff", 0.16)
+const PAVEMENT_SHADOW := Color("182226", 0.24)
+const FENCE_COLOR := Color("53656b")
+const FENCE_MESH := Color("91a4aa", 0.52)
+const PERIMETER_LIGHT := Color("fff0bd")
 const PARCEL_UNLOCK_FX_DURATION := 0.9
 
 var parcels: Dictionary = {}
@@ -163,9 +172,11 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
+	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
 	_draw_buildings()
+	_draw_airside_props()
 	_draw_synergy_overlay()
 	_draw_event_theme_overlay()
 	_draw_runway_hold_short_markings()
@@ -202,6 +213,206 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 					line = LOCKED_GRID_LINE
 			draw_colored_polygon(points, fill)
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
+			if owned:
+				_draw_grass_detail(Vector2i(x, y), center)
+
+
+func _draw_grass_detail(tile: Vector2i, center: Vector2) -> void:
+	var seed := absi(tile.x * 37 + tile.y * 53)
+	if seed % 3 != 0:
+		return
+	var offset := Vector2(
+		float((seed % 17) - 8),
+		float((int(seed / 3.0) % 9) - 4)
+	)
+	var tuft := center + offset
+	draw_line(
+		tuft + Vector2(-2.0, 2.0),
+		tuft + Vector2(0.0, -2.0),
+		Color("d9efb7", 0.30),
+		1.0
+	)
+	draw_line(
+		tuft + Vector2(2.0, 2.0),
+		tuft + Vector2(0.0, -2.0),
+		Color("4e7f43", 0.28),
+		1.0
+	)
+
+
+func _draw_owned_airport_environment() -> void:
+	for parcel_variant in parcels.values():
+		var parcel: Dictionary = parcel_variant
+		if not bool(parcel.get("owned", false)):
+			continue
+
+		var px := int(parcel.get("px", 0))
+		var py := int(parcel.get("py", 0))
+		if not _parcel_owned_at(px - 1, py):
+			_draw_owned_parcel_edge(parcel, "x_min")
+		if not _parcel_owned_at(px + 1, py):
+			_draw_owned_parcel_edge(parcel, "x_max")
+		if not _parcel_owned_at(px, py - 1):
+			_draw_owned_parcel_edge(parcel, "y_min")
+		if not _parcel_owned_at(px, py + 1):
+			_draw_owned_parcel_edge(parcel, "y_max")
+
+
+func _parcel_owned_at(px: int, py: int) -> bool:
+	var parcel := _parcel_at(px, py)
+	return (
+		not parcel.is_empty()
+		and bool(parcel.get("owned", false))
+	)
+
+
+func _draw_owned_parcel_edge(
+	parcel: Dictionary,
+	edge_name: String
+) -> void:
+	var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
+	var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
+	var ex := sx + PARCEL_SIZE - 1
+	var ey := sy + PARCEL_SIZE - 1
+	var parcel_center := get_parcel_world_center(
+		String(parcel.get("id", ""))
+	)
+
+	for index in range(PARCEL_SIZE):
+		var tile := Vector2i.ZERO
+		match edge_name:
+			"x_min":
+				tile = Vector2i(sx, sy + index)
+			"x_max":
+				tile = Vector2i(ex, sy + index)
+			"y_min":
+				tile = Vector2i(sx + index, sy)
+			_:
+				tile = Vector2i(sx + index, ey)
+
+		var points := _tile_points(
+			tile_to_world(Vector2(tile.x, tile.y))
+		)
+		var a := Vector2.ZERO
+		var b := Vector2.ZERO
+		match edge_name:
+			"x_min":
+				a = points[0]
+				b = points[3]
+			"x_max":
+				a = points[1]
+				b = points[2]
+			"y_min":
+				a = points[0]
+				b = points[1]
+			_:
+				a = points[3]
+				b = points[2]
+
+		_draw_fence_segment(a, b)
+
+		var midpoint := a.lerp(b, 0.5)
+		var outward := (midpoint - parcel_center).normalized()
+		if index % 4 == 1:
+			_draw_perimeter_light(midpoint - outward * 3.0)
+		if index % 6 == 4:
+			_draw_perimeter_tree(midpoint + outward * 20.0)
+
+
+func _draw_fence_segment(a: Vector2, b: Vector2) -> void:
+	draw_line(
+		a + Vector2(2, 3),
+		b + Vector2(2, 3),
+		Color(0.03, 0.07, 0.08, 0.22),
+		3.0
+	)
+	draw_line(a, b, FENCE_COLOR, 2.2)
+	for fraction in [0.0, 0.5, 1.0]:
+		var base := a.lerp(b, float(fraction))
+		draw_line(
+			base,
+			base + Vector2(0, -13),
+			FENCE_COLOR.lightened(0.18),
+			2.0
+		)
+	if a.distance_to(b) > 1.0:
+		var top_a := a + Vector2(0, -10)
+		var top_b := b + Vector2(0, -10)
+		draw_line(top_a, top_b, FENCE_MESH, 1.0)
+		for fraction in [0.25, 0.5, 0.75]:
+			var low := a.lerp(b, float(fraction))
+			var high := top_a.lerp(top_b, float(fraction))
+			draw_line(low, high, FENCE_MESH, 0.7)
+
+
+func _draw_perimeter_light(base: Vector2) -> void:
+	draw_line(
+		base + Vector2(2, 3),
+		base + Vector2(2, -28),
+		Color(0.02, 0.05, 0.06, 0.25),
+		4.0
+	)
+	draw_line(
+		base,
+		base + Vector2(0, -31),
+		Color("56666c"),
+		3.0
+	)
+	var head := base + Vector2(0, -33)
+	draw_rect(
+		Rect2(head + Vector2(-7, -3), Vector2(14, 6)),
+		Color("48585e"),
+		true
+	)
+	draw_circle(
+		head + Vector2(-4, 0),
+		2.2,
+		PERIMETER_LIGHT
+	)
+	draw_circle(
+		head + Vector2(4, 0),
+		2.2,
+		PERIMETER_LIGHT
+	)
+
+
+func _draw_perimeter_tree(base: Vector2) -> void:
+	draw_set_transform(
+		base + Vector2(4, 5),
+		0.0,
+		Vector2(1.0, 0.42)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		10.0,
+		Color(0.03, 0.08, 0.04, 0.18)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_rect(
+		Rect2(base + Vector2(-2, -16), Vector2(4, 18)),
+		Color("71543a"),
+		true
+	)
+	draw_circle(
+		base + Vector2(-5, -22),
+		9.0,
+		Color("3f7f46")
+	)
+	draw_circle(
+		base + Vector2(5, -23),
+		10.0,
+		Color("4e9953")
+	)
+	draw_circle(
+		base + Vector2(0, -31),
+		10.0,
+		Color("5aa95d")
+	)
+	draw_circle(
+		base + Vector2(-3, -33),
+		4.0,
+		Color("83be68", 0.75)
+	)
 
 
 func _draw_expansion_boundary_visuals() -> void:
@@ -461,6 +672,16 @@ func _draw_buildings() -> void:
 
 		var footprint := _footprint_for(definition, int(building["rotation"]))
 		var origin: Vector2i = building["origin"]
+		var id := String(definition.get("id", ""))
+
+		if id == "taxiway" or id == "service_road":
+			_draw_pavement_tile(origin, id)
+			if id == "taxiway":
+				_draw_taxiway_detail(origin)
+			else:
+				_draw_service_road_detail(origin)
+			continue
+
 		var color: Color = definition["color"]
 		if _definition_has_world_sprite(definition):
 			color.a = 0.72
@@ -1238,6 +1459,120 @@ func _draw_building_sprite(
 		draw_texture_rect(texture, rect, false, modulate)
 
 
+func _draw_pavement_tile(
+	origin: Vector2i,
+	kind: String
+) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var points := _tile_points(center)
+	var outer := TAXIWAY_OUTER
+	var inner := TAXIWAY_INNER
+	if kind == "service_road":
+		outer = SERVICE_ROAD_OUTER
+		inner = SERVICE_ROAD_INNER
+
+	draw_colored_polygon(points, outer)
+
+	var inner_points := PackedVector2Array()
+	for point_variant in points:
+		var point: Vector2 = point_variant
+		inner_points.append(
+			center + (point - center) * 0.88
+		)
+	draw_colored_polygon(inner_points, inner)
+
+	# Fixed upper-left sunlight: highlight the upper edges and darken
+	# the lower edges so these flat surfaces match the building art.
+	draw_line(
+		points[0],
+		points[1],
+		PAVEMENT_HIGHLIGHT,
+		1.8
+	)
+	draw_line(
+		points[0],
+		points[3],
+		Color("ffffff", 0.10),
+		1.2
+	)
+	draw_line(
+		points[2],
+		points[3],
+		PAVEMENT_SHADOW,
+		2.0
+	)
+	draw_line(
+		points[1],
+		points[2],
+		Color("182226", 0.16),
+		1.4
+	)
+
+	var seed := absi(origin.x * 29 + origin.y * 43)
+	if seed % 2 == 0:
+		var seam_color := (
+			Color("b8c1c3", 0.12)
+			if kind == "taxiway"
+			else Color("eee6dc", 0.14)
+		)
+		draw_line(
+			center + Vector2(-12, 6),
+			center + Vector2(12, -6),
+			seam_color,
+			1.0
+		)
+
+
+func _draw_service_road_detail(origin: Vector2i) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var directions: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
+	var connections := 0
+	for direction in directions:
+		var neighbor := origin + direction
+		if not _service_road_visually_connects_to(neighbor):
+			continue
+		connections += 1
+		var edge_tile := (
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.48
+		)
+		draw_dashed_line(
+			center,
+			tile_to_world(edge_tile),
+			Color("f2eee6", 0.85),
+			1.8,
+			5.0
+		)
+
+	if connections == 0:
+		draw_line(
+			center + Vector2(-8, 4),
+			center + Vector2(8, -4),
+			Color("f2eee6", 0.75),
+			1.8
+		)
+
+	# Small amber reflector at junctions reads clearly at default zoom.
+	if connections >= 2:
+		draw_circle(center, 3.0, Color(0.08, 0.10, 0.10, 0.55))
+		draw_circle(center, 1.8, Color("ffd77a"))
+
+
+func _service_road_visually_connects_to(cell: Vector2i) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+	var building := _building_by_uid(int(occupied_cells[key]))
+	if building.is_empty():
+		return false
+	return String(building.get("definition_id", "")) == "service_road"
+
+
 func _draw_taxiway_detail(origin: Vector2i) -> void:
 	var center := tile_to_world(Vector2(origin.x, origin.y))
 	var connections := get_taxiway_connection_count(origin)
@@ -1251,8 +1586,39 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 		var neighbor: Vector2i = origin + direction
 		if not _taxiway_visually_connects_to(neighbor):
 			continue
-		var edge_tile := Vector2(origin.x, origin.y) + Vector2(direction.x, direction.y) * 0.48
-		draw_line(center, tile_to_world(edge_tile), Color("f0c94c"), 3.0)
+		var edge_tile := (
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.48
+		)
+		var edge_world := tile_to_world(edge_tile)
+		draw_line(
+			center,
+			edge_world,
+			Color("f0c94c"),
+			3.2
+		)
+
+		# Blue edge reflectors add airport character without changing
+		# the actual taxi network.
+		var dir_world := (edge_world - center).normalized()
+		if dir_world != Vector2.ZERO:
+			var normal := Vector2(-dir_world.y, dir_world.x)
+			for side in [-1.0, 1.0]:
+				var light_pos := (
+					center
+					+ dir_world * 18.0
+					+ normal * 8.0 * float(side)
+				)
+				draw_circle(
+					light_pos,
+					2.5,
+					Color(0.03, 0.08, 0.10, 0.72)
+				)
+				draw_circle(
+					light_pos,
+					1.4,
+					Color("68c7f0")
+				)
 
 	if connections == 0:
 		draw_line(
@@ -1271,22 +1637,84 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 			false,
 			1.5
 		)
-		for direction in directions:
-			var neighbor: Vector2i = origin + direction
-			if not _taxiway_visually_connects_to(neighbor):
-				continue
-			var dir_world := (
-				tile_to_world(
-					Vector2(neighbor.x, neighbor.y)
-				) - center
-			).normalized()
-			if dir_world == Vector2.ZERO:
-				continue
-			draw_circle(
-				center + dir_world * 9.5,
-				1.7,
-				Color("ffe78c")
-			)
+
+
+func _draw_airside_props() -> void:
+	for building in placed_buildings:
+		var id := String(building.get("definition_id", ""))
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		if id == "taxiway":
+			var connections := get_taxiway_connection_count(origin)
+			if (
+				connections >= 2
+				and (origin.x + origin.y) % 3 == 0
+			):
+				_draw_taxiway_sign(
+					tile_to_world(Vector2(origin.x, origin.y))
+					+ Vector2(18, -8)
+				)
+		elif id == "service_road":
+			if (origin.x * 3 + origin.y) % 5 == 0:
+				var center := tile_to_world(
+					Vector2(origin.x, origin.y)
+				)
+				_draw_safety_cone(center + Vector2(11, 5))
+				_draw_safety_cone(center + Vector2(17, 2))
+
+
+func _draw_taxiway_sign(base: Vector2) -> void:
+	draw_line(
+		base + Vector2(0, 4),
+		base + Vector2(0, -9),
+		Color("536168"),
+		2.0
+	)
+	var sign_rect := Rect2(
+		base + Vector2(-12, -18),
+		Vector2(24, 10)
+	)
+	draw_rect(
+		sign_rect.grow(2.0),
+		Color(0.02, 0.05, 0.06, 0.32),
+		true
+	)
+	draw_rect(sign_rect, Color("173d58"), true)
+	draw_rect(sign_rect, Color("f0c94c"), false, 1.5)
+	draw_line(
+		base + Vector2(-7, -13),
+		base + Vector2(7, -13),
+		Color("f4dc6b"),
+		2.0
+	)
+
+
+func _draw_safety_cone(base: Vector2) -> void:
+	draw_circle(
+		base + Vector2(1, 2),
+		3.3,
+		Color(0.02, 0.05, 0.05, 0.20)
+	)
+	var cone := PackedVector2Array([
+		base + Vector2(0, -7),
+		base + Vector2(-3, 1),
+		base + Vector2(3, 1)
+	])
+	draw_colored_polygon(cone, Color("ef7f32"))
+	draw_line(
+		base + Vector2(-2, -2),
+		base + Vector2(2, -2),
+		Color("f9f4e9"),
+		1.5
+	)
+	draw_line(
+		base + Vector2(-4, 2),
+		base + Vector2(4, 2),
+		Color("bb4e20"),
+		2.0
+	)
 
 
 func _draw_runway_hold_short_markings() -> void:

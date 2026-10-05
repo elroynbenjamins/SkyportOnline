@@ -587,7 +587,9 @@ func _advance_stage(job_id: int) -> void:
 		"UNLOADING":
 			_begin_servicing(job_id)
 		"SERVICING":
-			if aircraft.has_flight_plan():
+			if aircraft.is_social_visitor():
+				_begin_loading(job_id)
+			elif aircraft.has_flight_plan():
 				_request_passenger_boarding(job_id)
 			else:
 				_wait_for_destination(job_id)

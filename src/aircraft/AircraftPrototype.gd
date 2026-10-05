@@ -31,6 +31,8 @@ var event_featured := false
 var event_theme := ""
 var event_marker_text := ""
 var event_livery_enabled := false
+var social_visit := false
+var social_visit_data: Dictionary = {}
 var stand_uid := -1
 var runway_uid := -1
 
@@ -121,6 +123,29 @@ func set_event_visual(
 	event_marker_text = marker_text
 	event_livery_enabled = livery_enabled
 	queue_redraw()
+
+
+func configure_social_visit(
+	data: Dictionary
+) -> void:
+	social_visit = not data.is_empty()
+	social_visit_data = data.duplicate(true)
+	queue_redraw()
+
+
+func is_social_visitor() -> bool:
+	return social_visit
+
+
+func get_social_visit_data() -> Dictionary:
+	return social_visit_data.duplicate(true)
+
+
+func prepare_social_inbound() -> void:
+	if not social_visit:
+		return
+	visible = false
+	_set_state("HOLDING_FOR_ARRIVAL")
 
 
 func has_flight_plan() -> bool:
@@ -1099,6 +1124,11 @@ func _draw() -> void:
 		and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]
 	):
 		_draw_event_badge()
+	elif (
+		social_visit
+		and state not in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]
+	):
+		_draw_social_badge()
 
 	match state:
 		"WAITING_FUEL":
@@ -1123,6 +1153,30 @@ func _draw() -> void:
 			draw_circle(Vector2(-2, -26), 6.0, Color("78b7e8"))
 		"HOLDING_FOR_ARRIVAL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
+
+
+func _draw_social_badge() -> void:
+	var center := Vector2(-2, -39)
+	var relationship := String(
+		social_visit_data.get("relationship", "friend")
+	)
+	var fill := (
+		Color("9b6bd6")
+		if relationship == "alliance"
+		else Color("4f9fc8")
+	)
+	draw_circle(center, 9.0, Color(0, 0, 0, 0.35))
+	draw_circle(center, 7.0, fill)
+	draw_circle(center, 7.0, Color("eaf7ff"), false, 2.0)
+	draw_string(
+		ThemeDB.fallback_font,
+		center + Vector2(-5, 4),
+		"A" if relationship == "alliance" else "F",
+		HORIZONTAL_ALIGNMENT_CENTER,
+		10.0,
+		10,
+		Color("ffffff")
+	)
 
 
 func _draw_event_badge() -> void:

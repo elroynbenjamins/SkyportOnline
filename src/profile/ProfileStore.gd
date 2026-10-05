@@ -99,6 +99,15 @@ static func load_profile() -> Dictionary:
 	if stored_contracts is Dictionary:
 		priority_contract_progress = stored_contracts.duplicate(true)
 
+	var social_state := {}
+	var stored_social_state = config.get_value(
+		"profile",
+		"social_state",
+		{}
+	)
+	if stored_social_state is Dictionary:
+		social_state = stored_social_state.duplicate(true)
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -125,6 +134,7 @@ static func load_profile() -> Dictionary:
 		"event_states": event_states,
 		"owned_cosmetics": owned_cosmetics,
 		"priority_contract_progress": priority_contract_progress,
+		"social_state": social_state,
 		"passenger_gift_day": String(
 			config.get_value("profile", "passenger_gift_day", "")
 		),
@@ -176,6 +186,7 @@ static func create_guest_airport(
 		"event_states": {},
 		"owned_cosmetics": {},
 		"priority_contract_progress": {},
+		"social_state": {},
 		"passenger_gift_day": "",
 		"passenger_gifts_received_today": 0
 	}
@@ -604,6 +615,195 @@ static func record_friend_passenger_gift(
 
 	profile["passenger_gift_day"] = today
 	profile["passenger_gifts_received_today"] = received
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func get_social_state() -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+	var state = profile.get("social_state", {})
+	if state is Dictionary:
+		return (state as Dictionary).duplicate(true)
+	return {}
+
+
+static func get_outgoing_friend_gift_status(
+	contact_id: String,
+	day_key: String = ""
+) -> Dictionary:
+	if contact_id.is_empty():
+		return {}
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var today := day_key
+	if today.is_empty():
+		today = Time.get_date_string_from_system()
+	var state: Dictionary = profile.get(
+		"social_state",
+		{}
+	).duplicate(true)
+	var sent: Dictionary = state.get(
+		"sent_passenger_gifts",
+		{}
+	).duplicate(true)
+	var last_day := String(sent.get(contact_id, ""))
+	return {
+		"contact_id": contact_id,
+		"day": today,
+		"sent_today": last_day == today,
+		"can_send": last_day != today
+	}
+
+
+static func record_outgoing_friend_passenger_gift(
+	contact_id: String,
+	day_key: String = ""
+) -> Dictionary:
+	if contact_id.is_empty():
+		return {}
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	var status := get_outgoing_friend_gift_status(
+		contact_id,
+		day_key
+	)
+	if status.is_empty() or not bool(
+		status.get("can_send", false)
+	):
+		return {}
+
+	var state: Dictionary = profile.get(
+		"social_state",
+		{}
+	).duplicate(true)
+	var sent: Dictionary = state.get(
+		"sent_passenger_gifts",
+		{}
+	).duplicate(true)
+	sent[contact_id] = String(status.get("day", day_key))
+	state["sent_passenger_gifts"] = sent
+	state["gifts_sent_total"] = int(
+		state.get("gifts_sent_total", 0)
+	) + 1
+	var action_outbox: Array = state.get(
+		"social_action_outbox",
+		[]
+	).duplicate(true)
+	action_outbox.append({
+		"action": "passenger_gift",
+		"contact_id": contact_id,
+		"amount": PassengerSupportRules.friend_gift_amount(),
+		"day": String(status.get("day", day_key)),
+		"created_at_unix": int(Time.get_unix_time_from_system())
+	})
+	while action_outbox.size() > 50:
+		action_outbox.remove_at(0)
+	state["social_action_outbox"] = action_outbox
+	profile["social_state"] = state
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func record_social_service(
+	contact_id: String,
+	source_type: String,
+	country_id: String,
+	coins_earned: int,
+	xp_earned: int,
+	resources_earned: int
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty() or contact_id.is_empty():
+		return {}
+
+	var state: Dictionary = profile.get(
+		"social_state",
+		{}
+	).duplicate(true)
+	state["visits_serviced_total"] = int(
+		state.get("visits_serviced_total", 0)
+	) + 1
+	state["social_coins_earned"] = int(
+		state.get("social_coins_earned", 0)
+	) + maxi(coins_earned, 0)
+	state["social_xp_earned"] = int(
+		state.get("social_xp_earned", 0)
+	) + maxi(xp_earned, 0)
+	state["social_resources_earned"] = int(
+		state.get("social_resources_earned", 0)
+	) + maxi(resources_earned, 0)
+
+	var by_contact: Dictionary = state.get(
+		"visits_by_contact",
+		{}
+	).duplicate(true)
+	by_contact[contact_id] = int(
+		by_contact.get(contact_id, 0)
+	) + 1
+	state["visits_by_contact"] = by_contact
+
+	if not country_id.is_empty():
+		var by_country: Dictionary = state.get(
+			"visits_by_country",
+			{}
+		).duplicate(true)
+		by_country[country_id] = int(
+			by_country.get(country_id, 0)
+		) + 1
+		state["visits_by_country"] = by_country
+
+	if source_type == "alliance":
+		state["alliance_visits_serviced"] = int(
+			state.get("alliance_visits_serviced", 0)
+		) + 1
+	else:
+		state["friend_visits_serviced"] = int(
+			state.get("friend_visits_serviced", 0)
+		) + 1
+
+	profile["social_state"] = state
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func enqueue_social_reward_receipt(
+	contact_id: String,
+	reward: Dictionary,
+	visit_id: String = ""
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty() or contact_id.is_empty():
+		return {}
+
+	var state: Dictionary = profile.get(
+		"social_state",
+		{}
+	).duplicate(true)
+	var outbox: Array = state.get(
+		"reward_receipt_outbox",
+		[]
+	).duplicate(true)
+	outbox.append({
+		"contact_id": contact_id,
+		"visit_id": visit_id,
+		"reward": reward.duplicate(true),
+		"created_at_unix": int(
+			Time.get_unix_time_from_system()
+		)
+	})
+	while outbox.size() > 50:
+		outbox.remove_at(0)
+	state["reward_receipt_outbox"] = outbox
+	profile["social_state"] = state
 	if not _save_profile(profile):
 		return {}
 	return profile

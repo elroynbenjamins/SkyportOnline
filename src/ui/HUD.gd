@@ -77,6 +77,7 @@ var active_building_id := ""
 var active_build_mode := ""
 var active_expand_parcel_id := ""
 var event_nav_button: Button
+var social_nav_button: Button
 var nav_buttons: Dictionary = {}
 
 
@@ -684,7 +685,7 @@ func _build_bottom_navigation(root: Control) -> void:
 	nav_row.add_theme_constant_override("separation", 4)
 	bottom_nav.add_child(nav_row)
 
-	for item in ["🔨\nBUILD", "✈\nFLEET", "🌍\nWORLD", "🎉\nEVENT", "👥\nALLIANCE", "☰\nMORE"]:
+	for item in ["🔨\nBUILD", "✈\nFLEET", "🌍\nWORLD", "🎉\nEVENT", "👥\nSOCIAL", "☰\nMORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -707,6 +708,8 @@ func _build_bottom_navigation(root: Control) -> void:
 		if tab == "event":
 			event_nav_button = button
 			button.visible = false
+		elif tab == "social":
+			social_nav_button = button
 
 		nav_row.add_child(button)
 
@@ -733,6 +736,25 @@ func set_event_attention(claimable: bool) -> void:
 	else:
 		event_nav_button.text = "🎉\nEVENT"
 		GameUIStyle.apply_button(event_nav_button, "nav", true)
+
+
+func set_social_attention(active: bool) -> void:
+	if social_nav_button == null:
+		return
+	if active:
+		social_nav_button.text = "👥 •\nSOCIAL"
+		GameUIStyle.apply_button(
+			social_nav_button,
+			"gold",
+			true
+		)
+	else:
+		social_nav_button.text = "👥\nSOCIAL"
+		GameUIStyle.apply_button(
+			social_nav_button,
+			"nav",
+			true
+		)
 
 
 func set_interface_visible(value: bool) -> void:

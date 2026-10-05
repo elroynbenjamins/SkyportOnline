@@ -39,6 +39,9 @@ func _run() -> void:
 	var event := EventScreen.new()
 	root.add_child(event)
 
+	var social := SocialAirportScreen.new()
+	root.add_child(social)
+
 	var inventory := ResourceInventoryScreen.new()
 	root.add_child(inventory)
 
@@ -74,6 +77,14 @@ func _run() -> void:
 	if hud.catalog_filter_buttons.size() < 6:
 		_fail("Build Tray should expose category filter chips.")
 		return
+	if hud.social_nav_button == null:
+		_fail("Airport HUD should expose the Social network navigation button.")
+		return
+	hud.set_social_attention(true)
+	if not hud.social_nav_button.text.contains("•"):
+		_fail("Social nav should visibly flag active visiting traffic.")
+		return
+	hud.set_social_attention(false)
 
 	if world.route_card_label == null:
 		_fail("World Map should expose compact Route information card.")
@@ -116,6 +127,7 @@ func _run() -> void:
 		world.root,
 		fleet.root,
 		event.root,
+		social.root,
 		inventory.root,
 		passenger_upgrade.root,
 		service_upgrade.root,
@@ -148,7 +160,7 @@ func _run() -> void:
 
 	print(
 		"UI modernization passed: compact airport chips, build tray, "
-		+ "World Map cards, upgrade comparisons, reward tiles, and "
+		+ "World Map/Social cards, upgrade comparisons, reward tiles, and "
 		+ "shared game styling."
 	)
 	quit(0)

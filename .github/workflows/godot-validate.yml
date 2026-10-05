@@ -59,6 +59,12 @@ jobs:
       - name: Test passenger support
         run: timeout 20s godot --headless --path . --script res://tests/passenger_support_test.gd
 
+      - name: Test social airport account and rewards
+        run: timeout 20s godot --headless --path . --script res://tests/social_airport_test.gd
+
+      - name: Test social visitor airport cycle
+        run: timeout 25s godot --headless --path . --script res://tests/social_aircraft_cycle_test.gd
+
 
       - name: Test country selection and resource catalog
         run: timeout 20s godot --headless --path . --script res://tests/country_resource_test.gd

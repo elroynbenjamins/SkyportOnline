@@ -3,6 +3,7 @@ extends CanvasLayer
 
 signal choose_route_requested(aircraft: AircraftPrototype)
 signal fleet_requested(aircraft: AircraftPrototype)
+signal social_requested(aircraft: AircraftPrototype)
 
 var root: Control
 var panel: PanelContainer
@@ -162,6 +163,42 @@ func refresh_card() -> void:
 		AircraftMastery.format_stars(stars),
 		mastery_hours
 	]
+
+	if aircraft.is_social_visitor():
+		var social := aircraft.get_social_visit_data()
+		var relationship := String(
+			social.get("relationship", "friend")
+		).capitalize()
+		var country_id := String(
+			social.get("country_id", "")
+		)
+		var country := CountryCatalog.get_country(country_id)
+		route_label.text = "Visiting from %s • %s" % [
+			String(
+				social.get(
+					"airport_name",
+					"Friend Airport"
+				)
+			),
+			String(country.get("name", country_id))
+		]
+		passenger_label.text = "👥 VISITOR • Your passenger stock is not consumed"
+		passenger_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_ACCENT
+		)
+		mastery_label.text = "%s FLIGHT • %s" % [
+			relationship.to_upper(),
+			country_id
+		]
+		primary_button.text = "👥  SOCIAL NETWORK"
+		primary_button.disabled = false
+		GameUIStyle.apply_button(
+			primary_button,
+			"gold"
+		)
+		fleet_button.visible = false
+		return
 
 	var can_choose_route := aircraft.can_change_flight_plan()
 	if can_choose_route:
@@ -413,7 +450,11 @@ func _on_primary_pressed() -> void:
 	):
 		return
 
-	if selected_aircraft.can_change_flight_plan():
+	if selected_aircraft.is_social_visitor():
+		social_requested.emit(
+			selected_aircraft
+		)
+	elif selected_aircraft.can_change_flight_plan():
 		choose_route_requested.emit(
 			selected_aircraft
 		)

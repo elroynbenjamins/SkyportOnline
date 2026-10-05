@@ -59,6 +59,25 @@ func _run() -> void:
 
 	await process_frame
 
+	if hud.airport_meta_label == null:
+		_fail("Airport HUD should show airport-code/country identity metadata.")
+		return
+	if hud.xp_progress == null or hud.xp_label == null:
+		_fail("Airport HUD should expose visible level XP progression.")
+		return
+	if hud.bottom_nav_panel == null:
+		_fail("Airport HUD should expose a dedicated game action dock.")
+		return
+	if hud.operation_toast_panel == null:
+		_fail("Airport HUD should expose game-style operation feedback toast.")
+		return
+	if hud.operation_toast_panel.visible:
+		_fail("Operation feedback toast should start hidden.")
+		return
+	hud.set_level_progress(150, 100, 300, false)
+	if int(hud.xp_progress.value) != 50 or int(hud.xp_progress.max_value) != 200:
+		_fail("HUD XP bar should show progress within the current airport level.")
+		return
 	if hud.airside_status_chip == null:
 		_fail("Airport HUD should expose compact Airfield status chip.")
 		return
@@ -150,6 +169,11 @@ func _run() -> void:
 	if event_button.get_theme_stylebox("normal") == null:
 		_fail("Event action style should exist.")
 		return
+	var dock_button := Button.new()
+	GameUIStyle.apply_button(dock_button, "dock_selected", true)
+	if dock_button.get_theme_stylebox("normal") == null:
+		_fail("Airport action dock selected style should exist.")
+		return
 
 	var map := CountryMap.new()
 	root.add_child(map)
@@ -159,9 +183,9 @@ func _run() -> void:
 		return
 
 	print(
-		"UI modernization passed: compact airport chips, build tray, "
-		+ "World Map/Social cards, upgrade comparisons, reward tiles, and "
-		+ "shared game styling."
+		"UI modernization passed: game-style airport identity/resources/XP dock, "
+		+ "compact operations chips, build tray, World Map/Social cards, "
+		+ "upgrade comparisons, reward tiles, and shared game styling."
 	)
 	quit(0)
 

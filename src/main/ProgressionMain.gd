@@ -75,6 +75,7 @@ func _start_gameplay() -> void:
 	add_child(career_screen)
 	mission_pass_screen = MissionPassScreen.new()
 	mission_pass_screen.reroll_requested.connect(_on_mission_reroll_requested)
+	mission_pass_screen.guidance_requested.connect(_on_mission_guidance_requested)
 	mission_pass_screen.pass_reward_claim_requested.connect(_on_pass_reward_claim_requested)
 	mission_pass_screen.claim_all_requested.connect(_on_pass_claim_all_requested)
 	mission_pass_screen.product_purchase_requested.connect(_on_mission_product_purchase_requested)
@@ -276,14 +277,22 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 	var boarded := aircraft.get_boarded_passengers()
 	var coins_before := coins
 	var xp_before := player_xp
+	var resources_before := _resource_inventory_total()
+	var mastery_before := _mastery_hours_for_aircraft(aircraft)
 	super._apply_completed_flight_reward(aircraft, label)
+	var resources_after := _resource_inventory_total()
+	var mastery_after := _mastery_hours_for_aircraft(aircraft)
 	AirportProgressionRules.record_event(progression, {"id": token, "kind": "flight_return",
 		"aircraft": aircraft.aircraft_type_id, "country": plan.get("country_code", ""), "visitor": false}, player_level)
 	_record_mission_event("flight", {
 		"passengers": boarded,
 		"coins": maxi(coins - coins_before, 0),
 		"xp": maxi(player_xp - xp_before, 0),
-		"country": String(plan.get("country_code", ""))
+		"country": String(plan.get("country_code", "")),
+		"flight_minutes": maxi(int(round(float(plan.get("duration_seconds", 0.0)) / 60.0)), 0),
+		"distance_km": maxi(int(round(float(plan.get("distance_km", 0.0)))), 0),
+		"mastery_minutes": maxi(int(round(maxf(mastery_after - mastery_before, 0.0) * 60.0)), 0),
+		"resources": maxi(resources_after - resources_before, 0)
 	})
 	# A completed route is not an implicit order to charge passengers and fly it again.
 	aircraft.assign_flight_plan({})
@@ -382,6 +391,23 @@ func _open_missions() -> void:
 	if career_screen != null:
 		career_screen.close_screen()
 	mission_pass_screen.open_screen(_mission_snapshot())
+
+func _on_mission_guidance_requested(mission: Dictionary) -> void:
+	var metric := String(mission.get("metric", ""))
+	mission_pass_screen.close_screen()
+	match metric:
+		"npc_services":
+			career_screen.open_screen(_career_snapshot(), "NPC Visitors")
+		"passive_passengers":
+			super._on_navigation_requested("more")
+		_:
+			super._on_navigation_requested("world")
+
+func _resource_inventory_total() -> int:
+	var total := 0
+	for amount_variant in resource_inventory.values():
+		total += maxi(int(amount_variant), 0)
+	return total
 
 func _record_mission_event(event_kind: String, payload: Dictionary) -> void:
 	if not progression_ready:

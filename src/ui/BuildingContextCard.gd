@@ -254,7 +254,10 @@ func _refresh() -> void:
 	)
 	details_button.visible = show_details
 
-	building_image.texture = _building_texture(definition)
+	building_image.texture = _building_texture(
+		definition,
+		int(selected_building.get("rotation", 0))
+	)
 
 
 func _make_stat_card(
@@ -298,7 +301,8 @@ func _apply_status_tone(tone: String) -> void:
 
 
 func _building_texture(
-	definition: Dictionary
+	definition: Dictionary,
+	rotation: int = 0
 ) -> Texture2D:
 	# Match the airport/build drawer: show the exact production world art
 	# before falling back to a legacy menu icon.

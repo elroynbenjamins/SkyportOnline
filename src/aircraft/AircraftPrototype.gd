@@ -1670,8 +1670,9 @@ func _draw_aircraft_engines(
 		design.get("engine_y_ratio", 0.56)
 	)
 
-	for side in [-1.0, 1.0]:
-		var y := engine_y * side
+	for side_value in [-1.0, 1.0]:
+		var side: float = float(side_value)
+		var y: float = engine_y * side
 		if style == "prop":
 			var pod := PackedVector2Array([
 				Vector2(engine_x + 4.0, y),

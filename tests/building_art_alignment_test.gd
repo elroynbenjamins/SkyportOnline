@@ -109,20 +109,20 @@ func _run() -> void:
 				visible_width / maxf(footprint_width, 1.0)
 			)
 
-			print(
+			var diagnostic := (
 				"BUILDING_ART_ALIGN id=%s rot=%d fp=%dx%d used=%s "
 				+ "bottom_delta=%.2f center_x=%.2f width_ratio=%.2f"
-				% [
-					String(definition.get("id", "")),
-					rotation,
-					footprint.x,
-					footprint.y,
-					str(used),
-					bottom_delta,
-					visible_center_x,
-					width_ratio
-				]
-			)
+			) % [
+				String(definition.get("id", "")),
+				rotation,
+				footprint.x,
+				footprint.y,
+				str(used),
+				bottom_delta,
+				visible_center_x,
+				width_ratio
+			]
+			print(diagnostic)
 			checked += 1
 
 	if checked < 16:

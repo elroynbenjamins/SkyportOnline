@@ -2663,7 +2663,7 @@ func apply_saved_airport_layout(
 
 	if not saved_layout.is_empty():
 		for item_variant in saved_layout:
-			if not item_variant is Dictionary:
+			if not (item_variant is Dictionary):
 				return false
 			var item: Dictionary = item_variant
 			var definition_id := String(

@@ -25,6 +25,7 @@ const LOCKED_GRID_LINE := Color("84958d", 0.22)
 const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
+const PREVIEW_EXPANSION_LINE := Color("ffd166", 0.95)
 const AIRSIDE_WARNING := Color("ffb84d")
 const AIRSIDE_CONNECTED := Color("76d39b")
 const HOLD_SHORT_SOLID := Color("f5d76e")
@@ -132,6 +133,7 @@ func _draw() -> void:
 	_draw_runway_operational_indicators()
 	_draw_airside_warnings()
 	_draw_build_preview()
+	_draw_preview_expansion_outline()
 	_draw_selected_outline()
 
 
@@ -1041,6 +1043,41 @@ func _draw_tile_overlay(tile: Vector2i, color: Color, line_color: Color, width: 
 	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line_color, width)
 
 
+func _draw_preview_expansion_outline() -> void:
+	var parcel_id := String(
+		preview_status.get("locked_parcel_id", "")
+	)
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return
+
+	var parcel: Dictionary = parcels[parcel_id]
+	var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
+	var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
+	for y in range(sy, sy + PARCEL_SIZE):
+		for x in range(sx, sx + PARCEL_SIZE):
+			if not (
+				x == sx
+				or x == sx + PARCEL_SIZE - 1
+				or y == sy
+				or y == sy + PARCEL_SIZE - 1
+			):
+				continue
+			var points := _tile_points(
+				tile_to_world(Vector2(x, y))
+			)
+			draw_polyline(
+				PackedVector2Array([
+					points[0],
+					points[1],
+					points[2],
+					points[3],
+					points[0]
+				]),
+				PREVIEW_EXPANSION_LINE,
+				3.0
+			)
+
+
 func _draw_selected_outline() -> void:
 	if selected_id.is_empty() or not parcels.has(selected_id):
 		return
@@ -1114,16 +1151,38 @@ func get_selected_parcel() -> Dictionary:
 	return parcels[selected_id].duplicate(true)
 
 
+func get_parcel(parcel_id: String) -> Dictionary:
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return {}
+	return (
+		parcels[parcel_id] as Dictionary
+	).duplicate(true)
+
+
+func purchase_parcel(parcel_id: String) -> bool:
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return false
+	if bool(parcels[parcel_id].get("owned", false)):
+		return false
+
+	parcels[parcel_id]["owned"] = true
+	_update_parcel_label(parcel_id)
+	queue_redraw()
+	if selected_id == parcel_id:
+		parcel_selected.emit(
+			parcel_id,
+			parcels[parcel_id].duplicate(true)
+		)
+	return true
+
+
 func purchase_selected() -> void:
 	if selected_id.is_empty() or not parcels.has(selected_id):
 		return
 	if parcels[selected_id]["owned"]:
 		return
 
-	parcels[selected_id]["owned"] = true
-	_update_parcel_label(selected_id)
-	queue_redraw()
-	parcel_selected.emit(selected_id, parcels[selected_id].duplicate(true))
+	purchase_parcel(selected_id)
 
 
 func set_build_preview(
@@ -1604,6 +1663,7 @@ func _get_placement_status(
 
 	var footprint := _footprint_for(definition, rotation)
 	var cells := _cells_for(origin, footprint)
+	var locked_parcels: Dictionary = {}
 
 	for cell in cells:
 		if not _tile_in_world(cell):
@@ -1613,13 +1673,7 @@ func _get_placement_status(
 				"origin": origin,
 				"footprint": footprint
 			}
-		if not _is_tile_owned(cell):
-			return {
-				"valid": false,
-				"reason": "This land parcel is still locked.",
-				"origin": origin,
-				"footprint": footprint
-			}
+
 		var cell_key := _cell_key(cell)
 		if occupied_cells.has(cell_key):
 			var occupying_uid := int(occupied_cells[cell_key])
@@ -1630,6 +1684,35 @@ func _get_placement_status(
 					"origin": origin,
 					"footprint": footprint
 				}
+
+		var parcel := _parcel_for_tile(cell)
+		if (
+			not parcel.is_empty()
+			and not bool(parcel.get("owned", false))
+		):
+			locked_parcels[
+				String(parcel.get("id", ""))
+			] = parcel.duplicate(true)
+
+	if not locked_parcels.is_empty():
+		var locked_ids: Array = locked_parcels.keys()
+		locked_ids.sort()
+		var parcel_id := String(locked_ids[0])
+		var locked: Dictionary = locked_parcels[parcel_id]
+		return {
+			"valid": false,
+			"reason": "This land parcel is still locked.",
+			"origin": origin,
+			"footprint": footprint,
+			"locked_parcel_id": parcel_id,
+			"locked_parcel_level": int(
+				locked.get("level", 1)
+			),
+			"locked_parcel_cost": int(
+				locked.get("cost", 0)
+			),
+			"locked_parcel_count": locked_ids.size()
+		}
 
 	var result := {
 		"valid": true,

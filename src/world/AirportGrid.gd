@@ -20,12 +20,16 @@ const OWNED_A := Color("5e965f")
 const OWNED_B := Color("579059")
 const LOCKED_A := Color("384c45")
 const LOCKED_B := Color("334640")
+const AVAILABLE_A := Color("676b49")
+const AVAILABLE_B := Color("5f6343")
 const GRID_LINE := Color("8fbc86", 0.32)
 const LOCKED_GRID_LINE := Color("84958d", 0.22)
+const AVAILABLE_GRID_LINE := Color("e2c46b", 0.55)
 const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
 const PREVIEW_EXPANSION_LINE := Color("ffd166", 0.95)
+const PREVIEW_FUTURE_LINE := Color("7d8b85", 0.88)
 const AIRSIDE_WARNING := Color("ffb84d")
 const AIRSIDE_CONNECTED := Color("76d39b")
 const HOLD_SHORT_SOLID := Color("f5d76e")
@@ -141,6 +145,11 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 	var start_x: int = int(parcel["px"]) * PARCEL_SIZE
 	var start_y: int = int(parcel["py"]) * PARCEL_SIZE
 	var owned: bool = bool(parcel["owned"])
+	var progression_state := String(
+		_parcel_progression_data(
+			String(parcel.get("id", ""))
+		).get("progression_state", "future")
+	)
 
 	for y in range(start_y, start_y + PARCEL_SIZE):
 		for x in range(start_x, start_x + PARCEL_SIZE):
@@ -150,8 +159,12 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 			var fill := OWNED_A if checker else OWNED_B
 			var line := GRID_LINE
 			if not owned:
-				fill = LOCKED_A if checker else LOCKED_B
-				line = LOCKED_GRID_LINE
+				if progression_state == "available":
+					fill = AVAILABLE_A if checker else AVAILABLE_B
+					line = AVAILABLE_GRID_LINE
+				else:
+					fill = LOCKED_A if checker else LOCKED_B
+					line = LOCKED_GRID_LINE
 			draw_colored_polygon(points, fill)
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), line, 1.0)
 
@@ -1051,6 +1064,14 @@ func _draw_preview_expansion_outline() -> void:
 		return
 
 	var parcel: Dictionary = parcels[parcel_id]
+	var line_color := PREVIEW_EXPANSION_LINE
+	if String(
+		preview_status.get(
+			"locked_parcel_state",
+			"available"
+		)
+	) == "future":
+		line_color = PREVIEW_FUTURE_LINE
 	var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
 	var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
 	for y in range(sy, sy + PARCEL_SIZE):
@@ -1073,7 +1094,7 @@ func _draw_preview_expansion_outline() -> void:
 					points[3],
 					points[0]
 				]),
-				PREVIEW_EXPANSION_LINE,
+				line_color,
 				3.0
 			)
 
@@ -1137,7 +1158,10 @@ func select_parcel(parcel_id: String) -> void:
 		return
 	selected_id = parcel_id
 	queue_redraw()
-	parcel_selected.emit(parcel_id, parcels[parcel_id].duplicate(true))
+	parcel_selected.emit(
+		parcel_id,
+		_parcel_progression_data(parcel_id)
+	)
 
 
 func clear_parcel_selection() -> void:
@@ -1148,41 +1172,60 @@ func clear_parcel_selection() -> void:
 func get_selected_parcel() -> Dictionary:
 	if selected_id.is_empty() or not parcels.has(selected_id):
 		return {}
-	return parcels[selected_id].duplicate(true)
+	return _parcel_progression_data(selected_id)
 
 
 func get_parcel(parcel_id: String) -> Dictionary:
-	if parcel_id.is_empty() or not parcels.has(parcel_id):
-		return {}
-	return (
-		parcels[parcel_id] as Dictionary
-	).duplicate(true)
+	return _parcel_progression_data(parcel_id)
+
+
+func get_expansion_frontier() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for parcel_id_variant in parcels.keys():
+		var parcel_id := String(parcel_id_variant)
+		var data := _parcel_progression_data(parcel_id)
+		if String(
+			data.get("progression_state", "")
+		) == "available":
+			result.append(data)
+	result.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			var a_level := int(a.get("level", 1))
+			var b_level := int(b.get("level", 1))
+			if a_level != b_level:
+				return a_level < b_level
+			return int(a.get("cost", 0)) < int(
+				b.get("cost", 0)
+			)
+	)
+	return result
 
 
 func purchase_parcel(parcel_id: String) -> bool:
 	if parcel_id.is_empty() or not parcels.has(parcel_id):
 		return false
-	if bool(parcels[parcel_id].get("owned", false)):
+
+	var data := _parcel_progression_data(parcel_id)
+	if String(
+		data.get("progression_state", "")
+	) != "available":
 		return false
 
 	parcels[parcel_id]["owned"] = true
-	_update_parcel_label(parcel_id)
+	_refresh_parcel_labels()
 	queue_redraw()
 	if selected_id == parcel_id:
 		parcel_selected.emit(
 			parcel_id,
-			parcels[parcel_id].duplicate(true)
+			_parcel_progression_data(parcel_id)
 		)
 	return true
 
 
-func purchase_selected() -> void:
+func purchase_selected() -> bool:
 	if selected_id.is_empty() or not parcels.has(selected_id):
-		return
-	if parcels[selected_id]["owned"]:
-		return
-
-	purchase_parcel(selected_id)
+		return false
+	return purchase_parcel(selected_id)
 
 
 func set_build_preview(
@@ -1697,11 +1740,37 @@ func _get_placement_status(
 	if not locked_parcels.is_empty():
 		var locked_ids: Array = locked_parcels.keys()
 		locked_ids.sort()
+		var available_ids: Array[String] = []
+		for locked_id_variant in locked_ids:
+			var locked_id := String(locked_id_variant)
+			if _parcel_is_adjacent_to_owned(
+				locked_id
+			):
+				available_ids.append(locked_id)
+
 		var parcel_id := String(locked_ids[0])
-		var locked: Dictionary = locked_parcels[parcel_id]
+		if not available_ids.is_empty():
+			available_ids.sort()
+			parcel_id = available_ids[0]
+
+		var locked := _parcel_progression_data(
+			parcel_id
+		)
+		var progression_state := String(
+			locked.get(
+				"progression_state",
+				"future"
+			)
+		)
+		var reason := "This land parcel is still locked."
+		if progression_state == "future":
+			reason = (
+				"Expand a neighboring parcel first."
+			)
+
 		return {
 			"valid": false,
-			"reason": "This land parcel is still locked.",
+			"reason": reason,
 			"origin": origin,
 			"footprint": footprint,
 			"locked_parcel_id": parcel_id,
@@ -1711,7 +1780,14 @@ func _get_placement_status(
 			"locked_parcel_cost": int(
 				locked.get("cost", 0)
 			),
-			"locked_parcel_count": locked_ids.size()
+			"locked_parcel_count": locked_ids.size(),
+			"locked_parcel_state": progression_state,
+			"locked_parcel_adjacent": bool(
+				locked.get(
+					"adjacent_to_owned",
+					false
+				)
+			)
 		}
 
 	var result := {
@@ -1802,6 +1878,89 @@ func _parcel_at(px: int, py: int) -> Dictionary:
 	return {}
 
 
+func _parcel_neighbor_ids(parcel_id: String) -> Array[String]:
+	var result: Array[String] = []
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return result
+
+	var parcel: Dictionary = parcels[parcel_id]
+	var px := int(parcel.get("px", 0))
+	var py := int(parcel.get("py", 0))
+	for offset in [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]:
+		var neighbor := _parcel_at(
+			px + offset.x,
+			py + offset.y
+		)
+		if neighbor.is_empty():
+			continue
+		result.append(
+			String(neighbor.get("id", ""))
+		)
+	return result
+
+
+func _owned_neighbor_ids(parcel_id: String) -> Array[String]:
+	var result: Array[String] = []
+	for neighbor_id in _parcel_neighbor_ids(parcel_id):
+		if (
+			parcels.has(neighbor_id)
+			and bool(
+				parcels[neighbor_id].get(
+					"owned",
+					false
+				)
+			)
+		):
+			result.append(neighbor_id)
+	result.sort()
+	return result
+
+
+func _parcel_is_adjacent_to_owned(
+	parcel_id: String
+) -> bool:
+	return not _owned_neighbor_ids(
+		parcel_id
+	).is_empty()
+
+
+func _parcel_progression_data(
+	parcel_id: String
+) -> Dictionary:
+	if parcel_id.is_empty() or not parcels.has(parcel_id):
+		return {}
+
+	var result: Dictionary = (
+		parcels[parcel_id] as Dictionary
+	).duplicate(true)
+	var owned := bool(result.get("owned", false))
+	var owned_neighbors := _owned_neighbor_ids(parcel_id)
+	var state := "future"
+	if owned:
+		state = "owned"
+	elif not owned_neighbors.is_empty():
+		state = "available"
+
+	result["progression_state"] = state
+	result["adjacent_to_owned"] = (
+		not owned_neighbors.is_empty()
+	)
+	result["owned_neighbor_ids"] = owned_neighbors
+	return result
+
+
+func _refresh_parcel_labels() -> void:
+	for parcel_id_variant in parcels.keys():
+		_update_parcel_label(
+			String(parcel_id_variant)
+		)
+
+
 func _footprint_center_world(origin: Vector2i, footprint: Vector2i) -> Vector2:
 	var center_tile := Vector2(
 		float(origin.x) + float(footprint.x - 1) * 0.5,
@@ -1839,14 +1998,37 @@ func _update_parcel_label(id: String) -> void:
 	if not parcel_labels.has(id):
 		return
 
-	var parcel: Dictionary = parcels[id]
+	var parcel := _parcel_progression_data(id)
 	var label: Label = parcel_labels[id]
-	if parcel["owned"]:
-		label.text = "OWNED"
-		if id == "home":
-			label.text = "YOUR AIRPORT"
-	else:
-		label.text = "🔒  Lv %d\n%s coins" % [int(parcel["level"]), _format_number(int(parcel["cost"]))]
+	var state := String(
+		parcel.get("progression_state", "future")
+	)
+	match state:
+		"owned":
+			label.text = "OWNED"
+			if id == "home":
+				label.text = "YOUR AIRPORT"
+			label.add_theme_color_override(
+				"font_color",
+				Color("f5f7f6")
+			)
+		"available":
+			label.text = "NEXT EXPANSION\nLv %d • %s coins" % [
+				int(parcel.get("level", 1)),
+				_format_number(
+					int(parcel.get("cost", 0))
+				)
+			]
+			label.add_theme_color_override(
+				"font_color",
+				Color("ffe19a")
+			)
+		_:
+			label.text = "🔒 FUTURE LAND\nExpand adjacent parcel"
+			label.add_theme_color_override(
+				"font_color",
+				Color("aab8b2")
+			)
 
 
 func _refresh_building_labels() -> void:
@@ -3121,7 +3303,7 @@ func apply_saved_airport_layout(
 			String(parcel_id) == "home"
 			or owned.has(String(parcel_id))
 		)
-		_update_parcel_label(String(parcel_id))
+	_refresh_parcel_labels()
 
 	if (
 		not saved_layout.is_empty()

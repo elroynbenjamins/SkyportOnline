@@ -837,10 +837,25 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 		purchase_button.disabled = true
 		return
 
+	var progression_state := String(
+		parcel.get("progression_state", "future")
+	)
+	if progression_state == "future":
+		parcel_title.text = "FUTURE EXPANSION"
+		parcel_requirements.text = (
+			"Expand a neighboring parcel first to connect this land."
+		)
+		purchase_button.text = "NOT CONNECTED"
+		purchase_button.disabled = true
+		return
+
 	var required_level := int(parcel.get("level", 1))
 	var cost := int(parcel.get("cost", 0))
-	parcel_title.text = "EXPAND LAND"
-	parcel_requirements.text = "Unlock: Lv %d   •   Cost: 🪙 %s" % [required_level, _format_number(cost)]
+	parcel_title.text = "NEXT EXPANSION"
+	parcel_requirements.text = "Unlock: Lv %d   •   Cost: 🪙 %s" % [
+		required_level,
+		_format_number(cost)
+	]
 
 	if player_level < required_level:
 		purchase_button.text = "REQUIRES LV %d" % required_level
@@ -1193,6 +1208,17 @@ func _update_placement_expand_action(
 	expand_here_button.visible = true
 	if place_button != null:
 		place_button.visible = false
+
+	var progression_state := String(
+		status.get(
+			"locked_parcel_state",
+			"available"
+		)
+	)
+	if progression_state == "future":
+		expand_here_button.text = "CONNECT LAND\nFIRST"
+		expand_here_button.disabled = true
+		return
 
 	var required_level := int(
 		status.get("locked_parcel_level", 1)

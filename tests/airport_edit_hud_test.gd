@@ -219,6 +219,63 @@ func _run() -> void:
 		)
 		return
 
+	hud.show_parcel(
+		{
+			"id": "north_west",
+			"owned": false,
+			"progression_state": "future",
+			"level": 35,
+			"cost": 2000000
+		},
+		40,
+		3000000
+	)
+	if hud.purchase_button.text != "NOT CONNECTED":
+		_fail("Future parcel should show Not Connected.")
+		return
+	if not hud.purchase_button.disabled:
+		_fail("Future parcel purchase should remain disabled.")
+		return
+
+	hud.show_parcel(
+		{
+			"id": "north",
+			"owned": false,
+			"progression_state": "available",
+			"level": 5,
+			"cost": 25000
+		},
+		5,
+		25000
+	)
+	if hud.purchase_button.disabled:
+		_fail("Connected affordable parcel should be purchasable.")
+		return
+	if hud.parcel_title.text != "NEXT EXPANSION":
+		_fail("Connected parcel should be labelled Next Expansion.")
+		return
+
+	hud.show_move_preview(
+		definition,
+		{
+			"valid": false,
+			"reason": "Expand a neighboring parcel first.",
+			"locked_parcel_id": "north_west",
+			"locked_parcel_state": "future",
+			"locked_parcel_level": 35,
+			"locked_parcel_cost": 2000000
+		}
+	)
+	if not hud.expand_here_button.visible:
+		_fail("Future placement should still explain the expansion blocker.")
+		return
+	if not hud.expand_here_button.disabled:
+		_fail("Disconnected placement expansion must stay disabled.")
+		return
+	if not hud.expand_here_button.text.contains("CONNECT LAND"):
+		_fail("Future placement should instruct the player to connect land.")
+		return
+
 	hud._on_done_airport_edit_pressed()
 	if not done_emitted:
 		_fail("Done should emit an edit completion request.")

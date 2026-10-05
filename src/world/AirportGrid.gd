@@ -29,6 +29,7 @@ const SELECTED_LINE := Color("ffd166")
 const PREVIEW_VALID := Color("68d391", 0.62)
 const PREVIEW_INVALID := Color("ef6461", 0.68)
 const PREVIEW_EXPANSION_LINE := Color("ffd166", 0.95)
+const PREVIEW_FUTURE_LINE := Color("7d8b85", 0.88)
 const AIRSIDE_WARNING := Color("ffb84d")
 const AIRSIDE_CONNECTED := Color("76d39b")
 const HOLD_SHORT_SOLID := Color("f5d76e")
@@ -1063,6 +1064,14 @@ func _draw_preview_expansion_outline() -> void:
 		return
 
 	var parcel: Dictionary = parcels[parcel_id]
+	var line_color := PREVIEW_EXPANSION_LINE
+	if String(
+		preview_status.get(
+			"locked_parcel_state",
+			"available"
+		)
+	) == "future":
+		line_color = PREVIEW_FUTURE_LINE
 	var sx := int(parcel.get("px", 0)) * PARCEL_SIZE
 	var sy := int(parcel.get("py", 0)) * PARCEL_SIZE
 	for y in range(sy, sy + PARCEL_SIZE):
@@ -1085,7 +1094,7 @@ func _draw_preview_expansion_outline() -> void:
 					points[3],
 					points[0]
 				]),
-				PREVIEW_EXPANSION_LINE,
+				line_color,
 				3.0
 			)
 

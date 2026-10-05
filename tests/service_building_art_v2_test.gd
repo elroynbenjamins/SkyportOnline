@@ -100,7 +100,7 @@ func _run() -> void:
 		if atlas.get_width() != 896 or atlas.get_height() != 1344:
 			_fail("Service-building v2 atlases should import at 896x1344.")
 			return
-		var atlas_image := atlas.get_image()
+		var atlas_image: Image = atlas.get_image()
 		if atlas_image == null:
 			_fail("Service-building v2 atlases should expose readable image data.")
 			return

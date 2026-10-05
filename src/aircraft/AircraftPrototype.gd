@@ -82,6 +82,43 @@ func get_interaction_radius() -> float:
 			return 36.0
 
 
+func get_visual_scale() -> float:
+	var passengers := int(
+		aircraft_profile.get("passengers", 0)
+	)
+	match aircraft_size:
+		"M":
+			if passengers <= 0:
+				return 1.34
+			var medium_progress := clampf(
+				(float(passengers) - 40.0) / 48.0,
+				0.0,
+				1.0
+			)
+			return lerpf(1.26, 1.46, medium_progress)
+		"L":
+			return 1.62
+		"XL":
+			return 1.82
+		_:
+			if passengers <= 0:
+				return 1.0
+			var small_progress := clampf(
+				(float(passengers) - 8.0) / 24.0,
+				0.0,
+				1.0
+			)
+			return lerpf(0.96, 1.12, small_progress)
+
+
+func get_visual_half_length() -> float:
+	return 25.0 * get_visual_scale()
+
+
+func get_visual_half_span() -> float:
+	return 18.0 * get_visual_scale()
+
+
 func contains_world_point(world_position: Vector2) -> bool:
 	if not visible:
 		return false
@@ -104,6 +141,8 @@ func configure_aircraft_type(type_id: String) -> void:
 		aircraft_size,
 		profile
 	)
+	_sync_turnaround_status_transform()
+	queue_redraw()
 
 
 func assign_flight_plan(plan: Dictionary) -> void:
@@ -450,7 +489,15 @@ func _build_turnaround_status() -> void:
 func _sync_turnaround_status_transform() -> void:
 	if turnaround_panel == null:
 		return
-	var anchor := Vector2(-59, -58).rotated(-rotation)
+	var visual_scale := get_visual_scale()
+	var vertical_clearance := maxf(
+		visual_scale - 1.0,
+		0.0
+	) * 34.0
+	var anchor := Vector2(
+		-59,
+		-58 - vertical_clearance
+	).rotated(-rotation)
 	turnaround_panel.position = anchor
 	turnaround_panel.rotation = -rotation
 
@@ -476,6 +523,7 @@ func set_departure_route(
 	assigned_runway_uid: int = -1
 ) -> void:
 	aircraft_size = size_class
+	_sync_turnaround_status_transform()
 	departure_route = _refined_departure_route(points)
 	stand_uid = assigned_stand_uid
 	runway_uid = assigned_runway_uid
@@ -1065,6 +1113,13 @@ func _set_state(new_state: String) -> void:
 func _draw() -> void:
 	_draw_shadow()
 
+	var visual_scale := get_visual_scale()
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE * visual_scale
+	)
+
 	var fuselage := PackedVector2Array([
 		Vector2(22, 0),
 		Vector2(12, -5),
@@ -1182,6 +1237,12 @@ func _draw() -> void:
 		"HOLDING_FOR_ARRIVAL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
 
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
 
 func _draw_social_badge() -> void:
 	var center := Vector2(-2, -39)
@@ -1244,9 +1305,25 @@ func _draw_shadow() -> void:
 	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
 		return
 
-	draw_set_transform(Vector2(2, 4), 0.0, Vector2(1.0, 0.45))
-	draw_circle(Vector2.ZERO, 20.0, Color(0, 0, 0, 0.25))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var visual_scale := get_visual_scale()
+	draw_set_transform(
+		Vector2(2, 4) * visual_scale,
+		0.0,
+		Vector2(
+			visual_scale,
+			visual_scale * 0.45
+		)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		20.0,
+		Color(0, 0, 0, 0.25)
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
 
 
 func _exit_tree() -> void:

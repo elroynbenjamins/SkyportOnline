@@ -1588,34 +1588,50 @@ func _draw_starter_apron_surface() -> void:
 	if polygon.size() < 4:
 		return
 
-	var shadow := PackedVector2Array()
-	for point_variant in polygon:
-		var point: Vector2 = point_variant
-		shadow.append(point + Vector2(6, 8))
-	draw_colored_polygon(
-		shadow,
-		Color(0.03, 0.07, 0.08, 0.24)
+	var integrated_site := _building_is_on_airport_foundation(
+		origin,
+		footprint
 	)
-
-	var shoulder := PackedVector2Array()
 	var center := Vector2.ZERO
 	for point_variant in polygon:
 		var center_point: Vector2 = point_variant
 		center += center_point
 	center /= float(polygon.size())
-	for point_variant in polygon:
-		var point: Vector2 = point_variant
-		shoulder.append(
-			center + (point - center) * 1.018
+
+	if integrated_site:
+		draw_colored_polygon(
+			polygon,
+			Color(
+				APRON_CONCRETE_LIGHT.r,
+				APRON_CONCRETE_LIGHT.g,
+				APRON_CONCRETE_LIGHT.b,
+				0.08
+			)
 		)
-	draw_colored_polygon(
-		shoulder,
-		Color("b9b5ad")
-	)
-	draw_colored_polygon(
-		polygon,
-		APRON_CONCRETE
-	)
+	else:
+		var shadow := PackedVector2Array()
+		for point_variant in polygon:
+			var point: Vector2 = point_variant
+			shadow.append(point + Vector2(6, 8))
+		draw_colored_polygon(
+			shadow,
+			Color(0.03, 0.07, 0.08, 0.24)
+		)
+
+		var shoulder := PackedVector2Array()
+		for point_variant in polygon:
+			var point: Vector2 = point_variant
+			shoulder.append(
+				center + (point - center) * 1.018
+			)
+		draw_colored_polygon(
+			shoulder,
+			Color("b9b5ad")
+		)
+		draw_colored_polygon(
+			polygon,
+			APRON_CONCRETE
+		)
 
 	# The apron is one visual slab; sparse expansion joints suggest large
 	# concrete panels without bringing back a visible placement grid.
@@ -1634,30 +1650,31 @@ func _draw_starter_apron_surface() -> void:
 			1.0
 		)
 
-	draw_line(
-		polygon[0],
-		polygon[1],
-		Color("ffffff", 0.32),
-		2.0
-	)
-	draw_line(
-		polygon[0],
-		polygon[3],
-		Color("fffdf7", 0.18),
-		1.4
-	)
-	draw_line(
-		polygon[2],
-		polygon[3],
-		Color("5d6261", 0.28),
-		2.4
-	)
-	draw_line(
-		polygon[1],
-		polygon[2],
-		Color("535b5c", 0.20),
-		1.8
-	)
+	if not integrated_site:
+		draw_line(
+			polygon[0],
+			polygon[1],
+			Color("ffffff", 0.32),
+			2.0
+		)
+		draw_line(
+			polygon[0],
+			polygon[3],
+			Color("fffdf7", 0.18),
+			1.4
+		)
+		draw_line(
+			polygon[2],
+			polygon[3],
+			Color("5d6261", 0.28),
+			2.4
+		)
+		draw_line(
+			polygon[1],
+			polygon[2],
+			Color("535b5c", 0.20),
+			1.8
+		)
 
 	_draw_starter_terminal_forecourt(
 		int(snapshot.get("terminal_uid", -1))

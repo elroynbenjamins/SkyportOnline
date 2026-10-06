@@ -2,10 +2,10 @@ class_name AirportGrid
 extends Node2D
 
 const PlacementGridV2 := preload(
-	"res://src/build/PlacementGridV2.gd"
+	"res://src/build/BuildingPlacementGrid.gd"
 )
 const SpritePlacementV2 := preload(
-	"res://src/build/SpritePlacementV2.gd"
+	"res://src/build/BuildingSpritePlacement.gd"
 )
 
 signal parcel_selected(parcel_id: String, data: Dictionary)

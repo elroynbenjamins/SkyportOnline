@@ -9,6 +9,7 @@ var coin_tile_label: Label
 var xp_tile_label: Label
 var mastery_tile_label: Label
 var body_label: Label
+var resource_roll_row: HBoxContainer
 var collect_button: Button
 var reveal_tween: Tween
 var queue: Array[Dictionary] = []
@@ -105,6 +106,11 @@ func _build_ui() -> void:
 		GameUIStyle.COLOR_TEXT
 	)
 	wrapper.add_child(body_label)
+
+	resource_roll_row = HBoxContainer.new()
+	resource_roll_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	resource_roll_row.add_theme_constant_override("separation", 8)
+	wrapper.add_child(resource_roll_row)
 
 	collect_button = Button.new()
 	collect_button.text = "COLLECT & CONTINUE"
@@ -216,6 +222,7 @@ func _show_next() -> void:
 	if rolls.is_empty():
 		text += "No regional resources configured for this destination.\n"
 
+	_refresh_resource_rolls(rolls, inventory)
 	body_label.text = text
 	if collect_button != null:
 		collect_button.text = (
@@ -226,6 +233,65 @@ func _show_next() -> void:
 	root.visible = true
 	_animate_reward_panel()
 
+
+
+func _refresh_resource_rolls(
+	rolls: Array,
+	inventory: Dictionary
+) -> void:
+	if resource_roll_row == null:
+		return
+
+	for child in resource_roll_row.get_children():
+		child.queue_free()
+
+	resource_roll_row.visible = not rolls.is_empty()
+	for result in rolls:
+		var resource_id := String(result.get("id", ""))
+		var resource_name := String(result.get("name", "Resource"))
+		var success := bool(result.get("success", false))
+		var owned := int(inventory.get(resource_id, 0))
+
+		var card := PanelContainer.new()
+		card.custom_minimum_size = Vector2(160, 92)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		GameUIStyle.apply_panel(card, "reward_tile")
+		resource_roll_row.add_child(card)
+
+		var content := VBoxContainer.new()
+		content.alignment = BoxContainer.ALIGNMENT_CENTER
+		content.add_theme_constant_override("separation", 1)
+		card.add_child(content)
+
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(54, 54)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = ResourceVisualCatalog.texture_for_resource(
+			resource_id
+		)
+		icon.tooltip_text = resource_name
+		if not success:
+			icon.modulate = Color(1.0, 1.0, 1.0, 0.32)
+		content.add_child(icon)
+
+		var label := Label.new()
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.add_theme_font_size_override("font_size", 11)
+		label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_SUCCESS
+			if success
+			else GameUIStyle.COLOR_MUTED
+		)
+		label.text = (
+			"✓ %s\n+1 • Owned %d" % [resource_name, owned]
+			if success
+			else "✕ %s\nNo drop" % resource_name
+		)
+		content.add_child(label)
 
 
 func _animate_reward_panel() -> void:

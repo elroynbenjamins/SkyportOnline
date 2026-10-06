@@ -232,8 +232,26 @@ func _refresh(
 			GameUIStyle.apply_panel(card, "dark")
 			row.add_child(card)
 
+			var content := VBoxContainer.new()
+			content.custom_minimum_size = Vector2(0, 112)
+			content.alignment = BoxContainer.ALIGNMENT_CENTER
+			content.add_theme_constant_override("separation", 2)
+			card.add_child(content)
+
+			var icon := TextureRect.new()
+			icon.custom_minimum_size = Vector2(64, 64)
+			icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.texture = ResourceVisualCatalog.texture_for_resource(
+				resource_id
+			)
+			icon.tooltip_text = String(
+				resource.get("name", "Resource")
+			)
+			content.add_child(icon)
+
 			var label := Label.new()
-			label.custom_minimum_size = Vector2(0, 56)
 			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			label.text = "%s\nOwned: %d" % [
@@ -241,7 +259,7 @@ func _refresh(
 				amount
 			]
 			label.add_theme_font_size_override("font_size", 14)
-			card.add_child(label)
+			content.add_child(label)
 
 	if not any_owned:
 		var empty := Label.new()

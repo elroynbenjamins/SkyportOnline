@@ -75,6 +75,9 @@ jobs:
       - name: Test World Map passenger demand
         run: timeout 20s godot --headless --path . --script res://tests/world_map_demand_test.gd
 
+      - name: Test World Map country selection
+        run: timeout 20s godot --headless --path . --script res://tests/world_map_country_selection_test.gd
+
       - name: Test economy history
         run: timeout 20s godot --headless --path . --script res://tests/economy_history_test.gd
 

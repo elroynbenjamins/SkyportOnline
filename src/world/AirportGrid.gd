@@ -8959,10 +8959,17 @@ func _taxiway_path_to_specific_runway(
 		aircraft_size,
 		reachable
 	)
-	return AirsideRoutingRules.find_smooth_path(
+	var smooth := AirsideRoutingRules.find_smooth_path(
 		reachable,
 		start,
 		goals
+	)
+	if not smooth.is_empty():
+		return smooth
+	return _legacy_taxiway_path_to_specific_runway(
+		start,
+		runway_uid,
+		aircraft_size
 	)
 
 
@@ -9018,11 +9025,111 @@ func _taxiway_path_to_runway(
 		).x >= 0:
 			goals[_cell_key(cell)] = true
 
-	return AirsideRoutingRules.find_smooth_path(
+	var smooth := AirsideRoutingRules.find_smooth_path(
 		reachable,
 		start,
 		goals
 	)
+	if not smooth.is_empty():
+		return smooth
+	return _legacy_taxiway_path_to_runway(
+		start,
+		aircraft_size
+	)
+
+
+func _legacy_taxiway_path_to_specific_runway(
+	start: Vector2i,
+	runway_uid: int,
+	aircraft_size: String = ""
+) -> Array[Vector2i]:
+	var reachable_keys: Array = airside_status.get(
+		"reachable_taxiway_cells",
+		[]
+	)
+	var reachable: Dictionary = {}
+	for key_variant in reachable_keys:
+		reachable[String(key_variant)] = true
+	if not reachable.has(_cell_key(start)):
+		return []
+
+	var queue: Array[Vector2i] = [start]
+	var parent: Dictionary = {
+		_cell_key(start): Vector2i(-999, -999),
+	}
+	var cursor := 0
+	var goal := Vector2i(-1, -1)
+	while cursor < queue.size():
+		var current := queue[cursor]
+		cursor += 1
+		if _adjacent_runway_cell_for_uid(
+			current,
+			runway_uid,
+			aircraft_size
+		).x >= 0:
+			goal = current
+			break
+		for neighbor in _orthogonal_neighbors(current):
+			var key := _cell_key(neighbor)
+			if reachable.has(key) and not parent.has(key):
+				parent[key] = current
+				queue.append(neighbor)
+	return _reconstruct_legacy_taxi_path(goal, parent)
+
+
+func _legacy_taxiway_path_to_runway(
+	start: Vector2i,
+	aircraft_size: String = ""
+) -> Array[Vector2i]:
+	var reachable_keys: Array = airside_status.get(
+		"reachable_taxiway_cells",
+		[]
+	)
+	var reachable: Dictionary = {}
+	for key_variant in reachable_keys:
+		reachable[String(key_variant)] = true
+	if not reachable.has(_cell_key(start)):
+		return []
+
+	var queue: Array[Vector2i] = [start]
+	var parent: Dictionary = {
+		_cell_key(start): Vector2i(-999, -999),
+	}
+	var cursor := 0
+	var goal := Vector2i(-1, -1)
+	while cursor < queue.size():
+		var current := queue[cursor]
+		cursor += 1
+		if _adjacent_runway_cell(
+			current,
+			aircraft_size
+		).x >= 0:
+			goal = current
+			break
+		for neighbor in _orthogonal_neighbors(current):
+			var key := _cell_key(neighbor)
+			if reachable.has(key) and not parent.has(key):
+				parent[key] = current
+				queue.append(neighbor)
+	return _reconstruct_legacy_taxi_path(goal, parent)
+
+
+func _reconstruct_legacy_taxi_path(
+	goal: Vector2i,
+	parent: Dictionary
+) -> Array[Vector2i]:
+	if goal.x < 0:
+		return []
+	var reversed: Array[Vector2i] = []
+	var cursor_cell := goal
+	while cursor_cell != Vector2i(-999, -999):
+		reversed.append(cursor_cell)
+		var key := _cell_key(cursor_cell)
+		if not parent.has(key):
+			break
+		cursor_cell = parent[key]
+	reversed.reverse()
+	return reversed
 
 
 func _adjacent_runway_cell_for_uid(

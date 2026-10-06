@@ -3,6 +3,19 @@ extends RefCounted
 
 # Stable IDs are save keys. Rewards deliberately contain no coins, gems or materials.
 # Flight objectives count completed OWNED-aircraft returns, not dispatches or visitors.
+const ROUTE_RANK_BY_QUEST := {
+	"first_circuit": 0,
+	"german_business": 1,
+	"channel_crossing": 2,
+	"french_connection": 3,
+	"berlin_schedule": 3,
+	"nordic_connection": 4,
+	"nimbus_france": 3,
+	"arrow_london": 4,
+	"atlas_denmark": 5,
+	"falcon_germany": 6
+}
+
 static func all() -> Array[Dictionary]:
 	return [
 		_q("first_circuit", "First departures", "A first link to Belgium", "Captain Tess", 1, 80, 8,
@@ -97,8 +110,102 @@ static func _q(id: String, chapter: String, title: String, mentor: String,
 		"level": level, "xp": xp, "passengers": passengers,
 		"objective": objective, "guidance": guidance}
 
-static func current(claimed: Dictionary) -> Dictionary:
-	for quest in all():
+static func all_for_home(
+	home_country_id: String
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for quest_variant in all():
+		var quest: Dictionary = quest_variant
+		result.append(
+			resolve_for_home(
+				quest,
+				home_country_id
+			)
+		)
+	return result
+
+
+static func resolve_for_home(
+	quest: Dictionary,
+	home_country_id: String
+) -> Dictionary:
+	var resolved := quest.duplicate(true)
+	var objective: Dictionary = (
+		resolved.get("objective", {}) as Dictionary
+	).duplicate(true)
+	var kind := String(objective.get("kind", ""))
+	if kind == "flight":
+		var aircraft_id := String(
+			objective.get("aircraft", "")
+		)
+		var rank := int(
+			ROUTE_RANK_BY_QUEST.get(
+				String(resolved.get("id", "")),
+				0
+			)
+		)
+		var destination := (
+			DestinationCatalog.career_destination_for_home(
+				home_country_id,
+				aircraft_id,
+				int(resolved.get("level", 1)),
+				rank
+			)
+		)
+		if not destination.is_empty():
+			objective["country"] = String(
+				destination.get("country_code", "")
+			)
+			objective["destination"] = String(
+				destination.get("id", "")
+			)
+			resolved["title"] = "%s connection" % String(
+				destination.get("city", "Route")
+			)
+			var target := maxi(
+				int(objective.get("target", 1)),
+				1
+			)
+			var aircraft := AircraftCatalog.get_profile(
+				aircraft_id
+			)
+			resolved["guidance"] = (
+				"Complete %d return%s to %s, %s with a %s. "
+				+ "This route is selected from your %s home network; "
+				+ "other countries keep their own resource drops."
+			) % [
+				target,
+				"" if target == 1 else "s",
+				String(destination.get("city", "destination")),
+				String(destination.get("country", "")),
+				String(aircraft.get("name", aircraft_id)),
+				String(
+					CountryCatalog.get_country(
+						home_country_id
+					).get("name", home_country_id)
+				)
+			]
+			resolved["objective"] = objective
+	elif kind == "countries":
+		var aircraft := AircraftCatalog.get_profile(
+			String(objective.get("aircraft", ""))
+		)
+		resolved["title"] = "An airport without borders"
+		resolved["guidance"] = (
+			"Complete returns from %d different destination countries "
+			+ "with your %s. Repeating one country does not advance the tour."
+		) % [
+			maxi(int(objective.get("target", 1)), 1),
+			String(aircraft.get("name", "aircraft"))
+		]
+	return resolved
+
+
+static func current(
+	claimed: Dictionary,
+	home_country_id: String = DestinationCatalog.DEFAULT_HOME_COUNTRY_ID
+) -> Dictionary:
+	for quest in all_for_home(home_country_id):
 		if not bool(claimed.get(quest["id"], false)):
 			return quest.duplicate(true)
 	return {}

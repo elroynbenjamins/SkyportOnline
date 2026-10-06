@@ -161,7 +161,22 @@ func _run() -> void:
 		return
 	screen.close_screen(true)
 
-	print("Airport Dispatch passed: timer, live scoring, penalty, Gold reward, practice and daily reset.")
+	var hud := preload("res://src/ui/HUD.gd").new()
+	root.add_child(hud)
+	await process_frame
+	hud.set_dispatch_shift("RUNNING", 42, 125)
+	if hud.dispatch_shift_panel == null or not hud.dispatch_shift_panel.visible:
+		_fail("Live Dispatch HUD indicator should be visible during a running shift.")
+		return
+	if not hud.dispatch_shift_label.text.contains("2:05") or not hud.dispatch_shift_label.text.contains("42 PTS"):
+		_fail("Live Dispatch HUD should show the exact countdown and score.")
+		return
+	hud.set_dispatch_shift("READY", 42, 0)
+	if hud.dispatch_shift_panel.visible:
+		_fail("Live Dispatch HUD indicator should hide after the shift ends.")
+		return
+
+	print("Airport Dispatch passed: timer, live HUD, scoring, penalty, Gold reward, practice and daily reset.")
 	quit(0)
 
 func _fail(message: String) -> void:

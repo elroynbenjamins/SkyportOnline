@@ -27,8 +27,9 @@ const SELECTED_HALO_RADIUS := 24.0
 const GEOGRAPHY_DETAIL_COUNT := 12
 const AIRPORT_LABEL_ZOOM := 1.35
 const NETWORK_ROUTE_WIDTH := 1.35
-const PRODUCTION_ART_ASSET_COUNT := 9
-const TERRAIN_STAMP_COUNT := 8
+const PRODUCTION_ART_ASSET_COUNT := 13
+const TERRAIN_STAMP_COUNT := 11
+const OCEAN_DECORATION_COUNT := 7
 
 var countries: Array[Dictionary] = []
 var destinations: Array[Dictionary] = []
@@ -174,6 +175,7 @@ func focus_country(country_code: String, target_zoom: float = 1.75) -> void:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), OCEAN_DEEP)
 	_draw_ocean_bands()
+	_draw_ocean_decorations()
 	_draw_grid()
 	_draw_continents()
 	_draw_geography_details()
@@ -181,6 +183,7 @@ func _draw() -> void:
 	_draw_region_labels()
 
 	var home_position := _home_position()
+	_draw_selected_country_focus()
 	_draw_route_network(home_position)
 	var selected := _selected_map_position()
 	if selected.x >= 0.0:
@@ -223,6 +226,105 @@ func _draw_ocean_bands() -> void:
 			Rect2(Vector2(0, top), Vector2(size.x, height + 1.0)),
 			band_color
 		)
+
+
+func _draw_ocean_decorations() -> void:
+	var decorations := [
+		{
+			"path": WorldMapVisualAssets.CLOUD_CLUSTER,
+			"position": Vector2(0.09, 0.54),
+			"size": Vector2(54, 30),
+			"alpha": 0.30
+		},
+		{
+			"path": WorldMapVisualAssets.CLOUD_CLUSTER,
+			"position": Vector2(0.67, 0.68),
+			"size": Vector2(60, 34),
+			"alpha": 0.26
+		},
+		{
+			"path": WorldMapVisualAssets.CLOUD_CLUSTER,
+			"position": Vector2(0.93, 0.48),
+			"size": Vector2(48, 28),
+			"alpha": 0.24
+		},
+		{
+			"path": WorldMapVisualAssets.SEA_GLINT,
+			"position": Vector2(0.40, 0.43),
+			"size": Vector2(42, 24),
+			"alpha": 0.34
+		},
+		{
+			"path": WorldMapVisualAssets.SEA_GLINT,
+			"position": Vector2(0.17, 0.67),
+			"size": Vector2(38, 22),
+			"alpha": 0.28
+		},
+		{
+			"path": WorldMapVisualAssets.SEA_GLINT,
+			"position": Vector2(0.70, 0.55),
+			"size": Vector2(40, 23),
+			"alpha": 0.30
+		},
+		{
+			"path": WorldMapVisualAssets.SEA_GLINT,
+			"position": Vector2(0.93, 0.62),
+			"size": Vector2(34, 20),
+			"alpha": 0.25
+		},
+	]
+
+	for decoration in decorations:
+		var map_position: Vector2 = decoration["position"]
+		var position := _map_to_screen(map_position)
+		if not _is_screen_visible(position, 70.0):
+			continue
+		var texture := WorldMapVisualAssets.texture(
+			String(decoration["path"])
+		)
+		if texture == null:
+			continue
+		var decoration_size: Vector2 = decoration["size"]
+		var zoom_scale := clampf(zoom_level, 0.90, 1.18)
+		decoration_size *= zoom_scale
+		draw_texture_rect(
+			texture,
+			Rect2(
+				position - decoration_size * 0.5,
+				decoration_size
+			),
+			false,
+			Color(
+				1,
+				1,
+				1,
+				float(decoration["alpha"])
+			)
+		)
+
+
+func _draw_selected_country_focus() -> void:
+	if selected_country_code.is_empty():
+		return
+	var country := CountryCatalog.get_country(selected_country_code)
+	if country.is_empty():
+		return
+	var texture := WorldMapVisualAssets.texture(
+		WorldMapVisualAssets.COUNTRY_FOCUS
+	)
+	if texture == null:
+		return
+	var position := _country_position(country)
+	if not _is_screen_visible(position, 60.0):
+		return
+	var focus_size := Vector2(62, 62)
+	focus_size *= clampf(zoom_level, 0.95, 1.22)
+	draw_texture_rect(
+		texture,
+		Rect2(position - focus_size * 0.5, focus_size),
+		false,
+		Color(1, 1, 1, 0.92)
+	)
 
 
 func _draw_grid() -> void:
@@ -340,11 +442,22 @@ func _draw_island(points: Array, fill: Color) -> void:
 	var shadow := PackedVector2Array()
 	for point in polygon:
 		shadow.append(point + Vector2(1.5, 2.0))
-	draw_colored_polygon(shadow, Color(0.01, 0.06, 0.08, 0.20))
+	draw_colored_polygon(shadow, Color(0.01, 0.06, 0.08, 0.26))
 	draw_colored_polygon(polygon, fill)
 	var outline := polygon.duplicate()
 	outline.append(outline[0])
-	draw_polyline(outline, Color(0.50, 0.68, 0.55, 0.72), 1.0, true)
+	draw_polyline(
+		outline,
+		Color(0.03, 0.16, 0.17, 0.78),
+		3.0,
+		true
+	)
+	draw_polyline(
+		outline,
+		Color(0.68, 0.82, 0.54, 0.80),
+		1.2,
+		true
+	)
 
 
 func _draw_lake(map_position: Vector2, base_radius: float) -> void:
@@ -367,18 +480,29 @@ func _draw_continent(points: Array, fill: Color) -> void:
 	var shadow := PackedVector2Array()
 	for point in polygon:
 		shadow.append(point + Vector2(2.0, 3.0))
-	draw_colored_polygon(shadow, Color(0.01, 0.06, 0.08, 0.24))
+	draw_colored_polygon(shadow, Color(0.01, 0.06, 0.08, 0.30))
 	draw_colored_polygon(polygon, fill)
 	var outline := polygon.duplicate()
 	if not outline.is_empty():
 		outline.append(outline[0])
 		draw_polyline(
 			outline,
-			Color(0.53, 0.73, 0.60, 0.22),
-			3.5,
+			Color(0.025, 0.14, 0.16, 0.88),
+			5.0,
 			true
 		)
-		draw_polyline(outline, LAND_EDGE, 1.4, true)
+		draw_polyline(
+			outline,
+			Color(0.63, 0.79, 0.51, 0.76),
+			2.2,
+			true
+		)
+		draw_polyline(
+			outline,
+			Color(0.78, 0.90, 0.65, 0.28),
+			1.0,
+			true
+		)
 
 
 
@@ -424,6 +548,21 @@ func _draw_terrain_stamps() -> void:
 			"position": Vector2(0.86, 0.70),
 			"size": Vector2(38, 28)
 		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_CITY,
+			"position": Vector2(0.20, 0.30),
+			"size": Vector2(36, 26)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_CITY,
+			"position": Vector2(0.52, 0.25),
+			"size": Vector2(34, 25)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_CITY,
+			"position": Vector2(0.79, 0.32),
+			"size": Vector2(36, 26)
+		},
 	]
 
 	for stamp in stamps:
@@ -439,11 +578,16 @@ func _draw_terrain_stamps() -> void:
 		var stamp_size: Vector2 = stamp["size"]
 		var zoom_scale := clampf(zoom_level, 0.95, 1.35)
 		stamp_size *= zoom_scale
+		draw_circle(
+			position + Vector2(0, stamp_size.y * 0.22),
+			stamp_size.x * 0.28,
+			Color(0.07, 0.20, 0.15, 0.18)
+		)
 		draw_texture_rect(
 			texture,
 			Rect2(position - stamp_size * 0.5, stamp_size),
 			false,
-			Color(1, 1, 1, 0.58)
+			Color(1, 1, 1, 0.66)
 		)
 
 

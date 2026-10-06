@@ -9,8 +9,8 @@ const REGIONAL_ART := {
 		],
 		"size": Vector2(300, 300),
 		"offsets": [
-			Vector2(0, -61),
-			Vector2(0, -61)
+			Vector2(0, -77),
+			Vector2(0, -77)
 		]
 	},
 	"regional_fuel": {
@@ -20,8 +20,8 @@ const REGIONAL_ART := {
 		],
 		"size": Vector2(306, 306),
 		"offsets": [
-			Vector2(0, -66),
-			Vector2(0, -66)
+			Vector2(0, -81),
+			Vector2(0, -81)
 		]
 	},
 	"rapid_regional_fuel": {
@@ -31,8 +31,8 @@ const REGIONAL_ART := {
 		],
 		"size": Vector2(348, 348),
 		"offsets": [
-			Vector2(0, -82),
-			Vector2(0, -82)
+			Vector2(0, -98),
+			Vector2(0, -98)
 		]
 	}
 }

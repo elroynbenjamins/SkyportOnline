@@ -1558,6 +1558,12 @@ func _update_external_motion_feedback(delta: float) -> void:
 
 
 func _airborne_shadow_factor() -> float:
+	if (
+		state == "HOLDING_FOR_ARRIVAL"
+		and visible
+		and not arrival_route.is_empty()
+	):
+		return 1.0
 	if state == "APPROACH" and not arrival_route.is_empty():
 		return clampf(
 			position.distance_to(arrival_route[0])
@@ -1586,7 +1592,10 @@ func _airborne_shadow_factor() -> float:
 
 func get_airborne_visual_lift() -> float:
 	var airborne := _airborne_shadow_factor()
-	if state == "APPROACH":
+	if state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH"
+	]:
 		return approach_visual_lift * airborne
 	if state == "CLIMBING":
 		return climb_visual_lift * airborne
@@ -2008,7 +2017,7 @@ func _draw_motion_feedback() -> void:
 
 
 func _draw_shadow() -> void:
-	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
+	if state == "EN_ROUTE":
 		return
 
 	var visual_scale := get_visual_scale()

@@ -40,6 +40,9 @@ jobs:
       - name: Test fuel economy
         run: timeout 20s godot --headless --path . --script res://tests/fuel_economy_test.gd
 
+      - name: Test fuel upgrades and low-stock feedback
+        run: timeout 20s godot --headless --path . --script res://tests/fuel_upgrade_feedback_test.gd
+
       - name: Test building synergy and optimization
         run: timeout 20s godot --headless --path . --script res://tests/building_synergy_test.gd
 

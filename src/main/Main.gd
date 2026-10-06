@@ -2560,6 +2560,7 @@ func _on_fuel_economy_changed(
 	per_minute: float
 ) -> void:
 	hud.set_fuel_data(fuel, capacity, per_minute)
+	airport_grid.set_fuel_status(fuel, capacity)
 	var updated := ProfileStore.save_fuel_balance(fuel)
 	if not updated.is_empty():
 		current_profile = updated
@@ -3335,6 +3336,61 @@ func _service_building_context_summary(
 			)
 		)
 
+	if service_types.has("fuel") and fuel_economy != null:
+		var fuel_stats := ServiceUpgradeCatalog.effective_fuel_stats(
+			building_id,
+			level
+		)
+		var fuel_stock := fuel_economy.get_fuel()
+		var total_capacity := fuel_economy.get_capacity()
+		var ratio := 1.0
+		if total_capacity > 0:
+			ratio = clampf(
+				float(fuel_stock) / float(total_capacity),
+				0.0,
+				1.0
+			)
+		result["role"] = "Fuel operations"
+		result["stat_one"] = "DEPOT STORAGE\n%d" % int(
+			fuel_stats.get("fuel_storage", 0)
+		)
+		result["stat_two"] = "DELIVERY / TRUCKS\n+%.2f/m • %d" % [
+			float(
+				fuel_stats.get(
+					"fuel_delivery_per_minute",
+					0.0
+				)
+			),
+			max_capacity
+		]
+		result["description"] = "%s Airport fuel: %d / %d." % [
+			String(result.get("description", "")),
+			fuel_stock,
+			total_capacity
+		]
+		if ratio <= 0.10:
+			result["status"] = "Critical fuel stock • order or wait for delivery"
+			result["tone"] = "danger"
+		elif ratio <= 0.25:
+			result["status"] = "Low fuel stock • depot replenishing"
+			result["tone"] = "warning"
+		elif waiting > 0:
+			result["status"] = "%d fuel request%s waiting" % [
+				waiting,
+				"" if waiting == 1 else "s"
+			]
+			result["tone"] = "warning"
+		else:
+			result["status"] = "Fuel supply healthy"
+			result["tone"] = "success"
+		if not ServiceUpgradeCatalog.get_next_level(
+			building_id,
+			level
+		).is_empty():
+			result["primary_label"] = "UPGRADE FUEL DEPOT"
+			result["primary_kind"] = "gold"
+		return result
+
 	result["role"] = "Ground service"
 	var coverage := airport_grid.get_service_coverage_summary(
 		int(building.get("uid", -1))
@@ -3642,6 +3698,7 @@ func _on_service_upgrade_requested(
 		building_uid,
 		int(next.get("level", current_level + 1))
 	)
+	_refresh_layout_dependent_systems()
 	hud.set_player_data(player_level, coins, gems)
 
 	var refreshed: Dictionary = airport_grid.get_building(building_uid)

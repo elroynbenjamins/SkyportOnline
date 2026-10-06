@@ -209,6 +209,55 @@ static func effective_service_stats(
 	}
 
 
+static func effective_fuel_stats(
+	building_id: String,
+	level: int
+) -> Dictionary:
+	var definition := BuildingCatalog.get_definition(building_id)
+	if (
+		definition.is_empty()
+		or String(definition.get("service", "")) != "fuel"
+	):
+		return {}
+
+	var storage_multipliers := [1.0, 1.25, 1.50, 2.00]
+	var delivery_multipliers := [1.0, 1.20, 1.45, 1.80]
+	match building_id:
+		"rapid_small_fuel":
+			storage_multipliers = [1.0, 1.20, 1.45, 1.80]
+			delivery_multipliers = [1.0, 1.15, 1.35, 1.60]
+		"rapid_regional_fuel":
+			storage_multipliers = [1.0, 1.20, 1.50, 2.00]
+			delivery_multipliers = [1.0, 1.15, 1.35, 1.60]
+
+	var clamped_level := clampi(level, 1, 4)
+	var index := clamped_level - 1
+	var base_storage := maxi(
+		int(definition.get("fuel_storage", 0)),
+		0
+	)
+	var base_delivery := maxf(
+		float(definition.get("fuel_delivery_per_minute", 0.0)),
+		0.0
+	)
+	var storage_multiplier := float(storage_multipliers[index])
+	var delivery_multiplier := float(delivery_multipliers[index])
+
+	return {
+		"level": clamped_level,
+		"fuel_storage": maxi(
+			int(round(float(base_storage) * storage_multiplier)),
+			0
+		),
+		"fuel_delivery_per_minute": maxf(
+			base_delivery * delivery_multiplier,
+			0.0
+		),
+		"storage_multiplier": storage_multiplier,
+		"delivery_multiplier": delivery_multiplier
+	}
+
+
 static func _specialized_levels(
 	level_2_coin: int,
 	level_3_coin: int,

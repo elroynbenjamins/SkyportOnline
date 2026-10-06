@@ -407,10 +407,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(292, 292),
 			"world_sprite_offsets": [
-				Vector2(0, -66),
+				Vector2(0, -81),
 				Vector2(0, -71)
 			],
-			"world_sprite_offset": Vector2(0, -66)
+			"world_sprite_offset": Vector2(0, -81)
 		},
 		{
 			"id": "basic_fuel",
@@ -470,7 +470,7 @@ static func all() -> Array[Dictionary]:
 			"world_sprite_size": Vector2(220, 220),
 			"world_sprite_offsets": [
 				Vector2(0, -67),
-				Vector2(0, -66)
+				Vector2(0, -81)
 			],
 			"world_sprite_offset": Vector2(0, -67)
 		},
@@ -495,10 +495,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(300, 300),
 			"world_sprite_offsets": [
-				Vector2(0, -61),
-				Vector2(0, -61)
+				Vector2(0, -77),
+				Vector2(0, -77)
 			],
-			"world_sprite_offset": Vector2(0, -61)
+			"world_sprite_offset": Vector2(0, -77)
 		},
 		{
 			"id": "regional_fuel",
@@ -526,10 +526,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(306, 306),
 			"world_sprite_offsets": [
-				Vector2(0, -66),
-				Vector2(0, -66)
+				Vector2(0, -81),
+				Vector2(0, -81)
 			],
-			"world_sprite_offset": Vector2(0, -66)
+			"world_sprite_offset": Vector2(0, -81)
 		},
 		{
 			"id": "regional_runway",
@@ -681,10 +681,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(348, 348),
 			"world_sprite_offsets": [
-				Vector2(0, -82),
-				Vector2(0, -82)
+				Vector2(0, -98),
+				Vector2(0, -98)
 			],
-			"world_sprite_offset": Vector2(0, -82)
+			"world_sprite_offset": Vector2(0, -98)
 		}
 	]
 

@@ -116,6 +116,46 @@ func _run() -> void:
 	if AirportAmbientLifeArt.passenger_archetype(8) != "business":
 		_fail("Passenger v2 archetype selection should wrap cleanly.")
 		return
+	var passenger_economy := PassengerEconomy.new()
+	root.add_child(passenger_economy)
+	passenger_economy.configure(grid, 20.0)
+	ambient.configure_passenger_economy(
+		passenger_economy
+	)
+	await process_frame
+
+	var economy_flow := ambient.get_passenger_flow_snapshot()
+	var passenger_capacity := int(
+		economy_flow.get("capacity", 0)
+	)
+	if passenger_capacity <= 0:
+		_fail("Starter airport should provide passenger storage capacity.")
+		return
+	if not bool(economy_flow.get("economy_connected", false)):
+		_fail("Ambient passenger flow should connect to the real passenger economy.")
+		return
+
+	passenger_economy.set_passengers(0.0)
+	var empty_flow := ambient.get_passenger_flow_snapshot()
+	if int(empty_flow.get("terminal_bustle_count", -1)) != 0:
+		_fail("Zero passenger stock should visibly empty terminal bustle.")
+		return
+
+	passenger_economy.set_passengers(
+		float(passenger_capacity)
+	)
+	var full_flow := ambient.get_passenger_flow_snapshot()
+	if (
+		int(full_flow.get("terminal_bustle_count", 0))
+		!= AirportAmbientLife.MAX_TERMINAL_PASSENGERS
+	):
+		_fail("Full passenger storage should show maximum terminal bustle.")
+		return
+
+	passenger_economy.set_passengers(
+		float(passenger_capacity) * 0.5
+	)
+
 	for key in [
 		"crew_a",
 		"crew_b",
@@ -193,6 +233,11 @@ func _run() -> void:
 	if npc.taxi_speed <= base_taxi_speed:
 		_fail("Hopper NPC should receive the intended subtle taxi-speed lift.")
 		return
+	npc.assign_flight_plan({
+		"city": "Visual Test",
+		"duration_seconds": 60.0
+	})
+	npc.record_boarded_passengers(18)
 	npc.state = "SERVICING"
 	npc.position = Vector2(90, 320)
 	root.add_child(npc)
@@ -225,6 +270,56 @@ func _run() -> void:
 		_fail("Terminal travelers should use the dedicated v2 passenger renderer.")
 		return
 
+	var boarding_flow := ambient.get_passenger_flow_snapshot()
+	if int(boarding_flow.get("boarding_aircraft", 0)) != 1:
+		_fail("Loading aircraft should create one boarding passenger flow.")
+		return
+	if int(boarding_flow.get("flow_sprite_count", 0)) <= 0:
+		_fail("Boarding should render visible v2 passenger sprites.")
+		return
+	var boarding_rows: Array = boarding_flow.get("flows", [])
+	if boarding_rows.is_empty():
+		_fail("Boarding flow should expose a visual route row.")
+		return
+	var boarding_row: Dictionary = boarding_rows[0]
+	if String(boarding_row.get("direction", "")) != "boarding":
+		_fail("Loading passenger flow should move terminal to aircraft.")
+		return
+	if String(boarding_row.get("mode", "")) not in ["walk", "shuttle"]:
+		_fail("Boarding should choose a walk or shuttle presentation.")
+		return
+
+	npc.state = "UNLOADING"
+	var deplaning_flow := ambient.get_passenger_flow_snapshot()
+	if int(deplaning_flow.get("deplaning_aircraft", 0)) != 1:
+		_fail("Unloading aircraft should create one deplaning passenger flow.")
+		return
+	var deplaning_rows: Array = deplaning_flow.get("flows", [])
+	if (
+		deplaning_rows.is_empty()
+		or String(
+			(deplaning_rows[0] as Dictionary).get(
+				"direction",
+				""
+			)
+		) != "deplaning"
+	):
+		_fail("Unloading passenger flow should move aircraft to terminal.")
+		return
+
+	passenger_economy.set_passengers(0.0)
+	npc.state = "WAITING_PASSENGERS"
+	var waiting_flow := ambient.get_passenger_flow_snapshot()
+	if not bool(waiting_flow.get("bottleneck_visible", false)):
+		_fail("Passenger shortage should expose a visible bottleneck state.")
+		return
+	if int(waiting_flow.get("waiting_aircraft", 0)) != 1:
+		_fail("Waiting passenger aircraft should be represented in flow state.")
+		return
+	if int(waiting_flow.get("flow_sprite_count", -1)) != 0:
+		_fail("Zero stock should not invent passengers for a waiting aircraft.")
+		return
+
 	if int(live_snapshot.get("npc_aircraft", 0)) != 1:
 		_fail("NPC aircraft should be identified from their behavior metadata.")
 		return
@@ -237,7 +332,7 @@ func _run() -> void:
 		(
 			"AIRPORT_AMBIENT_LIFE_OK "
 			+ "stands=%d route=%d windsocks=%d draw_hz=%.0f "
-			+ "crew=%d baggage=%d atlas=true passengers=8 npc_tier=%s"
+			+ "crew=%d baggage=%d flow=true atlas=true passengers=8 npc_tier=%s"
 		) % [
 			int(snapshot.get("stands", 0)),
 			int(snapshot.get("service_route_points", 0)),

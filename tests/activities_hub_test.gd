@@ -18,7 +18,7 @@ func _run() -> void:
 			return
 
 	hud.set_mission_activity_attention(true)
-	if hud.activities_nav_button == null or "•" not in hud.activities_nav_button.text:
+	if hud.activities_nav_button == null or not hud.activities_nav_button.text.contains("•"):
 		_fail("Activities navigation should show attention when a mode reward is ready.")
 		return
 	hud.set_mission_activity_attention(false)

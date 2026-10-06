@@ -59,11 +59,14 @@ func _run() -> void:
 	if not scene_text.contains("AirportBackdrop"):
 		_fail("Main scene should include the AirportBackdrop node.")
 		return
-	if (
-		scene_text.find("AirportBackdrop")
-		> scene_text.find("AirportGrid")
-	):
-		_fail("AirportBackdrop should be declared before AirportGrid.")
+	var backdrop_node := scene_text.find(
+		"[node name=\"AirportBackdrop\""
+	)
+	var grid_node := scene_text.find(
+		"[node name=\"AirportGrid\""
+	)
+	if backdrop_node < 0 or grid_node < 0 or backdrop_node > grid_node:
+		_fail("AirportBackdrop node should be declared before AirportGrid.")
 		return
 	if not scene_text.contains("zoom = Vector2(0.84, 0.84)"):
 		_fail("Opening camera should be wide enough to reveal the background.")

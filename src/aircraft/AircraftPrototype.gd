@@ -324,6 +324,19 @@ func _sync_handling_action_transform() -> void:
 	)
 	handling_action_button.position = anchor
 	handling_action_button.rotation = -rotation
+	var pulse := (
+		0.90
+		+ 0.10
+		* sin(
+			visual_clock * 4.8
+		)
+	)
+	handling_action_button.modulate = Color(
+		1.0,
+		1.0,
+		1.0,
+		pulse
+	)
 	handling_action_button.visible = (
 		visible
 		and not pending_handling_action.is_empty()

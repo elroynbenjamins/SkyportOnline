@@ -237,11 +237,35 @@ func _refresh() -> void:
 			has_alliance = true
 			break
 	if alliance_ops_button != null:
-		alliance_ops_button.disabled = not has_alliance
+		var level_unlocked := bool(
+			snapshot.get(
+				"alliance_operations_level_unlocked",
+				true
+			)
+		)
+		var unlock_level := int(
+			snapshot.get(
+				"alliance_operations_level",
+				ActivityProgressionRules.ALLIANCE_UNLOCK_LEVEL
+			)
+		)
+		alliance_ops_button.disabled = (
+			not level_unlocked
+			or not has_alliance
+		)
+		alliance_ops_button.text = (
+			"◆ ALLIANCE OPS"
+			if level_unlocked
+			else "◆ OPS • LV %d" % unlock_level
+		)
 		alliance_ops_button.tooltip_text = (
-			"Weekly cooperative Alliance airport project"
-			if has_alliance
-			else "Join or connect an Alliance to unlock Alliance Operations"
+			"Unlocks at Airport Level %d" % unlock_level
+			if not level_unlocked
+			else (
+				"Weekly cooperative Alliance airport project"
+				if has_alliance
+				else "Join or connect an Alliance to unlock Alliance Operations"
+			)
 		)
 
 	_refresh_contacts()

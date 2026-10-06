@@ -1798,8 +1798,7 @@ func set_stored_buildings(
 				footprint.y,
 				footprint.x
 			)
-		button.text = "%s • LV %d
-%dx%d • PLACE FREE" % [
+		button.text = "%s • LV %d\\n%dx%d • PLACE FREE" % [
 			String(definition.get("name", "Building")),
 			int(building.get("upgrade_level", 1)),
 			footprint.x,

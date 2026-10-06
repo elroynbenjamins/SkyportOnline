@@ -318,7 +318,7 @@ func _run() -> void:
 	grid.select_parcel("east")
 	grid.purchase_selected()
 
-	var disconnected_position := grid.tile_to_world(Vector2(15, 10))
+	var disconnected_position := grid.tile_to_world(Vector2(15, 9))
 	var preview := grid.set_build_preview("small_stand", disconnected_position, 0)
 	if not bool(preview.get("valid", false)):
 		_fail("Disconnected stand test placement should be buildable.")
@@ -336,13 +336,34 @@ func _run() -> void:
 		_fail("Third stand should remain disconnected before adding taxiway.")
 		return
 
-	var connector_position := grid.tile_to_world(Vector2(14, 10))
-	var connector_preview := grid.set_build_preview("taxiway", connector_position, 0)
-	if not bool(connector_preview.get("valid", false)):
-		_fail("Connector taxiway test placement should be valid.")
-		return
+	# Extend the player-built taxi spine physically to the expanded stand.
+	var connector_cells: Array[Vector2i] = [
+		Vector2i(11, 5),
+		Vector2i(12, 5),
+		Vector2i(13, 5),
+		Vector2i(14, 5),
+		Vector2i(15, 5),
+		Vector2i(15, 6),
+		Vector2i(15, 7),
+		Vector2i(15, 8)
+	]
+	for connector_cell in connector_cells:
+		var connector_position := grid.tile_to_world(
+			Vector2(connector_cell.x, connector_cell.y)
+		)
+		var connector_preview := grid.set_build_preview(
+			"taxiway",
+			connector_position,
+			0
+		)
+		if not bool(connector_preview.get("valid", false)):
+			_fail(
+				"Connector taxiway placement should be valid at %s."
+				% str(connector_cell)
+			)
+			return
+		grid.confirm_build_preview()
 
-	grid.confirm_build_preview()
 	var connected := grid.get_airside_status()
 	if int(connected.get("stands_connected", 0)) != 3:
 		_fail("All three stands should connect after extending the taxiway.")
@@ -351,6 +372,7 @@ func _run() -> void:
 	var rapid_grid := AirportGrid.new()
 	root.add_child(rapid_grid)
 	await process_frame
+	_build_player_starter_network(rapid_grid)
 	rapid_grid.select_parcel("east")
 	rapid_grid.purchase_selected()
 
@@ -360,6 +382,29 @@ func _run() -> void:
 		_fail("Rapid fuel station test placement should be valid on expanded land.")
 		return
 	rapid_grid.confirm_build_preview()
+
+	var rapid_service_cells: Array[Vector2i] = [
+		Vector2i(13, 11),
+		Vector2i(14, 11),
+		Vector2i(15, 11),
+		Vector2i(16, 11),
+		Vector2i(16, 12)
+	]
+	for service_cell in rapid_service_cells:
+		var service_preview := rapid_grid.set_build_preview(
+			"service_road",
+			rapid_grid.tile_to_world(
+				Vector2(service_cell.x, service_cell.y)
+			),
+			0
+		)
+		if not bool(service_preview.get("valid", false)):
+			_fail(
+				"Rapid fuel service-road placement should be valid at %s."
+				% str(service_cell)
+			)
+			return
+		rapid_grid.confirm_build_preview()
 
 	var preferred_fuel := rapid_grid.get_best_service_building("fuel", "S")
 	if String(preferred_fuel.get("definition_id", "")) != "rapid_small_fuel":

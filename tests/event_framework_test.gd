@@ -205,6 +205,39 @@ func _run() -> void:
 		return
 	screen.close_event()
 
+	# Featured route bonuses follow the active phase instead of all three
+	# event destinations paying the bonus for the full 21-day event.
+	var route_event := winter.duplicate(true)
+	route_event["id"] = "phase-route-bonus-test"
+	route_event["enabled"] = true
+	route_event["start_unix"] = start
+	route_event["featured_route_currency"] = 5
+	var route_manager := EventManager.new()
+	root.add_child(route_manager)
+	route_manager.set_now_override(
+		start + EventCatalog.SECONDS_PER_DAY
+	)
+	route_manager.configure(economy, route_event)
+	route_manager.record_destination_flight("london")
+	if route_manager.get_currency() != 0:
+		_fail("Week 1 should not award the featured-route bonus for the Week 2 route.")
+		return
+	route_manager.record_destination_flight("brussels")
+	if route_manager.get_currency() != 5:
+		_fail("Week 1 should award the featured-route bonus for Brussels.")
+		return
+	route_manager.set_now_override(
+		start + 8 * EventCatalog.SECONDS_PER_DAY
+	)
+	route_manager.record_destination_flight("brussels")
+	if route_manager.get_currency() != 5:
+		_fail("Brussels should stop paying the featured-route bonus after Phase 1.")
+		return
+	route_manager.record_destination_flight("london")
+	if route_manager.get_currency() != 10:
+		_fail("London should become the featured bonus route in Phase 2.")
+		return
+
 	economy.set_passengers(0)
 	var passenger_purchase := manager.purchase_shop_item(
 		"passengers_25"

@@ -5,6 +5,9 @@ extends Node2D
 # no service timing, runway authority, economy, or aircraft ownership is changed.
 const DRAW_INTERVAL := 1.0 / 12.0
 const LAYOUT_REFRESH_INTERVAL := 0.75
+# Clean airport presentation: keep vehicles, lights, windsocks and service
+# equipment, but temporarily hide all human/passenger sprites.
+const SHOW_PEOPLE := false
 const MAX_CREW := 14
 const MAX_AMBIENT_CARTS := 2
 const MAX_BAGGAGE_TRAINS := 3
@@ -30,7 +33,8 @@ var service_route := PackedVector2Array()
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	AirportAmbientLifeArt.texture()
-	AirportAmbientLifeArt.passenger_texture()
+	if SHOW_PEOPLE:
+		AirportAmbientLifeArt.passenger_texture()
 	ApronDetailArt.texture()
 	set_process(true)
 
@@ -71,12 +75,13 @@ func _draw() -> void:
 
 	_draw_windsocks()
 	_draw_terminal_activity()
-	_draw_passenger_flow()
 	_draw_operations_activity()
 	_draw_apron_staging_props()
 	_draw_ambient_service_traffic()
 	_draw_baggage_activity()
-	_draw_ground_crew()
+	if SHOW_PEOPLE:
+		_draw_passenger_flow()
+		_draw_ground_crew()
 
 
 func _refresh_layout_anchors() -> void:
@@ -584,6 +589,17 @@ func get_passenger_flow_snapshot() -> Dictionary:
 		"deplaning_aircraft": deplaning_aircraft,
 		"bottleneck_visible": waiting_aircraft > 0,
 		"flows": flows
+	}
+
+
+func get_clean_presentation_snapshot() -> Dictionary:
+	return {
+		"show_people": SHOW_PEOPLE,
+		"passenger_sprites_visible": SHOW_PEOPLE,
+		"ground_crew_visible": SHOW_PEOPLE,
+		"vehicles_visible": true,
+		"apron_props_visible": true,
+		"windsocks_visible": true
 	}
 
 
@@ -1548,7 +1564,11 @@ func _draw_terminal_activity() -> void:
 				)
 			)
 
-		var terminal_passenger_count := _terminal_passenger_count()
+		var terminal_passenger_count := (
+			_terminal_passenger_count()
+			if SHOW_PEOPLE
+			else 0
+		)
 		for index in range(terminal_passenger_count):
 			var walk_speed := (
 				0.050 + float(index % 3) * 0.010

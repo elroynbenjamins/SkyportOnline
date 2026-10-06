@@ -139,6 +139,27 @@ func _run() -> void:
 			)
 			return
 
+		var visible_width := (
+			float(used.size.x)
+			/ maxf(float(source_i.size.x), 1.0)
+			* rect.size.x
+		)
+		if visible_width > footprint_width + 0.01:
+			_fail(
+				"%s visible art %.2f must not exceed footprint width %.2f."
+				% [building_id, visible_width, footprint_width]
+			)
+			return
+		var visible_width_scale := float(
+			definition.get("world_sprite_visible_width_scale", 9.0)
+		)
+		if visible_width_scale > 1.0:
+			_fail(
+				"%s should never render wider than its declared grid footprint."
+				% building_id
+			)
+			return
+
 	if not grid._definition_uses_integrated_world_base(
 		BuildingCatalog.get_definition("small_terminal")
 	):
@@ -175,7 +196,7 @@ func _run() -> void:
 
 	print(
 		"STARTER_BUILDING_GRID_FIT_OK integrated_bases=true "
-		+ "procedural_underlays=false grounded=true raised_site_slab=false width_cap=1.35"
+		+ "procedural_underlays=false grounded=true strict_footprints=true people_hidden=true"
 	)
 	quit(0)
 

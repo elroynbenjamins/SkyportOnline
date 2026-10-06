@@ -18,6 +18,20 @@ func _run() -> void:
 	await process_frame
 
 	var snapshot := ambient.get_ambient_snapshot()
+	var presentation := ambient.get_clean_presentation_snapshot()
+	if bool(presentation.get("show_people", true)):
+		_fail("Clean airport presentation should hide people for now.")
+		return
+	if bool(presentation.get("passenger_sprites_visible", true)):
+		_fail("Passenger sprites should be hidden from the airport scene.")
+		return
+	if bool(presentation.get("ground_crew_visible", true)):
+		_fail("Ground-crew humans should be hidden from the airport scene.")
+		return
+	if not bool(presentation.get("vehicles_visible", false)):
+		_fail("Service vehicles should remain visible in the clean presentation.")
+		return
+
 	if int(snapshot.get("stands", 0)) < 2:
 		_fail("Starter airport should expose both stand anchors to ambient life.")
 		return

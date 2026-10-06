@@ -151,11 +151,19 @@ func _start_gameplay() -> void:
 		String(current_profile.get("account_type", "guest"))
 	)
 
+	var saved_layout: Array = current_profile.get(
+		"airport_layout",
+		[]
+	)
+	var new_player_airfield := saved_layout.is_empty()
 	airport_grid.apply_saved_airport_layout(
-		current_profile.get("airport_layout", []),
+		saved_layout,
 		current_profile.get("owned_parcels", []),
 		current_profile.get("airport_storage", [])
 	)
+	if new_player_airfield:
+		airport_grid.prepare_new_player_airfield()
+		_persist_airport_layout()
 	hud.set_stored_buildings(
 		airport_grid.get_stored_buildings()
 	)
@@ -433,9 +441,47 @@ func _setup_runway_strategy_panel() -> void:
 
 
 func _spawn_aircraft_demos() -> void:
-	var routes: Array[Dictionary] = airport_grid.get_departure_routes("S")
+	if not aircraft_demos.is_empty():
+		return
+
+	var route_candidates: Array[Dictionary] = (
+		airport_grid.get_departure_routes("S")
+	)
+	if route_candidates.is_empty():
+		hud.set_operation_status(
+			"Build a runway + stand and connect them with taxiway.",
+			"warning"
+		)
+		return
+
+	var routes: Array[Dictionary] = []
+	for route_info in route_candidates:
+		var stand_uid := int(
+			route_info.get("stand_uid", -1)
+		)
+		var flow := airport_grid.get_departure_ground_flow_for_stand(
+			stand_uid,
+			"S"
+		)
+		var hangar_route: PackedVector2Array = flow.get(
+			"hangar_to_stand_route",
+			PackedVector2Array()
+		)
+		var fuel_route: PackedVector2Array = flow.get(
+			"fuel_service_route",
+			PackedVector2Array()
+		)
+		if (
+			hangar_route.size() >= 2
+			and fuel_route.size() >= 2
+		):
+			routes.append(route_info)
+
 	if routes.is_empty():
-		hud.set_operation_status("No connected S-class stand/runway.", "warning")
+		hud.set_operation_status(
+			"Connect Hangar → Stand by taxiway and Fuel → Stand by service road.",
+			"warning"
+		)
 		return
 
 	var count := mini(routes.size(), 2)
@@ -4753,6 +4799,11 @@ func _refresh_layout_dependent_systems() -> void:
 	if ground_services != null:
 		ground_services.refresh_after_layout_change()
 	_refresh_operations_analytics()
+	if (
+		gameplay_started
+		and aircraft_demos.is_empty()
+	):
+		call_deferred("_spawn_aircraft_demos")
 
 
 func _persist_airport_layout() -> void:

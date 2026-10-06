@@ -1,6 +1,9 @@
 class_name AirportProgressionPacing
 extends RefCounted
 
+const MAX_LEVEL := 30
+const MAX_FLEET_CAPACITY := 16
+
 const STAGES := [
 	{
 		"id": "local_airfield",
@@ -72,7 +75,7 @@ const FLEET_CAPACITY_BY_LEVEL := {
 }
 
 static func stage_for_level(level: int) -> Dictionary:
-	var bounded := clampi(level, 1, AirportProgressionRules.MAX_LEVEL)
+	var bounded := clampi(level, 1, MAX_LEVEL)
 	for stage_variant in STAGES:
 		var stage: Dictionary = stage_variant
 		if (
@@ -80,7 +83,7 @@ static func stage_for_level(level: int) -> Dictionary:
 			and bounded <= int(
 				stage.get(
 					"max_level",
-					AirportProgressionRules.MAX_LEVEL
+					MAX_LEVEL
 				)
 			)
 		):
@@ -88,7 +91,7 @@ static func stage_for_level(level: int) -> Dictionary:
 	return (STAGES[STAGES.size() - 1] as Dictionary).duplicate(true)
 
 static func fleet_capacity_for_level(level: int) -> int:
-	var bounded := clampi(level, 1, AirportProgressionRules.MAX_LEVEL)
+	var bounded := clampi(level, 1, MAX_LEVEL)
 	var capacity := 2
 	for unlock_level_variant in FLEET_CAPACITY_BY_LEVEL.keys():
 		var unlock_level := int(unlock_level_variant)
@@ -99,12 +102,12 @@ static func fleet_capacity_for_level(level: int) -> int:
 			)
 	return mini(
 		capacity,
-		AirportProgressionRules.MAX_OWNED_AIRCRAFT
+		MAX_FLEET_CAPACITY
 	)
 
 static func unlocks_at_level(level: int) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	if level < 1 or level > AirportProgressionRules.MAX_LEVEL:
+	if level < 1 or level > MAX_LEVEL:
 		return result
 
 	for profile_variant in AircraftCatalog.all():
@@ -168,8 +171,8 @@ static func unlocks_at_level(level: int) -> Array[Dictionary]:
 
 static func next_unlock(level: int) -> Dictionary:
 	for next_level in range(
-		clampi(level + 1, 2, AirportProgressionRules.MAX_LEVEL),
-		AirportProgressionRules.MAX_LEVEL + 1
+		clampi(level + 1, 2, MAX_LEVEL),
+		MAX_LEVEL + 1
 	):
 		var unlocks := unlocks_at_level(next_level)
 		if not unlocks.is_empty():

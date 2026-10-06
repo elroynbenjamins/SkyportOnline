@@ -67,6 +67,13 @@ const RUNWAY_PRIORITY := Color("ffbf47")
 const RUNWAY_EDGE_LIGHT_IDLE := Color("6d8f98")
 const RUNWAY_EDGE_LIGHT_ACTIVE := Color("c9f4ff")
 const RUNWAY_EDGE_LIGHT_PRIORITY := Color("ffd166")
+const RUNWAY_SURFACE_OUTER := Color("59636a")
+const RUNWAY_SURFACE_INNER := Color("394248")
+const RUNWAY_SURFACE_MID := Color("434c51")
+const RUNWAY_SURFACE_DARK := Color("242d32")
+const RUNWAY_MARKING_WHITE := Color("f5f3e8")
+const RUNWAY_SHOULDER_LIGHT := Color("d9ded7", 0.22)
+const RUNWAY_TIRE_MARK := Color("171d21", 0.34)
 const TAXIWAY_OUTER := Color("38454b")
 const TAXIWAY_INNER := Color("4b575c")
 const SERVICE_ROAD_OUTER := Color("6b655e")
@@ -1763,6 +1770,16 @@ func _draw_buildings() -> void:
 				)
 			)
 
+		if String(definition.get("surface_art", "")) == "runway_v2":
+			_draw_runway_surface_v2(
+				definition,
+				origin,
+				footprint,
+				int(building["rotation"]),
+				sprite_modulate.a
+			)
+			continue
+
 		if _definition_has_world_sprite(definition):
 			_draw_world_art_ground_pad(
 				definition,
@@ -2513,6 +2530,381 @@ func _draw_world_art_ground_pad(
 		polygon,
 		definition
 	)
+
+
+func _draw_runway_surface_v2(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	_rotation: int,
+	strength: float = 1.0
+) -> void:
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var alpha := clampf(strength, 0.0, 1.0)
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	)
+
+	var shadow := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shadow.append(point + Vector2(3, 4))
+	draw_colored_polygon(
+		shadow,
+		Color(0.03, 0.06, 0.07, 0.24 * alpha)
+	)
+
+	draw_colored_polygon(
+		polygon,
+		_micro_alpha(
+			RUNWAY_SURFACE_OUTER,
+			alpha
+		)
+	)
+
+	var inner := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		inner.append(
+			center + (point - center) * 0.925
+		)
+	draw_colored_polygon(
+		inner,
+		_micro_alpha(
+			RUNWAY_SURFACE_INNER,
+			alpha
+		)
+	)
+
+	var start := Vector2.ZERO
+	var finish := Vector2.ZERO
+	var side_a_mid := Vector2.ZERO
+	var side_b_mid := Vector2.ZERO
+	if footprint.x >= footprint.y:
+		start = polygon[0].lerp(
+			polygon[3],
+			0.5
+		)
+		finish = polygon[1].lerp(
+			polygon[2],
+			0.5
+		)
+		side_a_mid = polygon[0].lerp(
+			polygon[1],
+			0.5
+		)
+		side_b_mid = polygon[3].lerp(
+			polygon[2],
+			0.5
+		)
+	else:
+		start = polygon[0].lerp(
+			polygon[1],
+			0.5
+		)
+		finish = polygon[3].lerp(
+			polygon[2],
+			0.5
+		)
+		side_a_mid = polygon[0].lerp(
+			polygon[3],
+			0.5
+		)
+		side_b_mid = polygon[1].lerp(
+			polygon[2],
+			0.5
+		)
+
+	var axis := finish - start
+	var length := axis.length()
+	if length <= 1.0:
+		return
+	axis /= length
+
+	var width_vector := side_b_mid - side_a_mid
+	var full_width := width_vector.length()
+	if full_width <= 1.0:
+		return
+	var normal := width_vector / full_width
+	var half_width := full_width * 0.5
+
+	# Layered asphalt bands keep the runway from reading as one flat polygon.
+	for lateral_variant in [-0.50, -0.18, 0.18, 0.50]:
+		var lateral := float(lateral_variant)
+		var band_start := (
+			start
+			+ axis * 12.0
+			+ normal * half_width * lateral
+		)
+		var band_finish := (
+			finish
+			- axis * 12.0
+			+ normal * half_width * lateral
+		)
+		draw_line(
+			band_start,
+			band_finish,
+			_micro_alpha(
+				RUNWAY_SURFACE_MID
+				if absf(lateral) < 0.30
+				else RUNWAY_SURFACE_DARK,
+				alpha * 0.40
+			),
+			2.0
+		)
+
+	var edge_offset := half_width * 0.87
+	for side in [-1.0, 1.0]:
+		var edge_start := (
+			start
+			+ axis * 10.0
+			+ normal * edge_offset * side
+		)
+		var edge_finish := (
+			finish
+			- axis * 10.0
+			+ normal * edge_offset * side
+		)
+		draw_line(
+			edge_start,
+			edge_finish,
+			_micro_alpha(
+				RUNWAY_SHOULDER_LIGHT,
+				alpha
+			),
+			2.2
+		)
+
+	var marking := _micro_alpha(
+		RUNWAY_MARKING_WHITE,
+		alpha
+	)
+	var center_start := start + axis * 34.0
+	var center_finish := finish - axis * 34.0
+	draw_dashed_line(
+		center_start,
+		center_finish,
+		marking,
+		2.4,
+		10.0
+	)
+
+	var threshold_inset := clampf(
+		length * 0.085,
+		22.0,
+		38.0
+	)
+	var threshold_count := (
+		6
+		if String(definition.get("id", "")) == "regional_runway"
+		else 4
+	)
+	for threshold_center in [
+		start + axis * threshold_inset,
+		finish - axis * threshold_inset
+	]:
+		for index in range(threshold_count):
+			var fraction := (
+				0.0
+				if threshold_count <= 1
+				else float(index) / float(threshold_count - 1)
+			)
+			var lateral := lerpf(
+				-half_width * 0.58,
+				half_width * 0.58,
+				fraction
+			)
+			var bar_center := (
+				threshold_center
+				+ normal * lateral
+			)
+			draw_line(
+				bar_center - axis * 6.2,
+				bar_center + axis * 6.2,
+				marking,
+				3.2
+			)
+
+	var touchdown_fractions := [0.28, 0.72]
+	if String(definition.get("id", "")) == "regional_runway":
+		touchdown_fractions = [
+			0.23,
+			0.33,
+			0.67,
+			0.77
+		]
+	for fraction_variant in touchdown_fractions:
+		var fraction := float(
+			fraction_variant
+		)
+		var zone_center := start.lerp(
+			finish,
+			fraction
+		)
+		for side in [-1.0, 1.0]:
+			var bar_center := (
+				zone_center
+				+ normal
+				* half_width
+				* 0.43
+				* side
+			)
+			draw_line(
+				bar_center - axis * 7.0,
+				bar_center + axis * 7.0,
+				_micro_alpha(
+					RUNWAY_MARKING_WHITE,
+					alpha * 0.82
+				),
+				2.8
+			)
+
+	# Subtle rubber deposits make the strip feel used without reducing clarity.
+	for fraction_variant in [0.18, 0.22, 0.78, 0.82]:
+		var fraction := float(
+			fraction_variant
+		)
+		var mark_center := (
+			start.lerp(
+				finish,
+				fraction
+			)
+			+ normal
+			* half_width
+			* (
+				0.10
+				if int(fraction * 100.0) % 2 == 0
+				else -0.10
+			)
+		)
+		draw_line(
+			mark_center - axis * 11.0,
+			mark_center + axis * 11.0,
+			_micro_alpha(
+				RUNWAY_TIRE_MARK,
+				alpha
+			),
+			3.0
+		)
+
+	var light_count := maxi(
+		int(length / 52.0),
+		5
+	)
+	for index in range(light_count + 1):
+		var fraction := float(index) / float(light_count)
+		var axis_pos := start.lerp(
+			finish,
+			fraction
+		)
+		for side in [-1.0, 1.0]:
+			var light_pos := (
+				axis_pos
+				+ normal
+				* half_width
+				* 0.94
+				* side
+			)
+			draw_circle(
+				light_pos + Vector2(0, 1),
+				2.8,
+				Color(0.04, 0.08, 0.09, 0.34 * alpha)
+			)
+			draw_circle(
+				light_pos,
+				1.6,
+				_micro_alpha(
+					Color("d8f7ff"),
+					alpha * 0.92
+				)
+			)
+
+	# Fixed upper-left light direction, matching the canonical building art.
+	draw_line(
+		polygon[0],
+		polygon[1],
+		_micro_alpha(
+			Color("ffffff", 0.18),
+			alpha
+		),
+		1.5
+	)
+	draw_line(
+		polygon[0],
+		polygon[3],
+		_micro_alpha(
+			Color("ffffff", 0.10),
+			alpha
+		),
+		1.2
+	)
+	draw_line(
+		polygon[2],
+		polygon[3],
+		_micro_alpha(
+			Color("11191d", 0.30),
+			alpha
+		),
+		2.0
+	)
+	draw_line(
+		polygon[1],
+		polygon[2],
+		_micro_alpha(
+			Color("11191d", 0.18),
+			alpha
+		),
+		1.4
+	)
+
+
+func get_runway_surface_v2_snapshot(
+	definition_id: String
+) -> Dictionary:
+	var definition := BuildingCatalog.get_definition(
+		definition_id
+	)
+	if definition.is_empty():
+		return {}
+	if String(
+		definition.get(
+			"surface_art",
+			""
+		)
+	) != "runway_v2":
+		return {}
+
+	var footprint: Vector2i = definition.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var regional := definition_id == "regional_runway"
+	return {
+		"art_tier": String(
+			definition.get(
+				"art_tier",
+				""
+			)
+		),
+		"surface_art": "runway_v2",
+		"footprint": footprint,
+		"threshold_bars": 6 if regional else 4,
+		"touchdown_zones": 4 if regional else 2,
+		"edge_lights_min": 5,
+		"icon_path": String(
+			definition.get(
+				"icon_path",
+				""
+			)
+		)
+	}
 
 
 func _draw_hardscape_curb_and_drainage(
@@ -4469,6 +4861,15 @@ func _draw_build_preview() -> void:
 				Color("ffffff", 0.52),
 				1.4
 			)
+
+	if String(definition.get("surface_art", "")) == "runway_v2":
+		_draw_runway_surface_v2(
+			definition,
+			preview_origin,
+			footprint,
+			preview_rotation,
+			0.72 if valid else 0.48
+		)
 
 	var footprint_outline := _footprint_polygon(
 		preview_origin,

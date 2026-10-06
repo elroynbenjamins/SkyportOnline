@@ -537,18 +537,23 @@ func _refresh_destination_buttons() -> void:
 	)
 
 	for destination in DestinationCatalog.all():
-		var destination_id := String(destination["id"])
+		var destination_id := String(destination.get("id", ""))
 		if not destination_buttons.has(destination_id):
 			continue
 
 		var button: Button = destination_buttons[destination_id]
+		var country_code := String(destination.get("country_code", ""))
+		button.visible = country_code == selected_country_code
+		if not button.visible:
+			continue
+
 		var required_level := int(destination.get("unlock_level", 1))
 		button.disabled = player_level < required_level
 
 		if button.disabled:
 			GameUIStyle.apply_button(button, "build_card_locked", true)
-			button.text = "%s\n🔒 LV %d" % [
-				String(destination["city"]).to_upper(),
+			button.text = "🔒  %s  •  LV %d" % [
+				String(destination.get("city", "Route")).to_upper(),
 				required_level
 			]
 			continue
@@ -557,9 +562,9 @@ func _refresh_destination_buttons() -> void:
 		var contract_suffix := ""
 		if destination_id == contract_destination_id:
 			if bool(contract_state.get("completed", false)):
-				contract_suffix = " • ✓ CONTRACT"
+				contract_suffix = "  •  ✓ CONTRACT"
 			else:
-				contract_suffix = " • ★ CONTRACT"
+				contract_suffix = "  •  ★ CONTRACT"
 
 		var button_kind := "screen_tab"
 		if destination_id == selected_destination_id:
@@ -574,12 +579,13 @@ func _refresh_destination_buttons() -> void:
 			button_kind = "event"
 
 		GameUIStyle.apply_button(button, button_kind, true)
-		button.text = "%s\n%s • %s%s" % [
-			String(destination["city"]).to_upper(),
-			String(destination["country_code"]),
+		button.text = "%s  •  %s%s" % [
+			String(destination.get("city", "Route")).to_upper(),
 			String(condition.get("short_label", "NORMAL")),
 			contract_suffix
 		]
+
+	_refresh_country_summary()
 
 
 func _refresh_details() -> void:
@@ -598,10 +604,31 @@ func _refresh_details() -> void:
 		selected_destination_id
 	)
 	if destination.is_empty():
-		details_title.text = "SELECT DESTINATION"
+		var selected_country := CountryCatalog.get_country(
+			selected_country_code
+		)
+		var country_resources := CountryResourceCatalog.resources_for_country(
+			selected_country_code
+		)
+		details_title.text = "NO ACTIVE ROUTE"
 		_clear_detail_cards()
-		details_body.text = "Choose a destination on the map."
+		resource_card_label.text = "RESOURCES\n%s\n40%% base" % (
+			_resource_names(country_resources)
+		)
+		_refresh_resource_preview(country_resources)
+		if selected_country.is_empty():
+			details_body.text = "Select a country on the world map."
+			assign_button.text = "SELECT COUNTRY"
+		else:
+			details_body.text = (
+				"%s currently has no dispatch destination in this "
+				+ "route set. Its resources are already part of the "
+				+ "country economy and can be used as the network expands."
+			) % String(selected_country.get("name", selected_country_code))
+			assign_button.text = "NO ROUTE YET"
 		assign_button.disabled = true
+		if map_canvas != null:
+			map_canvas.set_selected_country(selected_country_code)
 		return
 
 	var profile := plane.get_aircraft_profile()
@@ -670,6 +697,10 @@ func _refresh_details() -> void:
 		String(destination.get("country_code", ""))
 	)
 
+	selected_country_code = String(
+		destination.get("country_code", selected_country_code)
+	)
+	_refresh_country_summary()
 	details_title.text = "%s, %s" % [
 		String(destination["city"]).to_upper(),
 		String(destination["country"])
@@ -831,8 +862,8 @@ func _refresh_details() -> void:
 			FlightRules.format_duration(duration_seconds)
 		]
 
-	var map_position: Vector2 = destination["map_position"]
-	map_canvas.set_selected_position(map_position)
+	if map_canvas != null:
+		map_canvas.set_selected_country(selected_country_code)
 
 
 func _refresh_resource_preview(
@@ -904,8 +935,166 @@ func _on_aircraft_pressed(index: int) -> void:
 	_refresh_details()
 
 
+func _on_country_selected(country_code: String) -> void:
+	_select_country(country_code)
+
+
+func _on_country_hovered(country_code: String) -> void:
+	if map_hint_label == null:
+		return
+	if country_code.is_empty():
+		map_hint_label.text = (
+			"Tap a country marker to inspect routes and resources."
+		)
+		return
+
+	var country := CountryCatalog.get_country(country_code)
+	if country.is_empty():
+		return
+	var routes := _destinations_for_country(country_code)
+	var route_text := (
+		"%d route%s" % [
+			routes.size(),
+			"" if routes.size() == 1 else "s"
+		]
+		if not routes.is_empty()
+		else "future destination"
+	)
+	map_hint_label.text = "%s  •  %s  •  %s" % [
+		String(country.get("name", country_code)),
+		String(country.get("region", "")),
+		route_text
+	]
+
+
+func _select_country(country_code: String) -> void:
+	var country := CountryCatalog.get_country(country_code)
+	if country.is_empty():
+		return
+
+	selected_country_code = country_code
+	var routes := _destinations_for_country(country_code)
+	var keep_current := false
+	if not selected_destination_id.is_empty():
+		var current_destination := DestinationCatalog.get_destination(
+			selected_destination_id
+		)
+		keep_current = (
+			String(current_destination.get("country_code", ""))
+			== country_code
+		)
+
+	if not keep_current:
+		selected_destination_id = ""
+		var first_route := ""
+		for destination in routes:
+			var destination_id := String(destination.get("id", ""))
+			if first_route.is_empty():
+				first_route = destination_id
+			if player_level >= int(destination.get("unlock_level", 1)):
+				selected_destination_id = destination_id
+				break
+		if selected_destination_id.is_empty():
+			selected_destination_id = first_route
+
+	_refresh_map_state()
+	_refresh_destination_buttons()
+	_refresh_details()
+
+
+func _refresh_map_state() -> void:
+	if map_canvas == null:
+		return
+
+	var route_codes: Array[String] = []
+	var unlocked_codes: Array[String] = []
+	for destination in DestinationCatalog.all():
+		var country_code := String(destination.get("country_code", ""))
+		if not route_codes.has(country_code):
+			route_codes.append(country_code)
+		if (
+			player_level >= int(destination.get("unlock_level", 1))
+			and not unlocked_codes.has(country_code)
+		):
+			unlocked_codes.append(country_code)
+
+	map_canvas.set_countries(CountryCatalog.get_countries())
+	map_canvas.set_home_country(home_country_code)
+	map_canvas.set_route_countries(route_codes, unlocked_codes)
+	map_canvas.set_selected_country(selected_country_code)
+
+	if home_hub_label != null:
+		var home_country := CountryCatalog.get_country(home_country_code)
+		home_hub_label.text = "★ HOME  •  %s" % String(
+			home_country.get("name", home_country_code)
+		).to_upper()
+
+	_refresh_country_summary()
+
+
+func _refresh_country_summary() -> void:
+	if country_title_label == null or country_status_label == null:
+		return
+
+	var country := CountryCatalog.get_country(selected_country_code)
+	if country.is_empty():
+		country_title_label.text = "SELECT A COUNTRY"
+		country_status_label.text = (
+			"Tap any country marker to inspect its resources and routes."
+		)
+		return
+
+	var routes := _destinations_for_country(selected_country_code)
+	var unlocked_count := 0
+	for destination in routes:
+		if player_level >= int(destination.get("unlock_level", 1)):
+			unlocked_count += 1
+
+	country_title_label.text = "%s  •  %s" % [
+		String(country.get("id", "")),
+		String(country.get("name", "Country"))
+	]
+	var home_suffix := (
+		"  •  HOME HUB"
+		if selected_country_code == home_country_code
+		else ""
+	)
+	if routes.is_empty():
+		country_status_label.text = "%s  •  No active route yet%s" % [
+			String(country.get("region", "")),
+			home_suffix
+		]
+	else:
+		country_status_label.text = (
+			"%s  •  %d route%s  •  %d unlocked%s"
+		) % [
+			String(country.get("region", "")),
+			routes.size(),
+			"" if routes.size() == 1 else "s",
+			unlocked_count,
+			home_suffix
+		]
+
+
+func _destinations_for_country(
+	country_code: String
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for destination in DestinationCatalog.all():
+		if String(destination.get("country_code", "")) == country_code:
+			result.append(destination.duplicate(true))
+	return result
+
+
 func _on_destination_pressed(destination_id: String) -> void:
+	var destination := DestinationCatalog.get_destination(destination_id)
+	if destination.is_empty():
+		return
 	selected_destination_id = destination_id
+	selected_country_code = String(
+		destination.get("country_code", selected_country_code)
+	)
+	_refresh_map_state()
 	_refresh_destination_buttons()
 	_refresh_details()
 

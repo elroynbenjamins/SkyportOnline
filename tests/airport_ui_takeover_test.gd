@@ -29,6 +29,30 @@ func _run() -> void:
 	if String((hud.nav_buttons["build"] as Button).text) != "BUILD":
 		_fail("Main dock should use clean icon-safe labels instead of emoji placeholders.")
 		return
+	for tab in ["build", "fleet", "world", "activities", "social", "more"]:
+		var nav_button := hud.nav_buttons.get(tab) as Button
+		if nav_button == null or nav_button.icon == null:
+			_fail("Every compact dock action should expose a real HUD icon: " + tab)
+			return
+	if (
+		hud.passenger_icon == null
+		or hud.passenger_icon.texture == null
+		or hud.fuel_icon == null
+		or hud.fuel_icon.texture == null
+		or hud.coins_icon == null
+		or hud.coins_icon.texture == null
+		or hud.gems_icon == null
+		or hud.gems_icon.texture == null
+	):
+		_fail("Top HUD resource pills should expose dedicated icon art.")
+		return
+	if (
+		hud.airside_status_chip.icon == null
+		or hud.operation_status_chip.icon == null
+		or hud.atc_status_chip.icon == null
+	):
+		_fail("Operational status chips should expose dedicated icon badges.")
+		return
 
 	if hud.catalog_panel == null:
 		_fail("Build tray should exist.")

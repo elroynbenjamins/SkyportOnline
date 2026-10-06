@@ -1,5 +1,20 @@
 extends CanvasLayer
 
+const HUD_ICON_SVG := {
+	"build": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M7 17.5l6.6-6.6 2.5 2.5-6.6 6.6H7v-2.5z" fill="#f8fcff"/><path d="M12.7 7.7l2.1-2.1 3.6 3.6-2.1 2.1-3.6-3.6z" fill="#f5b33b"/><path d="M5.6 6.3l4.1 4.1" stroke="#f8fcff" stroke-width="2" stroke-linecap="round"/></svg>""",
+	"fleet": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M4.5 13l6.2-1.8 1.4-6.5c.2-.9 1.6-.9 1.8 0l.5 5.7 4.3-1.2c1-.3 1.5 1 .6 1.5l-4.7 2.7-.3 4.8 2 1.5v.9l-3.3-.8-3.3.8v-.9l2-1.5-.3-4-6.1.7c-1.1.1-1.7-1.5-.8-1.9z" fill="#f8fcff"/></svg>""",
+	"world": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><circle cx="12" cy="12" r="6.3" fill="none" stroke="#f8fcff" stroke-width="1.5"/><path d="M5.9 12h12.2M12 5.7c2 1.8 3 3.9 3 6.3s-1 4.5-3 6.3M12 5.7c-2 1.8-3 3.9-3 6.3s1 4.5 3 6.3" fill="none" stroke="#f8fcff" stroke-width="1.2" stroke-linecap="round"/></svg>""",
+	"activities": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><rect x="6.5" y="5.5" width="11" height="13" rx="1.8" fill="none" stroke="#f8fcff" stroke-width="1.5"/><rect x="9" y="4.2" width="6" height="2.8" rx="1" fill="#f5b33b"/><path d="M12 9l.9 1.8 2 .3-1.5 1.4.4 2-1.8-.9-1.8.9.4-2-1.5-1.4 2-.3L12 9z" fill="#f8fcff"/></svg>""",
+	"social": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><circle cx="9" cy="9" r="2.4" fill="#f8fcff"/><circle cx="15.5" cy="10" r="2" fill="#f8fcff" opacity=".9"/><path d="M4.8 17.8c.4-3.1 2-4.6 4.4-4.6s4 1.5 4.4 4.6" fill="#f8fcff"/><path d="M13.2 17.8c.3-2.4 1.4-3.6 3.3-3.6 1.6 0 2.7 1.2 3 3.6" fill="#f8fcff" opacity=".85"/></svg>""",
+	"more": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><circle cx="7" cy="12" r="1.7" fill="#f8fcff"/><circle cx="12" cy="12" r="1.7" fill="#f8fcff"/><circle cx="17" cy="12" r="1.7" fill="#f8fcff"/></svg>""",
+	"passengers": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#075a78" stroke="#4bd7f6" stroke-width="1.2"/><circle cx="9" cy="8.8" r="2.2" fill="#f8fcff"/><circle cx="15.2" cy="9.5" r="1.8" fill="#f8fcff" opacity=".85"/><path d="M5 17.7c.4-3.2 1.9-4.8 4.2-4.8 2.4 0 3.8 1.6 4.2 4.8" fill="#f8fcff"/><path d="M13 17.7c.3-2.5 1.4-3.7 3.2-3.7 1.6 0 2.7 1.2 3 3.7" fill="#f8fcff" opacity=".82"/></svg>""",
+	"fuel": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#4a3517" stroke="#f5c55d" stroke-width="1.2"/><rect x="6.5" y="5.5" width="7.5" height="12.5" rx="1.2" fill="#f5b33b"/><rect x="8" y="7" width="4.5" height="3.4" rx=".5" fill="#403418"/><path d="M14 8h2.2l1.6 1.8v5.6c0 .8-.5 1.3-1.2 1.3-.8 0-1.3-.5-1.3-1.3v-3.1" fill="none" stroke="#f8fcff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>""",
+	"coins": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#3a3020" stroke="#f5b33b" stroke-width="1.2"/><ellipse cx="11.5" cy="8" rx="5.2" ry="2.2" fill="#f5b33b"/><path d="M6.3 8v3c0 1.2 2.3 2.2 5.2 2.2s5.2-1 5.2-2.2V8" fill="#f5b33b" opacity=".92"/><path d="M6.3 11v3c0 1.2 2.3 2.2 5.2 2.2s5.2-1 5.2-2.2v-3" fill="#f5b33b" opacity=".82"/><path d="M9.5 7.8h4" stroke="#6f4b0d" stroke-width="1.1" stroke-linecap="round"/></svg>""",
+	"aero": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#2e2045" stroke="#c49af5" stroke-width="1.2"/><path d="M12 4.8l5.7 5.2L12 19.2 6.3 10 12 4.8z" fill="#c49af5"/><path d="M6.3 10h11.4M12 4.8L9.5 10 12 19.2 14.5 10 12 4.8z" fill="none" stroke="#f8fcff" stroke-width="1" stroke-linejoin="round"/></svg>""",
+	"airfield": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M5 16.8h14" stroke="#f8fcff" stroke-width="1.6" stroke-linecap="round"/><path d="M7 13.8h10" stroke="#f8fcff" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2"/><path d="M6.5 9.8l4.2-1.1.9-3.5c.2-.7 1.1-.7 1.3 0l.4 3 3-.8c.8-.2 1.1.8.4 1.2l-3.2 1.8-.2 2.3-1.3.3-.3-2.1-5 .6c-.8.1-1.1-1.1-.2-1.7z" fill="#f8fcff"/></svg>""",
+	"ops": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M8.5 7h7l1 2.2 2 .6v5.6H6V9.8l1.5-.6L8.5 7z" fill="#f8fcff"/><circle cx="9" cy="16" r="1.7" fill="#78df77"/><circle cx="15.5" cy="16" r="1.7" fill="#78df77"/><rect x="9.5" y="8.5" width="4.5" height="2" rx=".4" fill="#0b4f70"/></svg>""",
+	"atc": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M8 18h8l-1.2-8H9.2L8 18z" fill="#f8fcff"/><rect x="7.3" y="7" width="9.4" height="3.4" rx="1" fill="#f8fcff"/><rect x="9" y="8" width="2" height="1.4" fill="#0b4f70"/><rect x="13" y="8" width="2" height="1.4" fill="#0b4f70"/><path d="M12 7V4.8M12 4.8l3-1" stroke="#f5b33b" stroke-width="1.4" stroke-linecap="round"/></svg>"""
+}
 signal purchase_expansion_requested
 signal building_selected(building_id: String)
 signal rotate_building_requested
@@ -23,12 +38,16 @@ var xp_progress: ProgressBar
 var xp_label: Label
 var passenger_label: Label
 var passenger_rate_label: Label
+var passenger_icon: TextureRect
 var fuel_label: Label
 var fuel_rate_label: Label
+var fuel_icon: TextureRect
 var fuel_order_button: Button
 var fuel_panel: PanelContainer
 var coins_label: Label
+var coins_icon: TextureRect
 var gems_label: Label
+var gems_icon: TextureRect
 var airside_status_label: Label
 var operation_status_label: Label
 var atc_status_label: Label
@@ -107,6 +126,7 @@ var event_activity_attention := false
 var alliance_activity_attention := false
 var mission_activity_attention := false
 var nav_buttons: Dictionary = {}
+var hud_icon_textures: Dictionary = {}
 
 
 func _ready() -> void:
@@ -199,10 +219,12 @@ func _build_interface() -> void:
 		"0 / 0",
 		"+0.0/m",
 		"hud_passenger",
-		124
+		124,
+		_hud_icon("passengers")
 	)
 	passenger_label = passenger_chip["value"] as Label
 	passenger_rate_label = passenger_chip["detail"] as Label
+	passenger_icon = passenger_chip["icon"] as TextureRect
 
 	var fuel_chip := _build_hud_resource_chip(
 		top_row,
@@ -210,10 +232,12 @@ func _build_interface() -> void:
 		"0 / 0",
 		"+0.0/m",
 		"hud_fuel",
-		112
+		112,
+		_hud_icon("fuel")
 	)
 	fuel_label = fuel_chip["value"] as Label
 	fuel_rate_label = fuel_chip["detail"] as Label
+	fuel_icon = fuel_chip["icon"] as TextureRect
 	fuel_panel = fuel_chip["panel"] as PanelContainer
 
 	fuel_order_button = Button.new()
@@ -230,9 +254,11 @@ func _build_interface() -> void:
 		"0",
 		"",
 		"hud_coin",
-		96
+		96,
+		_hud_icon("coins")
 	)
 	coins_label = coin_chip["value"] as Label
+	coins_icon = coin_chip["icon"] as TextureRect
 
 	var aero_chip := _build_hud_resource_chip(
 		top_row,
@@ -240,9 +266,11 @@ func _build_interface() -> void:
 		"0",
 		"",
 		"hud_premium",
-		82
+		82,
+		_hud_icon("aero")
 	)
 	gems_label = aero_chip["value"] as Label
+	gems_icon = aero_chip["icon"] as TextureRect
 
 	var objective_panel := PanelContainer.new()
 	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -273,6 +301,7 @@ func _build_interface() -> void:
 	airside_status_chip = Button.new()
 	airside_status_chip.text = "AIR • CHECKING"
 	airside_status_chip.custom_minimum_size = Vector2(132, 34)
+	_apply_button_icon(airside_status_chip, _hud_icon("airfield"), 18)
 	GameUIStyle.apply_button(airside_status_chip, "nav", true)
 	airside_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("airside")
@@ -282,6 +311,7 @@ func _build_interface() -> void:
 	operation_status_chip = Button.new()
 	operation_status_chip.text = "OPS • PREPARING"
 	operation_status_chip.custom_minimum_size = Vector2(150, 34)
+	_apply_button_icon(operation_status_chip, _hud_icon("ops"), 18)
 	GameUIStyle.apply_button(operation_status_chip, "nav", true)
 	operation_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("operations")
@@ -291,6 +321,7 @@ func _build_interface() -> void:
 	atc_status_chip = Button.new()
 	atc_status_chip.text = "ATC • CLEAR"
 	atc_status_chip.custom_minimum_size = Vector2(136, 34)
+	_apply_button_icon(atc_status_chip, _hud_icon("atc"), 18)
 	GameUIStyle.apply_button(atc_status_chip, "nav", true)
 	atc_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("atc")
@@ -406,17 +437,33 @@ func _build_hud_resource_chip(
 	value_text: String,
 	detail_text: String,
 	panel_variant: String,
-	minimum_width: int
+	minimum_width: int,
+	icon_texture: Texture2D = null
 ) -> Dictionary:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(minimum_width, 38)
 	GameUIStyle.apply_panel(panel, panel_variant)
 	parent.add_child(panel)
 
+	var content_row := HBoxContainer.new()
+	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	content_row.add_theme_constant_override("separation", 5)
+	panel.add_child(content_row)
+
+	var icon_rect := TextureRect.new()
+	icon_rect.custom_minimum_size = Vector2(20, 20)
+	icon_rect.texture = icon_texture
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_rect.visible = icon_texture != null
+	content_row.add_child(icon_rect)
+
 	var box := VBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_theme_constant_override("separation", 0)
-	panel.add_child(box)
+	content_row.add_child(box)
 
 	var meta_row := HBoxContainer.new()
 	meta_row.add_theme_constant_override("separation", 4)
@@ -447,6 +494,7 @@ func _build_hud_resource_chip(
 	return {
 		"panel": panel,
 		"box": box,
+		"icon": icon_rect,
 		"value": value_label,
 		"detail": detail_label
 	}
@@ -1030,6 +1078,7 @@ func _build_bottom_navigation(root: Control) -> void:
 		button.add_theme_font_size_override("font_size", 12)
 
 		var tab: String = item.to_lower()
+		_apply_button_icon(button, _nav_icon_for(tab), 20)
 		GameUIStyle.apply_button(
 			button,
 			"dock_selected" if tab == "build" else "dock",
@@ -1049,6 +1098,41 @@ func _build_bottom_navigation(root: Control) -> void:
 			social_nav_button = button
 
 		nav_row.add_child(button)
+
+func _hud_icon(key: String) -> Texture2D:
+	if hud_icon_textures.has(key):
+		return hud_icon_textures[key] as Texture2D
+	var svg_text := String(HUD_ICON_SVG.get(key, ""))
+	if svg_text.is_empty():
+		return null
+	var image := Image.new()
+	if image.load_svg_from_string(svg_text, 2.0) != OK:
+		return null
+	var texture := ImageTexture.create_from_image(image)
+	hud_icon_textures[key] = texture
+	return texture
+
+
+func _apply_button_icon(
+	button: Button,
+	texture: Texture2D,
+	max_width: int
+) -> void:
+	if button == null or texture == null:
+		return
+	button.icon = texture
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	button.add_theme_constant_override("icon_max_width", max_width)
+	button.add_theme_constant_override("h_separation", 5)
+	button.expand_icon = true
+
+
+func _nav_icon_for(tab: String) -> Texture2D:
+	if HUD_ICON_SVG.has(tab):
+		return _hud_icon(tab)
+	return _hud_icon("more")
+
 
 func set_charter_available(value: bool, attention: bool = false) -> void:
 	charter_activity_attention = value and attention

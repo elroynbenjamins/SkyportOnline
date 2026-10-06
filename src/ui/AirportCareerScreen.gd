@@ -162,7 +162,8 @@ func _career(state: Dictionary, level: int) -> void:
 	var card := _card()
 	if quest.is_empty():
 		_text(card, "V1 CAREER COMPLETE", true)
-		_text(card, "Your airport career is complete. Continue building your fleet, hosting visitors and mastering routes.")
+		_text(card, "Your airport career is complete. Continue building your fleet, hosting visitors, mastering routes and exploring Activities.")
+		_add_activity_roadmap(state, level)
 		return
 	var claimed: Dictionary = state.get("claimed", {})
 	_text(card, "%s  •  %d / %d missions completed" % [quest["chapter"], claimed.size(), AirportCareerCatalog.all().size()])
@@ -201,11 +202,17 @@ func _career(state: Dictionary, level: int) -> void:
 		if shown >= 3:
 			break
 
+	_add_activity_roadmap(state, level)
+
+func _add_activity_roadmap(
+	state: Dictionary,
+	level: int
+) -> void:
 	var activity_card := _card()
 	_text(activity_card, "AIRPORT ACTIVITIES", true)
 	_text(
 		activity_card,
-		"New modes unlock gradually as your airport grows. Open a newly unlocked mode once for its short introduction."
+		"New modes unlock gradually as your airport grows. Activity missions can join Daily/Weekly rotation after the related system becomes available."
 	)
 	var activities: Dictionary = data.get("activities", {})
 	var suggested_mode := ""
@@ -225,7 +232,10 @@ func _career(state: Dictionary, level: int) -> void:
 		if level >= unlock_level:
 			status_text = (
 				"INTRODUCED"
-				if ActivityProgressionRules.tutorial_seen(state, mode_id)
+				if ActivityProgressionRules.tutorial_seen(
+					state,
+					mode_id
+				)
 				else "NEW"
 			)
 		if (
@@ -251,6 +261,7 @@ func _career(state: Dictionary, level: int) -> void:
 				activity_requested.emit(suggested_mode),
 			"gold"
 		)
+
 
 func _orders(state: Dictionary, level: int) -> void:
 	_text(body, "Aircraft are bought with ordinary coins, not quest rewards. A purchased plane waits in reserve until a connected, fully serviced stand is free.", true)

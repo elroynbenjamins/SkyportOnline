@@ -21,9 +21,10 @@ jobs:
         shell: bash
         run: |
           status=0
-          godot --headless --editor --path . --quit > /tmp/skyport-progression-import.log 2>&1 || status=$?
+          godot --headless --path . --import > /tmp/skyport-progression-import.log 2>&1 || status=$?
           tail -n 45 /tmp/skyport-progression-import.log
           test "$status" -eq 0
+          test -s .godot/global_script_class_cache.cfg
           if grep -E 'SCRIPT ERROR|Parse Error|Compile Error' /tmp/skyport-progression-import.log; then exit 1; fi
       - name: Career rules and NPC gates
         shell: bash

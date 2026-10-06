@@ -428,6 +428,10 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
+			"art_tier": "canonical_v2",
+			"world_art_has_integrated_base": true,
+			"world_sprite_grid_fit": true,
+			"world_sprite_ground_align": true,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
 				Rect2(0, 448, 448, 448),

@@ -1562,15 +1562,25 @@ func _activities_snapshot() -> Dictionary:
 	var event_attention := _event_has_claimable_reward()
 	var event_name := String(current_event_snapshot.get("name", "Seasonal Event"))
 	var event_status := (
-		"WEEK %d / 3 • %d DAYS LEFT" % [
+		"PHASE %d / 3 • %s" % [
 			int(current_event_snapshot.get("week", 1)),
-			int(current_event_snapshot.get("days_remaining", 0))
+			String(
+				current_event_snapshot.get(
+					"phase_name",
+					"Event Phase"
+				)
+			).to_upper()
 		]
 		if event_active
 		else "NO EVENT ACTIVE"
 	)
 	var event_detail := (
-		"%s • quests, event shop and Alliance milestones" % event_name
+		"%s • %d/%d phase quests complete • %d days left" % [
+			String(current_event_snapshot.get("phase_description", event_name)),
+			int(current_event_snapshot.get("phase_quest_complete", 0)),
+			maxi(int(current_event_snapshot.get("phase_quest_total", 0)), 1),
+			int(current_event_snapshot.get("days_remaining", 0))
+		]
 		if event_active
 		else "Limited-time events appear here when activated."
 	)

@@ -173,7 +173,11 @@ func record_destination_flight(destination_id: String) -> void:
 			progress[quest_id] = after
 			changed_any = true
 
-	var featured: Array = event_definition.get(
+	var current_phase := EventCatalog.phase_for_week(
+		event_definition,
+		current_week
+	)
+	var featured: Array = current_phase.get(
 		"featured_destinations",
 		[]
 	)
@@ -547,6 +551,18 @@ func get_snapshot() -> Dictionary:
 		{}
 	).duplicate(true)
 
+	var current_phase := EventCatalog.phase_for_week(
+		event_definition,
+		current_week
+	)
+	var following_phase := EventCatalog.next_phase(
+		event_definition,
+		current_week
+	)
+	var phase_quest_total := 0
+	var phase_quest_complete := 0
+	var phase_quest_claimed := 0
+
 	var quests: Array[Dictionary] = []
 	for quest_variant in event_definition.get("quests", []):
 		var quest: Dictionary = (
@@ -562,6 +578,19 @@ func get_snapshot() -> Dictionary:
 		quest["claimed"] = bool(claimed.get(quest_id, false))
 		quest["unlocked"] = int(quest.get("week", 1)) <= current_week
 		quest["complete"] = quest_progress >= target
+		var quest_week := int(quest.get("week", 1))
+		quest["phase_state"] = (
+			"current"
+			if quest_week == current_week
+			else "archive" if quest_week < current_week
+			else "upcoming"
+		)
+		if quest_week == current_week:
+			phase_quest_total += 1
+			if bool(quest["complete"]):
+				phase_quest_complete += 1
+			if bool(quest["claimed"]):
+				phase_quest_claimed += 1
 		quests.append(quest)
 
 	var shop: Array[Dictionary] = []
@@ -624,6 +653,19 @@ func get_snapshot() -> Dictionary:
 		),
 		"currency": get_currency(),
 		"week": current_week,
+		"phase_id": String(current_phase.get("id", "")),
+		"phase_name": String(current_phase.get("name", "Event Phase")),
+		"phase_description": String(current_phase.get("description", "")),
+		"phase_featured_destinations": (
+			current_phase.get("featured_destinations", []) as Array
+		).duplicate(true),
+		"phase_metrics": (
+			current_phase.get("metrics", []) as Array
+		).duplicate(true),
+		"phase_quest_total": phase_quest_total,
+		"phase_quest_complete": phase_quest_complete,
+		"phase_quest_claimed": phase_quest_claimed,
+		"next_phase_name": String(following_phase.get("name", "")),
 		"days_remaining": EventCatalog.days_remaining(
 			event_definition,
 			_now_unix()

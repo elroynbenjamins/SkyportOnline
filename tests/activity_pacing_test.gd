@@ -78,10 +78,10 @@ func _run() -> void:
 	var intro := ActivityIntroScreen.new()
 	root.add_child(intro)
 	await process_frame
-	var continued := ""
+	var continued := {"mode": ""}
 	intro.continue_requested.connect(
 		func(mode_id: String) -> void:
-			continued = mode_id
+			continued["mode"] = mode_id
 	)
 	intro.open_intro(
 		"challenge",
@@ -100,7 +100,7 @@ func _run() -> void:
 		return
 	intro.continue_button.pressed.emit()
 	await process_frame
-	if continued != "challenge":
+	if String(continued.get("mode", "")) != "challenge":
 		_fail("Activity introduction should continue into the selected mode.")
 		return
 	if intro.is_open():

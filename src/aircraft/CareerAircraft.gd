@@ -72,7 +72,11 @@ func _draw() -> void:
 	_draw_shadow()
 	_draw_motion_feedback()
 	# Directional artwork is already isometric: cancel node rotation instead of rotating the image twice.
-	draw_set_transform(Vector2.ZERO, -global_rotation, Vector2.ONE)
+	draw_set_transform(
+		get_airborne_visual_local_offset(),
+		-global_rotation,
+		Vector2.ONE
+	)
 	var width := get_directional_draw_width()
 	var size := Vector2(
 		width,

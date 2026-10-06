@@ -12,6 +12,7 @@ signal state_changed(state: String)
 @export var takeoff_speed: float = 235.0
 @export var approach_speed: float = 185.0
 @export var landing_speed: float = 150.0
+@export var takeoff_acceleration: float = 135.0
 @export var departure_delay: float = 0.55
 @export var lineup_delay: float = 0.45
 @export var taxi_acceleration: float = 95.0
@@ -45,6 +46,10 @@ var flight_remaining := 0.0
 var takeoff_velocity := 0.0
 var taxi_current_speed := 0.0
 var taxi_turn_rate_deg := 145.0
+var approach_spawn_distance := 220.0
+var climb_out_distance := 260.0
+var approach_visual_lift := 48.0
+var climb_visual_lift := 58.0
 var departure_hold_short_index := -1
 var arrival_runway_cleared := false
 var turnaround_panel: PanelContainer
@@ -149,6 +154,63 @@ func configure_aircraft_type(type_id: String) -> void:
 	aircraft_display_name = String(profile.get("name", type_id))
 	aircraft_size = String(profile.get("size", aircraft_size))
 	taxi_speed = maxf(float(profile.get("taxi_speed", taxi_speed)), 1.0)
+	approach_speed = maxf(
+		float(profile.get("approach_speed", approach_speed)),
+		1.0
+	)
+	landing_speed = maxf(
+		float(profile.get("landing_speed", landing_speed)),
+		1.0
+	)
+	takeoff_speed = maxf(
+		float(profile.get("takeoff_speed", takeoff_speed)),
+		1.0
+	)
+	takeoff_acceleration = maxf(
+		float(
+			profile.get(
+				"takeoff_acceleration",
+				takeoff_acceleration
+			)
+		),
+		1.0
+	)
+	approach_spawn_distance = maxf(
+		float(
+			profile.get(
+				"approach_spawn_distance",
+				approach_spawn_distance
+			)
+		),
+		120.0
+	)
+	climb_out_distance = maxf(
+		float(
+			profile.get(
+				"climb_out_distance",
+				climb_out_distance
+			)
+		),
+		160.0
+	)
+	approach_visual_lift = maxf(
+		float(
+			profile.get(
+				"approach_visual_lift",
+				approach_visual_lift
+			)
+		),
+		0.0
+	)
+	climb_visual_lift = maxf(
+		float(
+			profile.get(
+				"climb_visual_lift",
+				climb_visual_lift
+			)
+		),
+		0.0
+	)
 	taxi_turn_rate_deg = TaxiMotionRules.turn_rate_degrees(
 		aircraft_size,
 		profile
@@ -613,10 +675,20 @@ func begin_arrival_after_clearance() -> void:
 	if outward == Vector2.ZERO:
 		outward = Vector2(-1, 0)
 
-	position = runway_start + outward * 220.0
+	position = (
+		runway_start
+		+ outward * approach_spawn_distance
+	)
+	var final_direction := (
+		runway_start - position
+	).normalized()
+	if final_direction != Vector2.ZERO:
+		rotation = final_direction.angle()
 	visible = true
 	route_index = -1
 	arrival_runway_cleared = false
+	motion_sample_position = global_position
+	motion_sample_initialized = true
 	_set_state("APPROACH")
 
 
@@ -775,7 +847,11 @@ func _process_runway_entry(delta: float) -> void:
 
 func _process_takeoff_roll(delta: float) -> void:
 	var runway_end_index := departure_route.size() - 1
-	takeoff_velocity = minf(takeoff_velocity + 135.0 * delta, takeoff_speed)
+	takeoff_velocity = minf(
+		takeoff_velocity
+		+ takeoff_acceleration * delta,
+		takeoff_speed
+	)
 
 	if _move_toward_point(
 		departure_route[runway_end_index],
@@ -791,7 +867,10 @@ func _process_takeoff_roll(delta: float) -> void:
 		if direction == Vector2.ZERO:
 			direction = Vector2(1, 0)
 
-		departure_route.append(departure_route[runway_end_index] + direction * 260.0)
+		departure_route.append(
+			departure_route[runway_end_index]
+			+ direction * climb_out_distance
+		)
 		_set_state("CLIMBING")
 
 
@@ -816,9 +895,30 @@ func _process_approach(delta: float) -> void:
 	if arrival_route.is_empty():
 		return
 
-	if _move_toward_point(
-		arrival_route[0],
+	var threshold := arrival_route[0]
+	var distance_to_threshold := position.distance_to(
+		threshold
+	)
+	var approach_ratio := clampf(
+		distance_to_threshold
+		/ maxf(
+			approach_spawn_distance,
+			1.0
+		),
+		0.0,
+		1.0
+	)
+	# Ease from cruise-like final-approach speed into landing speed instead
+	# of snapping to a slower velocity at the runway threshold.
+	var current_approach_speed := lerpf(
+		landing_speed,
 		approach_speed,
+		approach_ratio
+	)
+
+	if _move_toward_point(
+		threshold,
+		current_approach_speed,
 		delta,
 		125.0
 	):
@@ -1180,7 +1280,11 @@ func _update_external_motion_feedback(delta: float) -> void:
 func _airborne_shadow_factor() -> float:
 	if state == "APPROACH" and not arrival_route.is_empty():
 		return clampf(
-			position.distance_to(arrival_route[0]) / 220.0,
+			position.distance_to(arrival_route[0])
+			/ maxf(
+				approach_spawn_distance,
+				1.0
+			),
 			0.0,
 			1.0
 		)
@@ -1189,11 +1293,49 @@ func _airborne_shadow_factor() -> float:
 			departure_route.size() - 1
 		]
 		return 1.0 - clampf(
-			position.distance_to(climb_target) / 260.0,
+			position.distance_to(climb_target)
+			/ maxf(
+				climb_out_distance,
+				1.0
+			),
 			0.0,
 			1.0
 		)
 	return 0.0
+
+
+func get_airborne_visual_lift() -> float:
+	var airborne := _airborne_shadow_factor()
+	if state == "APPROACH":
+		return approach_visual_lift * airborne
+	if state == "CLIMBING":
+		return climb_visual_lift * airborne
+	return 0.0
+
+
+func get_airborne_visual_local_offset() -> Vector2:
+	return Vector2(
+		0,
+		-get_airborne_visual_lift()
+	).rotated(
+		-global_rotation
+	)
+
+
+func get_flight_presentation_snapshot() -> Dictionary:
+	return {
+		"aircraft_type_id": aircraft_type_id,
+		"state": state,
+		"visible": visible,
+		"approach_spawn_distance": approach_spawn_distance,
+		"climb_out_distance": climb_out_distance,
+		"approach_speed": approach_speed,
+		"landing_speed": landing_speed,
+		"takeoff_speed": takeoff_speed,
+		"takeoff_acceleration": takeoff_acceleration,
+		"airborne_factor": _airborne_shadow_factor(),
+		"visual_lift": get_airborne_visual_lift()
+	}
 
 
 func get_motion_feedback_snapshot() -> Dictionary:
@@ -1204,6 +1346,9 @@ func get_motion_feedback_snapshot() -> Dictionary:
 		"pushback_motion": externally_moving,
 		"external_speed": external_motion_speed,
 		"shadow_airborne_factor": _airborne_shadow_factor(),
+		"visual_lift": get_airborne_visual_lift(),
+		"approach_spawn_distance": approach_spawn_distance,
+		"climb_out_distance": climb_out_distance,
 		"takeoff_speed_ratio": clampf(
 			takeoff_velocity / maxf(takeoff_speed, 1.0),
 			0.0,
@@ -1218,7 +1363,7 @@ func _draw() -> void:
 
 	var visual_scale := get_visual_scale()
 	draw_set_transform(
-		Vector2.ZERO,
+		get_airborne_visual_local_offset(),
 		0.0,
 		Vector2.ONE * visual_scale
 	)
@@ -1540,6 +1685,41 @@ func _draw_motion_feedback() -> void:
 			Color(1.0, 0.78, 0.28, 0.34 + 0.18 * speed_amount),
 			2.0
 		)
+
+	if state in ["APPROACH", "CLIMBING"]:
+		var airborne := _airborne_shadow_factor()
+		var wake_strength := (
+			0.08
+			+ airborne * 0.12
+		)
+		var wake_length := (
+			18.0
+			+ airborne * 24.0
+		) * visual_scale
+		var wake_origin := (
+			Vector2(
+				-get_visual_half_length() * 0.78,
+				0
+			)
+			+ get_airborne_visual_local_offset()
+		)
+		for side in [-1.0, 1.0]:
+			var side_offset := (
+				5.5
+				* visual_scale
+				* float(side)
+			)
+			draw_line(
+				wake_origin + Vector2(0, side_offset),
+				wake_origin + Vector2(-wake_length, side_offset),
+				Color(
+					0.80,
+					0.92,
+					0.98,
+					wake_strength
+				),
+				1.2
+			)
 
 
 func _draw_shadow() -> void:

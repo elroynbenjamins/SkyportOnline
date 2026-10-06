@@ -1546,7 +1546,7 @@ func _draw_starter_service_support(
 			definition,
 			int(building.get("rotation", 0))
 		)
-		var center := _footprint_center_world(
+		var center: Vector2 = _footprint_center_world(
 			origin,
 			footprint
 		)
@@ -2546,7 +2546,7 @@ func _draw_runway_surface_v2(
 	if polygon.size() < 4:
 		return
 
-	var alpha := clampf(strength, 0.0, 1.0)
+	var alpha: float = clampf(strength, 0.0, 1.0)
 	var center := _footprint_center_world(
 		origin,
 		footprint
@@ -2622,28 +2622,28 @@ func _draw_runway_surface_v2(
 			0.5
 		)
 
-	var axis := finish - start
-	var length := axis.length()
+	var axis: Vector2 = finish - start
+	var length: float = axis.length()
 	if length <= 1.0:
 		return
 	axis /= length
 
-	var width_vector := side_b_mid - side_a_mid
-	var full_width := width_vector.length()
+	var width_vector: Vector2 = side_b_mid - side_a_mid
+	var full_width: float = width_vector.length()
 	if full_width <= 1.0:
 		return
-	var normal := width_vector / full_width
-	var half_width := full_width * 0.5
+	var normal: Vector2 = width_vector / full_width
+	var half_width: float = full_width * 0.5
 
 	# Layered asphalt bands keep the runway from reading as one flat polygon.
 	for lateral_variant in [-0.50, -0.18, 0.18, 0.50]:
 		var lateral := float(lateral_variant)
-		var band_start := (
+		var band_start: Vector2 = (
 			start
 			+ axis * 12.0
 			+ normal * half_width * lateral
 		)
-		var band_finish := (
+		var band_finish: Vector2 = (
 			finish
 			- axis * 12.0
 			+ normal * half_width * lateral
@@ -2660,14 +2660,15 @@ func _draw_runway_surface_v2(
 			2.0
 		)
 
-	var edge_offset := half_width * 0.87
-	for side in [-1.0, 1.0]:
-		var edge_start := (
+	var edge_offset: float = half_width * 0.87
+	for side_variant in [-1.0, 1.0]:
+		var side: float = float(side_variant)
+		var edge_start: Vector2 = (
 			start
 			+ axis * 10.0
 			+ normal * edge_offset * side
 		)
-		var edge_finish := (
+		var edge_finish: Vector2 = (
 			finish
 			- axis * 10.0
 			+ normal * edge_offset * side
@@ -2682,12 +2683,12 @@ func _draw_runway_surface_v2(
 			2.2
 		)
 
-	var marking := _micro_alpha(
+	var marking: Color = _micro_alpha(
 		RUNWAY_MARKING_WHITE,
 		alpha
 	)
-	var center_start := start + axis * 34.0
-	var center_finish := finish - axis * 34.0
+	var center_start: Vector2 = start + axis * 34.0
+	var center_finish: Vector2 = finish - axis * 34.0
 	draw_dashed_line(
 		center_start,
 		center_finish,
@@ -2696,32 +2697,33 @@ func _draw_runway_surface_v2(
 		10.0
 	)
 
-	var threshold_inset := clampf(
+	var threshold_inset: float = clampf(
 		length * 0.085,
 		22.0,
 		38.0
 	)
-	var threshold_count := (
+	var threshold_count: int = (
 		6
 		if String(definition.get("id", "")) == "regional_runway"
 		else 4
 	)
-	for threshold_center in [
+	var threshold_centers: Array[Vector2] = [
 		start + axis * threshold_inset,
 		finish - axis * threshold_inset
-	]:
+	]
+	for threshold_center in threshold_centers:
 		for index in range(threshold_count):
-			var fraction := (
+			var fraction: float = (
 				0.0
 				if threshold_count <= 1
 				else float(index) / float(threshold_count - 1)
 			)
-			var lateral := lerpf(
+			var lateral: float = lerpf(
 				-half_width * 0.58,
 				half_width * 0.58,
 				fraction
 			)
-			var bar_center := (
+			var bar_center: Vector2 = (
 				threshold_center
 				+ normal * lateral
 			)
@@ -2732,7 +2734,7 @@ func _draw_runway_surface_v2(
 				3.2
 			)
 
-	var touchdown_fractions := [0.28, 0.72]
+	var touchdown_fractions: Array[float] = [0.28, 0.72]
 	if String(definition.get("id", "")) == "regional_runway":
 		touchdown_fractions = [
 			0.23,
@@ -2741,15 +2743,16 @@ func _draw_runway_surface_v2(
 			0.77
 		]
 	for fraction_variant in touchdown_fractions:
-		var fraction := float(
+		var fraction: float = float(
 			fraction_variant
 		)
-		var zone_center := start.lerp(
+		var zone_center: Vector2 = start.lerp(
 			finish,
 			fraction
 		)
-		for side in [-1.0, 1.0]:
-			var bar_center := (
+		for side_variant in [-1.0, 1.0]:
+			var side: float = float(side_variant)
+			var bar_center: Vector2 = (
 				zone_center
 				+ normal
 				* half_width
@@ -2771,7 +2774,7 @@ func _draw_runway_surface_v2(
 		var fraction := float(
 			fraction_variant
 		)
-		var mark_center := (
+		var mark_center: Vector2 = (
 			start.lerp(
 				finish,
 				fraction
@@ -2794,18 +2797,19 @@ func _draw_runway_surface_v2(
 			3.0
 		)
 
-	var light_count := maxi(
+	var light_count: int = maxi(
 		int(length / 52.0),
 		5
 	)
 	for index in range(light_count + 1):
 		var fraction := float(index) / float(light_count)
-		var axis_pos := start.lerp(
+		var axis_pos: Vector2 = start.lerp(
 			finish,
 			fraction
 		)
-		for side in [-1.0, 1.0]:
-			var light_pos := (
+		for side_variant in [-1.0, 1.0]:
+			var side: float = float(side_variant)
+			var light_pos: Vector2 = (
 				axis_pos
 				+ normal
 				* half_width
@@ -2885,7 +2889,7 @@ func get_runway_surface_v2_snapshot(
 		"footprint",
 		Vector2i.ONE
 	)
-	var regional := definition_id == "regional_runway"
+	var regional: bool = definition_id == "regional_runway"
 	return {
 		"art_tier": String(
 			definition.get(

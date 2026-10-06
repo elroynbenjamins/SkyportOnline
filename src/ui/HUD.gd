@@ -89,6 +89,7 @@ var active_build_mode := ""
 var active_expand_parcel_id := ""
 var event_nav_button: Button
 var charter_nav_button: Button
+var challenge_nav_button: Button
 var social_nav_button: Button
 var nav_buttons: Dictionary = {}
 
@@ -874,7 +875,7 @@ func _build_bottom_navigation(root: Control) -> void:
 	nav_row.add_theme_constant_override("separation", 6)
 	bottom_nav_panel.add_child(nav_row)
 
-	for item in ["BUILD", "FLEET", "WORLD", "CHARTER", "EVENT", "SOCIAL", "MORE"]:
+	for item in ["BUILD", "FLEET", "WORLD", "CHARTER", "CHALLENGE", "EVENT", "SOCIAL", "MORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -897,6 +898,9 @@ func _build_bottom_navigation(root: Control) -> void:
 		if tab == "charter":
 			charter_nav_button = button
 			button.visible = false
+		elif tab == "challenge":
+			challenge_nav_button = button
+			button.visible = false
 		elif tab == "event":
 			event_nav_button = button
 			button.visible = false
@@ -916,6 +920,26 @@ func set_charter_available(value: bool, attention: bool = false) -> void:
 	charter_nav_button.text = "CHARTER •" if attention else "CHARTER"
 	GameUIStyle.apply_button(
 		charter_nav_button,
+		"gold" if attention else "dock",
+		true
+	)
+
+
+func set_challenge_available(value: bool, attention: bool = false) -> void:
+	if challenge_nav_button == null:
+		return
+	challenge_nav_button.visible = value
+	if not value:
+		challenge_nav_button.text = "CHALLENGE"
+		return
+	challenge_nav_button.text = "CHALLENGE •" if attention else "CHALLENGE"
+	challenge_nav_button.tooltip_text = (
+		"Weekly rewards ready to claim"
+		if attention
+		else "Weekly Airport Challenge"
+	)
+	GameUIStyle.apply_button(
+		challenge_nav_button,
 		"gold" if attention else "dock",
 		true
 	)

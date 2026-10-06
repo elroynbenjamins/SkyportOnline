@@ -42,6 +42,9 @@ static func all() -> Array[Dictionary]:
 			"description": "Parking and turnaround for small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
 			"art_tier": "canonical_v2",
+			"world_art_has_integrated_base": true,
+			"world_sprite_grid_fit": true,
+			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
 				Rect2(896, 0, 448, 448),
@@ -103,6 +106,9 @@ static func all() -> Array[Dictionary]:
 			"synergy_bonus": 0.10,
 			"icon_path": "res://assets/pixel/airport_v1/terminal_small.svg",
 			"art_tier": "canonical_v2",
+			"world_art_has_integrated_base": true,
+			"world_sprite_grid_fit": true,
+			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
 				Rect2(0, 0, 448, 448),
@@ -159,6 +165,9 @@ static func all() -> Array[Dictionary]:
 			"synergy_receiver": "passenger_hub",
 			"passenger_synergy_bonus": 0.10,
 			"icon_path": "res://assets/pixel/airport_v1/travel_office.svg",
+			"world_art_has_integrated_base": true,
+			"world_sprite_grid_fit": true,
+			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
 				Rect2(896, 896, 448, 448),
@@ -187,6 +196,9 @@ static func all() -> Array[Dictionary]:
 			"local_service_radius_tiles": 5.0,
 			"icon_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
 			"art_tier": "canonical_v2",
+			"world_art_has_integrated_base": true,
+			"world_sprite_grid_fit": true,
+			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
 				Rect2(0, 896, 448, 448),
@@ -433,6 +445,9 @@ static func all() -> Array[Dictionary]:
 			"fuel_delivery_per_minute": 1.0,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
 			"art_tier": "canonical_v2",
+			"world_art_has_integrated_base": true,
+			"world_sprite_grid_fit": true,
+			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
 				Rect2(896, 448, 448, 448),

@@ -1372,7 +1372,7 @@ func set_fuel_data(
 	if fuel_rate_label != null:
 		match status:
 			"critical":
-				fuel_rate_label.text = "CRIT • +%.1f/m" % per_minute
+				fuel_rate_label.text = "CRITICAL • +%.1f/m" % per_minute
 				fuel_rate_label.add_theme_color_override(
 					"font_color",
 					GameUIStyle.COLOR_DANGER
@@ -1406,8 +1406,7 @@ func set_fuel_data(
 			fuel_order_button,
 			"danger"
 			if status == "critical"
-			else ("gold" if status == "low" else "secondary"),
-			true
+			else ("gold" if status == "low" else "secondary")
 		)
 
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:

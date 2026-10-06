@@ -4,6 +4,8 @@ extends RefCounted
 # Catalog definitions are immutable; return copies so callers cannot alter the cache.
 static var _definitions_by_id: Dictionary = {}
 const PRODUCTION_BUILDING_ATLAS := "res://assets/production/airport_buildings_v2/skyport_buildings_atlas.webp"
+const PRODUCTION_SERVICE_BUILDING_ATLAS_A := "res://assets/production/service_buildings_v2/service_buildings_v2a.webp"
+const PRODUCTION_SERVICE_BUILDING_ATLAS_B := "res://assets/production/service_buildings_v2/service_buildings_v2b.webp"
 
 
 static func all() -> Array[Dictionary]:
@@ -215,10 +217,18 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/cleaning_center.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/cleaning_center.svg", "res://assets/pixel/airport_v1/cleaning_center_b.svg"]),
-			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
-			"world_sprite_offset": Vector2(0, -16),
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_A,
+			"world_sprite_regions": [
+				Rect2(0, 0, 448, 448),
+				Rect2(448, 0, 448, 448)
+			],
+			"world_sprite_size": Vector2(210, 210),
+			"world_sprite_offsets": [
+				Vector2(0, -58),
+				Vector2(0, -58)
+			],
+			"world_sprite_offset": Vector2(0, -58),
 			"service": "cleaning",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -268,10 +278,18 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/baggage_depot.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/baggage_depot.svg", "res://assets/pixel/airport_v1/baggage_depot_b.svg"]),
-			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
-			"world_sprite_offset": Vector2(0, -16),
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_A,
+			"world_sprite_regions": [
+				Rect2(0, 448, 448, 448),
+				Rect2(448, 448, 448, 448)
+			],
+			"world_sprite_size": Vector2(210, 210),
+			"world_sprite_offsets": [
+				Vector2(0, -51),
+				Vector2(0, -51)
+			],
+			"world_sprite_offset": Vector2(0, -51),
 			"service": "cargo",
 			"service_speed": 1.35,
 			"vehicle_capacity": 2
@@ -291,10 +309,18 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/catering_kitchen.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/catering_kitchen.svg", "res://assets/pixel/airport_v1/catering_kitchen_b.svg"]),
-			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
-			"world_sprite_offset": Vector2(0, -16),
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_A,
+			"world_sprite_regions": [
+				Rect2(0, 896, 448, 448),
+				Rect2(448, 896, 448, 448)
+			],
+			"world_sprite_size": Vector2(210, 210),
+			"world_sprite_offsets": [
+				Vector2(0, -52),
+				Vector2(0, -52)
+			],
+			"world_sprite_offset": Vector2(0, -52),
 			"service": "catering",
 			"service_speed": 1.30,
 			"vehicle_capacity": 2
@@ -314,10 +340,18 @@ static func all() -> Array[Dictionary]:
 			"local_service_bonus": 0.10,
 			"local_service_radius_tiles": 6.0,
 			"icon_path": "res://assets/pixel/airport_v1/tow_operations.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/tow_operations.svg", "res://assets/pixel/airport_v1/tow_operations_b.svg"]),
-			"world_sprite_size": Vector2(188, 157),
-			"world_sprite_offsets": [Vector2(0, -16), Vector2(0, -12)],
-			"world_sprite_offset": Vector2(0, -16),
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_B,
+			"world_sprite_regions": [
+				Rect2(0, 0, 448, 448),
+				Rect2(448, 0, 448, 448)
+			],
+			"world_sprite_size": Vector2(210, 210),
+			"world_sprite_offsets": [
+				Vector2(0, -32),
+				Vector2(0, -35)
+			],
+			"world_sprite_offset": Vector2(0, -32),
 			"service": "pushback",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2
@@ -335,10 +369,18 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray([]),
 			"description": "Reduces required separation between runway movements.",
 			"icon_path": "res://assets/pixel/airport_v1/atc_tower.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/atc_tower.svg", "res://assets/pixel/airport_v1/atc_tower_b.svg"]),
-			"world_sprite_size": Vector2(210, 240),
-			"world_sprite_offsets": [Vector2(0, -50), Vector2(0, -44)],
-			"world_sprite_offset": Vector2(0, -50),
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_B,
+			"world_sprite_regions": [
+				Rect2(0, 896, 448, 448),
+				Rect2(448, 896, 448, 448)
+			],
+			"world_sprite_size": Vector2(228, 228),
+			"world_sprite_offsets": [
+				Vector2(0, -54),
+				Vector2(0, -58)
+			],
+			"world_sprite_offset": Vector2(0, -54),
 			"air_traffic_control": true
 		},
 		{
@@ -415,10 +457,18 @@ static func all() -> Array[Dictionary]:
 			"service_speed": 1.6,
 			"vehicle_capacity": 2,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_rapid.svg", "res://assets/pixel/airport_v1/fuel_rapid_b.svg"]),
-			"world_sprite_size": Vector2(224, 187),
-			"world_sprite_offsets": [Vector2(0, -25), Vector2(0, -21)],
-			"world_sprite_offset": Vector2(0, -25)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_B,
+			"world_sprite_regions": [
+				Rect2(0, 448, 448, 448),
+				Rect2(448, 448, 448, 448)
+			],
+			"world_sprite_size": Vector2(220, 220),
+			"world_sprite_offsets": [
+				Vector2(0, -67),
+				Vector2(0, -66)
+			],
+			"world_sprite_offset": Vector2(0, -67)
 		},
 		{
 			"id": "medium_stand",

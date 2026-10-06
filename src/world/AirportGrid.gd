@@ -12,6 +12,7 @@ signal building_selected_world(data: Dictionary)
 
 const TILE_WIDTH := 64.0
 const TILE_HEIGHT := 32.0
+const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.35
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
@@ -1708,6 +1709,8 @@ func _draw_starter_terminal_forecourt(
 	var definition := BuildingCatalog.get_definition(
 		"small_terminal"
 	)
+	if _definition_uses_integrated_world_base(definition):
+		return
 	var footprint := _footprint_for(
 		definition,
 		int(terminal.get("rotation", 0))
@@ -1804,6 +1807,8 @@ func _draw_starter_service_support(
 			continue
 
 		var definition := BuildingCatalog.get_definition(id)
+		if _definition_uses_integrated_world_base(definition):
+			continue
 		var footprint := _footprint_for(
 			definition,
 			int(building.get("rotation", 0))
@@ -1889,6 +1894,8 @@ func _draw_starter_stand_dressing(
 	var definition := BuildingCatalog.get_definition(
 		"small_stand"
 	)
+	if _definition_uses_integrated_world_base(definition):
+		return
 	var footprint := _footprint_for(
 		definition,
 		int(stand.get("rotation", 0))
@@ -2043,25 +2050,29 @@ func _draw_buildings() -> void:
 			continue
 
 		if _definition_has_world_sprite(definition):
-			if bool(definition.get("world_ground_pad", true)):
-				_draw_world_art_ground_pad(
+			var integrated_world_base := (
+				_definition_uses_integrated_world_base(definition)
+			)
+			if not integrated_world_base:
+				if bool(definition.get("world_ground_pad", true)):
+					_draw_world_art_ground_pad(
+						definition,
+						origin,
+						footprint
+					)
+				_draw_apron_surface_micro_detail(
 					definition,
 					origin,
-					footprint
+					footprint,
+					int(building["rotation"]),
+					sprite_modulate.a
 				)
-			_draw_apron_surface_micro_detail(
-				definition,
-				origin,
-				footprint,
-				int(building["rotation"]),
-				sprite_modulate.a
-			)
-			_draw_building_contact_shadow(
-				definition,
-				origin,
-				footprint,
-				sprite_modulate.a
-			)
+				_draw_building_contact_shadow(
+					definition,
+					origin,
+					footprint,
+					sprite_modulate.a
+				)
 			_draw_building_sprite(
 				definition,
 				origin,
@@ -2070,13 +2081,14 @@ func _draw_buildings() -> void:
 				sprite_modulate,
 				sprite_offset
 			)
-			_draw_apron_prop_micro_detail(
-				definition,
-				origin,
-				footprint,
-				int(building["rotation"]),
-				sprite_modulate.a
-			)
+			if not integrated_world_base:
+				_draw_apron_prop_micro_detail(
+					definition,
+					origin,
+					footprint,
+					int(building["rotation"]),
+					sprite_modulate.a
+				)
 		else:
 			var color: Color = definition["color"]
 			for y in range(footprint.y):
@@ -4524,6 +4536,17 @@ func _definition_has_world_sprite(definition: Dictionary) -> bool:
 	)
 
 
+func _definition_uses_integrated_world_base(
+	definition: Dictionary
+) -> bool:
+	return bool(
+		definition.get(
+			"world_art_has_integrated_base",
+			false
+		)
+	)
+
+
 func _sprite_path_for_rotation(
 	definition: Dictionary,
 	rotation: int
@@ -4577,6 +4600,43 @@ func _sprite_offset_for_rotation(
 
 
 
+func _grid_fitted_world_sprite_size(
+	definition: Dictionary,
+	footprint: Vector2i
+) -> Vector2:
+	var configured_size: Vector2 = definition.get(
+		"world_sprite_size",
+		Vector2(160, 120)
+	)
+	if not bool(
+		definition.get("world_sprite_grid_fit", false)
+	):
+		return configured_size
+	if configured_size.x <= 0.0:
+		return configured_size
+
+	# Production atlas cells often contain their own concrete/landscaping base.
+	# Keep that base close to the building's logical isometric footprint instead
+	# of letting the full 448px atlas cell sprawl across neighbouring grid cells.
+	var footprint_width := (
+		float(footprint.x + footprint.y)
+		* TILE_WIDTH
+		* 0.5
+	)
+	var width_scale := float(
+		definition.get(
+			"world_sprite_max_width_scale",
+			WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG
+		)
+	)
+	var max_width := footprint_width * maxf(width_scale, 1.0)
+	if configured_size.x <= max_width:
+		return configured_size
+
+	var scale := max_width / configured_size.x
+	return configured_size * scale
+
+
 func _building_sprite_rect(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -4584,14 +4644,25 @@ func _building_sprite_rect(
 	rotation: int,
 	extra_offset: Vector2 = Vector2.ZERO
 ) -> Rect2:
-	var draw_size: Vector2 = definition.get(
+	var configured_size: Vector2 = definition.get(
 		"world_sprite_size",
 		Vector2(160, 120)
+	)
+	var draw_size := _grid_fitted_world_sprite_size(
+		definition,
+		footprint
 	)
 	var offset := _sprite_offset_for_rotation(
 		definition,
 		rotation
 	)
+	if (
+		configured_size.x > 0.0
+		and draw_size.x < configured_size.x
+	):
+		var fit_scale := draw_size.x / configured_size.x
+		offset *= fit_scale
+		extra_offset *= fit_scale
 	var center := _footprint_center_world(
 		origin,
 		footprint

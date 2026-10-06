@@ -599,7 +599,19 @@ func _selected_map_position() -> Vector2:
 	if not selected_country_code.is_empty():
 		var country := CountryCatalog.get_country(selected_country_code)
 		if not country.is_empty():
-			return _country_position(country)
+			var country_position := _country_position(country)
+			var routes := _routes_for_selected_country()
+			for index in range(routes.size()):
+				if (
+					String(routes[index].get("id", ""))
+					== selected_destination_id
+				):
+					return _destination_marker_position(
+						country_position,
+						index,
+						routes.size()
+					)
+			return country_position
 	if selected_position.x >= 0.0:
 		return _map_to_screen(selected_position)
 	return Vector2(-1, -1)

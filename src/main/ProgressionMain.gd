@@ -293,7 +293,9 @@ func _install_career_pin() -> void:
 				mission_pin.custom_minimum_size = Vector2(165, 48)
 				mission_pin.add_theme_font_size_override("font_size", 12)
 				GameUIStyle.apply_button(mission_pin, "nav", true)
-				mission_pin.pressed.connect(_open_missions)
+				mission_pin.pressed.connect(
+					_request_activity_entry.bind("missions")
+				)
 				actions.add_child(mission_pin)
 				return
 

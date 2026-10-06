@@ -444,9 +444,12 @@ static func apply_button(
 	var glossy_path := ""
 	if kind in ["primary", "mission_complete"]:
 		glossy_path = ProductionUIAssets.BUTTON_GREEN
+	elif kind == "dock":
+		glossy_path = ProductionUIAssets.NAV_TILE
+	elif kind == "dock_selected":
+		glossy_path = ProductionUIAssets.NAV_TILE_SELECTED
 	elif kind in [
 		"nav",
-		"dock",
 		"build_card",
 		"screen_tab",
 		"secondary"
@@ -454,7 +457,6 @@ static func apply_button(
 		glossy_path = ProductionUIAssets.BUTTON_BLUE
 	elif kind in [
 		"selected",
-		"dock_selected",
 		"build_card_selected",
 		"screen_tab_selected"
 	]:

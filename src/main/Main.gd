@@ -38,6 +38,7 @@ var service_upgrade_panel: ServiceUpgradePanel
 var air_traffic_upgrade_panel: AirTrafficUpgradePanel
 var runway_strategy_panel: RunwayStrategyPanel
 var passenger_economy: PassengerEconomy
+var fuel_economy: FuelEconomy
 var rewarded_passenger_ad_bridge: RewardedPassengerAdBridge
 var event_manager: EventManager
 var event_screen: EventScreen
@@ -98,6 +99,7 @@ func _ready() -> void:
 	hud.handling_attention_requested.connect(
 		_on_handling_attention_requested
 	)
+	hud.fuel_order_requested.connect(_on_fuel_order_requested)
 	airport_setup.airport_created.connect(_on_airport_created)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
@@ -158,6 +160,7 @@ func _start_gameplay() -> void:
 		airport_grid.get_stored_buildings()
 	)
 
+	_setup_fuel_system()
 	_setup_ground_services()
 	_setup_runway_dispatcher()
 	_setup_taxi_traffic()
@@ -180,10 +183,26 @@ func _start_gameplay() -> void:
 	_spawn_aircraft_demos()
 
 
+func _setup_fuel_system() -> void:
+	fuel_economy = FuelEconomy.new()
+	fuel_economy.changed.connect(_on_fuel_economy_changed)
+	add_child(fuel_economy)
+	fuel_economy.configure(
+		airport_grid,
+		float(
+			current_profile.get(
+				"fuel_balance",
+				FuelRules.DEFAULT_STARTING_FUEL
+			)
+		)
+	)
+
+
 func _setup_ground_services() -> void:
 	ground_services = GroundServiceDispatcher.new()
 	ground_services.z_index = 85
 	ground_services.configure(airport_grid)
+	ground_services.configure_fuel_economy(fuel_economy)
 	ground_services.status_changed.connect(_on_ground_service_status)
 	ground_services.queue_changed.connect(_on_ground_service_queue_changed)
 	ground_services.passenger_boarding_requested.connect(
@@ -2201,10 +2220,11 @@ func _on_world_map_flight_assignment_requested(
 
 	var route_passengers := _passenger_requirement(aircraft)
 	world_map.set_assignment_status(
-		"%s → %s • %d passengers • %s" % [
+		"%s → %s • %d passengers • %d fuel • %s" % [
 			aircraft.name,
 			String(destination.get("city", "")),
 			route_passengers,
+			int(plan.get("fuel_required", 0)),
 			FlightRules.format_duration(
 				float(plan.get("duration_seconds", 0.0))
 			)
@@ -2532,6 +2552,49 @@ func _on_passive_passengers_generated(amount: int) -> void:
 	})
 	if not updated.is_empty():
 		current_profile = updated
+
+
+func _on_fuel_economy_changed(
+	fuel: int,
+	capacity: int,
+	per_minute: float
+) -> void:
+	hud.set_fuel_data(fuel, capacity, per_minute)
+	var updated := ProfileStore.save_fuel_balance(fuel)
+	if not updated.is_empty():
+		current_profile = updated
+	if ground_services != null:
+		ground_services.call_deferred("refresh_after_layout_change")
+
+
+func _on_fuel_order_requested() -> void:
+	if fuel_economy == null:
+		return
+	var room := fuel_economy.get_capacity() - fuel_economy.get_fuel()
+	if room <= 0:
+		hud.set_operation_status("Fuel storage is already full.", "normal")
+		return
+	if coins < FuelRules.EMERGENCY_ORDER_COIN_COST:
+		hud.set_operation_status(
+			"Need %d coins for an emergency fuel delivery." % FuelRules.EMERGENCY_ORDER_COIN_COST,
+			"warning"
+		)
+		return
+
+	var delivered := fuel_economy.add_fuel(
+		FuelRules.EMERGENCY_ORDER_AMOUNT
+	)
+	if delivered <= 0:
+		return
+	coins -= FuelRules.EMERGENCY_ORDER_COIN_COST
+	hud.set_player_data(player_level, coins, gems)
+	hud.set_operation_status(
+		"Fuel delivery arrived • +%d fuel • -%d coins" % [
+			delivered,
+			FuelRules.EMERGENCY_ORDER_COIN_COST
+		],
+		"success"
+	)
 
 
 func _on_passenger_economy_changed(
@@ -4553,6 +4616,8 @@ func _passenger_storage_block_reason(
 func _refresh_layout_dependent_systems() -> void:
 	if passenger_economy != null:
 		passenger_economy.refresh_building_stats()
+	if fuel_economy != null:
+		fuel_economy.refresh_building_stats()
 	if runway_dispatcher != null:
 		runway_dispatcher.refresh_air_traffic_control()
 		runway_dispatcher.set_runway_strategies(

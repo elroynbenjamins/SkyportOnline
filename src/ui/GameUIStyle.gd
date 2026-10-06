@@ -124,6 +124,11 @@ static func apply_panel(
 				"panel",
 				panel(Color("073550"), Color("24bce8"), 16, 1, false)
 			)
+		"hud_fuel":
+			control.add_theme_stylebox_override(
+				"panel",
+				panel(Color("403418"), Color("e7b84a"), 16, 1, false)
+			)
 		"hud_coin":
 			control.add_theme_stylebox_override(
 				"panel",

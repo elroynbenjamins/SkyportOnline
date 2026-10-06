@@ -13,6 +13,7 @@ signal undo_airport_edit_requested
 signal done_airport_edit_requested
 signal navigation_requested(tab: String)
 signal handling_attention_requested
+signal fuel_order_requested
 
 var interface_root: Control
 var title_label: Label
@@ -22,6 +23,9 @@ var xp_progress: ProgressBar
 var xp_label: Label
 var passenger_label: Label
 var passenger_rate_label: Label
+var fuel_label: Label
+var fuel_rate_label: Label
+var fuel_order_button: Button
 var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
@@ -195,6 +199,24 @@ func _build_interface() -> void:
 	)
 	passenger_label = passenger_chip["value"] as Label
 	passenger_rate_label = passenger_chip["detail"] as Label
+
+	var fuel_chip := _build_hud_resource_chip(
+		top_row,
+		"FUEL",
+		"0 / 0",
+		"+0.0 / MIN",
+		"hud_fuel",
+		154
+	)
+	fuel_label = fuel_chip["value"] as Label
+	fuel_rate_label = fuel_chip["detail"] as Label
+	fuel_order_button = Button.new()
+	fuel_order_button.text = "ORDER FUEL • 750"
+	fuel_order_button.custom_minimum_size = Vector2(0, 22)
+	fuel_order_button.add_theme_font_size_override("font_size", 9)
+	GameUIStyle.apply_button(fuel_order_button, "secondary")
+	fuel_order_button.pressed.connect(_on_fuel_order_pressed)
+	(fuel_chip["box"] as VBoxContainer).add_child(fuel_order_button)
 
 	var coin_chip := _build_hud_resource_chip(
 		top_row,
@@ -413,9 +435,14 @@ func _build_hud_resource_chip(
 
 	return {
 		"panel": panel,
+		"box": box,
 		"value": value_label,
 		"detail": detail_label
 	}
+
+
+func _on_fuel_order_pressed() -> void:
+	fuel_order_requested.emit()
 
 
 func set_handling_attention(
@@ -1298,6 +1325,20 @@ func set_passenger_data(
 	]
 	if passenger_rate_label != null:
 		passenger_rate_label.text = "+%.1f / MIN" % per_minute
+
+
+func set_fuel_data(
+	fuel: int,
+	capacity: int,
+	per_minute: float
+) -> void:
+	if fuel_label == null:
+		return
+	fuel_label.text = "%d / %d" % [fuel, capacity]
+	if fuel_rate_label != null:
+		fuel_rate_label.text = "+%.1f / MIN" % per_minute
+	if fuel_order_button != null:
+		fuel_order_button.disabled = capacity <= 0 or fuel >= capacity
 
 
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:

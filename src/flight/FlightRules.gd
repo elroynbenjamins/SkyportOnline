@@ -65,6 +65,10 @@ static func create_flight_plan(
 		"country": String(destination.get("country", "")),
 		"country_code": String(destination.get("country_code", "")),
 		"distance_km": float(destination.get("distance_km", 0.0)),
+		"fuel_required": FuelRules.required_for_route(
+			aircraft_profile,
+			float(destination.get("distance_km", 0.0))
+		),
 		"flight_hours": (
 			float(destination.get("distance_km", 0.0))
 			/ maxf(

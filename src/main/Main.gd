@@ -2626,22 +2626,16 @@ func _refresh_waiting_passenger_cards() -> void:
 		)
 		if manual_wait:
 			aircraft.set_handling_action("LOAD")
-		aircraft.set_turnaround_status(
-			(
-				"Passengers %d / %d\nTap LOAD"
-				if manual_wait
-				else "Passengers %d / %d\nWAITING"
-			) % [
-				passenger_economy.get_passengers(),
-				required
-			],
-			(
-				"success"
-				if manual_wait
-				and passenger_economy.get_passengers() >= required
-				else "warning"
+			var tone := "warning"
+			if passenger_economy.get_passengers() >= required:
+				tone = "success"
+			aircraft.set_turnaround_status(
+				"Passengers %d / %d\nTap LOAD" % [
+					passenger_economy.get_passengers(),
+					required
+				],
+				tone
 			)
-		)
 		else:
 			aircraft.set_turnaround_status(
 				"Passengers %d / %d\nWAITING" % [

@@ -201,7 +201,14 @@ func _career(state: Dictionary, level: int) -> void:
 	var next_card := _card()
 	_text(next_card, "COMING NEXT", true)
 	var shown := 0
-	for upcoming in AirportCareerCatalog.all():
+	for upcoming in AirportCareerCatalog.all_for_home(
+		String(
+			state.get(
+				"home_country_id",
+				DestinationCatalog.DEFAULT_HOME_COUNTRY_ID
+			)
+		)
+	):
 		if bool(claimed.get(upcoming["id"], false)) or upcoming["id"] == quest["id"]:
 			continue
 		_text(next_card, "LV %d  •  %s" % [int(upcoming["level"]), String(upcoming["title"])])

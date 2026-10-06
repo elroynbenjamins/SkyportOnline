@@ -483,10 +483,18 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S", "M"]),
 			"description": "Larger turnaround stand for small and medium aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/stand_small.svg", "res://assets/pixel/airport_v1/stand_small_b.svg"]),
-			"world_sprite_size": Vector2(270, 162),
-			"world_sprite_offsets": [Vector2(0, 6), Vector2(0, 2)],
-			"world_sprite_offset": Vector2(0, 6)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 0, 448, 448),
+				Rect2(1344, 0, 448, 448)
+			],
+			"world_sprite_size": Vector2(276, 276),
+			"world_sprite_offsets": [
+				Vector2(0, -40),
+				Vector2(0, -47)
+			],
+			"world_sprite_offset": Vector2(0, -40)
 		},
 		{
 			"id": "regional_fuel",
@@ -506,10 +514,18 @@ static func all() -> Array[Dictionary]:
 			"service_speed": 1.0,
 			"vehicle_capacity": 2,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_basic.svg", "res://assets/pixel/airport_v1/fuel_basic_b.svg"]),
-			"world_sprite_size": Vector2(280, 233),
-			"world_sprite_offsets": [Vector2(0, -23), Vector2(0, -18)],
-			"world_sprite_offset": Vector2(0, -23)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"world_sprite_regions": [
+				Rect2(896, 448, 448, 448),
+				Rect2(1344, 448, 448, 448)
+			],
+			"world_sprite_size": Vector2(280, 280),
+			"world_sprite_offsets": [
+				Vector2(0, -52),
+				Vector2(0, -67)
+			],
+			"world_sprite_offset": Vector2(0, -52)
 		},
 		{
 			"id": "regional_runway",
@@ -607,10 +623,18 @@ static func all() -> Array[Dictionary]:
 			"service_speed": 1.5,
 			"vehicle_capacity": 3,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
-			"world_sprite_paths": PackedStringArray(["res://assets/pixel/airport_v1/fuel_rapid.svg", "res://assets/pixel/airport_v1/fuel_rapid_b.svg"]),
-			"world_sprite_size": Vector2(330, 275),
-			"world_sprite_offsets": [Vector2(0, -27), Vector2(0, -21)],
-			"world_sprite_offset": Vector2(0, -27)
+			"art_tier": "canonical_v2",
+			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_B,
+			"world_sprite_regions": [
+				Rect2(0, 448, 448, 448),
+				Rect2(448, 448, 448, 448)
+			],
+			"world_sprite_size": Vector2(330, 330),
+			"world_sprite_offsets": [
+				Vector2(0, -93),
+				Vector2(0, -91)
+			],
+			"world_sprite_offset": Vector2(0, -93)
 		}
 	]
 

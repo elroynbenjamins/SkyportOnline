@@ -132,6 +132,13 @@ static func load_profile() -> Dictionary:
 		"passenger_balance": int(
 			config.get_value("profile", "passenger_balance", 20)
 		),
+		"fuel_balance": int(
+			config.get_value(
+				"profile",
+				"fuel_balance",
+				FuelRules.DEFAULT_STARTING_FUEL
+			)
+		),
 		"building_upgrades": building_upgrades,
 		"airport_layout": airport_layout,
 		"owned_parcels": owned_parcels,
@@ -185,6 +192,7 @@ static func create_guest_airport(
 		"created_at_unix": int(Time.get_unix_time_from_system()),
 		"resource_inventory": {},
 		"passenger_balance": 20,
+		"fuel_balance": FuelRules.DEFAULT_STARTING_FUEL,
 		"building_upgrades": {},
 		"airport_layout": [],
 		"owned_parcels": [],
@@ -290,6 +298,17 @@ static func save_passenger_balance(value: int) -> Dictionary:
 		return {}
 
 	profile["passenger_balance"] = maxi(value, 0)
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func save_fuel_balance(value: int) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	profile["fuel_balance"] = maxi(value, 0)
 	if not _save_profile(profile):
 		return {}
 	return profile

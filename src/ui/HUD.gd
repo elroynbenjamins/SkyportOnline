@@ -12,6 +12,7 @@ signal airport_edit_requested
 signal undo_airport_edit_requested
 signal done_airport_edit_requested
 signal navigation_requested(tab: String)
+signal handling_attention_requested
 
 var interface_root: Control
 var title_label: Label
@@ -30,6 +31,7 @@ var atc_status_label: Label
 var airside_status_chip: Button
 var operation_status_chip: Button
 var atc_status_chip: Button
+var handling_attention_button: Button
 var status_detail_panel: PanelContainer
 var status_detail_title: Label
 var status_detail_body: Label
@@ -234,7 +236,7 @@ func _build_interface() -> void:
 	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	status_strip.offset_left = 16
 	status_strip.offset_top = 86
-	status_strip.offset_right = 650
+	status_strip.offset_right = 850
 	status_strip.offset_bottom = 142
 	status_strip.add_theme_constant_override("separation", 6)
 	root.add_child(status_strip)
@@ -265,6 +267,20 @@ func _build_interface() -> void:
 		_on_status_chip_pressed.bind("atc")
 	)
 	status_strip.add_child(atc_status_chip)
+
+	handling_attention_button = Button.new()
+	handling_attention_button.text = "NEXT ACTION\nNONE"
+	handling_attention_button.custom_minimum_size = Vector2(188, 50)
+	handling_attention_button.visible = false
+	handling_attention_button.pressed.connect(
+		_on_handling_attention_pressed
+	)
+	GameUIStyle.apply_button(
+		handling_attention_button,
+		"gold",
+		true
+	)
+	status_strip.add_child(handling_attention_button)
 
 	_build_expansion_banner(root)
 	_build_operation_toast(root)
@@ -400,6 +416,38 @@ func _build_hud_resource_chip(
 		"value": value_label,
 		"detail": detail_label
 	}
+
+
+func set_handling_attention(
+	aircraft_label: String,
+	action: String,
+	pending_count: int = 1
+) -> void:
+	if handling_attention_button == null:
+		return
+
+	var normalized_action := action.to_upper()
+	if normalized_action.is_empty():
+		handling_attention_button.visible = false
+		return
+
+	var suffix := ""
+	if pending_count > 1:
+		suffix = "  +%d" % (pending_count - 1)
+	handling_attention_button.text = "NEXT • %s%s\n%s" % [
+		normalized_action,
+		suffix,
+		aircraft_label
+	]
+	handling_attention_button.tooltip_text = (
+		"Focus the next aircraft waiting for %s."
+		% normalized_action.capitalize()
+	)
+	handling_attention_button.visible = true
+
+
+func _on_handling_attention_pressed() -> void:
+	handling_attention_requested.emit()
 
 
 func _build_expansion_banner(root: Control) -> void:

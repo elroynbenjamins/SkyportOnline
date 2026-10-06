@@ -1365,6 +1365,8 @@ func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:
 
 func _on_social_snapshot_changed(snapshot: Dictionary) -> void:
 	super._on_social_snapshot_changed(_social_only_snapshot(snapshot))
+	if progression_ready:
+		_refresh_activities_hub()
 
 func _on_navigation_requested(tab: String) -> void:
 	if career_screen != null:

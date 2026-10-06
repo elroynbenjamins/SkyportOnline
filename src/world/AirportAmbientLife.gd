@@ -1251,6 +1251,28 @@ func _draw_apron_staging_props() -> void:
 			)
 			drawn += 1
 
+			if (
+				aircraft.aircraft_size == "M"
+				and state in [
+					"WAITING_UNLOAD",
+					"WAITING_SERVICE",
+					"WAITING_PASSENGERS"
+				]
+				and drawn < MAX_APRON_PROPS
+			):
+				_draw_apron_detail_sprite(
+					passenger_point
+						+ forward * 18.0
+						- side * 18.0,
+					ApronDetailArt.directional_key(
+						"utility",
+						heading
+					),
+					ApronDetailArt.world_size("utility"),
+					0.76
+				)
+				drawn += 1
+
 		if state in ["LOADING", "UNLOADING"]:
 			var cargo_point := _aircraft_service_point(
 				aircraft,
@@ -1306,6 +1328,21 @@ func _draw_apron_staging_props() -> void:
 				)
 				drawn += 1
 
+			if (
+				aircraft.aircraft_size == "M"
+				and drawn < MAX_APRON_PROPS
+			):
+				_draw_apron_detail_sprite(
+					cargo_point
+						- forward * 34.0
+						- side * 15.0,
+					"uld",
+					ApronDetailArt.world_size("uld"),
+					0.78,
+					cos(heading) < 0.0
+				)
+				drawn += 1
+
 		if state in [
 			"SERVICING",
 			"WAITING_FUEL"
@@ -1328,6 +1365,43 @@ func _draw_apron_staging_props() -> void:
 			)
 			drawn += 1
 
+			if (
+				aircraft.aircraft_size == "M"
+				and state == "SERVICING"
+				and drawn < MAX_APRON_PROPS
+			):
+				_draw_apron_detail_sprite(
+					fuel_point
+						+ forward * 16.0
+						+ side * 20.0,
+					ApronDetailArt.directional_key(
+						"utility",
+						heading
+					),
+					ApronDetailArt.world_size("utility"),
+					0.76
+				)
+				drawn += 1
+
+		if (
+			aircraft.aircraft_size == "M"
+			and state in [
+				"PUSHBACK_PREP",
+				"READY_FOR_DEPARTURE"
+			]
+			and drawn < MAX_APRON_PROPS
+		):
+			_draw_apron_detail_sprite(
+				center
+					+ forward * radius * 0.58
+					+ side * radius * 0.70,
+				"cones",
+				ApronDetailArt.world_size("cones"),
+				0.78,
+				true
+			)
+			drawn += 1
+
 
 func get_apron_choreography_snapshot(
 	aircraft: AircraftPrototype
@@ -1336,10 +1410,31 @@ func get_apron_choreography_snapshot(
 		return {}
 
 	var state := String(aircraft.state)
+	var is_medium := aircraft.aircraft_size == "M"
 	return {
 		"state": state,
+		"size": aircraft.aircraft_size,
+		"medium_heavy": is_medium,
 		"prop_count": _apron_prop_count_for_aircraft(aircraft),
 		"crew_count": _crew_count_for_aircraft(aircraft),
+		"cargo_units": (
+			2
+			if is_medium and state in ["UNLOADING", "LOADING"]
+			else (
+				1
+				if state in ["UNLOADING", "LOADING"]
+				else 0
+			)
+		),
+		"support_units": (
+			2
+			if is_medium and state == "SERVICING"
+			else (
+				1
+				if state in ["SERVICING", "WAITING_FUEL"]
+				else 0
+			)
+		),
 		"stairs": state in [
 			"WAITING_UNLOAD",
 			"UNLOADING",

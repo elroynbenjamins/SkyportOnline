@@ -39,10 +39,27 @@ func _start_gameplay() -> void:
 			hud.set_operation_status("Career save could not be read. Your existing save has not been overwritten.", "warning")
 			return
 		progression = AirportProgressionRules.new_state(airport_id, 4 if legacy_airport else 1)
+		progression["home_country_id"] = String(
+			current_profile.get(
+				"country_id",
+				DestinationCatalog.DEFAULT_HOME_COUNTRY_ID
+			)
+		)
 		progression["passenger_balance"] = float(current_profile.get("passenger_balance", 20))
 		if not AirportProgressionStore.save_state(progression):
 			hud.set_operation_status("Cannot save airport progression. Check device storage.", "warning")
 			return
+	var profile_home_country := String(
+		current_profile.get(
+			"country_id",
+			DestinationCatalog.DEFAULT_HOME_COUNTRY_ID
+		)
+	)
+	if String(progression.get("home_country_id", "")).is_empty():
+		progression["home_country_id"] = profile_home_country
+	DestinationCatalog.configure_home_country(
+		String(progression.get("home_country_id", profile_home_country))
+	)
 	var stored_level := AirportProgressionRules.level_for_xp(int(progression.get("xp", 0)))
 	var mission_state_changed := MissionPassRules.ensure_state(
 		progression,
@@ -346,7 +363,10 @@ func _deploy_reserve_aircraft() -> void:
 		aircraft.set_meta("passengers_paid", bool(saved.get("paid", false)))
 		var plan: Dictionary = saved.get("plan", {})
 		if plan.is_empty() and runtime.is_empty() and uid in ["owned-1", "owned-2"]:
-			plan = _create_current_flight_plan(profile, DestinationCatalog.get_destination("brussels"))
+			plan = _create_current_flight_plan(
+				profile,
+				DestinationCatalog.starter_destination(profile)
+			)
 		aircraft.assign_flight_plan(plan)
 		var label := String(aircraft.name)
 		aircraft.state_changed.connect(_on_demo_aircraft_state_changed.bind(aircraft, label))
@@ -1018,17 +1038,14 @@ func _on_rewarded_action_unavailable(action_id: String) -> void:
 
 
 func _available_resource_choice_country_codes() -> Array[String]:
-	var seen := {}
-	var home_code := String(current_profile.get("country_id", ""))
-	if not CountryResourceCatalog.resources_for_country(home_code).is_empty():
-		seen[home_code] = true
-	for destination in DestinationCatalog.unlocked_for_level(player_level):
-		var country_code := String(destination.get("country_code", ""))
-		if not CountryResourceCatalog.resources_for_country(country_code).is_empty():
-			seen[country_code] = true
+	# Resource-choice crates are global by design. Home country and personal
+	# route range determine travel progression, not permanent material access.
 	var result: Array[String] = []
-	for code_variant in seen.keys():
-		result.append(String(code_variant))
+	for country_variant in CountryCatalog.get_countries():
+		var country: Dictionary = country_variant
+		var code := String(country.get("id", ""))
+		if CountryResourceCatalog.resources_for_country(code).size() == 3:
+			result.append(code)
 	result.sort()
 	return result
 
@@ -1039,7 +1056,10 @@ func _on_pass_resource_choice_requested(resource_id: String) -> void:
 		return
 	var allowed := _available_resource_choice_country_codes()
 	if not allowed.has(String(resource.get("country_code", ""))):
-		hud.set_operation_status("Unlock a route to that country before choosing its resource.", "warning")
+		hud.set_operation_status(
+			"That country resource is not available in the launch catalog.",
+			"warning"
+		)
 		return
 	var next := MissionPassRules.reserve_resource_choice(
 		_capture_state(),

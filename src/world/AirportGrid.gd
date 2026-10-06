@@ -23,12 +23,12 @@ const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.35
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
-const STARTER_PARCEL_IDS := PackedStringArray([
+const STARTER_PARCEL_IDS := [
 	"north_west",
 	"north",
 	"west",
 	"home"
-])
+]
 const STARTER_BUILD_WIDTH_TILES := 16
 const STARTER_BUILD_HEIGHT_TILES := 16
 

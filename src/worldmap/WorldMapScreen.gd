@@ -10,6 +10,7 @@ signal flight_assignment_requested(
 var root: Control
 var screen_title_label: Label
 var network_meta_label: Label
+var home_hub_label: Label
 var map_canvas: WorldMapCanvas
 var map_hint_label: Label
 var aircraft_list_container: VBoxContainer
@@ -217,17 +218,17 @@ func _build_top_bar() -> void:
 	title_box.add_child(screen_title_label)
 
 	network_meta_label = Label.new()
-	network_meta_label.text = "1  SELECT AIRCRAFT   →   2  CHOOSE DESTINATION   →   3  DISPATCH"
+	network_meta_label.text = "1  AIRCRAFT   →   2  COUNTRY   →   3  ROUTE   →   4  DISPATCH"
 	network_meta_label.add_theme_font_size_override("font_size", 11)
 	network_meta_label.add_theme_color_override("font_color", GameUIStyle.COLOR_ACCENT)
 	title_box.add_child(network_meta_label)
 
-	var origin := Label.new()
-	origin.text = "★ HOME HUB  •  %s" % DestinationCatalog.DEVELOPMENT_HOME_NAME.to_upper()
-	origin.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	origin.add_theme_font_size_override("font_size", 12)
-	GameUIStyle.muted(origin)
-	row.add_child(origin)
+	home_hub_label = Label.new()
+	home_hub_label.text = "★ HOME HUB"
+	home_hub_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	home_hub_label.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(home_hub_label)
+	row.add_child(home_hub_label)
 
 	var close_button := Button.new()
 	close_button.text = "✕  AIRPORT"
@@ -274,9 +275,9 @@ func _build_aircraft_sidebar() -> void:
 func _build_map_area() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	panel.offset_left = 282
+	panel.offset_left = 252
 	panel.offset_top = 80
-	panel.offset_right = -350
+	panel.offset_right = -390
 	panel.offset_bottom = -10
 	root.add_child(panel)
 	GameUIStyle.apply_panel(panel, "context_preview")
@@ -284,36 +285,31 @@ func _build_map_area() -> void:
 	map_canvas = WorldMapCanvas.new()
 	map_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	map_canvas.clip_contents = true
+	map_canvas.set_countries(CountryCatalog.get_countries())
+	map_canvas.country_selected.connect(_on_country_selected)
+	map_canvas.country_hovered.connect(_on_country_hovered)
 	panel.add_child(map_canvas)
 
-	var home := Label.new()
-	home.text = "★ %s" % DestinationCatalog.DEVELOPMENT_HOME_NAME
-	home.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	home.add_theme_font_size_override("font_size", 14)
-	_place_map_control(home, WorldMapCanvas.HOME_POSITION, Vector2(150, 34))
-	map_canvas.add_child(home)
+	var hint_panel := PanelContainer.new()
+	hint_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	hint_panel.offset_left = 12
+	hint_panel.offset_top = 10
+	hint_panel.offset_right = -12
+	hint_panel.offset_bottom = 48
+	hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_canvas.add_child(hint_panel)
+	GameUIStyle.apply_panel(hint_panel, "dark")
 
-	for destination in DestinationCatalog.all():
-		var button := Button.new()
-		var destination_id := String(destination["id"])
-		button.text = "%s\n%s" % [
-			String(destination["city"]).to_upper(),
-			String(destination["country_code"])
-		]
-		button.custom_minimum_size = Vector2(118, 46)
-		GameUIStyle.apply_button(button, "nav", true)
-		button.pressed.connect(
-			_on_destination_pressed.bind(destination_id)
-		)
-
-		var normalized_position: Vector2 = destination["map_position"]
-		_place_map_control(
-			button,
-			normalized_position,
-			Vector2(118, 46)
-		)
-		map_canvas.add_child(button)
-		destination_buttons[destination_id] = button
+	map_hint_label = Label.new()
+	map_hint_label.text = "Tap a country marker to inspect routes and resources."
+	map_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	map_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	map_hint_label.add_theme_font_size_override("font_size", 12)
+	map_hint_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_MUTED
+	)
+	hint_panel.add_child(map_hint_label)
 
 
 func _build_details_sidebar() -> void:
@@ -331,14 +327,50 @@ func _build_details_sidebar() -> void:
 	panel.add_child(wrapper)
 
 	var heading := Label.new()
-	heading.text = "2  ROUTE BRIEFING"
+	heading.text = "2  COUNTRY & ROUTE"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(heading, 16)
 	wrapper.add_child(heading)
 
+	country_title_label = Label.new()
+	country_title_label.text = "Select a country"
+	GameUIStyle.heading(country_title_label, 21)
+	country_title_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
+	wrapper.add_child(country_title_label)
+
+	country_status_label = Label.new()
+	country_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	country_status_label.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(country_status_label)
+	wrapper.add_child(country_status_label)
+
+	destination_list_container = VBoxContainer.new()
+	destination_list_container.add_theme_constant_override("separation", 5)
+	wrapper.add_child(destination_list_container)
+
+	for destination in DestinationCatalog.all():
+		var destination_id := String(destination.get("id", ""))
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(0, 42)
+		button.pressed.connect(
+			_on_destination_pressed.bind(destination_id)
+		)
+		GameUIStyle.apply_button(button, "screen_tab", true)
+		destination_list_container.add_child(button)
+		destination_buttons[destination_id] = button
+
+	var route_heading := Label.new()
+	route_heading.text = "3  ROUTE BRIEFING"
+	route_heading.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(route_heading)
+	wrapper.add_child(route_heading)
+
 	details_title = Label.new()
-	details_title.text = "Select a destination"
-	GameUIStyle.heading(details_title, 22)
+	details_title.text = "Select a route"
+	GameUIStyle.heading(details_title, 20)
 	wrapper.add_child(details_title)
 
 	var info_grid := GridContainer.new()
@@ -391,7 +423,7 @@ func _build_details_sidebar() -> void:
 	wrapper.add_child(details_body)
 
 	assign_button = Button.new()
-	assign_button.text = "3  DISPATCH FLIGHT"
+	assign_button.text = "4  DISPATCH FLIGHT"
 	assign_button.custom_minimum_size = Vector2(0, 58)
 	assign_button.add_theme_font_size_override("font_size", 16)
 	assign_button.pressed.connect(_on_assign_pressed)

@@ -16,6 +16,7 @@ var details_title: Label
 var route_card_label: Label
 var reward_card_label: Label
 var resource_card_label: Label
+var resource_preview_row: HBoxContainer
 var aircraft_fit_label: Label
 var details_body: Label
 var assignment_status: Label
@@ -342,6 +343,12 @@ func _build_details_sidebar() -> void:
 		"AIRCRAFT FIT",
 		Color("d8b9ff")
 	)
+
+	resource_preview_row = HBoxContainer.new()
+	resource_preview_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	resource_preview_row.custom_minimum_size = Vector2(0, 48)
+	resource_preview_row.add_theme_constant_override("separation", 8)
+	wrapper.add_child(resource_preview_row)
 
 	var secondary_heading := Label.new()
 	secondary_heading.text = "ROUTE STATUS"
@@ -718,6 +725,7 @@ func _refresh_details() -> void:
 		_resource_names(country_resources),
 		resource_chance * 100.0
 	]
+	_refresh_resource_preview(country_resources)
 
 	aircraft_fit_label.text = (
 		"AIRCRAFT FIT\n"
@@ -771,6 +779,32 @@ func _refresh_details() -> void:
 	map_canvas.set_selected_position(map_position)
 
 
+func _refresh_resource_preview(
+	resources: Array[Dictionary]
+) -> void:
+	if resource_preview_row == null:
+		return
+
+	for child in resource_preview_row.get_children():
+		child.queue_free()
+
+	resource_preview_row.visible = not resources.is_empty()
+	for resource in resources:
+		var resource_id := String(resource.get("id", ""))
+		var resource_name := String(resource.get("name", "Resource"))
+
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(44, 44)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = ResourceVisualCatalog.texture_for_resource(
+			resource_id
+		)
+		icon.tooltip_text = resource_name
+		resource_preview_row.add_child(icon)
+
+
 func _clear_detail_cards() -> void:
 	if route_card_label != null:
 		route_card_label.text = "ROUTE\n—"
@@ -778,6 +812,9 @@ func _clear_detail_cards() -> void:
 		reward_card_label.text = "REWARD\n—"
 	if resource_card_label != null:
 		resource_card_label.text = "RESOURCES\n—"
+	if resource_preview_row != null:
+		for child in resource_preview_row.get_children():
+			child.queue_free()
 	if aircraft_fit_label != null:
 		aircraft_fit_label.text = "AIRCRAFT FIT\n—"
 

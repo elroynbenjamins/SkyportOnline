@@ -1313,6 +1313,15 @@ func get_airborne_visual_lift() -> float:
 	return 0.0
 
 
+func get_airborne_visual_local_offset() -> Vector2:
+	return Vector2(
+		0,
+		-get_airborne_visual_lift()
+	).rotated(
+		-global_rotation
+	)
+
+
 func get_flight_presentation_snapshot() -> Dictionary:
 	return {
 		"aircraft_type_id": aircraft_type_id,
@@ -1354,10 +1363,7 @@ func _draw() -> void:
 
 	var visual_scale := get_visual_scale()
 	draw_set_transform(
-		Vector2(
-			0,
-			-get_airborne_visual_lift()
-		),
+		get_airborne_visual_local_offset(),
 		0.0,
 		Vector2.ONE * visual_scale
 	)
@@ -1682,7 +1688,6 @@ func _draw_motion_feedback() -> void:
 
 	if state in ["APPROACH", "CLIMBING"]:
 		var airborne := _airborne_shadow_factor()
-		var lift := get_airborne_visual_lift()
 		var wake_strength := (
 			0.08
 			+ airborne * 0.12
@@ -1691,9 +1696,12 @@ func _draw_motion_feedback() -> void:
 			18.0
 			+ airborne * 24.0
 		) * visual_scale
-		var wake_origin := Vector2(
-			-get_visual_half_length() * 0.78,
-			-lift
+		var wake_origin := (
+			Vector2(
+				-get_visual_half_length() * 0.78,
+				0
+			)
+			+ get_airborne_visual_local_offset()
 		)
 		for side in [-1.0, 1.0]:
 			var side_offset := (

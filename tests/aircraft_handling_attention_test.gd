@@ -40,7 +40,7 @@ func _run() -> void:
 		func() -> void:
 			requested = true
 	)
-	hud.handling_attention_button.pressed.emit()
+	hud._on_handling_attention_pressed()
 	if not requested:
 		_fail("Pressing the handling-attention chip should request aircraft focus.")
 		return

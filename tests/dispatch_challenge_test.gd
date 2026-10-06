@@ -17,6 +17,18 @@ func _run() -> void:
 	if not DispatchChallengeRules.is_unlocked(12):
 		_fail("Airport Dispatch should unlock at level 12.")
 		return
+	if not DispatchChallengeRules.tier_for_score(29).is_empty():
+		_fail("29 points should remain below the rebalanced Bronze threshold.")
+		return
+	if String(DispatchChallengeRules.tier_for_score(30).get("id", "")) != "bronze":
+		_fail("Bronze Dispatch should begin at 30 points.")
+		return
+	if String(DispatchChallengeRules.tier_for_score(65).get("id", "")) != "silver":
+		_fail("Silver Dispatch should begin at 65 points.")
+		return
+	if String(DispatchChallengeRules.tier_for_score(105).get("id", "")) != "gold":
+		_fail("Gold Dispatch should begin at 105 points.")
+		return
 	if DispatchChallengeRules.ensure_state(state, 11, now):
 		_fail("Locked Dispatch should not initialize persistent mode state.")
 		return
@@ -199,6 +211,13 @@ func _run() -> void:
 		_fail("New day should reset the daily Dispatch best score.")
 		return
 
+	next_day_snapshot["airport_aircraft"] = 3
+	next_day_snapshot["airport_at_stand"] = 2
+	next_day_snapshot["passenger_stock"] = 75
+	next_day_snapshot["passenger_capacity"] = 120
+	next_day_snapshot["runway_queue"] = 0
+	next_day_snapshot["ground_queue"] = 1
+	next_day_snapshot["inbound_holding"] = 0
 	var screen := DispatchChallengeScreen.new()
 	root.add_child(screen)
 	await process_frame
@@ -211,6 +230,9 @@ func _run() -> void:
 		return
 	if not screen.combo_label.text.contains("COMBO BONUS"):
 		_fail("Dispatch start presentation should explain the combo opportunity.")
+		return
+	if not screen.readiness_label.text.contains("3 aircraft") or not screen.readiness_label.text.contains("passengers 75/120"):
+		_fail("Dispatch start presentation should summarize the player's live airport readiness.")
 		return
 	screen.close_screen(true)
 

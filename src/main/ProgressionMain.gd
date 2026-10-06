@@ -277,6 +277,15 @@ func _deploy_reserve_aircraft() -> void:
 		var aircraft := CareerAircraft.new()
 		aircraft.configure_aircraft_type(type_id)
 		aircraft.configure_taxi_traffic(taxi_traffic)
+		# Player-owned aircraft use the tactile handling loop by default.
+		# The second flag is the future paid size-class automation hook.
+		aircraft.configure_handling_mode(
+			true,
+			false
+		)
+		aircraft.handling_action_requested.connect(
+			_on_aircraft_handling_action_requested
+		)
 		aircraft.name = "SO-%03d" % int(uid.trim_prefix("owned-"))
 		aircraft.z_index = 80
 		aircraft.set_meta("owned_uid", uid)
@@ -308,7 +317,12 @@ func _deploy_reserve_aircraft() -> void:
 			var stand_uid := int(route_info.get("stand_uid", -1))
 			aircraft.set_departure_route(route_info["route"], String(profile["size"]), stand_uid, int(route_info.get("runway_uid", -1)))
 			stand_occupancy[stand_uid] = aircraft
-			ground_services.request_turnaround(aircraft, label, false)
+			ground_services.request_turnaround(
+				aircraft,
+				label,
+				false,
+				aircraft.uses_manual_handling()
+			)
 	deploying = false
 
 func _release_stand(aircraft: AircraftPrototype) -> void:
@@ -321,10 +335,27 @@ func _on_demo_aircraft_state_changed(state: String, aircraft: AircraftPrototype,
 		aircraft.set_meta("passengers_paid", true)
 
 func _on_passenger_boarding_requested(aircraft: AircraftPrototype, label: String) -> void:
-	if is_instance_valid(aircraft) and not aircraft.is_social_visitor() and bool(aircraft.get_meta("passengers_paid", false)):
+	if (
+		is_instance_valid(aircraft)
+		and not aircraft.is_social_visitor()
+		and bool(
+			aircraft.get_meta(
+				"passengers_paid",
+				false
+			)
+		)
+		and (
+			not aircraft.uses_manual_handling()
+			or aircraft.uses_handling_automation()
+		)
+	):
+		aircraft.clear_handling_action()
 		ground_services.approve_passenger_loading(aircraft)
 		return
-	super._on_passenger_boarding_requested(aircraft, label)
+	super._on_passenger_boarding_requested(
+		aircraft,
+		label
+	)
 	_save_checkpoint()
 
 func _on_demo_aircraft_departed(aircraft: AircraftPrototype, label: String) -> void:

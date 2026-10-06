@@ -87,11 +87,13 @@ func _run() -> void:
 
 	var fuel_uid := int(fuel.get("uid", -1))
 	var fuel_coverage := grid.get_service_coverage_summary(fuel_uid)
-	if int(fuel_coverage.get("covered_count", 0)) != 2:
-		_fail("Starter Basic Fuel Station should cover both starter stands.")
+	if int(fuel_coverage.get("covered_count", -1)) != 0:
+		_fail(
+			"Spaced starter Fuel Station should not grant a free proximity bonus."
+		)
 		return
 	if int(fuel_coverage.get("bonus_pct", 0)) != 8:
-		_fail("Basic Fuel Station local zone should provide +8% speed.")
+		_fail("Basic Fuel Station local-zone bonus should remain +8%.")
 		return
 
 	var first_stand_uid := int(stands[0].get("uid", -1))
@@ -100,13 +102,28 @@ func _run() -> void:
 		first_stand_uid,
 		"fuel"
 	)
-	if not bool(fuel_synergy.get("active", false)):
-		_fail("Fuel synergy should activate for a nearby starter stand.")
+	if bool(fuel_synergy.get("active", true)):
+		_fail(
+			"Starter stand should rely on its service-road route, not proximity synergy."
+		)
 		return
 	if absf(
-		float(fuel_synergy.get("multiplier", 1.0)) - 1.08
+		float(fuel_synergy.get("multiplier", 1.0)) - 1.0
 	) > 0.001:
-		_fail("Nearby stand should receive the x1.08 Basic Fuel multiplier.")
+		_fail("Out-of-range starter stand should use the normal x1.0 fuel speed.")
+		return
+
+	var nearby_fuel_preview := grid.get_preview_synergy_summary(
+		"basic_fuel",
+		Vector2i(8, 6),
+		0,
+		fuel_uid
+	)
+	if not bool(nearby_fuel_preview.get("active", false)):
+		_fail("Moving a fuel station beside stands should activate local synergy.")
+		return
+	if int(nearby_fuel_preview.get("covered_count", 0)) != 2:
+		_fail("Nearby fuel preview should cover both starter stands.")
 		return
 
 	var dispatcher := GroundServiceDispatcher.new()
@@ -130,12 +147,14 @@ func _run() -> void:
 				"effective_service_speed",
 				0.0
 			)
-		) - 1.08
+		) - 1.0
 	) > 0.001:
-		_fail("Dispatcher should use local synergy in effective fuel speed.")
+		_fail(
+			"Spaced starter fuel station should use normal service speed."
+		)
 		return
-	if int(station.get("synergy_bonus_pct", 0)) != 8:
-		_fail("Dispatcher station metadata should expose the local bonus.")
+	if int(station.get("synergy_bonus_pct", -1)) != 0:
+		_fail("Dispatcher should report no proximity bonus at starter spacing.")
 		return
 
 	var far_service := grid.get_preview_synergy_summary(
@@ -162,7 +181,7 @@ func _run() -> void:
 		{
 			"valid": true,
 			"footprint": Vector2i(2, 2),
-			"synergy": fuel_coverage
+			"synergy": nearby_fuel_preview
 		}
 	)
 	if not hud.build_status.text.contains("✦"):

@@ -17,6 +17,12 @@ func _run() -> void:
 	if hud.bottom_nav_panel == null:
 		_fail("Concept HUD should expose the bottom dock.")
 		return
+	if hud.catalog_panel == null or hud.catalog_panel.visible:
+		_fail("Build drawer should start collapsed so the airport remains visible.")
+		return
+	if hud.parcel_panel == null or hud.parcel_panel.visible:
+		_fail("Empty expansion context should not cover the airport.")
+		return
 	if int(hud.bottom_nav_panel.offset_left) != 16:
 		_fail("Bottom dock should use the tighter concept edge margin.")
 		return
@@ -65,6 +71,40 @@ func _run() -> void:
 		return
 	if hud.catalog_help_label == null or hud.catalog_help_label.visible:
 		_fail("Build tray helper copy should not consume permanent screen space.")
+		return
+
+	hud._on_build_navigation_pressed()
+	if not hud.catalog_panel.visible:
+		_fail("BUILD should open the construction drawer on demand.")
+		return
+	hud._on_build_navigation_pressed()
+	if hud.catalog_panel.visible:
+		_fail("BUILD should close the construction drawer on a second tap.")
+		return
+
+	hud.show_parcel(
+		{
+			"id": "north",
+			"name": "Service Apron",
+			"tag": "EXPANSION",
+			"purpose": "Additional service space.",
+			"owned": false,
+			"level": 5,
+			"cost": 25000,
+			"progression_state": "available"
+		},
+		7,
+		50000
+	)
+	if not hud.parcel_panel.visible:
+		_fail("Selecting expansion land should reveal a compact context card.")
+		return
+	if hud.parcel_panel.offset_right - hud.parcel_panel.offset_left > 680.0:
+		_fail("Expansion context card should no longer span most of the airport.")
+		return
+	hud.show_parcel({}, 7, 50000)
+	if hud.parcel_panel.visible:
+		_fail("Clearing parcel selection should collapse expansion context.")
 		return
 
 	var grid := AirportGrid.new()

@@ -34,6 +34,12 @@ func _run() -> void:
 	if screen.selected_destination_id != "brussels":
 		_fail("World Map should default to Brussels at level 1.")
 		return
+	if screen.country_badge_rect.texture == null:
+		_fail("Selected country should render its country badge.")
+		return
+	if screen.country_resource_row.get_child_count() != 3:
+		_fail("Selected country should show three visual resource cards.")
+		return
 	if not screen.destination_buttons["brussels"].visible:
 		_fail("Selected-country route button should be visible.")
 		return
@@ -70,6 +76,12 @@ func _run() -> void:
 		return
 	if screen.resource_preview_row.get_child_count() != 3:
 		_fail("Future countries should still preview all three resources.")
+		return
+	if screen.country_badge_rect.texture == null:
+		_fail("Future countries should still show their country badge.")
+		return
+	if screen.country_resource_row.get_child_count() != 3:
+		_fail("Future countries should keep the three-card country resource strip.")
 		return
 	if not screen.assign_button.disabled:
 		_fail("Dispatch should be disabled when the country has no route.")

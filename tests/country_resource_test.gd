@@ -42,6 +42,20 @@ func _run() -> void:
 		_fail("Expected one distinct visual frame for each of the 69 country resources.")
 		return
 
+	var country_visual_check := CountryVisualCatalog.validate_catalog()
+	if not bool(country_visual_check.get("valid", false)):
+		_fail(
+			"Country badge visual validation failed: %s"
+			% str(country_visual_check.get("errors", []))
+		)
+		return
+	if CountryVisualCatalog.frame_count() != 23:
+		_fail("Expected one badge frame for each of the 23 launch countries.")
+		return
+	if not FileAccess.file_exists(CountryVisualCatalog.ATLAS_PATH):
+		_fail("Country badge atlas is missing.")
+		return
+
 	var none := ResourceDropRules.evaluate_resources("NL", [0.40, 0.75, 0.99])
 	if _success_count(none) != 0:
 		_fail("Rolls at or above 40% should not drop a resource.")

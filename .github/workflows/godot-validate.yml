@@ -88,6 +88,9 @@ jobs:
       - name: Test Activities hub
         run: timeout 25s godot --headless --path . --script res://tests/activities_hub_test.gd
 
+      - name: Test Airport Dispatch
+        run: timeout 25s godot --headless --path . --script res://tests/dispatch_challenge_test.gd
+
 
       - name: Test country selection and resource catalog
         run: timeout 20s godot --headless --path . --script res://tests/country_resource_test.gd

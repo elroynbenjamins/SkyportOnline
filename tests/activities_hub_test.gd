@@ -33,6 +33,11 @@ func _run() -> void:
 			"status": "1 REWARD READY", "detail": "Mission detail",
 			"attention": true, "enabled": true, "action": "OPEN MISSIONS"
 		},
+		"dispatch": {
+			"title": "AIRPORT DISPATCH", "badge": "3-MINUTE LIVE SHIFT",
+			"status": "READY • BEST 0", "detail": "Dispatch detail",
+			"attention": false, "enabled": true, "action": "OPEN DISPATCH"
+		},
 		"charter": {
 			"title": "CARGO CHARTER", "badge": "LOGISTICS",
 			"status": "3 CONTRACTS AVAILABLE", "detail": "Charter detail",
@@ -58,8 +63,8 @@ func _run() -> void:
 	if not screen.is_open():
 		_fail("Activities hub should open with a game-mode snapshot.")
 		return
-	if screen.cards_grid.get_child_count() != 5:
-		_fail("Activities hub should render exactly five current activity cards.")
+	if screen.cards_grid.get_child_count() != 6:
+		_fail("Activities hub should render exactly six current activity cards.")
 		return
 	if "2 rewards ready" not in screen.summary_label.text:
 		_fail("Activities hub should surface aggregate reward attention.")
@@ -70,7 +75,7 @@ func _run() -> void:
 		_fail("Activities hub should support silent navigation close.")
 		return
 
-	print("Activities hub passed: consolidated nav, attention state and five mode cards.")
+	print("Activities hub passed: consolidated nav, attention state and six mode cards.")
 	quit(0)
 
 func _fail(message: String) -> void:

@@ -10,6 +10,7 @@ var mission_pass_screen: MissionPassScreen
 var charter_screen: CharterScreen
 var alliance_operations_screen: AllianceOperationsScreen
 var airport_challenge_screen: AirportChallengeScreen
+var dispatch_challenge_screen: DispatchChallengeScreen
 var activities_hub_screen: ActivitiesHubScreen
 var mission_pin: Button
 var mission_billing_bridge: MissionProductBillingBridge
@@ -116,6 +117,18 @@ func _start_gameplay() -> void:
 	)
 	add_child(airport_challenge_screen)
 
+	dispatch_challenge_screen = DispatchChallengeScreen.new()
+	dispatch_challenge_screen.start_requested.connect(
+		_on_dispatch_start_requested
+	)
+	dispatch_challenge_screen.claim_requested.connect(
+		_on_dispatch_claim_requested
+	)
+	dispatch_challenge_screen.close_requested.connect(
+		_on_dispatch_closed
+	)
+	add_child(dispatch_challenge_screen)
+
 	activities_hub_screen = ActivitiesHubScreen.new()
 	activities_hub_screen.mode_requested.connect(
 		_on_activity_mode_requested
@@ -152,6 +165,13 @@ func _start_gameplay() -> void:
 	):
 		_save_checkpoint()
 	_refresh_airport_challenge_ui()
+	if DispatchChallengeRules.ensure_state(
+		progression,
+		player_level,
+		Time.get_unix_time_from_system()
+	):
+		_save_checkpoint()
+	_refresh_dispatch_ui()
 	_refresh_activities_hub()
 	_drain_passenger_rewards()
 	_drain_resource_choice_grants()
@@ -212,6 +232,23 @@ func _process(delta: float) -> void:
 		if challenge_changed:
 			_save_checkpoint()
 		_refresh_airport_challenge_ui()
+		var dispatch_changed := DispatchChallengeRules.ensure_state(
+			progression,
+			player_level,
+			Time.get_unix_time_from_system()
+		)
+		if dispatch_changed:
+			_save_checkpoint()
+			var dispatch_data := _dispatch_snapshot()
+			if String(dispatch_data.get("status", "")) == "READY":
+				hud.set_operation_status(
+					"Dispatch shift complete • %d points • %s" % [
+						int(dispatch_data.get("score", 0)),
+						String(dispatch_data.get("tier_name", "No medal"))
+					],
+					"success"
+				)
+		_refresh_dispatch_ui()
 		_refresh_activities_hub()
 
 func _notification(what: int) -> void:
@@ -377,6 +414,7 @@ func _on_demo_aircraft_departed(aircraft: AircraftPrototype, label: String) -> v
 			"%s departed • Tailwind active • travel time −10%%" % label,
 			"success"
 		)
+	_record_dispatch_action("departure")
 	_save_checkpoint()
 
 func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) -> void:
@@ -454,6 +492,7 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 	_refresh_mission_ui()
 	_refresh_alliance_operations_ui()
 	_refresh_airport_challenge_ui()
+	_record_dispatch_action("return")
 
 func _on_world_map_flight_assignment_requested(aircraft: AircraftPrototype, destination_id: String) -> void:
 	if not is_instance_valid(aircraft) or not aircraft.can_change_flight_plan():
@@ -1372,6 +1411,7 @@ func _on_social_aircraft_departed(aircraft: AircraftPrototype, label: String, vi
 				1,
 				Time.get_unix_time_from_system()
 			)
+	_record_dispatch_action("visitor_service")
 	_update_level()
 	_save_checkpoint()
 	_refresh_career_ui()
@@ -1424,6 +1464,8 @@ func _on_navigation_requested(tab: String) -> void:
 		mission_pass_screen.close_screen()
 	if activities_hub_screen != null and activities_hub_screen.is_open() and tab != "activities":
 		activities_hub_screen.close_screen(true)
+	if dispatch_challenge_screen != null and dispatch_challenge_screen.is_open() and tab != "activities":
+		dispatch_challenge_screen.close_screen(true)
 	if tab == "activities":
 		if charter_screen != null and charter_screen.is_open():
 			charter_screen.close_screen()
@@ -1431,6 +1473,8 @@ func _on_navigation_requested(tab: String) -> void:
 			alliance_operations_screen.close_screen(true)
 		if airport_challenge_screen != null and airport_challenge_screen.is_open():
 			airport_challenge_screen.close_screen(true)
+		if dispatch_challenge_screen != null and dispatch_challenge_screen.is_open():
+			dispatch_challenge_screen.close_screen(true)
 		_refresh_activities_hub()
 		activities_hub_screen.open_screen(_activities_snapshot())
 		return
@@ -1589,6 +1633,40 @@ func _activities_snapshot() -> Dictionary:
 		else "Join or connect an Alliance to take part in cooperative weekly goals."
 	)
 
+	var dispatch := _dispatch_snapshot()
+	var dispatch_unlocked := bool(dispatch.get("unlocked", false))
+	var dispatch_status_code := String(dispatch.get("status", "IDLE"))
+	var dispatch_attention := bool(dispatch.get("reward_available", false))
+	var dispatch_status := "UNLOCKS AT LEVEL %d" % DispatchChallengeRules.UNLOCK_LEVEL
+	var dispatch_detail := "Three-minute live operations shift using your real airport."
+	var dispatch_action := "OPEN DISPATCH"
+	if dispatch_unlocked:
+		match dispatch_status_code:
+			"RUNNING":
+				dispatch_status = "LIVE • %d PTS • %s LEFT" % [
+					int(dispatch.get("score", 0)),
+					_format_activity_time(int(dispatch.get("remaining_seconds", 0)))
+				]
+				dispatch_detail = "Keep turnarounds, departures and returns moving; taxi holds cost points."
+			"READY":
+				dispatch_status = "%s • %d PTS" % [
+					String(dispatch.get("tier_name", "RESULT")).to_upper(),
+					int(dispatch.get("score", 0))
+				]
+				dispatch_detail = (
+					"Daily reward ready to claim."
+					if dispatch_attention
+					else "Shift complete • finish the result to start another run."
+				)
+				dispatch_action = "VIEW RESULT"
+			_:
+				dispatch_status = "READY • BEST %d" % int(dispatch.get("best_score", 0))
+				dispatch_detail = (
+					"Daily reward already claimed • practice runs still improve your best."
+					if bool(dispatch.get("reward_claimed", false))
+					else "Start a 3-minute live shift for today's Bronze / Silver / Gold reward."
+				)
+
 	var event_active := bool(current_event_snapshot.get("active", false))
 	var event_attention := _event_has_claimable_reward()
 	var event_name := String(current_event_snapshot.get("name", "Seasonal Event"))
@@ -1619,6 +1697,7 @@ func _activities_snapshot() -> Dictionary:
 	var attention_count := 0
 	for ready in [
 		mission_claimable > 0,
+		dispatch_attention,
 		charter_attention,
 		challenge_attention,
 		alliance_attention,
@@ -1641,6 +1720,16 @@ func _activities_snapshot() -> Dictionary:
 			"attention": mission_claimable > 0,
 			"enabled": true,
 			"action": "OPEN MISSIONS"
+		},
+		"dispatch": {
+			"title": "AIRPORT DISPATCH",
+			"badge": "3-MINUTE LIVE SHIFT",
+			"status": dispatch_status,
+			"detail": dispatch_detail,
+			"attention": dispatch_attention,
+			"enabled": dispatch_unlocked,
+			"action": dispatch_action,
+			"locked_action": "LEVEL %d" % DispatchChallengeRules.UNLOCK_LEVEL
 		},
 		"charter": {
 			"title": "CARGO CHARTER",
@@ -1693,6 +1782,145 @@ func _activities_snapshot() -> Dictionary:
 	}
 
 
+func _dispatch_snapshot() -> Dictionary:
+	return DispatchChallengeRules.snapshot(
+		_capture_state(),
+		player_level,
+		Time.get_unix_time_from_system()
+	)
+
+
+func _refresh_dispatch_ui() -> void:
+	if not progression_ready:
+		return
+	var data := _dispatch_snapshot()
+	if dispatch_challenge_screen != null:
+		dispatch_challenge_screen.set_snapshot(data)
+	if hud != null:
+		hud.set_dispatch_shift(
+			String(data.get("status", "IDLE")),
+			int(data.get("score", 0)),
+			int(data.get("remaining_seconds", 0))
+		)
+
+
+func _on_dispatch_start_requested() -> void:
+	var next := DispatchChallengeRules.start_shift(
+		_capture_state(),
+		player_level,
+		Time.get_unix_time_from_system()
+	)
+	if next.is_empty():
+		hud.set_operation_status(
+			"Airport Dispatch cannot start right now.",
+			"warning"
+		)
+		return
+	if not AirportProgressionStore.save_state(next):
+		hud.set_operation_status(
+			"Dispatch shift could not start because progress could not be saved.",
+			"warning"
+		)
+		return
+	progression = next
+	_refresh_dispatch_ui()
+	_refresh_activities_hub()
+	if dispatch_challenge_screen != null:
+		dispatch_challenge_screen.close_screen(true)
+	hud.set_operation_status(
+		"Airport Dispatch started • 3:00 on the clock • keep traffic moving",
+		"success"
+	)
+
+
+func _on_dispatch_claim_requested() -> void:
+	var result := DispatchChallengeRules.claim_result(
+		_capture_state(),
+		player_level,
+		Time.get_unix_time_from_system()
+	)
+	if result.is_empty():
+		hud.set_operation_status(
+			"Dispatch result is not ready yet.",
+			"warning"
+		)
+		return
+	var next: Dictionary = result.get("state", {})
+	var reward: Dictionary = result.get("reward", {})
+	if next.is_empty() or not AirportProgressionStore.save_state(next):
+		hud.set_operation_status(
+			"Dispatch result remains available because progress could not be saved.",
+			"warning"
+		)
+		return
+	progression = next
+	coins = int(next.get("coins", coins))
+	player_xp = int(next.get("xp", player_xp))
+	_update_level()
+	_save_checkpoint()
+	_refresh_career_ui()
+	_refresh_mission_ui()
+	_refresh_charter_ui()
+	_refresh_alliance_operations_ui()
+	_refresh_airport_challenge_ui()
+	_refresh_dispatch_ui()
+	_refresh_activities_hub()
+	hud.set_player_data(player_level, coins, gems)
+	if bool(reward.get("rewarded", false)):
+		hud.set_operation_status(
+			"%s • %d pts • +%d coins • +%d XP" % [
+				String(reward.get("tier_name", "Dispatch result")),
+				int(reward.get("score", 0)),
+				int(reward.get("coins", 0)),
+				int(reward.get("xp", 0))
+			],
+			"success"
+		)
+	else:
+		hud.set_operation_status(
+			"Dispatch shift finished • %d points • no new daily reward" % int(
+				reward.get("score", 0)
+			),
+			"normal"
+		)
+
+
+func _on_dispatch_closed() -> void:
+	_refresh_activities_hub()
+	if activities_hub_screen != null:
+		activities_hub_screen.open_screen(_activities_snapshot())
+
+
+func _record_dispatch_action(
+	action: String,
+	amount: int = 1
+) -> int:
+	if not progression_ready:
+		return 0
+	var points := DispatchChallengeRules.record_action(
+		progression,
+		player_level,
+		action,
+		amount,
+		Time.get_unix_time_from_system()
+	)
+	if points == 0:
+		return 0
+	_save_checkpoint()
+	_refresh_dispatch_ui()
+	_refresh_activities_hub()
+	var data := _dispatch_snapshot()
+	hud.set_operation_status(
+		"Dispatch %s%d • %d pts" % [
+			"+" if points > 0 else "",
+			points,
+			int(data.get("score", 0))
+		],
+		"warning" if points < 0 else "success"
+	)
+	return points
+
+
 func _refresh_activities_hub() -> void:
 	if not progression_ready:
 		return
@@ -1709,6 +1937,9 @@ func _on_activity_mode_requested(mode_id: String) -> void:
 	match mode_id:
 		"missions":
 			_open_missions()
+		"dispatch":
+			if dispatch_challenge_screen != null:
+				dispatch_challenge_screen.open_screen(_dispatch_snapshot())
 		"charter":
 			_on_navigation_requested("charter")
 		"challenge":
@@ -1740,6 +1971,24 @@ func _on_event_changed(snapshot: Dictionary) -> void:
 	if progression_ready:
 		_refresh_activities_hub()
 
+
+
+func _on_aircraft_serviced(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	super._on_aircraft_serviced(aircraft, label)
+	_record_dispatch_action("turnaround")
+
+
+func _on_taxi_hold_changed(
+	aircraft: AircraftPrototype,
+	holding: bool,
+	reason: String
+) -> void:
+	super._on_taxi_hold_changed(aircraft, holding, reason)
+	if holding:
+		_record_dispatch_action("taxi_hold")
 
 
 func _show_aircraft_context(aircraft: AircraftPrototype) -> void:

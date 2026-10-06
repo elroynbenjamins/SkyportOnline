@@ -311,7 +311,7 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("small_terminal", Vector2i(5, 8), 0)
 	_place_building_internal("travel_office", Vector2i(5, 11), 0)
 	_place_building_internal("ground_ops_depot", Vector2i(11, 10), 0)
-	_place_building_internal("basic_fuel", Vector2i(12, 8), 0)
+	_place_building_internal("basic_fuel", Vector2i(8, 8), 0)
 
 	# Shared service-road loop. Fuel, passenger, baggage, cleaning and catering
 	# vehicles drive to the stands; the aircraft itself does not taxi to those

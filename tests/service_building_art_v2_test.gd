@@ -46,8 +46,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(210, 210),
 		"offsets": [
-			Vector2(0, -32),
-			Vector2(0, -35)
+			Vector2(0, -41),
+			Vector2(0, -41)
 		]
 	},
 	"rapid_small_fuel": {
@@ -58,8 +58,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(220, 220),
 		"offsets": [
-			Vector2(0, -67),
-			Vector2(0, -66)
+			Vector2(0, -45),
+			Vector2(0, -45)
 		]
 	},
 	"atc_tower": {
@@ -70,8 +70,8 @@ const SERVICE_ART := {
 		],
 		"size": Vector2(228, 228),
 		"offsets": [
-			Vector2(0, -54),
-			Vector2(0, -58)
+			Vector2(0, -48),
+			Vector2(0, -48)
 		]
 	}
 }
@@ -82,6 +82,12 @@ func _init() -> void:
 
 
 func _run() -> void:
+	if not BuildingCatalog.PRODUCTION_SERVICE_BUILDING_ATLAS_B.ends_with(
+		"service_buildings_v2b_stylized.svg"
+	):
+		_fail("Service atlas B should use the stylized replacement, not the realistic legacy sheet.")
+		return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame

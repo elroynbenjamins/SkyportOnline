@@ -5,7 +5,7 @@ extends RefCounted
 static var _definitions_by_id: Dictionary = {}
 const PRODUCTION_BUILDING_ATLAS := "res://assets/production/airport_buildings_v2/skyport_buildings_atlas.webp"
 const PRODUCTION_SERVICE_BUILDING_ATLAS_A := "res://assets/production/service_buildings_v2/service_buildings_v2a.webp"
-const PRODUCTION_SERVICE_BUILDING_ATLAS_B := "res://assets/production/service_buildings_v2/service_buildings_v2b.webp"
+const PRODUCTION_SERVICE_BUILDING_ATLAS_B := "res://assets/production/service_buildings_v2/service_buildings_v2b_stylized.svg"
 const PRODUCTION_SEASONAL_DECOR_ATLAS := "res://assets/production/seasonal_decor_v2/seasonal_decor_atlas_v2.svg"
 const PRODUCTION_REGIONAL_FACILITIES_ATLAS := "res://assets/production/regional_facilities_v2/regional_facilities_v2.svg"
 
@@ -352,10 +352,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(210, 210),
 			"world_sprite_offsets": [
-				Vector2(0, -32),
-				Vector2(0, -35)
+				Vector2(0, -41),
+				Vector2(0, -41)
 			],
-			"world_sprite_offset": Vector2(0, -32),
+			"world_sprite_offset": Vector2(0, -41),
 			"service": "pushback",
 			"service_speed": 1.25,
 			"vehicle_capacity": 2
@@ -381,10 +381,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(228, 228),
 			"world_sprite_offsets": [
-				Vector2(0, -54),
-				Vector2(0, -58)
+				Vector2(0, -48),
+				Vector2(0, -48)
 			],
-			"world_sprite_offset": Vector2(0, -54),
+			"world_sprite_offset": Vector2(0, -48),
 			"air_traffic_control": true
 		},
 		{
@@ -469,10 +469,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(220, 220),
 			"world_sprite_offsets": [
-				Vector2(0, -67),
-				Vector2(0, -66)
+				Vector2(0, -45),
+				Vector2(0, -45)
 			],
-			"world_sprite_offset": Vector2(0, -67)
+			"world_sprite_offset": Vector2(0, -45)
 		},
 		{
 			"id": "medium_stand",

@@ -433,6 +433,32 @@ func _setup_runway_strategy_panel() -> void:
 
 
 func _spawn_aircraft_demos() -> void:
+	if not aircraft_demos.is_empty():
+		return
+
+	var starter_setup := airport_grid.get_starter_construction_snapshot()
+	if (
+		bool(starter_setup.get("starter_setup_required", false))
+		and not bool(
+			starter_setup.get(
+				"ready_for_first_departure",
+				false
+			)
+		)
+	):
+		var missing: Array = starter_setup.get("missing_steps", [])
+		var instruction := (
+			String(missing[0])
+			if not missing.is_empty()
+			else "Finish the starter airport network"
+		)
+		hud.set_operation_status(
+			"%s • build the route before aircraft operations begin"
+			% instruction,
+			"warning"
+		)
+		return
+
 	var routes: Array[Dictionary] = airport_grid.get_departure_routes("S")
 	if routes.is_empty():
 		hud.set_operation_status("No connected S-class stand/runway.", "warning")
@@ -4686,6 +4712,8 @@ func _refresh_layout_dependent_systems() -> void:
 		)
 	if ground_services != null:
 		ground_services.refresh_after_layout_change()
+	if aircraft_demos.is_empty():
+		_spawn_aircraft_demos()
 	_refresh_operations_analytics()
 
 

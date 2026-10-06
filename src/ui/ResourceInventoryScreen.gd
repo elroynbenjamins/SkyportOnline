@@ -59,7 +59,7 @@ func _build_ui() -> void:
 	panel.offset_right = -80
 	panel.offset_bottom = -45
 	root.add_child(panel)
-	GameUIStyle.apply_panel(panel, "raised")
+	GameUIStyle.apply_panel(panel, "screen_section")
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 24)
@@ -229,19 +229,33 @@ func _refresh(
 
 			var card := PanelContainer.new()
 			card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			GameUIStyle.apply_panel(card, "dark")
+			card.custom_minimum_size = Vector2(150, 124)
+			GameUIStyle.apply_panel(card, "reward_tile")
 			row.add_child(card)
 
+			var content := VBoxContainer.new()
+			content.alignment = BoxContainer.ALIGNMENT_CENTER
+			content.add_theme_constant_override("separation", 4)
+			card.add_child(content)
+
+			var icon := TextureRect.new()
+			icon.custom_minimum_size = Vector2(72, 72)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.texture = CountryResourceVisuals.texture_for(resource_id)
+			icon.tooltip_text = String(resource.get("name", "Resource"))
+			content.add_child(icon)
+
 			var label := Label.new()
-			label.custom_minimum_size = Vector2(0, 56)
+			label.custom_minimum_size = Vector2(0, 42)
 			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			label.text = "%s\nOwned: %d" % [
 				String(resource.get("name", "Resource")),
 				amount
 			]
-			label.add_theme_font_size_override("font_size", 14)
-			card.add_child(label)
+			label.add_theme_font_size_override("font_size", 13)
+			content.add_child(label)
 
 	if not any_owned:
 		var empty := Label.new()

@@ -1,20 +1,24 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/main/ProgressionMain.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/world/AirportGrid.gd" id="2_grid"]
 [ext_resource type="Script" path="res://src/world/CameraController.gd" id="3_camera"]
 [ext_resource type="Script" path="res://src/ui/HUD.gd" id="4_hud"]
 [ext_resource type="Script" path="res://src/ui/AirportSetup.gd" id="5_setup"]
+[ext_resource type="Script" path="res://src/world/AirportBackdrop.gd" id="6_backdrop"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
+
+[node name="AirportBackdrop" type="Node2D" parent="."]
+script = ExtResource("6_backdrop")
 
 [node name="AirportGrid" type="Node2D" parent="."]
 script = ExtResource("2_grid")
 
 [node name="Camera" type="Camera2D" parent="."]
 position = Vector2(90, 350)
-zoom = Vector2(0.92, 0.92)
+zoom = Vector2(0.84, 0.84)
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 limit_left = -1200

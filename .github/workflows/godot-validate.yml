@@ -30,6 +30,12 @@ jobs:
       - name: Import project and parse scripts
         run: godot --headless --editor --path . --quit --verbose
 
+      - name: Test airport camera navigation
+        run: timeout 20s godot --headless --path . --script res://tests/camera_navigation_test.gd
+
+      - name: Test building placement V2
+        run: timeout 25s godot --headless --path . --script res://tests/building_placement_v2_test.gd
+
       - name: Start main scene smoke test
         run: godot --headless --path . --quit-after 3 --verbose
 

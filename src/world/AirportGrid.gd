@@ -1,6 +1,13 @@
 class_name AirportGrid
 extends Node2D
 
+const PlacementGridV2 := preload(
+	"res://src/build/BuildingPlacementGrid.gd"
+)
+const SpritePlacementV2 := preload(
+	"res://src/build/BuildingSpritePlacement.gd"
+)
+
 signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
@@ -129,6 +136,7 @@ var next_building_uid := 1
 var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
 var building_texture_images: Dictionary = {}
+var building_sprite_visible_bounds: Dictionary = {}
 var airside_status: Dictionary = {}
 var runway_visual_states: Dictionary = {}
 var runway_feedback_elapsed := 0.0
@@ -3446,37 +3454,10 @@ func _footprint_polygon(
 	origin: Vector2i,
 	footprint: Vector2i
 ) -> PackedVector2Array:
-	if footprint.x <= 0 or footprint.y <= 0:
-		return PackedVector2Array()
-
-	var a := tile_to_world(
-		Vector2(origin.x, origin.y)
+	return PlacementGridV2.footprint_polygon(
+		origin,
+		footprint
 	)
-	var b := tile_to_world(
-		Vector2(
-			origin.x + footprint.x - 1,
-			origin.y
-		)
-	)
-	var c := tile_to_world(
-		Vector2(
-			origin.x + footprint.x - 1,
-			origin.y + footprint.y - 1
-		)
-	)
-	var d := tile_to_world(
-		Vector2(
-			origin.x,
-			origin.y + footprint.y - 1
-		)
-	)
-
-	return PackedVector2Array([
-		a + Vector2(0, -TILE_HEIGHT * 0.5),
-		b + Vector2(TILE_WIDTH * 0.5, 0),
-		c + Vector2(0, TILE_HEIGHT * 0.5),
-		d + Vector2(-TILE_WIDTH * 0.5, 0)
-	])
 
 
 func _building_front_depth(building: Dictionary) -> int:
@@ -4664,6 +4645,43 @@ func _grid_fitted_world_sprite_size(
 	return configured_size * scale
 
 
+func _sprite_visible_bounds_for_rotation(
+	definition: Dictionary,
+	rotation: int
+) -> Rect2i:
+	var sprite_path := _sprite_path_for_rotation(
+		definition,
+		rotation
+	)
+	if sprite_path.is_empty():
+		return Rect2i()
+
+	var source := _sprite_region_for_rotation(
+		definition,
+		rotation
+	)
+	var cache_key := "%s|%d|%d|%d|%d" % [
+		sprite_path,
+		int(source.position.x),
+		int(source.position.y),
+		int(source.size.x),
+		int(source.size.y)
+	]
+	if building_sprite_visible_bounds.has(cache_key):
+		return building_sprite_visible_bounds[cache_key]
+
+	var image = _get_building_texture_image(sprite_path)
+	if image == null:
+		return Rect2i()
+
+	var bounds := SpritePlacementV2.visible_bounds(
+		image,
+		source
+	)
+	building_sprite_visible_bounds[cache_key] = bounds
+	return bounds
+
+
 func _building_sprite_rect(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -4671,6 +4689,61 @@ func _building_sprite_rect(
 	rotation: int,
 	extra_offset: Vector2 = Vector2.ZERO
 ) -> Rect2:
+	if bool(
+		definition.get(
+			"world_sprite_auto_ground",
+			false
+		)
+	):
+		var sprite_path := _sprite_path_for_rotation(
+			definition,
+			rotation
+		)
+		var image = _get_building_texture_image(
+			sprite_path
+		)
+		if image != null:
+			var source := _sprite_region_for_rotation(
+				definition,
+				rotation
+			)
+			var source_size := Vector2(
+				image.get_width(),
+				image.get_height()
+			)
+			if (
+				source.size.x > 0.0
+				and source.size.y > 0.0
+			):
+				source_size = source.size
+			var bounds := (
+				_sprite_visible_bounds_for_rotation(
+					definition,
+					rotation
+				)
+			)
+			if bounds.size.x > 0 and bounds.size.y > 0:
+				return SpritePlacementV2.grounded_rect(
+					bounds,
+					source_size,
+					_footprint_polygon(
+						origin,
+						footprint
+					),
+					_footprint_center_world(
+						origin,
+						footprint
+					),
+					float(
+						definition.get(
+							"world_sprite_visible_width_scale",
+							1.0
+						)
+					),
+					extra_offset
+				)
+
+	# Legacy fallback for buildings not yet migrated to Placement V2.
 	var configured_size: Vector2 = definition.get(
 		"world_sprite_size",
 		Vector2(160, 120)
@@ -4696,16 +4769,15 @@ func _building_sprite_rect(
 				false
 			)
 		):
-			# The source art was authored with its visible base already aligned
-			# to the logical footprint. Scaling around the sprite center would
-			# otherwise lift that base off the ground, so restore the lost
-			# footprint depth after scaling.
 			var footprint_bottom := (
 				float(footprint.x + footprint.y)
 				* TILE_HEIGHT
 				* 0.25
 			)
-			offset.y += footprint_bottom * (1.0 - fit_scale)
+			offset.y += (
+				footprint_bottom
+				* (1.0 - fit_scale)
+			)
 	var center := _footprint_center_world(
 		origin,
 		footprint
@@ -6413,16 +6485,13 @@ func _tile_points(center: Vector2) -> PackedVector2Array:
 
 
 func tile_to_world(tile: Vector2) -> Vector2:
-	return Vector2(
-		(tile.x - tile.y) * TILE_WIDTH * 0.5,
-		(tile.x + tile.y) * TILE_HEIGHT * 0.5
-	)
+	return PlacementGridV2.tile_to_world(tile)
 
 
 func world_to_tile(world_position: Vector2) -> Vector2i:
-	var tx := world_position.x / TILE_WIDTH + world_position.y / TILE_HEIGHT
-	var ty := world_position.y / TILE_HEIGHT - world_position.x / TILE_WIDTH
-	return Vector2i(floori(tx), floori(ty))
+	return PlacementGridV2.world_to_tile(
+		world_position
+	)
 
 
 func select_world_position(world_position: Vector2) -> void:
@@ -7243,19 +7312,24 @@ func _get_placement_status(
 	return result
 
 
-func _footprint_for(definition: Dictionary, rotation: int) -> Vector2i:
-	var base: Vector2i = definition["footprint"]
-	if bool(definition.get("rotatable", false)) and rotation % 2 == 1:
-		return Vector2i(base.y, base.x)
-	return base
+func _footprint_for(
+	definition: Dictionary,
+	rotation: int
+) -> Vector2i:
+	return PlacementGridV2.footprint_for(
+		definition,
+		rotation
+	)
 
 
-func _cells_for(origin: Vector2i, footprint: Vector2i) -> Array[Vector2i]:
-	var cells: Array[Vector2i] = []
-	for y in range(footprint.y):
-		for x in range(footprint.x):
-			cells.append(origin + Vector2i(x, y))
-	return cells
+func _cells_for(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> Array[Vector2i]:
+	return PlacementGridV2.cells_for(
+		origin,
+		footprint
+	)
 
 
 func _place_building_internal(definition_id: String, origin: Vector2i, rotation: int) -> Dictionary:
@@ -7284,7 +7358,7 @@ func _rebuild_occupied_cells() -> void:
 
 
 func _cell_key(cell: Vector2i) -> String:
-	return "%d:%d" % [cell.x, cell.y]
+	return PlacementGridV2.cell_key(cell)
 
 
 func _tile_in_world(tile: Vector2i) -> bool:
@@ -7412,12 +7486,14 @@ func _refresh_parcel_labels() -> void:
 		)
 
 
-func _footprint_center_world(origin: Vector2i, footprint: Vector2i) -> Vector2:
-	var center_tile := Vector2(
-		float(origin.x) + float(footprint.x - 1) * 0.5,
-		float(origin.y) + float(footprint.y - 1) * 0.5
+func _footprint_center_world(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> Vector2:
+	return PlacementGridV2.footprint_center_world(
+		origin,
+		footprint
 	)
-	return tile_to_world(center_tile)
 
 
 func _create_parcel_labels() -> void:

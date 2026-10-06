@@ -113,6 +113,11 @@ func _draw() -> void:
 			width,
 			draw_direction
 		)
+	elif aircraft_type_id == "nimbus_n40":
+		_draw_nimbus_operating_fx(
+			width,
+			draw_direction
+		)
 	if social_visit:
 		_draw_social_badge()
 	elif event_featured:
@@ -967,6 +972,209 @@ func get_voyager_visual_fx_snapshot() -> Dictionary:
 		"propeller_count": centers.size(),
 		"propeller_centers": centers,
 		"landing_lights": _swift_landing_lights_on()
+	}
+
+
+func _nimbus_engine_running() -> bool:
+	if aircraft_type_id != "nimbus_n40":
+		return false
+	return state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH",
+		"LANDING_ROLL",
+		"WAITING_TAXI_IN",
+		"TAXIING_IN",
+		"PUSHBACK_PREP",
+		"TAXIING_OUT",
+		"HOLD_SHORT",
+		"CLEARED",
+		"ENTERING_RUNWAY",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING"
+	]
+
+
+func _nimbus_engine_throttle() -> float:
+	match state:
+		"HOLDING_FOR_ARRIVAL", "APPROACH":
+			return 0.80
+		"LANDING_ROLL":
+			return 0.60
+		"WAITING_TAXI_IN", "TAXIING_IN":
+			return 0.34
+		"PUSHBACK_PREP":
+			return 0.16
+		"TAXIING_OUT":
+			return 0.38
+		"HOLD_SHORT":
+			return 0.34
+		"CLEARED", "ENTERING_RUNWAY", "LINE_UP":
+			return 0.54
+		"TAKEOFF_ROLL", "CLIMBING":
+			return 1.0
+		_:
+			return 0.0
+
+
+func _nimbus_landing_lights_on() -> bool:
+	return state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH",
+		"LANDING_ROLL",
+		"CLEARED",
+		"ENTERING_RUNWAY",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING"
+	]
+
+
+func _nimbus_propeller_centers(
+	direction: String,
+	width: float
+) -> Array[Vector2]:
+	var left := Vector2(-0.15, -0.02)
+	var right := Vector2(0.24, 0.10)
+	match direction:
+		"se":
+			left = Vector2(-0.20, 0.10)
+			right = Vector2(0.15, 0.19)
+		"sw":
+			left = Vector2(-0.15, 0.19)
+			right = Vector2(0.20, 0.10)
+		"nw":
+			left = Vector2(-0.24, 0.10)
+			right = Vector2(0.15, -0.02)
+	return [
+		left * width,
+		right * width
+	]
+
+
+func _nimbus_navigation_points(
+	direction: String,
+	width: float
+) -> Dictionary:
+	var red := Vector2(-0.46, -0.18)
+	var green := Vector2(0.46, 0.08)
+	match direction:
+		"se":
+			red = Vector2(0.45, -0.16)
+			green = Vector2(-0.46, 0.09)
+		"sw":
+			red = Vector2(0.45, 0.15)
+			green = Vector2(-0.45, -0.11)
+		"nw":
+			red = Vector2(-0.45, 0.06)
+			green = Vector2(0.45, -0.15)
+	return {
+		"red": red * width,
+		"green": green * width
+	}
+
+
+func _draw_nimbus_operating_fx(
+	width: float,
+	direction: String
+) -> void:
+	if not _nimbus_engine_running():
+		return
+
+	var throttle := _nimbus_engine_throttle()
+	var clock := get_visual_clock()
+	var centers := _nimbus_propeller_centers(
+		direction,
+		width
+	)
+	var radius := width * (
+		0.062 + throttle * 0.020
+	)
+	for index in range(centers.size()):
+		_draw_turboprop_disc(
+			centers[index],
+			radius,
+			throttle,
+			clock * 0.90,
+			float(index) * 0.92
+		)
+
+	var navigation := _nimbus_navigation_points(
+		direction,
+		width
+	)
+	var nav_pulse := (
+		0.60
+		+ 0.10 * sin(clock * 4.7)
+	)
+	for entry in [
+		{
+			"position": navigation.get("red", Vector2.ZERO),
+			"color": Color(1.0, 0.22, 0.18, nav_pulse)
+		},
+		{
+			"position": navigation.get("green", Vector2.ZERO),
+			"color": Color(0.20, 1.0, 0.50, nav_pulse)
+		}
+	]:
+		var point: Vector2 = entry.get("position", Vector2.ZERO)
+		var color: Color = entry.get("color", Color.WHITE)
+		draw_circle(
+			point,
+			4.5,
+			Color(color.r, color.g, color.b, color.a * 0.16)
+		)
+		draw_circle(point, 1.8, color)
+
+	var beacon_phase := fmod(clock + 0.07, 1.18)
+	if (
+		beacon_phase < 0.12
+		or (
+			beacon_phase > 0.25
+			and beacon_phase < 0.33
+		)
+	):
+		var beacon := Vector2(0, -width * 0.045)
+		draw_circle(beacon, 5.5, Color(1.0, 0.14, 0.10, 0.13))
+		draw_circle(beacon, 1.9, Color(1.0, 0.18, 0.14, 0.96))
+
+	var strobe_phase := fmod(clock + 0.15, 1.46)
+	if strobe_phase < 0.07:
+		for point_variant in navigation.values():
+			var point: Vector2 = point_variant
+			draw_circle(point, 6.0, Color(0.92, 0.98, 1.0, 0.18))
+			draw_circle(point, 2.1, Color(0.98, 1.0, 1.0, 0.98))
+
+	if _nimbus_landing_lights_on():
+		for center_variant in centers:
+			var center: Vector2 = center_variant
+			var light_center := center * 0.56
+			draw_circle(
+				light_center,
+				6.5,
+				Color(1.0, 0.94, 0.70, 0.08)
+			)
+			draw_circle(
+				light_center,
+				2.1,
+				Color(1.0, 0.96, 0.80, 0.92)
+			)
+
+
+func get_nimbus_visual_fx_snapshot() -> Dictionary:
+	var direction := direction_for(global_rotation)
+	var centers := _nimbus_propeller_centers(
+		direction,
+		get_directional_draw_width()
+	)
+	return {
+		"aircraft_type_id": aircraft_type_id,
+		"engine_running": _nimbus_engine_running(),
+		"throttle": _nimbus_engine_throttle(),
+		"propeller_count": centers.size(),
+		"propeller_centers": centers,
+		"landing_lights": _nimbus_landing_lights_on(),
+		"size": aircraft_size
 	}
 
 

@@ -11,7 +11,11 @@ var root: Control
 var screen_title_label: Label
 var network_meta_label: Label
 var map_canvas: WorldMapCanvas
+var map_hint_label: Label
 var aircraft_list_container: VBoxContainer
+var country_title_label: Label
+var country_status_label: Label
+var destination_list_container: VBoxContainer
 var details_title: Label
 var route_card_label: Label
 var reward_card_label: Label
@@ -26,7 +30,9 @@ var aircraft_buttons: Array[Button] = []
 var destination_buttons: Dictionary = {}
 var aircraft: Array[AircraftPrototype] = []
 var selected_aircraft_index := 0
+var selected_country_code := ""
 var selected_destination_id := ""
+var home_country_code := "NL"
 var player_level := 1
 var mastery_hours_by_type: Dictionary = {}
 var passenger_stock := 0
@@ -65,7 +71,8 @@ func open_map(
 	current_passenger_capacity: int = 0,
 	history: Dictionary = {},
 	airport_key: String = "",
-	contract_progress: Dictionary = {}
+	contract_progress: Dictionary = {},
+	current_home_country_code: String = "NL"
 ) -> void:
 	aircraft = aircraft_nodes
 	player_level = current_player_level
@@ -75,17 +82,34 @@ func open_map(
 	route_history = history.duplicate(true)
 	contract_airport_key = airport_key
 	priority_contract_progress = contract_progress.duplicate(true)
+	home_country_code = current_home_country_code
+	if CountryCatalog.get_country(home_country_code).is_empty():
+		home_country_code = "NL"
 	selected_aircraft_index = clampi(
 		selected_aircraft_index,
 		0,
 		maxi(aircraft.size() - 1, 0)
 	)
 
-	if selected_destination_id.is_empty():
-		var unlocked := DestinationCatalog.unlocked_for_level(player_level)
-		if not unlocked.is_empty():
-			selected_destination_id = String(unlocked[0]["id"])
+	if selected_country_code.is_empty():
+		if not selected_destination_id.is_empty():
+			var selected_destination := DestinationCatalog.get_destination(
+				selected_destination_id
+			)
+			selected_country_code = String(
+				selected_destination.get("country_code", "")
+			)
+		if selected_country_code.is_empty():
+			var unlocked := DestinationCatalog.unlocked_for_level(player_level)
+			if not unlocked.is_empty():
+				selected_destination_id = String(unlocked[0]["id"])
+				selected_country_code = String(
+					unlocked[0].get("country_code", "")
+				)
+		if selected_country_code.is_empty():
+			selected_country_code = home_country_code
 
+	_refresh_map_state()
 	_refresh_aircraft_buttons()
 	_refresh_destination_buttons()
 	_refresh_details()

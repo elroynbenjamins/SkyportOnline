@@ -1796,6 +1796,12 @@ func _refresh_dispatch_ui() -> void:
 	var data := _dispatch_snapshot()
 	if dispatch_challenge_screen != null:
 		dispatch_challenge_screen.set_snapshot(data)
+	if hud != null:
+		hud.set_dispatch_shift(
+			String(data.get("status", "IDLE")),
+			int(data.get("score", 0)),
+			int(data.get("remaining_seconds", 0))
+		)
 
 
 func _on_dispatch_start_requested() -> void:

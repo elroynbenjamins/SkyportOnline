@@ -535,6 +535,10 @@ func _begin_vehicle_stage(
 			float(profile.get(timer_key, 0.0)),
 			0.0
 		)
+		if service_type == "fuel":
+			base_duration *= FlightRules.fuel_service_multiplier(
+				aircraft.get_flight_plan()
+			)
 		if service_key.is_empty() or service_type.is_empty():
 			continue
 		if base_duration <= 0.0:

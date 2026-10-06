@@ -52,6 +52,13 @@ func _run() -> void:
 			"Normal airport view should keep the construction grid hidden."
 		)
 
+	grid.select_parcel("north")
+	if grid.is_placement_grid_visible():
+		_fail(
+			"Selecting expansion land should not reveal the construction grid."
+		)
+	grid.clear_parcel_selection()
+
 	var normal_owned_surface := grid._terrain_surface_color_for_state(
 		"owned"
 	)

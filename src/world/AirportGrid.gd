@@ -23,12 +23,12 @@ const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.35
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
-const BUILDER_STARTER_PARCELS := PackedStringArray([
+const BUILDER_STARTER_PARCELS := [
 	"north_west",
 	"north",
 	"west",
 	"home"
-])
+]
 
 const TERRAIN_BACKGROUND := Color("557f4b")
 const OWNED_GRASS_VARIANTS := [

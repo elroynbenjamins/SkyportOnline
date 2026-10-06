@@ -723,6 +723,8 @@ func _crew_count_for_aircraft(
 	match aircraft.state:
 		"UNLOADING", "SERVICING", "LOADING":
 			return base
+		"WAITING_UNLOAD", "WAITING_SERVICE":
+			return mini(base, 1)
 		"WAITING_FUEL", "WAITING_PASSENGERS":
 			return mini(base, 2)
 		"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
@@ -1118,9 +1120,15 @@ func _apron_prop_count_for_aircraft(
 	if aircraft == null or not is_instance_valid(aircraft):
 		return 0
 	match String(aircraft.state):
+		"WAITING_UNLOAD":
+			return 3
 		"UNLOADING", "LOADING":
 			return 5
-		"SERVICING", "WAITING_FUEL":
+		"WAITING_SERVICE":
+			return 3
+		"SERVICING":
+			return 4
+		"WAITING_FUEL":
 			return 3
 		"WAITING_PASSENGERS":
 			return 3
@@ -1206,9 +1214,12 @@ func _draw_apron_staging_props() -> void:
 			drawn += 1
 
 		if state in [
-			"LOADING",
+			"WAITING_UNLOAD",
 			"UNLOADING",
-			"WAITING_PASSENGERS"
+			"WAITING_SERVICE",
+			"SERVICING",
+			"WAITING_PASSENGERS",
+			"LOADING"
 		] and drawn < MAX_APRON_PROPS:
 			var passenger_point := _aircraft_service_point(
 				aircraft,
@@ -1304,6 +1315,40 @@ func _draw_apron_staging_props() -> void:
 				0.76
 			)
 			drawn += 1
+
+
+func get_apron_choreography_snapshot(
+	aircraft: AircraftPrototype
+) -> Dictionary:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return {}
+
+	var state := String(aircraft.state)
+	return {
+		"state": state,
+		"prop_count": _apron_prop_count_for_aircraft(aircraft),
+		"crew_count": _crew_count_for_aircraft(aircraft),
+		"stairs": state in [
+			"WAITING_UNLOAD",
+			"UNLOADING",
+			"WAITING_SERVICE",
+			"SERVICING",
+			"WAITING_PASSENGERS",
+			"LOADING"
+		],
+		"cargo_equipment": state in [
+			"UNLOADING",
+			"LOADING"
+		],
+		"gpu": state in [
+			"SERVICING",
+			"WAITING_FUEL"
+		],
+		"marshaller": state in [
+			"PUSHBACK_PREP",
+			"READY_FOR_DEPARTURE"
+		]
+	}
 
 
 func _draw_ground_crew_member(

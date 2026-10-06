@@ -243,7 +243,7 @@ func _build_interface() -> void:
 	map_column.add_child(resource_header)
 
 	var resource_title := Label.new()
-	resource_title.text = "POSSIBLE COUNTRY RESOURCES"
+	resource_title.text = "HOME COUNTRY RESOURCES"
 	resource_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	resource_title.add_theme_font_size_override("font_size", 15)
 	resource_header.add_child(resource_title)
@@ -274,7 +274,7 @@ func _build_interface() -> void:
 		resource_labels.append(resource_label)
 
 	var probability_note := Label.new()
-	probability_note.text = "At the 40% base chance: 21.6% none • 43.2% one • 28.8% two • 6.4% all three. Actual chance varies by aircraft, duration, and size."
+	probability_note.text = "These are this country's three materials. Every destination keeps its own three resources. At the 40% base chance: 21.6% none • 43.2% one • 28.8% two • 6.4% all three."
 	probability_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	probability_note.add_theme_font_size_override("font_size", 12)
 	GameUIStyle.muted(probability_note)
@@ -285,7 +285,7 @@ func _build_interface() -> void:
 	column.add_child(footer)
 
 	var social_note := Label.new()
-	social_note.text = "Your home country matters: routes, friends and Alliance airports help you collect materials from around the world."
+	social_note.text = "Home country sets your route origin and travel distances. It does NOT lock materials: every country's resources remain obtainable through flights, global resource crates, friends and Alliance play."
 	social_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	social_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	social_note.add_theme_font_size_override("font_size", 13)

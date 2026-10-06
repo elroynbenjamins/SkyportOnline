@@ -439,6 +439,7 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_auto_ground": true,
 			"world_sprite_visible_width_scale": 0.92,
+			"world_sprite_max_width_scale": 1.15,
 			"world_ground_pad": false,
 			"world_sprite_size": Vector2(292, 292),
 			"world_sprite_offsets": [

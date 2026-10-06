@@ -132,6 +132,9 @@ jobs:
       - name: Test Pico P8 full flight cycle
         run: timeout 35s godot --headless --path . --script res://tests/pico_full_flight_cycle_test.gd
 
+      - name: Test S-class flight presentation
+        run: timeout 30s godot --headless --path . --script res://tests/s_class_flight_presentation_test.gd
+
       - name: Test Pico P8 visual FX
         run: timeout 25s godot --headless --path . --script res://tests/pico_visual_fx_test.gd
 

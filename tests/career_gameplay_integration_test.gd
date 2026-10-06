@@ -15,7 +15,7 @@ func _place_for_career(
 	building_id: String,
 	cell: Vector2i
 ) -> bool:
-	var preview := main.airport_grid.set_build_preview(
+	var preview: Dictionary = main.airport_grid.set_build_preview(
 		building_id,
 		main.airport_grid.tile_to_world(
 			Vector2(cell.x, cell.y)

@@ -2125,7 +2125,13 @@ func _draw_shadow() -> void:
 
 
 func _uses_live_aircraft_fx() -> bool:
-	if aircraft_type_id != "pico_p8" or not visible:
+	if (
+		aircraft_type_id not in [
+			"pico_p8",
+			"swift_s14"
+		]
+		or not visible
+	):
 		return false
 	return state in [
 		"HOLDING_FOR_ARRIVAL",

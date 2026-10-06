@@ -92,10 +92,16 @@ func _draw() -> void:
 	if event_livery_enabled:
 		tint = Color("fff0d9") if event_theme == "autumn" else Color("eaf7ff")
 	draw_texture_rect(texture, Rect2(-size * 0.5, size), false, tint)
+	var draw_direction := direction_for(global_rotation)
 	if aircraft_type_id == "pico_p8":
 		_draw_pico_operating_fx(
 			width,
-			direction_for(global_rotation)
+			draw_direction
+		)
+	elif aircraft_type_id == "swift_s14":
+		_draw_swift_operating_fx(
+			width,
+			draw_direction
 		)
 	if social_visit:
 		_draw_social_badge()
@@ -416,6 +422,324 @@ func get_pico_visual_fx_snapshot() -> Dictionary:
 				and beacon_phase < 0.31
 			)
 		)
+	}
+
+
+func _swift_engine_running() -> bool:
+	if aircraft_type_id != "swift_s14":
+		return false
+	return state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH",
+		"LANDING_ROLL",
+		"WAITING_TAXI_IN",
+		"TAXIING_IN",
+		"PUSHBACK_PREP",
+		"TAXIING_OUT",
+		"HOLD_SHORT",
+		"CLEARED",
+		"ENTERING_RUNWAY",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING"
+	]
+
+
+func _swift_engine_throttle() -> float:
+	match state:
+		"HOLDING_FOR_ARRIVAL", "APPROACH":
+			return 0.84
+		"LANDING_ROLL":
+			return 0.65
+		"WAITING_TAXI_IN", "TAXIING_IN":
+			return 0.40
+		"PUSHBACK_PREP":
+			return 0.20
+		"TAXIING_OUT":
+			return 0.48
+		"HOLD_SHORT":
+			return 0.42
+		"CLEARED", "ENTERING_RUNWAY", "LINE_UP":
+			return 0.62
+		"TAKEOFF_ROLL", "CLIMBING":
+			return 1.0
+		_:
+			return 0.0
+
+
+func _swift_landing_lights_on() -> bool:
+	return state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH",
+		"LANDING_ROLL",
+		"CLEARED",
+		"ENTERING_RUNWAY",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING"
+	]
+
+
+func _swift_propeller_centers(
+	direction: String,
+	width: float
+) -> Array[Vector2]:
+	var left := Vector2(-0.13, -0.07)
+	var right := Vector2(0.20, 0.08)
+	match direction:
+		"se":
+			left = Vector2(-0.17, 0.03)
+			right = Vector2(0.17, 0.16)
+		"sw":
+			left = Vector2(-0.17, 0.16)
+			right = Vector2(0.17, 0.03)
+		"nw":
+			left = Vector2(-0.20, 0.08)
+			right = Vector2(0.13, -0.07)
+	return [
+		left * width,
+		right * width
+	]
+
+
+func _swift_navigation_points(
+	direction: String,
+	width: float
+) -> Dictionary:
+	var red := Vector2(-0.46, -0.20)
+	var green := Vector2(0.46, 0.06)
+	match direction:
+		"se":
+			red = Vector2(0.46, -0.16)
+			green = Vector2(-0.46, 0.07)
+		"sw":
+			red = Vector2(0.45, 0.14)
+			green = Vector2(-0.45, -0.11)
+		"nw":
+			red = Vector2(-0.45, 0.05)
+			green = Vector2(0.45, -0.15)
+	return {
+		"red": red * width,
+		"green": green * width
+	}
+
+
+func _draw_turboprop_disc(
+	center: Vector2,
+	radius: float,
+	throttle: float,
+	clock: float,
+	phase_offset: float = 0.0
+) -> void:
+	draw_circle(
+		center,
+		radius,
+		Color(
+			0.84,
+			0.91,
+			0.94,
+			0.06 + throttle * 0.08
+		)
+	)
+	draw_arc(
+		center,
+		radius,
+		0.0,
+		TAU,
+		22,
+		Color(
+			0.96,
+			0.98,
+			0.98,
+			0.14 + throttle * 0.12
+		),
+		1.1
+	)
+	var spin_angle := (
+		clock * lerpf(
+			8.0,
+			25.0,
+			throttle
+		)
+		+ phase_offset
+	)
+	for offset in [0.0, PI * 0.5]:
+		var direction_vector := Vector2.RIGHT.rotated(
+			spin_angle + float(offset)
+		)
+		draw_line(
+			center - direction_vector * radius,
+			center + direction_vector * radius,
+			Color(
+				0.98,
+				0.94,
+				0.72,
+				0.18 + throttle * 0.18
+			),
+			1.15
+		)
+
+
+func _draw_swift_operating_fx(
+	width: float,
+	direction: String
+) -> void:
+	if not _swift_engine_running():
+		return
+
+	var throttle := _swift_engine_throttle()
+	var clock := get_visual_clock()
+	var centers := _swift_propeller_centers(
+		direction,
+		width
+	)
+	var radius := width * (
+		0.070 + throttle * 0.022
+	)
+	for index in range(centers.size()):
+		_draw_turboprop_disc(
+			centers[index],
+			radius,
+			throttle,
+			clock,
+			float(index) * 0.74
+		)
+
+	var navigation := _swift_navigation_points(
+		direction,
+		width
+	)
+	var nav_pulse := (
+		0.58
+		+ 0.12
+		* sin(
+			clock * 5.4
+		)
+	)
+	for entry in [
+		{
+			"position": navigation.get(
+				"red",
+				Vector2.ZERO
+			),
+			"color": Color(
+				1.0,
+				0.24,
+				0.20,
+				nav_pulse
+			)
+		},
+		{
+			"position": navigation.get(
+				"green",
+				Vector2.ZERO
+			),
+			"color": Color(
+				0.22,
+				1.0,
+				0.54,
+				nav_pulse
+			)
+		}
+	]:
+		var point: Vector2 = entry.get(
+			"position",
+			Vector2.ZERO
+		)
+		var color: Color = entry.get(
+			"color",
+			Color.WHITE
+		)
+		draw_circle(
+			point,
+			4.0,
+			Color(
+				color.r,
+				color.g,
+				color.b,
+				color.a * 0.15
+			)
+		)
+		draw_circle(
+			point,
+			1.6,
+			color
+		)
+
+	var beacon_phase := fmod(
+		clock + 0.18,
+		1.10
+	)
+	var beacon_on := (
+		beacon_phase < 0.11
+		or (
+			beacon_phase > 0.22
+			and beacon_phase < 0.30
+		)
+	)
+	if beacon_on:
+		draw_circle(
+			Vector2(0, -width * 0.05),
+			5.0,
+			Color(1.0, 0.14, 0.10, 0.12)
+		)
+		draw_circle(
+			Vector2(0, -width * 0.05),
+			1.8,
+			Color(1.0, 0.18, 0.14, 0.95)
+		)
+
+	var strobe_phase := fmod(
+		clock + 0.11,
+		1.36
+	)
+	if strobe_phase < 0.07:
+		for point_variant in navigation.values():
+			var point: Vector2 = point_variant
+			draw_circle(
+				point,
+				5.5,
+				Color(0.92, 0.98, 1.0, 0.18)
+			)
+			draw_circle(
+				point,
+				1.9,
+				Color(0.98, 1.0, 1.0, 0.98)
+			)
+
+	if _swift_landing_lights_on():
+		for center_variant in centers:
+			var center: Vector2 = center_variant
+			var light_center := center * 0.58
+			draw_circle(
+				light_center,
+				6.0,
+				Color(1.0, 0.94, 0.70, 0.07)
+			)
+			draw_circle(
+				light_center,
+				2.0,
+				Color(1.0, 0.96, 0.80, 0.90)
+			)
+
+
+func get_swift_visual_fx_snapshot() -> Dictionary:
+	var direction := direction_for(
+		global_rotation
+	)
+	var centers := _swift_propeller_centers(
+		direction,
+		get_directional_draw_width()
+	)
+	return {
+		"aircraft_type_id": aircraft_type_id,
+		"direction": direction,
+		"engine_running": _swift_engine_running(),
+		"throttle": _swift_engine_throttle(),
+		"propeller_centers": centers,
+		"propeller_count": centers.size(),
+		"navigation_lights": _swift_engine_running(),
+		"landing_lights": _swift_landing_lights_on()
 	}
 
 

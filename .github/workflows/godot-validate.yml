@@ -135,6 +135,9 @@ jobs:
       - name: Test Pico P8 visual FX
         run: timeout 25s godot --headless --path . --script res://tests/pico_visual_fx_test.gd
 
+      - name: Test Swift S14 flight polish
+        run: timeout 25s godot --headless --path . --script res://tests/swift_s14_flight_polish_test.gd
+
       - name: Test manual aircraft handling loop
         run: timeout 35s godot --headless --path . --script res://tests/manual_aircraft_handling_test.gd
 

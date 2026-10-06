@@ -12,37 +12,32 @@ func _run() -> void:
 
 	var north := grid.get_parcel("north")
 	if String(north.get("name", "")) != "Service Apron":
-		_fail("North expansion should be the named Service Apron district.")
+		_fail("North starter parcel should retain the Service Apron identity.")
 		return
 	if int(north.get("level", 0)) != 5 or int(north.get("cost", 0)) != 25000:
-		_fail("Service Apron should preserve the Lv5 / 25,000 early expansion gate.")
+		_fail("Service Apron metadata should preserve the Lv5 / 25,000 expansion value.")
 		return
-	if String(north.get("tag", "")) != "FIRST EXPANSION":
-		_fail("Service Apron should expose its progression role.")
+	if not bool(north.get("owned", false)):
+		_fail("Service Apron is now granted as part of the 16x16 starter airfield.")
 		return
-
 	var north_visual := grid.get_parcel_visual_state("north")
-	if not bool(north_visual.get("show_boundary", false)):
-		_fail("Unowned connected land should render an expansion boundary.")
-		return
-	if not bool(north_visual.get("show_construction_marker", false)):
-		_fail("Available land should render a construction/purchase marker.")
-		return
-	if bool(north_visual.get("show_lock_marker", true)):
-		_fail("Connected purchasable land should not render as future-locked.")
+	if bool(north_visual.get("show_boundary", true)):
+		_fail("Starter-owned Service Apron should not show a sale boundary.")
 		return
 
-	var north_west := grid.get_parcel("north_west")
-	var north_west_visual := grid.get_parcel_visual_state("north_west")
-	if String(north_west.get("progression_state", "")) != "future":
-		_fail("International Reserve should begin disconnected.")
+	var future_runway := grid.get_parcel("south_east")
+	var future_visual := grid.get_parcel_visual_state("south_east")
+	if String(future_runway.get("progression_state", "")) != "future":
+		_fail("Regional Runway Reserve should begin disconnected.")
 		return
-	if not bool(north_west_visual.get("show_lock_marker", false)):
-		_fail("Disconnected future land should render a lock marker.")
+	if not bool(future_visual.get("show_lock_marker", false)):
+		_fail("Disconnected runway reserve should render a lock marker.")
 		return
-	if String(north_west_visual.get("zone_name", "")) != "International Reserve":
-		_fail("Visual state should expose the district identity.")
+	if String(future_visual.get("zone_name", "")) != "Regional Runway Reserve":
+		_fail("Visual state should expose the runway-reserve identity.")
 		return
+
+	var future_snapshot := future_runway.duplicate(true)
 
 	var east := grid.get_parcel("east")
 	if String(east.get("name", "")) != "Regional Apron":
@@ -96,7 +91,7 @@ func _run() -> void:
 		return
 	var label: Label = grid.parcel_labels.get("south_east")
 	if label == null or label.visible:
-		_fail("Purchased non-home districts should hide the large sale label.")
+		_fail("Purchased non-starter districts should hide the large sale label.")
 		return
 
 	var hud := preload("res://src/ui/HUD.gd").new()
@@ -113,12 +108,9 @@ func _run() -> void:
 	if not hud.parcel_requirements.text.contains("Medium Aircraft Stand"):
 		_fail("Expansion HUD should preview suitable/unlocked infrastructure.")
 		return
-	if hud.purchase_button.disabled:
-		_fail("Eligible affordable Regional Apron should be purchasable in the HUD.")
-		return
 
-	hud.show_parcel(north_west, 30, 2000000)
-	if hud.parcel_title.text != "INTERNATIONAL RESERVE":
+	hud.show_parcel(future_snapshot, 30, 2000000)
+	if hud.parcel_title.text != "REGIONAL RUNWAY RESERVE":
 		_fail("Future expansion HUD should retain the district identity.")
 		return
 	if not hud.parcel_requirements.text.contains("Connect adjacent airport land"):
@@ -138,8 +130,8 @@ func _run() -> void:
 		return
 
 	print(
-		"Airport expansion districts passed: named progression, regional runway "
-		+ "path, world visual states, district HUD and milestone celebration."
+		"Airport expansion districts passed: starter 16x16 land, regional "
+		+ "runway path, world visual states and district HUD."
 	)
 	quit(0)
 

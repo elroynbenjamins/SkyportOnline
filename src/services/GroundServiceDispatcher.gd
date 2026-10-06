@@ -76,24 +76,30 @@ func request_turnaround(
 		"label": label,
 		"profile": profile,
 		"is_returning": is_returning,
+		# Aircraft leaving the hangar use a departure-first flow:
+		# taxi to stand -> LOAD -> fuel/service vehicles -> SEND.
+		"outbound_preload_first": not is_returning,
 		"manual_steps": manual_steps,
 		"stage": "",
 		"stage_pending": {},
 		"service_status": {}
 	}
 
-	if (
-		manual_steps
-		and not aircraft.uses_handling_automation()
-	):
-		_wait_for_manual_stage(
-			job_id,
-			"READY_UNLOAD" if is_returning else "READY_SERVICE"
-		)
-	elif is_returning:
-		_begin_unloading(job_id)
+	if is_returning:
+		if (
+			manual_steps
+			and not aircraft.uses_handling_automation()
+		):
+			_wait_for_manual_stage(
+				job_id,
+				"READY_UNLOAD"
+			)
+		else:
+			_begin_unloading(job_id)
 	else:
-		_begin_servicing(job_id)
+		# Outbound aircraft load first. Fuel/cleaning/catering then come to
+		# the aircraft at the stand via the service-road network.
+		_request_passenger_boarding(job_id)
 
 
 func advance_manual_handling(
@@ -197,7 +203,8 @@ func request_fuel(
 		"label": label,
 		"service_key": "legacy_fuel",
 		"service_type": "fuel",
-		"base_duration": float(profile.get("fuel_seconds", 12.0))
+		"base_duration": float(profile.get("fuel_seconds", 12.0)),
+		"fuel_required": _fuel_required_for_aircraft(aircraft)
 	})
 	status_changed.emit("%s requested fuel" % label, "normal")
 	_try_dispatch()
@@ -705,6 +712,10 @@ func _advance_stage(job_id: int) -> void:
 	var manual_job := _is_manual_job(job)
 	var auto_handling := aircraft.uses_handling_automation()
 
+	var outbound_preload_first := bool(
+		job.get("outbound_preload_first", false)
+	)
+
 	match stage:
 		"UNLOADING":
 			if manual_job and not auto_handling:
@@ -715,14 +726,30 @@ func _advance_stage(job_id: int) -> void:
 			else:
 				_begin_servicing(job_id)
 		"SERVICING":
-			if aircraft.is_social_visitor():
+			if outbound_preload_first:
+				if manual_job and not auto_handling:
+					_wait_for_manual_stage(
+						job_id,
+						"READY_SEND"
+					)
+				else:
+					_begin_pushback(job_id)
+			elif aircraft.is_social_visitor():
 				_begin_loading(job_id)
 			elif aircraft.has_flight_plan():
 				_request_passenger_boarding(job_id)
 			else:
 				_wait_for_destination(job_id)
 		"LOADING":
-			if manual_job:
+			if outbound_preload_first:
+				if manual_job and not auto_handling:
+					_wait_for_manual_stage(
+						job_id,
+						"READY_SERVICE"
+					)
+				else:
+					_begin_servicing(job_id)
+			elif manual_job:
 				_wait_for_manual_stage(
 					job_id,
 					"READY_SEND"

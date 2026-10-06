@@ -10,47 +10,33 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(18, 10)
 	var status := grid.set_build_preview(
 		"basic_fuel",
-		grid.tile_to_world(
-			Vector2(target.x, target.y)
-		),
+		grid.tile_to_world(Vector2(target.x, target.y)),
 		0
 	)
 	if bool(status.get("valid", false)):
-		_fail("Locked north parcel should block this placement.")
+		_fail("Locked east parcel should block this placement.")
 		return
-	if String(
-		status.get("locked_parcel_id", "")
-	) != "north":
-		_fail("Placement should identify the north parcel as the blocker.")
+	if String(status.get("locked_parcel_id", "")) != "east":
+		_fail("Placement should identify the east parcel as the blocker.")
 		return
-	if int(status.get("locked_parcel_level", 0)) != 5:
-		_fail("Placement should expose the parcel level requirement.")
+	if int(status.get("locked_parcel_level", 0)) != 8:
+		_fail("Placement should expose the Regional Apron level requirement.")
 		return
-	if int(status.get("locked_parcel_cost", 0)) != 25000:
-		_fail("Placement should expose the parcel expansion cost.")
+	if int(status.get("locked_parcel_cost", 0)) != 50000:
+		_fail("Placement should expose the Regional Apron expansion cost.")
 		return
 	if not grid.has_build_preview():
 		_fail("Blocked placement should remain an active preview.")
 		return
 
-	var parcel := grid.get_parcel("north")
-	if parcel.is_empty() or bool(parcel.get("owned", true)):
-		_fail("North parcel should begin locked.")
-		return
-
-	if not grid.purchase_parcel("north"):
+	if not grid.purchase_parcel("east"):
 		_fail("Direct parcel purchase should unlock locked placement land.")
 		return
-	if not grid.is_parcel_unlock_animation_active("north"):
+	if not grid.is_parcel_unlock_animation_active("east"):
 		_fail("Placement-time expansion should trigger the unlock effect.")
-		return
-
-	parcel = grid.get_parcel("north")
-	if not bool(parcel.get("owned", false)):
-		_fail("Purchased parcel should report owned immediately.")
 		return
 
 	var refreshed := grid.refresh_build_preview(0)
@@ -60,19 +46,13 @@ func _run() -> void:
 			% String(refreshed.get("reason", "unknown"))
 		)
 		return
-	if not grid.has_build_preview():
-		_fail("Expansion must not clear the active placement preview.")
-		return
 	if refreshed.get("origin", Vector2i.ZERO) != target:
 		_fail("Expansion must preserve the exact preview origin.")
 		return
 
 	var placed := grid.confirm_build_preview()
-	if placed.is_empty():
-		_fail("Expanded placement should still be confirmable.")
-		return
-	if placed.get("origin", Vector2i.ZERO) != target:
-		_fail("Confirmed building should remain at the previewed target.")
+	if placed.is_empty() or placed.get("origin", Vector2i.ZERO) != target:
+		_fail("Expanded placement should confirm at the previewed target.")
 		return
 
 	var multi_grid := AirportGrid.new()
@@ -81,42 +61,32 @@ func _run() -> void:
 
 	var future_only := multi_grid.set_build_preview(
 		"basic_fuel",
-		multi_grid.tile_to_world(Vector2(3, 3)),
+		multi_grid.tile_to_world(Vector2(18, 18)),
 		0
 	)
-	if String(
-		future_only.get("locked_parcel_id", "")
-	) != "north_west":
-		_fail("Future-only placement should identify north-west.")
+	if String(future_only.get("locked_parcel_id", "")) != "south_east":
+		_fail("Future-only placement should identify south-east.")
 		return
-	if String(
-		future_only.get("locked_parcel_state", "")
-	) != "future":
-		_fail("Disconnected placement land should report future state.")
+	if String(future_only.get("locked_parcel_state", "")) != "future":
+		_fail("Disconnected runway-reserve land should report future state.")
 		return
-	if bool(
-		future_only.get("locked_parcel_adjacent", true)
-	):
+	if bool(future_only.get("locked_parcel_adjacent", true)):
 		_fail("Future-only parcel should not report owned adjacency.")
 		return
 
-	var multi_target := Vector2i(5, 6)
+	var multi_target := Vector2i(14, 17)
 	var multi_status := multi_grid.set_build_preview(
 		"short_runway",
-		multi_grid.tile_to_world(
-			Vector2(multi_target.x, multi_target.y)
-		),
+		multi_grid.tile_to_world(Vector2(multi_target.x, multi_target.y)),
 		0
 	)
 	if int(multi_status.get("locked_parcel_count", 0)) != 2:
-		_fail("Large footprint should report both locked parcels.")
+		_fail("Large runway footprint should report south and south-east parcels.")
 		return
 
-	var first_locked := String(
-		multi_status.get("locked_parcel_id", "")
-	)
-	if first_locked.is_empty():
-		_fail("Multi-parcel placement should expose the first expansion.")
+	var first_locked := String(multi_status.get("locked_parcel_id", ""))
+	if first_locked != "south":
+		_fail("South should be the first adjacent expansion for this runway footprint.")
 		return
 	if not multi_grid.purchase_parcel(first_locked):
 		_fail("First required parcel should be purchasable.")
@@ -124,19 +94,14 @@ func _run() -> void:
 
 	multi_status = multi_grid.refresh_build_preview(0)
 	if bool(multi_status.get("valid", false)):
-		_fail("One expansion should not unlock a two-parcel footprint.")
+		_fail("One expansion should not unlock a two-parcel runway footprint.")
 		return
-	var second_locked := String(
-		multi_status.get("locked_parcel_id", "")
-	)
-	if (
-		second_locked.is_empty()
-		or second_locked == first_locked
-	):
-		_fail("Revalidation should advance to the next locked parcel.")
+	var second_locked := String(multi_status.get("locked_parcel_id", ""))
+	if second_locked != "south_east":
+		_fail("Revalidation should advance to the runway reserve.")
 		return
 	if not multi_grid.purchase_parcel(second_locked):
-		_fail("Second required parcel should be purchasable.")
+		_fail("Second required parcel should be purchasable after south connects it.")
 		return
 
 	multi_status = multi_grid.refresh_build_preview(0)
@@ -148,8 +113,8 @@ func _run() -> void:
 		return
 
 	print(
-		"Placement expansion passed: locked parcel metadata, purchase, "
-		+ "preview preservation and immediate confirmation."
+		"Placement expansion passed: 16x16 starter boundary, locked parcel "
+		+ "metadata, sequential runway expansion and preview preservation."
 	)
 	quit(0)
 

@@ -4,6 +4,7 @@ extends SceneTree
 const STARTER_INTEGRATED_IDS := [
 	"small_terminal",
 	"small_stand",
+	"small_hangar",
 	"travel_office",
 	"ground_ops_depot",
 	"basic_fuel"
@@ -177,7 +178,7 @@ func _run() -> void:
 		if String(building.get("definition_id", "")) == "travel_office":
 			travel_origin = building.get("origin", Vector2i(-1, -1))
 			break
-	if travel_origin != Vector2i(9, 10):
+	if travel_origin != Vector2i(5, 11):
 		_fail(
 			"Starter Travel Office should sit beside the Terminal, not visually stack over its roof."
 		)
@@ -188,15 +189,38 @@ func _run() -> void:
 		if String(building.get("definition_id", "")) == "small_terminal":
 			terminal_origin = building.get("origin", Vector2i(-1, -1))
 			break
-	if terminal_origin != Vector2i(8, 14):
+	if terminal_origin != Vector2i(5, 8):
 		_fail(
 			"Starter Terminal should keep a clear ground gap from the Travel Office."
 		)
 		return
 
+	var hangar_origin := Vector2i(-1, -1)
+	for building in grid.placed_buildings:
+		if String(building.get("definition_id", "")) == "small_hangar":
+			hangar_origin = building.get("origin", Vector2i(-1, -1))
+			break
+	if hangar_origin != Vector2i(1, 6):
+		_fail("Starter Hangar should use the dedicated west-side aircraft bay.")
+		return
+
+	var starter_area := grid.get_starter_build_area_snapshot()
+	if (
+		int(starter_area.get("width_tiles", 0)) != 16
+		or int(starter_area.get("height_tiles", 0)) != 16
+		or int(starter_area.get("tile_count", 0)) != 256
+	):
+		_fail("Starter build area should expose a contiguous 16x16 / 256-tile footprint.")
+		return
+	var starter_parcels: Array = starter_area.get("parcel_ids", [])
+	for parcel_id in ["north_west", "north", "west", "home"]:
+		if not starter_parcels.has(parcel_id):
+			_fail("Starter 16x16 area should include parcel %s." % parcel_id)
+			return
+
 	print(
 		"STARTER_BUILDING_GRID_FIT_OK integrated_bases=true "
-		+ "procedural_underlays=false grounded=true strict_footprints=true people_hidden=true"
+		+ "procedural_underlays=false grounded=true strict_footprints=true starter=16x16 hangar=true"
 	)
 	quit(0)
 

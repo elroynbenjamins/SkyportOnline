@@ -16,13 +16,14 @@ const STARTER_VISUAL_IDS: Array[String] = [
 ]
 const STARTER_LAYOUT_COUNTS := {
 	"short_runway": 1,
-	"taxiway": 3,
+	"taxiway": 15,
 	"small_stand": 2,
+	"small_hangar": 1,
 	"small_terminal": 1,
 	"travel_office": 1,
 	"ground_ops_depot": 1,
 	"basic_fuel": 1,
-	"service_road": 10
+	"service_road": 12
 }
 const SERVICE_TYPES: Array[String] = [
 	"fuel",

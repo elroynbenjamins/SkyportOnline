@@ -47,6 +47,7 @@ var social_visitor_aircraft: Dictionary = {}
 var current_profile: Dictionary = {}
 var gameplay_started := false
 var current_event_snapshot: Dictionary = {}
+var handling_attention_elapsed := 0.0
 
 
 func _process(delta: float) -> void:
@@ -59,6 +60,11 @@ func _process(delta: float) -> void:
 			request.get("wait_seconds", 0.0)
 		) + delta
 		pending_arrivals[index] = request
+
+	handling_attention_elapsed += delta
+	if handling_attention_elapsed >= 0.20:
+		handling_attention_elapsed = 0.0
+		_refresh_handling_attention()
 
 
 func _ready() -> void:
@@ -89,6 +95,9 @@ func _ready() -> void:
 		_on_done_airport_edit_requested
 	)
 	hud.navigation_requested.connect(_on_navigation_requested)
+	hud.handling_attention_requested.connect(
+		_on_handling_attention_requested
+	)
 	airport_setup.airport_created.connect(_on_airport_created)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
@@ -2322,6 +2331,86 @@ func _on_world_hovered(world_position: Vector2) -> void:
 		)
 	else:
 		airport_grid.clear_building_hover()
+
+
+func _next_handling_aircraft() -> AircraftPrototype:
+	var priorities := [
+		"LAND",
+		"TAXI",
+		"UNLOAD",
+		"SERVICE",
+		"LOAD",
+		"SEND"
+	]
+	for action_variant in priorities:
+		var action := String(action_variant)
+		for aircraft in aircraft_demos:
+			if (
+				aircraft == null
+				or not is_instance_valid(aircraft)
+				or aircraft.is_social_visitor()
+				or aircraft.get_handling_action() != action
+			):
+				continue
+			return aircraft
+	return null
+
+
+func _handling_attention_count() -> int:
+	var count := 0
+	for aircraft in aircraft_demos:
+		if (
+			aircraft == null
+			or not is_instance_valid(aircraft)
+			or aircraft.is_social_visitor()
+		):
+			continue
+		if not aircraft.get_handling_action().is_empty():
+			count += 1
+	return count
+
+
+func _refresh_handling_attention() -> void:
+	if hud == null:
+		return
+	var aircraft := _next_handling_aircraft()
+	if aircraft == null:
+		hud.set_handling_attention("", "", 0)
+		return
+
+	hud.set_handling_attention(
+		String(aircraft.name),
+		aircraft.get_handling_action(),
+		_handling_attention_count()
+	)
+
+
+func _on_handling_attention_requested() -> void:
+	var aircraft := _next_handling_aircraft()
+	if aircraft == null:
+		_refresh_handling_attention()
+		return
+
+	if airport_edit_mode or moving_building_uid >= 0:
+		hud.set_operation_status(
+			"Finish airport editing before focusing aircraft.",
+			"warning"
+		)
+		return
+
+	camera_controller.focus_world_position(
+		aircraft.global_position,
+		0.34,
+		0.82
+	)
+	_show_aircraft_context(aircraft)
+	hud.set_operation_status(
+		"%s • %s ready" % [
+			String(aircraft.name),
+			aircraft.get_handling_action()
+		],
+		"warning"
+	)
 
 
 func _aircraft_at_world_position(

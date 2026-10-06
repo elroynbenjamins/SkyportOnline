@@ -4,6 +4,7 @@ extends SceneTree
 const STARTER_INTEGRATED_IDS := [
 	"small_terminal",
 	"small_stand",
+	"small_hangar",
 	"travel_office",
 	"ground_ops_depot",
 	"basic_fuel"
@@ -177,7 +178,7 @@ func _run() -> void:
 		if String(building.get("definition_id", "")) == "travel_office":
 			travel_origin = building.get("origin", Vector2i(-1, -1))
 			break
-	if travel_origin != Vector2i(9, 10):
+	if travel_origin != Vector2i(8, 10):
 		_fail(
 			"Starter Travel Office should sit beside the Terminal, not visually stack over its roof."
 		)
@@ -188,10 +189,24 @@ func _run() -> void:
 		if String(building.get("definition_id", "")) == "small_terminal":
 			terminal_origin = building.get("origin", Vector2i(-1, -1))
 			break
-	if terminal_origin != Vector2i(8, 14):
+	if terminal_origin != Vector2i(4, 10):
 		_fail(
-			"Starter Terminal should keep a clear ground gap from the Travel Office."
+			"Starter Terminal should keep a clear ground position inside the 16x16 area."
 		)
+		return
+
+	var starter_setup := grid.get_starter_construction_snapshot()
+	if int(starter_setup.get("starter_width_tiles", 0)) != 16:
+		_fail("Starter owned build area should be 16x16 tiles.")
+		return
+	if int(starter_setup.get("runway_count", -1)) != 0:
+		_fail("Starter layout should leave runway placement to the player.")
+		return
+	if int(starter_setup.get("taxiway_count", -1)) != 0:
+		_fail("Starter layout should leave taxiway placement to the player.")
+		return
+	if int(starter_setup.get("service_road_count", -1)) != 0:
+		_fail("Starter layout should leave service-road placement to the player.")
 		return
 
 	print(

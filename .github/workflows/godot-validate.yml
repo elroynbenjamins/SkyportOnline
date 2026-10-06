@@ -198,6 +198,25 @@ jobs:
       - name: Test main airport UI takeover
         run: timeout 20s godot --headless --path . --script res://tests/airport_ui_takeover_test.gd
 
+      - name: Prepare virtual display for airport screenshot
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb
+          fi
+
+      - name: Capture current airport visual QA screenshot
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_airport_screenshot.gd
+
+      - name: Upload current airport visual QA screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: current-airport-screenshot
+          path: artifacts/current_airport.png
+          if-no-files-found: error
+          retention-days: 7
+
+
       - name: Diagnose production building art alignment
         run: timeout 30s godot --headless --path . --script res://tests/building_art_alignment_test.gd
 

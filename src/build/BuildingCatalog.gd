@@ -422,7 +422,7 @@ static func all() -> Array[Dictionary]:
 			"category": "Operations",
 			"footprint": Vector2i(3, 3),
 			"cost": 12000,
-			"level": 3,
+			"level": 1,
 			"color": Color("8094a1"),
 			"rotatable": true,
 			"sizes": PackedStringArray(["S"]),
@@ -433,6 +433,9 @@ static func all() -> Array[Dictionary]:
 				Rect2(0, 448, 448, 448),
 				Rect2(448, 448, 448, 448)
 			],
+			"world_sprite_auto_ground": true,
+			"world_sprite_visible_width_scale": 0.92,
+			"world_ground_pad": false,
 			"world_sprite_size": Vector2(292, 292),
 			"world_sprite_offsets": [
 				Vector2(0, -66),

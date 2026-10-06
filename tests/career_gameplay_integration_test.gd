@@ -59,6 +59,18 @@ func _run() -> void:
 		for plane in aircraft:
 			if is_instance_valid(plane) and not plane.is_queued_for_deletion():
 				plane.set_process(false)
+				# The production game is tactile by default. Simulate an
+				# attentive player immediately pressing each surfaced action
+				# so this integration test still exercises the full real loop.
+				var handling_action := plane.get_handling_action()
+				if (
+					not handling_action.is_empty()
+					and not plane.is_social_visitor()
+				):
+					main._on_aircraft_handling_action_requested(
+						plane,
+						handling_action
+					)
 				plane._process(0.10)
 		for vehicle in main.ground_services.get_children():
 			if is_instance_valid(vehicle) and not vehicle.is_queued_for_deletion() and vehicle.has_method("_process"):

@@ -124,7 +124,7 @@ func _refresh() -> void:
 		GameUIStyle.COLOR_GOLD if ready > 0 else GameUIStyle.COLOR_MUTED
 	)
 
-	for id in ["missions", "charter", "challenge", "alliance", "event"]:
+	for id in ["missions", "dispatch", "charter", "challenge", "alliance", "event"]:
 		var data: Dictionary = snapshot.get(id, {})
 		_add_card(id, data)
 

@@ -7,6 +7,8 @@ signal claim_requested(milestone_id: String)
 var root: Control
 var network_label: Label
 var timer_label: Label
+var project_label: Label
+var next_project_label: Label
 var personal_label: Label
 var total_label: Label
 var contribution_label: Label
@@ -111,15 +113,25 @@ func _build_ui() -> void:
 	help_box.add_theme_constant_override("separation", 3)
 	help_panel.add_child(help_box)
 
-	var help := Label.new()
-	help.text = "WEEKLY AIRBRIDGE PROJECT"
-	GameUIStyle.heading(help, 15)
-	help_box.add_child(help)
+	project_label = Label.new()
+	project_label.text = "WEEKLY ALLIANCE PROJECT"
+	GameUIStyle.heading(project_label, 15)
+	project_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_EVENT
+	)
+	help_box.add_child(project_label)
 
 	contribution_label = Label.new()
 	contribution_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	contribution_label.add_theme_font_size_override("font_size", 13)
 	help_box.add_child(contribution_label)
+
+	next_project_label = Label.new()
+	next_project_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	next_project_label.add_theme_font_size_override("font_size", 11)
+	GameUIStyle.muted(next_project_label)
+	help_box.add_child(next_project_label)
 
 	var milestone_panel := PanelContainer.new()
 	milestone_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -180,14 +192,26 @@ func _refresh() -> void:
 		GameUIStyle.muted(network_label)
 
 	timer_label.text = "RESET IN %s" % _format_time(int(snapshot.get("seconds_remaining", 0)))
+	project_label.text = String(
+		snapshot.get("project_name", "Alliance Operations")
+	).to_upper()
+	next_project_label.text = "NEXT WEEK: %s" % String(
+		snapshot.get("next_project_name", "Alliance Operations")
+	).to_upper()
 	personal_label.text = "%d PTS" % int(snapshot.get("personal_points", 0))
 	total_label.text = "%d PTS" % int(snapshot.get("alliance_total", 0))
 
 	var contributions: Dictionary = snapshot.get("contributions", {})
+	var point_values: Dictionary = snapshot.get("point_values", {})
 	contribution_label.text = (
-		"Complete flights +1 • service alliance aircraft +3 • send alliance passenger support +1\n"
+		"%s\n"
+		+ "Flights +%d • alliance aircraft +%d • passenger support +%d\n"
 		+ "This week: %d flights • %d alliance visitors • %d support gifts"
 	) % [
+		String(snapshot.get("project_description", "")),
+		int(point_values.get("flight", 1)),
+		int(point_values.get("alliance_visit", 3)),
+		int(point_values.get("alliance_gift", 1)),
 		int(contributions.get("flight", 0)),
 		int(contributions.get("alliance_visit", 0)),
 		int(contributions.get("alliance_gift", 0))

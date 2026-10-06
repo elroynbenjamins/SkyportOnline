@@ -8,7 +8,7 @@ const DECOR := {
 		],
 		"size": Vector2(112, 112),
 		"offsets": [
-			Vector2(0, -37)
+			Vector2(0, -29)
 		]
 	},
 	"autumn_leaf_garden": {
@@ -28,7 +28,7 @@ const DECOR := {
 		],
 		"size": Vector2(112, 112),
 		"offsets": [
-			Vector2(0, -37)
+			Vector2(0, -29)
 		]
 	},
 	"winter_snow_globe_garden": {

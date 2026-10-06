@@ -55,8 +55,10 @@ func _start_gameplay() -> void:
 			DestinationCatalog.DEFAULT_HOME_COUNTRY_ID
 		)
 	)
+	var home_state_changed := false
 	if String(progression.get("home_country_id", "")).is_empty():
 		progression["home_country_id"] = profile_home_country
+		home_state_changed = true
 	DestinationCatalog.configure_home_country(
 		String(progression.get("home_country_id", profile_home_country))
 	)
@@ -66,6 +68,8 @@ func _start_gameplay() -> void:
 		Time.get_unix_time_from_system(),
 		stored_level
 	)
+	if home_state_changed:
+		mission_state_changed = true
 	var updated_level := AirportProgressionRules.level_for_xp(int(progression.get("xp", 0)))
 	var rollover_aero := MissionPassRules.aero_tokens_for_level_range(
 		stored_level,

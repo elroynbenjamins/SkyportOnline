@@ -12,6 +12,7 @@ var alliance_operations_screen: AllianceOperationsScreen
 var airport_challenge_screen: AirportChallengeScreen
 var dispatch_challenge_screen: DispatchChallengeScreen
 var activities_hub_screen: ActivitiesHubScreen
+var activity_intro_screen: ActivityIntroScreen
 var mission_pin: Button
 var mission_billing_bridge: MissionProductBillingBridge
 var pending_mission_ad_id := ""
@@ -137,6 +138,15 @@ func _start_gameplay() -> void:
 		_on_activities_hub_closed
 	)
 	add_child(activities_hub_screen)
+
+	activity_intro_screen = ActivityIntroScreen.new()
+	activity_intro_screen.continue_requested.connect(
+		_on_activity_intro_continue
+	)
+	activity_intro_screen.close_requested.connect(
+		_on_activity_intro_closed
+	)
+	add_child(activity_intro_screen)
 
 	mission_billing_bridge = MissionProductBillingBridge.new()
 	mission_billing_bridge.purchase_verified.connect(_on_mission_purchase_verified)
@@ -751,10 +761,7 @@ func _refresh_alliance_operations_ui() -> void:
 func _on_alliance_operations_requested() -> void:
 	if social_airport_screen != null:
 		social_airport_screen.close_screen()
-	if alliance_operations_screen != null:
-		alliance_operations_screen.open_screen(
-			_alliance_operations_snapshot()
-		)
+	_request_activity_entry("alliance")
 
 
 func _on_alliance_operations_closed() -> void:
@@ -1281,7 +1288,33 @@ func _update_level() -> void:
 			gems += aero_awarded
 			progression["aero_tokens"] = gems
 			progression["gems"] = gems
-		hud.set_operation_status("AIRPORT LEVEL %d • +%d Aero Tokens • new unlocks may be available" % [player_level, aero_awarded], "success")
+		var activity_unlocks: Array[String] = []
+		for mode_id in ActivityProgressionRules.definitions():
+			var unlock_level := ActivityProgressionRules.unlock_level(
+				String(mode_id)
+			)
+			if unlock_level > old_level and unlock_level <= player_level:
+				activity_unlocks.append(
+					String(
+						ActivityProgressionRules.definition(
+							String(mode_id)
+						).get("title", mode_id)
+					)
+				)
+		var unlock_text := (
+			" • NEW: %s" % " / ".join(activity_unlocks)
+			if not activity_unlocks.is_empty()
+			else ""
+		)
+		hud.set_operation_status(
+			"AIRPORT LEVEL %d • +%d Aero Tokens%s" % [
+				player_level,
+				aero_awarded,
+				unlock_text
+			],
+			"success"
+		)
+		_refresh_activities_hub()
 	if world_map != null:
 		world_map.player_level = player_level
 	if fleet_screen != null:
@@ -2006,12 +2039,67 @@ func _refresh_activities_hub() -> void:
 	if activities_hub_screen != null:
 		activities_hub_screen.set_snapshot(data)
 	if hud != null:
-		hud.set_activities_attention(int(data.get("attention_count", 0)) > 0)
+		hud.set_activities_attention(
+			int(data.get("attention_count", 0)) > 0
+			or int(data.get("new_count", 0)) > 0
+		)
 
 
 func _on_activity_mode_requested(mode_id: String) -> void:
 	if activities_hub_screen != null:
 		activities_hub_screen.close_screen(true)
+	_request_activity_entry(mode_id)
+
+
+func _request_activity_entry(mode_id: String) -> void:
+	if not _activity_entry_allowed(mode_id):
+		var definition := ActivityProgressionRules.definition(mode_id)
+		var unlock_level := int(definition.get("unlock_level", 1))
+		var message := (
+			"%s unlocks at Airport Level %d."
+			% [
+				String(definition.get("title", "This activity")),
+				unlock_level
+			]
+		)
+		if mode_id == "alliance" and player_level >= unlock_level:
+			message = "Join or connect an Alliance before opening Alliance Operations."
+		elif mode_id == "event" and player_level >= unlock_level:
+			message = "No seasonal event is active right now."
+		hud.set_operation_status(message, "warning")
+		_refresh_activities_hub()
+		return
+
+	if ActivityProgressionRules.is_newly_unlocked(
+		progression,
+		mode_id,
+		player_level
+	):
+		if activity_intro_screen != null:
+			activity_intro_screen.open_intro(
+				mode_id,
+				ActivityProgressionRules.definition(mode_id)
+			)
+		return
+
+	_open_activity_mode_direct(mode_id)
+
+
+func _activity_entry_allowed(mode_id: String) -> bool:
+	if not ActivityProgressionRules.is_level_unlocked(
+		mode_id,
+		player_level
+	):
+		return false
+	match mode_id:
+		"alliance":
+			return _has_alliance_contact()
+		"event":
+			return bool(current_event_snapshot.get("active", false))
+	return true
+
+
+func _open_activity_mode_direct(mode_id: String) -> void:
 	match mode_id:
 		"missions":
 			_open_missions()
@@ -2023,9 +2111,28 @@ func _on_activity_mode_requested(mode_id: String) -> void:
 		"challenge":
 			_on_navigation_requested("challenge")
 		"alliance":
-			_on_alliance_operations_requested()
+			if alliance_operations_screen != null:
+				alliance_operations_screen.open_screen(
+					_alliance_operations_snapshot()
+				)
 		"event":
 			super._on_navigation_requested("event")
+
+
+func _on_activity_intro_continue(mode_id: String) -> void:
+	if ActivityProgressionRules.mark_tutorial_seen(
+		progression,
+		mode_id
+	):
+		_save_checkpoint()
+	_refresh_activities_hub()
+	_open_activity_mode_direct(mode_id)
+
+
+func _on_activity_intro_closed() -> void:
+	_refresh_activities_hub()
+	if activities_hub_screen != null:
+		activities_hub_screen.open_screen(_activities_snapshot())
 
 
 func _on_activities_hub_closed() -> void:

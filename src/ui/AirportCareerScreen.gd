@@ -200,6 +200,35 @@ func _career(state: Dictionary, level: int) -> void:
 		if shown >= 3:
 			break
 
+	var activity_card := _card()
+	_text(activity_card, "AIRPORT ACTIVITIES", true)
+	_text(
+		activity_card,
+		"New modes unlock gradually as your airport grows. Open a newly unlocked mode once for its short introduction."
+	)
+	for mode_id in [
+		"missions",
+		"event",
+		"dispatch",
+		"challenge",
+		"alliance",
+		"charter"
+	]:
+		var activity := ActivityProgressionRules.definition(mode_id)
+		var unlock_level := int(activity.get("unlock_level", 1))
+		var title := String(activity.get("title", mode_id))
+		var status_text := "LV %d" % unlock_level
+		if level >= unlock_level:
+			status_text = (
+				"INTRODUCED"
+				if ActivityProgressionRules.tutorial_seen(state, mode_id)
+				else "NEW"
+			)
+		_text(
+			activity_card,
+			"%s  •  %s" % [status_text, title]
+		)
+
 func _orders(state: Dictionary, level: int) -> void:
 	_text(body, "Aircraft are bought with ordinary coins, not quest rewards. A purchased plane waits in reserve until a connected, fully serviced stand is free.", true)
 	var active: Array = data.get("active_owned", [])

@@ -12,6 +12,7 @@ var alliance_operations_screen: AllianceOperationsScreen
 var airport_challenge_screen: AirportChallengeScreen
 var dispatch_challenge_screen: DispatchChallengeScreen
 var activities_hub_screen: ActivitiesHubScreen
+var activity_intro_screen: ActivityIntroScreen
 var mission_pin: Button
 var mission_billing_bridge: MissionProductBillingBridge
 var pending_mission_ad_id := ""
@@ -137,6 +138,15 @@ func _start_gameplay() -> void:
 		_on_activities_hub_closed
 	)
 	add_child(activities_hub_screen)
+
+	activity_intro_screen = ActivityIntroScreen.new()
+	activity_intro_screen.continue_requested.connect(
+		_on_activity_intro_continue
+	)
+	activity_intro_screen.close_requested.connect(
+		_on_activity_intro_closed
+	)
+	add_child(activity_intro_screen)
 
 	mission_billing_bridge = MissionProductBillingBridge.new()
 	mission_billing_bridge.purchase_verified.connect(_on_mission_purchase_verified)
@@ -283,7 +293,9 @@ func _install_career_pin() -> void:
 				mission_pin.custom_minimum_size = Vector2(165, 48)
 				mission_pin.add_theme_font_size_override("font_size", 12)
 				GameUIStyle.apply_button(mission_pin, "nav", true)
-				mission_pin.pressed.connect(_open_missions)
+				mission_pin.pressed.connect(
+					_request_activity_entry.bind("missions")
+				)
 				actions.add_child(mission_pin)
 				return
 
@@ -477,12 +489,7 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 			],
 			"success"
 		)
-	AllianceOperationsRules.record_action(
-		progression,
-		"flight",
-		1,
-		Time.get_unix_time_from_system()
-	)
+	_record_alliance_activity("flight")
 	# A completed route is not an implicit order to charge passengers and fly it again.
 	aircraft.assign_flight_plan({})
 	aircraft.set_meta("passengers_paid", false)
@@ -740,7 +747,11 @@ func _refresh_alliance_operations_ui() -> void:
 	)
 	if hud != null:
 		hud.set_alliance_activity_attention(
-			_has_alliance_contact()
+			ActivityProgressionRules.is_level_unlocked(
+				"alliance",
+				player_level
+			)
+			and _has_alliance_contact()
 			and AllianceOperationsRules.claimable_count(
 				progression,
 				Time.get_unix_time_from_system()
@@ -751,10 +762,7 @@ func _refresh_alliance_operations_ui() -> void:
 func _on_alliance_operations_requested() -> void:
 	if social_airport_screen != null:
 		social_airport_screen.close_screen()
-	if alliance_operations_screen != null:
-		alliance_operations_screen.open_screen(
-			_alliance_operations_snapshot()
-		)
+	_request_activity_entry("alliance")
 
 
 func _on_alliance_operations_closed() -> void:
@@ -1281,7 +1289,33 @@ func _update_level() -> void:
 			gems += aero_awarded
 			progression["aero_tokens"] = gems
 			progression["gems"] = gems
-		hud.set_operation_status("AIRPORT LEVEL %d • +%d Aero Tokens • new unlocks may be available" % [player_level, aero_awarded], "success")
+		var activity_unlocks: Array[String] = []
+		for mode_id in ActivityProgressionRules.definitions():
+			var unlock_level := ActivityProgressionRules.unlock_level(
+				String(mode_id)
+			)
+			if unlock_level > old_level and unlock_level <= player_level:
+				activity_unlocks.append(
+					String(
+						ActivityProgressionRules.definition(
+							String(mode_id)
+						).get("title", mode_id)
+					)
+				)
+		var unlock_text := (
+			" • NEW: %s" % " / ".join(activity_unlocks)
+			if not activity_unlocks.is_empty()
+			else ""
+		)
+		hud.set_operation_status(
+			"AIRPORT LEVEL %d • +%d Aero Tokens%s" % [
+				player_level,
+				aero_awarded,
+				unlock_text
+			],
+			"success"
+		)
+		_refresh_activities_hub()
 	if world_map != null:
 		world_map.player_level = player_level
 	if fleet_screen != null:
@@ -1406,12 +1440,7 @@ func _on_social_aircraft_departed(aircraft: AircraftPrototype, label: String, vi
 			coins += int(floor(float(reward.get("coins", 0)) * float(rank.get("coin_bonus", 0.0))))
 		progression["friendships"] = FriendshipRules.record_completion(ledger, request, Time.get_date_string_from_system(true))
 		if String(request.get("relationship", "")) == "alliance":
-			AllianceOperationsRules.record_action(
-				progression,
-				"alliance_visit",
-				1,
-				Time.get_unix_time_from_system()
-			)
+			_record_alliance_activity("alliance_visit")
 	_record_dispatch_action("visitor_service")
 	_update_level()
 	_save_checkpoint()
@@ -1433,18 +1462,42 @@ func _on_social_passenger_gift_requested(
 		and not bool(before.get("sent_today", false))
 		and bool(after.get("sent_today", false))
 	):
-		AllianceOperationsRules.record_action(
-			progression,
-			"alliance_gift",
-			1,
-			Time.get_unix_time_from_system()
-		)
+		_record_alliance_activity("alliance_gift")
 		_save_checkpoint()
 		_refresh_alliance_operations_ui()
 
 
+func _record_alliance_activity(
+	action: String,
+	amount: int = 1
+) -> bool:
+	if (
+		not ActivityProgressionRules.is_level_unlocked(
+			"alliance",
+			player_level
+		)
+		or not _has_alliance_contact()
+	):
+		return false
+	return AllianceOperationsRules.record_action(
+		progression,
+		action,
+		amount,
+		Time.get_unix_time_from_system()
+	)
+
+
 func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:
 	var filtered := snapshot.duplicate(true)
+	filtered["alliance_operations_level"] = (
+		ActivityProgressionRules.ALLIANCE_UNLOCK_LEVEL
+	)
+	filtered["alliance_operations_level_unlocked"] = (
+		ActivityProgressionRules.is_level_unlocked(
+			"alliance",
+			player_level
+		)
+	)
 	for key in ["active_visits", "recent_completed"]:
 		var rows: Array = []
 		for row in snapshot.get(key, []):
@@ -1540,11 +1593,24 @@ func _event_has_claimable_reward() -> bool:
 func _activities_snapshot() -> Dictionary:
 	var mission_claimable := MissionPassRules.claimable_count(progression)
 	var mission_completed := MissionPassRules.completed_daily_count(progression)
+	var mission_new := ActivityProgressionRules.is_newly_unlocked(
+		progression,
+		"missions",
+		player_level
+	)
 	var charter := _charter_snapshot()
 	var charter_active: Dictionary = charter.get("active", {})
 	var charter_phase := String(charter_active.get("phase", ""))
 	var charter_attention := charter_phase == "READY"
 	var charter_unlocked := bool(charter.get("unlocked", false))
+	var charter_new := (
+		charter_unlocked
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"charter",
+			player_level
+		)
+	)
 	var charter_status := "UNLOCKS AT LEVEL %d" % CharterRules.UNLOCK_LEVEL
 	var charter_detail := "Dedicated cargo contracts and guaranteed country resources."
 	var charter_action := "OPEN CHARTER"
@@ -1590,6 +1656,15 @@ func _activities_snapshot() -> Dictionary:
 		Time.get_unix_time_from_system()
 	) > 0
 	var challenge_unlocked := bool(challenge.get("unlocked", false))
+	var challenge_new := (
+		challenge_unlocked
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"challenge",
+			player_level
+		)
+	)
+	challenge_attention = challenge_unlocked and challenge_attention
 	var challenge_status := "UNLOCKS AT LEVEL %d" % AirportChallengeRules.UNLOCK_LEVEL
 	var challenge_detail := "Weekly score track based on your normal passenger flights."
 	if challenge_unlocked:
@@ -1610,17 +1685,38 @@ func _activities_snapshot() -> Dictionary:
 
 	var alliance := _alliance_operations_snapshot()
 	var has_alliance := _has_alliance_contact()
-	var alliance_attention := has_alliance and AllianceOperationsRules.claimable_count(
-		progression,
-		Time.get_unix_time_from_system()
-	) > 0
+	var alliance_level_unlocked := ActivityProgressionRules.is_level_unlocked(
+		"alliance",
+		player_level
+	)
+	var alliance_enabled := alliance_level_unlocked and has_alliance
+	var alliance_new := (
+		alliance_enabled
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"alliance",
+			player_level
+		)
+	)
+	var alliance_attention := (
+		alliance_enabled
+		and AllianceOperationsRules.claimable_count(
+			progression,
+			Time.get_unix_time_from_system()
+		) > 0
+	)
 	var alliance_status := (
 		"%s • %d PTS" % [
 			String(alliance.get("project_short_name", "Alliance")).to_upper(),
 			int(alliance.get("alliance_total", 0))
 		]
-		if has_alliance
-		else "ALLIANCE REQUIRED"
+		if alliance_enabled
+		else (
+			"UNLOCKS AT LEVEL %d"
+			% ActivityProgressionRules.ALLIANCE_UNLOCK_LEVEL
+			if not alliance_level_unlocked
+			else "ALLIANCE REQUIRED"
+		)
 	)
 	var alliance_detail := (
 		"%s • %d personal pts • %s left" % [
@@ -1630,14 +1726,29 @@ func _activities_snapshot() -> Dictionary:
 				int(alliance.get("seconds_remaining", 0))
 			)
 		]
-		if has_alliance
-		else "Join or connect an Alliance to take part in cooperative weekly goals."
+		if alliance_enabled
+		else (
+			"Alliance Operations opens after you have mastered solo airport challenges."
+			if not alliance_level_unlocked
+			else "Join or connect an Alliance to take part in cooperative weekly goals."
+		)
 	)
 
 	var dispatch := _dispatch_snapshot()
 	var dispatch_unlocked := bool(dispatch.get("unlocked", false))
+	var dispatch_new := (
+		dispatch_unlocked
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"dispatch",
+			player_level
+		)
+	)
 	var dispatch_status_code := String(dispatch.get("status", "IDLE"))
-	var dispatch_attention := bool(dispatch.get("reward_available", false))
+	var dispatch_attention := (
+		dispatch_unlocked
+		and bool(dispatch.get("reward_available", false))
+	)
 	var dispatch_status := "UNLOCKS AT LEVEL %d" % DispatchChallengeRules.UNLOCK_LEVEL
 	var dispatch_detail := "Three-minute live operations shift using your real airport."
 	var dispatch_action := "OPEN DISPATCH"
@@ -1674,30 +1785,54 @@ func _activities_snapshot() -> Dictionary:
 				)
 
 	var event_active := bool(current_event_snapshot.get("active", false))
-	var event_attention := _event_has_claimable_reward()
+	var event_level_unlocked := ActivityProgressionRules.is_level_unlocked(
+		"event",
+		player_level
+	)
+	var event_enabled := event_active and event_level_unlocked
+	var event_new := (
+		event_enabled
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"event",
+			player_level
+		)
+	)
+	var event_attention := (
+		event_enabled
+		and _event_has_claimable_reward()
+	)
 	var event_name := String(current_event_snapshot.get("name", "Seasonal Event"))
 	var event_status := (
-		"PHASE %d / 3 • %s" % [
-			int(current_event_snapshot.get("week", 1)),
-			String(
-				current_event_snapshot.get(
-					"phase_name",
-					"Event Phase"
-				)
-			).to_upper()
-		]
-		if event_active
-		else "NO EVENT ACTIVE"
+		"UNLOCKS AT LEVEL %d" % ActivityProgressionRules.EVENT_UNLOCK_LEVEL
+		if not event_level_unlocked
+		else (
+			"PHASE %d / 3 • %s" % [
+				int(current_event_snapshot.get("week", 1)),
+				String(
+					current_event_snapshot.get(
+						"phase_name",
+						"Event Phase"
+					)
+				).to_upper()
+			]
+			if event_active
+			else "NO EVENT ACTIVE"
+		)
 	)
 	var event_detail := (
-		"%s • %d/%d phase quests complete • %d days left" % [
-			String(current_event_snapshot.get("phase_description", event_name)),
-			int(current_event_snapshot.get("phase_quest_complete", 0)),
-			maxi(int(current_event_snapshot.get("phase_quest_total", 0)), 1),
-			int(current_event_snapshot.get("days_remaining", 0))
-		]
-		if event_active
-		else "Limited-time events appear here when activated."
+		"Seasonal events unlock after the first few airport basics."
+		if not event_level_unlocked
+		else (
+			"%s • %d/%d phase quests complete • %d days left" % [
+				String(current_event_snapshot.get("phase_description", event_name)),
+				int(current_event_snapshot.get("phase_quest_complete", 0)),
+				maxi(int(current_event_snapshot.get("phase_quest_total", 0)), 1),
+				int(current_event_snapshot.get("days_remaining", 0))
+			]
+			if event_active
+			else "Limited-time events appear here when activated."
+		)
 	)
 
 	var attention_count := 0
@@ -1712,11 +1847,25 @@ func _activities_snapshot() -> Dictionary:
 		if ready:
 			attention_count += 1
 
+	var new_count := 0
+	for is_new in [
+		mission_new,
+		event_new,
+		dispatch_new,
+		challenge_new,
+		alliance_new,
+		charter_new
+	]:
+		if is_new:
+			new_count += 1
+
 	return {
 		"attention_count": attention_count,
+		"new_count": new_count,
 		"missions": {
 			"title": "MISSIONS & PASS",
 			"badge": "DAILY / WEEKLY",
+			"new": mission_new,
 			"status": (
 				"%d REWARD%s READY" % [mission_claimable, "" if mission_claimable == 1 else "S"]
 				if mission_claimable > 0
@@ -1730,6 +1879,7 @@ func _activities_snapshot() -> Dictionary:
 		"dispatch": {
 			"title": "AIRPORT DISPATCH",
 			"badge": "3-MINUTE LIVE SHIFT",
+			"new": dispatch_new,
 			"status": dispatch_status,
 			"detail": dispatch_detail,
 			"attention": dispatch_attention,
@@ -1740,6 +1890,7 @@ func _activities_snapshot() -> Dictionary:
 		"charter": {
 			"title": "CARGO CHARTER",
 			"badge": "LOGISTICS",
+			"new": charter_new,
 			"status": charter_status,
 			"detail": charter_detail,
 			"attention": charter_attention,
@@ -1749,6 +1900,7 @@ func _activities_snapshot() -> Dictionary:
 		},
 		"challenge": {
 			"title": "WEEKLY AIRPORT CHALLENGE",
+			"new": challenge_new,
 			"badge": (
 				String(challenge.get("theme_short_name", "SOLO WEEKLY")).to_upper()
 				if challenge_unlocked
@@ -1763,6 +1915,7 @@ func _activities_snapshot() -> Dictionary:
 		},
 		"alliance": {
 			"title": "ALLIANCE OPERATIONS",
+			"new": alliance_new,
 			"badge": (
 				String(alliance.get("project_short_name", "CO-OP WEEKLY")).to_upper()
 				if has_alliance
@@ -1771,19 +1924,28 @@ func _activities_snapshot() -> Dictionary:
 			"status": alliance_status,
 			"detail": alliance_detail,
 			"attention": alliance_attention,
-			"enabled": has_alliance,
+			"enabled": alliance_enabled,
 			"action": "OPEN ALLIANCE OPS",
-			"locked_action": "ALLIANCE REQUIRED"
+			"locked_action": (
+				"LEVEL %d" % ActivityProgressionRules.ALLIANCE_UNLOCK_LEVEL
+				if not alliance_level_unlocked
+				else "ALLIANCE REQUIRED"
+			)
 		},
 		"event": {
 			"title": event_name if event_active else "SEASONAL EVENT",
 			"badge": "LIMITED TIME",
+			"new": event_new,
 			"status": event_status,
 			"detail": event_detail,
 			"attention": event_attention,
-			"enabled": event_active,
+			"enabled": event_enabled,
 			"action": "OPEN EVENT",
-			"locked_action": "INACTIVE"
+			"locked_action": (
+				"LEVEL %d" % ActivityProgressionRules.EVENT_UNLOCK_LEVEL
+				if not event_level_unlocked
+				else "INACTIVE"
+			)
 		}
 	}
 
@@ -2006,12 +2168,67 @@ func _refresh_activities_hub() -> void:
 	if activities_hub_screen != null:
 		activities_hub_screen.set_snapshot(data)
 	if hud != null:
-		hud.set_activities_attention(int(data.get("attention_count", 0)) > 0)
+		hud.set_activities_attention(
+			int(data.get("attention_count", 0)) > 0
+			or int(data.get("new_count", 0)) > 0
+		)
 
 
 func _on_activity_mode_requested(mode_id: String) -> void:
 	if activities_hub_screen != null:
 		activities_hub_screen.close_screen(true)
+	_request_activity_entry(mode_id)
+
+
+func _request_activity_entry(mode_id: String) -> void:
+	if not _activity_entry_allowed(mode_id):
+		var definition := ActivityProgressionRules.definition(mode_id)
+		var unlock_level := int(definition.get("unlock_level", 1))
+		var message := (
+			"%s unlocks at Airport Level %d."
+			% [
+				String(definition.get("title", "This activity")),
+				unlock_level
+			]
+		)
+		if mode_id == "alliance" and player_level >= unlock_level:
+			message = "Join or connect an Alliance before opening Alliance Operations."
+		elif mode_id == "event" and player_level >= unlock_level:
+			message = "No seasonal event is active right now."
+		hud.set_operation_status(message, "warning")
+		_refresh_activities_hub()
+		return
+
+	if ActivityProgressionRules.is_newly_unlocked(
+		progression,
+		mode_id,
+		player_level
+	):
+		if activity_intro_screen != null:
+			activity_intro_screen.open_intro(
+				mode_id,
+				ActivityProgressionRules.definition(mode_id)
+			)
+		return
+
+	_open_activity_mode_direct(mode_id)
+
+
+func _activity_entry_allowed(mode_id: String) -> bool:
+	if not ActivityProgressionRules.is_level_unlocked(
+		mode_id,
+		player_level
+	):
+		return false
+	match mode_id:
+		"alliance":
+			return _has_alliance_contact()
+		"event":
+			return bool(current_event_snapshot.get("active", false))
+	return true
+
+
+func _open_activity_mode_direct(mode_id: String) -> void:
 	match mode_id:
 		"missions":
 			_open_missions()
@@ -2023,9 +2240,28 @@ func _on_activity_mode_requested(mode_id: String) -> void:
 		"challenge":
 			_on_navigation_requested("challenge")
 		"alliance":
-			_on_alliance_operations_requested()
+			if alliance_operations_screen != null:
+				alliance_operations_screen.open_screen(
+					_alliance_operations_snapshot()
+				)
 		"event":
 			super._on_navigation_requested("event")
+
+
+func _on_activity_intro_continue(mode_id: String) -> void:
+	if ActivityProgressionRules.mark_tutorial_seen(
+		progression,
+		mode_id
+	):
+		_save_checkpoint()
+	_refresh_activities_hub()
+	_open_activity_mode_direct(mode_id)
+
+
+func _on_activity_intro_closed() -> void:
+	_refresh_activities_hub()
+	if activities_hub_screen != null:
+		activities_hub_screen.open_screen(_activities_snapshot())
 
 
 func _on_activities_hub_closed() -> void:

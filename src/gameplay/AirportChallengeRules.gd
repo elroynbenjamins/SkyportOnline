@@ -1,7 +1,7 @@
 class_name AirportChallengeRules
 extends RefCounted
 
-const UNLOCK_LEVEL := 8
+const UNLOCK_LEVEL := ActivityProgressionRules.CHALLENGE_UNLOCK_LEVEL
 const WEEK_SECONDS := 604800
 const THEMES := [
 	{

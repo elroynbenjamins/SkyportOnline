@@ -83,7 +83,7 @@ func _run() -> void:
 		var atlas_path := String(
 			definition.get("world_sprite_atlas_path", "")
 		)
-		var atlas_texture = load(atlas_path)
+		var atlas_texture: Resource = load(atlas_path)
 		if not (atlas_texture is Texture2D):
 			_fail("%s atlas failed to load." % building_id)
 			return
@@ -101,22 +101,22 @@ func _run() -> void:
 		var region_image: Image = (
 			atlas_texture as Texture2D
 		).get_image().get_region(source_i)
-		var used := _alpha_used_rect(region_image)
+		var used: Rect2i = _alpha_used_rect(region_image)
 		if used.size.y <= 0:
 			_fail("%s atlas region has no visible pixels." % building_id)
 			return
-		var visible_bottom := (
+		var visible_bottom: float = (
 			rect.position.y
 			+ (
 				float(used.end.y)
 				/ maxf(float(source_i.size.y), 1.0)
 			) * rect.size.y
 		)
-		var footprint_polygon := grid._footprint_polygon(
+		var footprint_polygon: PackedVector2Array = grid._footprint_polygon(
 			Vector2i.ZERO,
 			footprint
 		)
-		var footprint_bottom := -INF
+		var footprint_bottom: float = -INF
 		for point_variant in footprint_polygon:
 			var footprint_point: Vector2 = point_variant
 			footprint_bottom = maxf(

@@ -203,7 +203,8 @@ func request_fuel(
 		"label": label,
 		"service_key": "legacy_fuel",
 		"service_type": "fuel",
-		"base_duration": float(profile.get("fuel_seconds", 12.0))
+		"base_duration": float(profile.get("fuel_seconds", 12.0)),
+		"fuel_required": _fuel_required_for_aircraft(aircraft)
 	})
 	status_changed.emit("%s requested fuel" % label, "normal")
 	_try_dispatch()

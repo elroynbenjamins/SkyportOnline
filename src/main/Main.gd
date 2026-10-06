@@ -1604,7 +1604,8 @@ func _on_navigation_requested(tab: String) -> void:
 				current_profile.get(
 					"priority_contract_progress",
 					{}
-				)
+				),
+				String(current_profile.get("country_id", "NL"))
 			)
 		"fleet":
 			fleet_screen.open_fleet(

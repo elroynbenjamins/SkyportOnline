@@ -1783,11 +1783,71 @@ func _activities_snapshot() -> Dictionary:
 
 
 func _dispatch_snapshot() -> Dictionary:
-	return DispatchChallengeRules.snapshot(
+	var data := DispatchChallengeRules.snapshot(
 		_capture_state(),
 		player_level,
 		Time.get_unix_time_from_system()
 	)
+	var operational_aircraft := 0
+	var aircraft_at_stand := 0
+	for aircraft_variant in aircraft_demos:
+		var aircraft := aircraft_variant as AircraftPrototype
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+		operational_aircraft += 1
+		if String(aircraft.state) in [
+			"PARKED",
+			"WAITING_FUEL",
+			"UNLOADING",
+			"SERVICING",
+			"WAITING_PASSENGERS",
+			"LOADING",
+			"PUSHBACK_PREP",
+			"READY_FOR_DESTINATION",
+			"READY_FOR_DEPARTURE"
+		]:
+			aircraft_at_stand += 1
+	for visitor_variant in social_visitor_aircraft.values():
+		var visitor := visitor_variant as AircraftPrototype
+		if visitor == null or not is_instance_valid(visitor):
+			continue
+		operational_aircraft += 1
+		if String(visitor.state) in [
+			"PARKED",
+			"WAITING_FUEL",
+			"UNLOADING",
+			"SERVICING",
+			"WAITING_PASSENGERS",
+			"LOADING",
+			"PUSHBACK_PREP",
+			"READY_FOR_DESTINATION",
+			"READY_FOR_DEPARTURE"
+		]:
+			aircraft_at_stand += 1
+	data["airport_aircraft"] = operational_aircraft
+	data["airport_at_stand"] = aircraft_at_stand
+	data["passenger_stock"] = (
+		passenger_economy.get_passengers()
+		if passenger_economy != null
+		else 0
+	)
+	data["passenger_capacity"] = (
+		passenger_economy.get_capacity()
+		if passenger_economy != null
+		else 0
+	)
+	data["runway_queue"] = (
+		runway_dispatcher.get_waiting_count()
+		if runway_dispatcher != null
+		else 0
+	)
+	data["ground_queue"] = (
+		ground_services.get_waiting_count()
+		if ground_services != null
+		else 0
+	)
+	data["inbound_holding"] = pending_arrivals.size()
+	return data
 
 
 func _refresh_dispatch_ui() -> void:
@@ -1800,7 +1860,8 @@ func _refresh_dispatch_ui() -> void:
 		hud.set_dispatch_shift(
 			String(data.get("status", "IDLE")),
 			int(data.get("score", 0)),
-			int(data.get("remaining_seconds", 0))
+			int(data.get("remaining_seconds", 0)),
+			int(data.get("combo_count", 0))
 		)
 
 
@@ -1910,14 +1971,24 @@ func _record_dispatch_action(
 	_refresh_dispatch_ui()
 	_refresh_activities_hub()
 	var data := _dispatch_snapshot()
-	hud.set_operation_status(
-		"Dispatch %s%d • %d pts" % [
-			"+" if points > 0 else "",
-			points,
-			int(data.get("score", 0))
-		],
-		"warning" if points < 0 else "success"
-	)
+	if points < 0:
+		hud.set_operation_status(
+			"Dispatch %d • TAXI HOLD • combo broken • %d pts" % [
+				points,
+				int(data.get("score", 0))
+			],
+			"warning"
+		)
+	else:
+		var combo := int(data.get("combo_count", 0))
+		hud.set_operation_status(
+			"Dispatch +%d • %d pts%s" % [
+				points,
+				int(data.get("score", 0)),
+				" • COMBO x%d" % combo if combo >= 2 else ""
+			],
+			"success"
+		)
 	return points
 
 
@@ -1978,7 +2049,12 @@ func _on_aircraft_serviced(
 	label: String
 ) -> void:
 	super._on_aircraft_serviced(aircraft, label)
-	_record_dispatch_action("turnaround")
+	if (
+		aircraft != null
+		and is_instance_valid(aircraft)
+		and not aircraft.is_social_visitor()
+	):
+		_record_dispatch_action("turnaround")
 
 
 func _on_taxi_hold_changed(

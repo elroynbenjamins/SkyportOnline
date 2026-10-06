@@ -151,7 +151,7 @@ func _run() -> void:
 		return
 
 	print(
-		"Airport UI takeover passed: concept dock/tray geometry, quiet world labels, "
+		"Airport UI takeover passed: compact dock, on-demand drawers, quiet world labels, "
 		+ "and compact aircraft status bubbles."
 	)
 	quit(0)

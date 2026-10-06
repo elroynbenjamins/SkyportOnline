@@ -2,13 +2,12 @@ class_name ResourceVisualCatalog
 extends RefCounted
 
 
-const ATLAS_PATH := "res://assets/pixel/resources/country_resource_icons_v2.svg"
+const ATLAS_PATH := "res://assets/pixel/resources/country_resource_icons_v3.svg"
 const CELL_SIZE := 96
 const COLUMNS := 8
 
-# Every live country resource gets its own atlas frame. Frames reuse a coherent
-# visual language, while country accents and subtype marks keep similar cargo
-# categories distinguishable at a glance.
+# Every live country resource gets its own atlas frame. V3 uses resource-specific
+# silhouettes plus country accents so related cargo remains readable at HUD size.
 const FRAME_INDEX := {
 	"nl_flowers": 0,
 	"nl_dairy": 1,

@@ -118,9 +118,10 @@ func _run() -> void:
 		)
 		var footprint_bottom := -INF
 		for point_variant in footprint_polygon:
+			var footprint_point: Vector2 = point_variant
 			footprint_bottom = maxf(
 				footprint_bottom,
-				(point_variant as Vector2).y
+				footprint_point.y
 			)
 		if absf(visible_bottom - footprint_bottom) > 1.5:
 			_fail(

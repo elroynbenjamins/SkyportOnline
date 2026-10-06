@@ -47,6 +47,39 @@ func _run() -> void:
 			"Locked land should use varied desaturated terrain."
 		)
 
+	if grid.is_placement_grid_visible():
+		_fail(
+			"Normal airport view should keep the construction grid hidden."
+		)
+
+	var normal_owned_surface := grid._terrain_surface_color_for_state(
+		"owned"
+	)
+	var normal_owned_surface_b := grid._terrain_surface_color_for_state(
+		"owned"
+	)
+	if not normal_owned_surface.is_equal_approx(
+		normal_owned_surface_b
+	):
+		_fail(
+			"Normal terrain should use a seamless base instead of visible tile variants."
+		)
+
+	grid.set_build_preview(
+		"small_terminal",
+		grid.tile_to_world(Vector2(8, 13)),
+		0
+	)
+	if not grid.is_placement_grid_visible():
+		_fail(
+			"Placement grid should appear while placing a building."
+		)
+	grid.clear_build_preview()
+	if grid.is_placement_grid_visible():
+		_fail(
+			"Placement grid should disappear immediately after placement mode ends."
+		)
+
 	var owned_line := grid._terrain_line_for_state(
 		"owned"
 	)
@@ -56,9 +89,9 @@ func _run() -> void:
 	var locked_line := grid._terrain_line_for_state(
 		"locked"
 	)
-	if owned_line.a >= 0.05:
+	if owned_line.a <= 0.05:
 		_fail(
-			"Normal owned land should not expose a strong tile grid."
+			"Placement mode should expose a readable owned-land construction grid."
 		)
 	if available_line.a <= owned_line.a:
 		_fail(

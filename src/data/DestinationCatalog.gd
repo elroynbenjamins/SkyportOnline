@@ -85,6 +85,45 @@ static func all() -> Array[Dictionary]:
 			"passenger_load_factor": 0.72,
 			"demand_label": "Moderate",
 			"map_position": Vector2(0.61, 0.30)
+		},
+		{
+			"id": "rome",
+			"city": "Rome",
+			"country": "Italy",
+			"country_code": "IT",
+			"distance_km": 1290.0,
+			"unlock_level": 10,
+			"coin_reward": 2050,
+			"xp_reward": 105,
+			"passenger_load_factor": 0.84,
+			"demand_label": "Leisure",
+			"map_position": Vector2(0.56, 0.31)
+		},
+		{
+			"id": "madrid",
+			"city": "Madrid",
+			"country": "Spain",
+			"country_code": "ES",
+			"distance_km": 1480.0,
+			"unlock_level": 12,
+			"coin_reward": 2380,
+			"xp_reward": 120,
+			"passenger_load_factor": 0.80,
+			"demand_label": "Tourism",
+			"map_position": Vector2(0.45, 0.34)
+		},
+		{
+			"id": "istanbul",
+			"city": "Istanbul",
+			"country": "Turkey",
+			"country_code": "TR",
+			"distance_km": 2210.0,
+			"unlock_level": 17,
+			"coin_reward": 3250,
+			"xp_reward": 155,
+			"passenger_load_factor": 0.76,
+			"demand_label": "Long Regional",
+			"map_position": Vector2(0.60, 0.32)
 		}
 	]
 

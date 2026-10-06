@@ -262,7 +262,7 @@ func _refresh_resource_reward_icons(
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(150, 86)
 		GameUIStyle.apply_panel(card, "reward_tile")
-		card.modulate.a = 1.0 if bool(result.get("success", false)) else 0.48
+		card.modulate = Color(1, 1, 1, 1.0 if bool(result.get("success", false)) else 0.48)
 		resource_reward_row.add_child(card)
 
 		var row := HBoxContainer.new()

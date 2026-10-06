@@ -118,6 +118,11 @@ func _draw() -> void:
 			width,
 			draw_direction
 		)
+	elif aircraft_type_id in ["arrow_a52", "atlas_a64"]:
+		_draw_m_class_jet_fx(
+			width,
+			draw_direction
+		)
 	if social_visit:
 		_draw_social_badge()
 	elif event_featured:
@@ -1077,6 +1082,175 @@ func get_nimbus_visual_fx_snapshot() -> Dictionary:
 		"propeller_count": centers.size(),
 		"propeller_centers": centers,
 		"landing_lights": _swift_landing_lights_on(),
+		"size_class": aircraft_size
+	}
+
+
+func _m_jet_engine_running() -> bool:
+	if aircraft_type_id not in ["arrow_a52", "atlas_a64"]:
+		return false
+	return state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH",
+		"LANDING_ROLL",
+		"WAITING_TAXI_IN",
+		"TAXIING_IN",
+		"PUSHBACK_PREP",
+		"TAXIING_OUT",
+		"HOLD_SHORT",
+		"CLEARED",
+		"ENTERING_RUNWAY",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING"
+	]
+
+
+func _m_jet_throttle() -> float:
+	match state:
+		"HOLDING_FOR_ARRIVAL", "APPROACH":
+			return 0.72
+		"LANDING_ROLL":
+			return 0.55
+		"WAITING_TAXI_IN", "TAXIING_IN":
+			return 0.30
+		"PUSHBACK_PREP":
+			return 0.14
+		"TAXIING_OUT":
+			return 0.34
+		"HOLD_SHORT":
+			return 0.30
+		"CLEARED", "ENTERING_RUNWAY", "LINE_UP":
+			return 0.52
+		"TAKEOFF_ROLL", "CLIMBING":
+			return 1.0
+		_:
+			return 0.0
+
+
+func _m_jet_engine_centers(
+	direction: String,
+	width: float
+) -> Array[Vector2]:
+	var left := Vector2(-0.17, -0.07)
+	var right := Vector2(0.20, 0.07)
+	match direction:
+		"se":
+			left = Vector2(-0.18, 0.01)
+			right = Vector2(0.17, 0.13)
+		"sw":
+			left = Vector2(-0.17, 0.13)
+			right = Vector2(0.18, 0.01)
+		"nw":
+			left = Vector2(-0.20, 0.07)
+			right = Vector2(0.17, -0.07)
+	return [left * width, right * width]
+
+
+func _m_jet_navigation_points(
+	direction: String,
+	width: float
+) -> Dictionary:
+	var red := Vector2(-0.48, -0.20)
+	var green := Vector2(0.48, 0.06)
+	match direction:
+		"se":
+			red = Vector2(0.48, -0.16)
+			green = Vector2(-0.48, 0.07)
+		"sw":
+			red = Vector2(0.47, 0.15)
+			green = Vector2(-0.47, -0.11)
+		"nw":
+			red = Vector2(-0.47, 0.05)
+			green = Vector2(0.47, -0.16)
+	return {"red": red * width, "green": green * width}
+
+
+func _m_jet_landing_lights_on() -> bool:
+	return state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH",
+		"LANDING_ROLL",
+		"CLEARED",
+		"ENTERING_RUNWAY",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING"
+	]
+
+
+func _draw_m_class_jet_fx(
+	width: float,
+	direction: String
+) -> void:
+	if not _m_jet_engine_running():
+		return
+
+	var throttle := _m_jet_throttle()
+	var clock := get_visual_clock()
+	var centers := _m_jet_engine_centers(direction, width)
+	var engine_radius := width * 0.038
+
+	for center_variant in centers:
+		var center: Vector2 = center_variant
+		draw_circle(
+			center,
+			engine_radius * 1.75,
+			Color(0.36, 0.70, 0.92, 0.04 + throttle * 0.07)
+		)
+		draw_circle(
+			center,
+			engine_radius,
+			Color(0.72, 0.90, 1.0, 0.14 + throttle * 0.20)
+		)
+		draw_circle(
+			center,
+			engine_radius * 0.45,
+			Color(0.96, 0.98, 1.0, 0.25 + throttle * 0.35)
+		)
+
+		if state in ["TAKEOFF_ROLL", "CLIMBING"]:
+			var wash_length := width * (0.12 + throttle * 0.12)
+			for offset in [-2.0, 0.0, 2.0]:
+				draw_line(
+					center + Vector2(-engine_radius, float(offset)),
+					center + Vector2(-wash_length, float(offset)),
+					Color(0.70, 0.87, 0.96, 0.05 + throttle * 0.08),
+					1.0
+				)
+
+	var navigation := _m_jet_navigation_points(direction, width)
+	var landing_centers: Array[Vector2] = []
+	for center_variant in centers:
+		var center: Vector2 = center_variant
+		landing_centers.append(center * 0.52)
+	_draw_common_small_prop_lights(
+		navigation,
+		landing_centers,
+		_m_jet_landing_lights_on(),
+		clock
+	)
+
+	# Slightly stronger white wing strobe for the faster Arrow.
+	if aircraft_type_id == "arrow_a52" and fmod(clock + 0.08, 1.20) < 0.06:
+		for point_variant in navigation.values():
+			var point: Vector2 = point_variant
+			draw_circle(point, 6.3, Color(0.95, 0.99, 1.0, 0.22))
+
+
+func get_m_class_jet_fx_snapshot() -> Dictionary:
+	var direction := direction_for(global_rotation)
+	var centers := _m_jet_engine_centers(
+		direction,
+		get_directional_draw_width()
+	)
+	return {
+		"aircraft_type_id": aircraft_type_id,
+		"engine_running": _m_jet_engine_running(),
+		"throttle": _m_jet_throttle(),
+		"engine_count": centers.size(),
+		"engine_centers": centers,
+		"landing_lights": _m_jet_landing_lights_on(),
 		"size_class": aircraft_size
 	}
 

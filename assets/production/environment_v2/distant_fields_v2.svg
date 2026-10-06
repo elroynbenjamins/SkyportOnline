@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="330" viewBox="0 0 640 330">
+  <defs><linearGradient id="fieldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9fbd69"/><stop offset="1" stop-color="#6f944e"/></linearGradient><linearGradient id="fieldB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d1b866"/><stop offset="1" stop-color="#a88d49"/></linearGradient><linearGradient id="fieldC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7da95b"/><stop offset="1" stop-color="#527b45"/></linearGradient></defs>
+  <ellipse cx="318" cy="270" rx="275" ry="34" fill="#213029" opacity=".18"/>
+  <polygon points="43,180 283,58 592,169 350,294" fill="#6c7c58"/>
+  <polygon points="55,177 178,115 331,171 207,236" fill="url(#fieldA)"/>
+  <polygon points="184,112 282,62 435,117 336,169" fill="url(#fieldB)"/>
+  <polygon points="214,239 337,175 487,229 364,292" fill="url(#fieldB)"/>
+  <polygon points="342,173 442,121 579,170 478,223" fill="url(#fieldC)"/>
+  <g stroke="#e0d694" stroke-width="2" opacity=".34">
+    <line x1="77" y1="172" x2="217" y2="224"/><line x1="91" y1="165" x2="230" y2="217"/><line x1="105" y1="158" x2="244" y2="210"/><line x1="223" y1="102" x2="367" y2="154"/><line x1="239" y1="94" x2="382" y2="146"/>
+    <line x1="253" y1="231" x2="389" y2="281"/><line x1="270" y1="222" x2="405" y2="272"/><line x1="383" y1="162" x2="510" y2="208"/><line x1="400" y1="153" x2="527" y2="199"/>
+  </g>
+  <g stroke="#375f3f" stroke-width="8" stroke-linecap="round" opacity=".88"><line x1="177" y1="113" x2="207" y2="238"/><line x1="337" y1="171" x2="364" y2="292"/><line x1="435" y1="117" x2="478" y2="223"/></g>
+  <polyline points="73,247 195,197 321,241 447,189 556,229" fill="none" stroke="#b9b09b" stroke-width="18" opacity=".8"/>
+  <polyline points="73,247 195,197 321,241 447,189 556,229" fill="none" stroke="#766f64" stroke-width="10" opacity=".9"/>
+  <g fill="#3f7444"><circle cx="101" cy="246" r="11"/><circle cx="124" cy="235" r="9"/><circle cx="470" cy="188" r="10"/><circle cx="493" cy="197" r="9"/></g>
+</svg>

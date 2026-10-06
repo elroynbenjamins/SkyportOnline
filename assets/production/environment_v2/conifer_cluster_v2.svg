@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="270" viewBox="0 0 320 270">
+  <defs><linearGradient id="pineA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f9b58"/><stop offset="1" stop-color="#205d42"/></linearGradient><linearGradient id="pineB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#65aa61"/><stop offset="1" stop-color="#2a6847"/></linearGradient></defs>
+  <ellipse cx="160" cy="230" rx="112" ry="23" fill="#1e2c27" opacity=".22"/>
+  <g stroke="#6f5337" stroke-width="8" stroke-linecap="round"><line x1="83" y1="222" x2="83" y2="168"/><line x1="139" y1="228" x2="139" y2="139"/><line x1="195" y1="224" x2="195" y2="153"/><line x1="246" y1="218" x2="246" y2="174"/></g>
+  <g fill="url(#pineA)"><polygon points="83,74 35,178 131,178"/><polygon points="83,103 44,194 122,194"/><polygon points="139,42 76,168 202,168"/><polygon points="139,82 87,197 191,197"/></g>
+  <g fill="url(#pineB)"><polygon points="195,65 145,173 245,173"/><polygon points="195,101 155,199 235,199"/><polygon points="246,92 207,181 285,181"/><polygon points="246,120 215,202 277,202"/></g>
+  <g fill="#7eb86b" opacity=".45"><polygon points="139,42 119,82 159,82"/><polygon points="83,74 67,108 99,108"/><polygon points="195,65 179,99 211,99"/></g>
+</svg>

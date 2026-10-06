@@ -30,8 +30,8 @@ func _run() -> void:
 		_fail("Perimeter pass should include the extended landside/distant scenery set.")
 
 	for path in [
-		"res://assets/pixel/airport_v1/environment_conifer_cluster.svg",
-		"res://assets/pixel/airport_v1/environment_distant_fields.svg"
+		"res://assets/production/environment_v2/conifer_cluster_v2.svg",
+		"res://assets/production/environment_v2/distant_fields_v2.svg"
 	]:
 		if not ResourceLoader.exists(path):
 			_fail("Missing perimeter scenery asset: %s" % path)
@@ -52,7 +52,7 @@ func _run() -> void:
 		return
 
 	print(
-		"AIRFIELD_PERIMETER_DETAIL_OK runways=%d taxi_open=%d service_open=%d barriers=%d scenery=%d"
+		"AIRFIELD_PERIMETER_DETAIL_OK runways=%d taxi_open=%d service_open=%d barriers=%d scenery=%d art=environment_v2"
 		% [
 			int(snapshot.get("runways", 0)),
 			int(snapshot.get("taxiway_open_edges", 0)),

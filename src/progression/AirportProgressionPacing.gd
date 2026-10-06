@@ -69,9 +69,10 @@ const FLEET_CAPACITY_BY_LEVEL := {
 	12: 9,
 	15: 11,
 	17: 12,
-	22: 14,
-	26: 15,
-	30: 16
+	19: 13,
+	21: 14,
+	24: 15,
+	28: 16
 }
 
 static func stage_for_level(level: int) -> Dictionary:

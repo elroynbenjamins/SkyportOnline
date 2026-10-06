@@ -100,6 +100,20 @@ func _run() -> void:
 		_fail("Locked country route should explain its unlock level.")
 		return
 
+	var germany_country := CountryCatalog.get_country("DE")
+	var germany_position := screen.map_canvas._country_position(germany_country)
+	var germany_routes := screen.map_canvas._routes_for_selected_country()
+	var berlin_marker := screen.map_canvas._destination_marker_position(
+		germany_position,
+		1,
+		germany_routes.size()
+	)
+	screen.map_canvas._begin_pointer(berlin_marker)
+	screen.map_canvas._end_pointer(berlin_marker)
+	if screen.selected_destination_id != "berlin":
+		_fail("Airport marker taps should select the matching route directly.")
+		return
+
 	screen._select_country("JP")
 	if screen.selected_country_code != "JP":
 		_fail("Countries without active routes should still be selectable.")

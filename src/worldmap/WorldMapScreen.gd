@@ -14,9 +14,11 @@ var home_hub_label: Label
 var map_canvas: WorldMapCanvas
 var map_hint_label: Label
 var aircraft_list_container: VBoxContainer
+var country_badge_rect: TextureRect
 var country_title_label: Label
 var country_status_label: Label
 var country_picker: OptionButton
+var country_resource_row: HBoxContainer
 var destination_list_container: VBoxContainer
 var details_title: Label
 var route_card_label: Label
@@ -343,6 +345,23 @@ func _build_details_sidebar() -> void:
 	wrapper.add_theme_constant_override("separation", 7)
 	scroll.add_child(wrapper)
 
+	var country_header := HBoxContainer.new()
+	country_header.add_theme_constant_override("separation", 10)
+	wrapper.add_child(country_header)
+
+	country_badge_rect = TextureRect.new()
+	country_badge_rect.custom_minimum_size = Vector2(64, 48)
+	country_badge_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	country_badge_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	country_badge_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	country_header.add_child(country_badge_rect)
+
+	var country_header_text := VBoxContainer.new()
+	country_header_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	country_header_text.alignment = BoxContainer.ALIGNMENT_CENTER
+	country_header_text.add_theme_constant_override("separation", 1)
+	country_header.add_child(country_header_text)
+
 	country_title_label = Label.new()
 	country_title_label.text = "Select a country"
 	GameUIStyle.heading(country_title_label, 20)
@@ -350,13 +369,13 @@ func _build_details_sidebar() -> void:
 		"font_color",
 		GameUIStyle.COLOR_GOLD
 	)
-	wrapper.add_child(country_title_label)
+	country_header_text.add_child(country_title_label)
 
 	country_status_label = Label.new()
 	country_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	country_status_label.add_theme_font_size_override("font_size", 12)
 	GameUIStyle.muted(country_status_label)
-	wrapper.add_child(country_status_label)
+	country_header_text.add_child(country_status_label)
 
 	country_picker = OptionButton.new()
 	country_picker.custom_minimum_size = Vector2(0, 38)
@@ -372,15 +391,23 @@ func _build_details_sidebar() -> void:
 			if not routes.is_empty()
 			else " • resources"
 		)
-		country_picker.add_item("%s  %s%s" % [
-			code,
-			String(country.get("name", "Country")),
-			route_badge
-		])
+		country_picker.add_icon_item(
+			CountryVisualCatalog.texture_for_country(code),
+			"%s  %s%s" % [
+				code,
+				String(country.get("name", "Country")),
+				route_badge
+			]
+		)
 		var item_index := country_picker.item_count - 1
 		country_picker.set_item_metadata(item_index, code)
 	country_picker.item_selected.connect(_on_country_picker_selected)
 	wrapper.add_child(country_picker)
+
+	country_resource_row = HBoxContainer.new()
+	country_resource_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	country_resource_row.add_theme_constant_override("separation", 6)
+	wrapper.add_child(country_resource_row)
 
 	destination_list_container = VBoxContainer.new()
 	destination_list_container.add_theme_constant_override("separation", 4)
@@ -1085,6 +1112,10 @@ func _refresh_country_summary() -> void:
 		country_status_label.text = (
 			"Tap any country marker to inspect its resources and routes."
 		)
+		if country_badge_rect != null:
+			country_badge_rect.texture = null
+			country_badge_rect.tooltip_text = ""
+		_refresh_country_resource_row([])
 		return
 
 	var routes := _destinations_for_country(selected_country_code)
@@ -1097,6 +1128,15 @@ func _refresh_country_summary() -> void:
 		String(country.get("id", "")),
 		String(country.get("name", "Country"))
 	]
+	if country_badge_rect != null:
+		country_badge_rect.texture = CountryVisualCatalog.texture_for_country(
+			selected_country_code
+		)
+		country_badge_rect.tooltip_text = "%s • %s" % [
+			String(country.get("name", "Country")),
+			String(country.get("region", ""))
+		]
+	_refresh_country_resource_row(country.get("resources", []) as Array)
 	if country_picker != null:
 		for index in range(country_picker.item_count):
 			if (
@@ -1125,6 +1165,50 @@ func _refresh_country_summary() -> void:
 			unlocked_count,
 			home_suffix
 		]
+
+
+func _refresh_country_resource_row(resources: Array) -> void:
+	if country_resource_row == null:
+		return
+
+	for child in country_resource_row.get_children():
+		child.free()
+
+	country_resource_row.visible = not resources.is_empty()
+	for resource in resources:
+		var resource_id := String(resource.get("id", ""))
+		var resource_name := String(resource.get("name", "Resource"))
+
+		var card := PanelContainer.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.custom_minimum_size = Vector2(0, 76)
+		GameUIStyle.apply_panel(card, "reward_tile")
+		country_resource_row.add_child(card)
+
+		var content := VBoxContainer.new()
+		content.alignment = BoxContainer.ALIGNMENT_CENTER
+		content.add_theme_constant_override("separation", 1)
+		card.add_child(content)
+
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(38, 38)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = ResourceVisualCatalog.texture_for_resource(resource_id)
+		icon.tooltip_text = resource_name
+		content.add_child(icon)
+
+		var label := Label.new()
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.add_theme_font_size_override("font_size", 10)
+		label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_TEXT
+		)
+		label.text = resource_name
+		content.add_child(label)
 
 
 func _destinations_for_country(

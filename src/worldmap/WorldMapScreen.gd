@@ -275,9 +275,9 @@ func _build_aircraft_sidebar() -> void:
 func _build_map_area() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	panel.offset_left = 252
+	panel.offset_left = 282
 	panel.offset_top = 80
-	panel.offset_right = -390
+	panel.offset_right = -382
 	panel.offset_bottom = -10
 	root.add_child(panel)
 	GameUIStyle.apply_panel(panel, "context_preview")
@@ -315,7 +315,7 @@ func _build_map_area() -> void:
 func _build_details_sidebar() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	panel.offset_left = -338
+	panel.offset_left = -370
 	panel.offset_top = 80
 	panel.offset_right = -10
 	panel.offset_bottom = -10

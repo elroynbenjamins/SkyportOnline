@@ -205,21 +205,87 @@ func _draw_country_marker(country: Dictionary) -> void:
 	draw_circle(position, radius, fill)
 	draw_circle(position, radius + 1.0, border, false, 1.5)
 
-	var show_label := has_route or selected or hovered or country_code == home_country_code
-	if show_label:
-		var font_color := Color("d9f1f7")
+	var show_badge := (
+		has_route
+		or selected
+		or hovered
+		or country_code == home_country_code
+	)
+	if show_badge:
+		_draw_country_badge(
+			country_code,
+			position,
+			radius,
+			selected,
+			hovered,
+			has_route,
+			unlocked
+		)
+
+
+func _draw_country_badge(
+	country_code: String,
+	position: Vector2,
+	marker_radius: float,
+	selected: bool,
+	hovered: bool,
+	has_route: bool,
+	unlocked: bool
+) -> void:
+	var texture := CountryVisualCatalog.texture_for_country(country_code)
+	if texture == null:
+		var fallback_color := Color("d9f1f7")
 		if selected:
-			font_color = Color("fff1bd")
+			fallback_color = Color("fff1bd")
 		elif has_route and not unlocked:
-			font_color = Color("aebdc4")
+			fallback_color = Color("aebdc4")
 		draw_string(
 			ThemeDB.fallback_font,
-			position + Vector2(radius + 5.0, 4.0),
+			position + Vector2(marker_radius + 5.0, 4.0),
 			country_code,
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1,
 			11,
-			font_color
+			fallback_color
+		)
+		return
+
+	var badge_size := Vector2(22, 16)
+	if selected:
+		badge_size = Vector2(30, 22)
+	elif hovered:
+		badge_size = Vector2(26, 19)
+
+	var badge_position := position + Vector2(
+		marker_radius + 5.0,
+		-badge_size.y * 0.5
+	)
+	if badge_position.x + badge_size.x > size.x - 4.0:
+		badge_position.x = position.x - marker_radius - 5.0 - badge_size.x
+	if badge_position.y < 4.0:
+		badge_position.y = 4.0
+	elif badge_position.y + badge_size.y > size.y - 4.0:
+		badge_position.y = size.y - 4.0 - badge_size.y
+
+	var badge_rect := Rect2(badge_position, badge_size)
+	var border_color := Color(0.03, 0.10, 0.14, 0.82)
+	if selected:
+		border_color = Color(0.96, 0.80, 0.36, 0.72)
+	elif has_route and unlocked:
+		border_color = Color(0.45, 0.82, 0.91, 0.60)
+
+	draw_rect(badge_rect.grow(2.0), border_color, true)
+	draw_texture_rect(texture, badge_rect, false)
+	if selected or hovered:
+		draw_string(
+			ThemeDB.fallback_font,
+			badge_rect.position
+				+ Vector2(badge_rect.size.x + 4.0, badge_rect.size.y - 3.0),
+			country_code,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			10,
+			Color("f4f8fa")
 		)
 
 

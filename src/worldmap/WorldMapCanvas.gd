@@ -24,6 +24,7 @@ const HOME_COLOR := Color("ffd66e")
 const AIRPORT_COLOR := Color("c8eff7")
 const COUNTRY_HIT_RADIUS := 32.0
 const SELECTED_HALO_RADIUS := 24.0
+const GEOGRAPHY_DETAIL_COUNT := 12
 
 var countries: Array[Dictionary] = []
 var destinations: Array[Dictionary] = []
@@ -34,6 +35,7 @@ var home_country_code := "NL"
 var route_country_codes: Dictionary = {}
 var unlocked_route_country_codes: Dictionary = {}
 var selected_position := Vector2(-1, -1)
+var route_preview: Dictionary = {}
 
 var zoom_level := 1.0
 var view_center := Vector2(0.5, 0.5)
@@ -80,6 +82,22 @@ func set_selected_country(country_code: String) -> void:
 func set_selected_destination(destination_id: String) -> void:
 	selected_destination_id = destination_id
 	queue_redraw()
+
+
+func set_route_preview(preview: Dictionary) -> void:
+	route_preview = preview.duplicate(true)
+	queue_redraw()
+
+
+func route_preview_text() -> String:
+	if route_preview.is_empty():
+		return ""
+	return "%s • %d km • %s • %s" % [
+		String(route_preview.get("city", "Route")).to_upper(),
+		int(route_preview.get("distance_km", 0)),
+		String(route_preview.get("duration_text", "—")),
+		String(route_preview.get("status", "READY"))
+	]
 
 
 func set_home_country(country_code: String) -> void:
@@ -154,6 +172,7 @@ func _draw() -> void:
 	_draw_ocean_bands()
 	_draw_grid()
 	_draw_continents()
+	_draw_geography_details()
 	_draw_region_labels()
 
 	var home_position := _home_position()
@@ -195,36 +214,125 @@ func _draw_grid() -> void:
 
 
 func _draw_continents() -> void:
+	# Stylized rather than geographic-to-the-pixel, but deliberately detailed
+	# enough that the map reads as a world instead of seven simple blobs.
 	_draw_continent([
-		[0.035, 0.17], [0.10, 0.10], [0.18, 0.08], [0.27, 0.12],
-		[0.32, 0.21], [0.30, 0.32], [0.25, 0.39], [0.17, 0.42],
-		[0.10, 0.35], [0.055, 0.28]
+		[0.025, 0.18], [0.055, 0.13], [0.10, 0.095], [0.16, 0.075],
+		[0.22, 0.09], [0.275, 0.125], [0.315, 0.18], [0.325, 0.235],
+		[0.305, 0.28], [0.31, 0.325], [0.275, 0.36], [0.245, 0.405],
+		[0.205, 0.425], [0.165, 0.405], [0.135, 0.37], [0.09, 0.355],
+		[0.06, 0.31], [0.035, 0.265]
 	], Color("4b745d"))
 	_draw_continent([
-		[0.27, 0.40], [0.34, 0.45], [0.39, 0.55], [0.39, 0.66],
-		[0.35, 0.80], [0.31, 0.91], [0.28, 0.75], [0.25, 0.55]
+		[0.27, 0.405], [0.315, 0.43], [0.35, 0.475], [0.38, 0.54],
+		[0.395, 0.61], [0.39, 0.68], [0.365, 0.75], [0.345, 0.82],
+		[0.315, 0.91], [0.29, 0.855], [0.275, 0.78], [0.26, 0.70],
+		[0.245, 0.61], [0.245, 0.52]
 	], Color("4f795f"))
 	_draw_continent([
-		[0.43, 0.16], [0.52, 0.13], [0.61, 0.15], [0.66, 0.22],
-		[0.62, 0.30], [0.55, 0.33], [0.48, 0.30], [0.43, 0.24]
+		[0.425, 0.18], [0.455, 0.145], [0.505, 0.13], [0.555, 0.135],
+		[0.61, 0.15], [0.65, 0.19], [0.665, 0.23], [0.645, 0.265],
+		[0.615, 0.285], [0.59, 0.32], [0.545, 0.335], [0.505, 0.315],
+		[0.47, 0.305], [0.44, 0.27], [0.425, 0.225]
 	], Color("587f63"))
 	_draw_continent([
-		[0.48, 0.31], [0.58, 0.31], [0.64, 0.43], [0.63, 0.57],
-		[0.59, 0.74], [0.55, 0.84], [0.49, 0.67], [0.46, 0.47]
+		[0.485, 0.305], [0.535, 0.30], [0.58, 0.325], [0.615, 0.365],
+		[0.64, 0.43], [0.64, 0.50], [0.625, 0.585], [0.60, 0.67],
+		[0.575, 0.75], [0.545, 0.835], [0.51, 0.79], [0.485, 0.70],
+		[0.47, 0.61], [0.455, 0.52], [0.46, 0.425]
 	], Color("547b61"))
 	_draw_continent([
-		[0.59, 0.17], [0.70, 0.12], [0.82, 0.11], [0.94, 0.18],
-		[0.95, 0.29], [0.91, 0.40], [0.83, 0.47], [0.73, 0.46],
-		[0.65, 0.37], [0.62, 0.26]
+		[0.595, 0.175], [0.65, 0.145], [0.71, 0.125], [0.78, 0.115],
+		[0.845, 0.125], [0.90, 0.155], [0.94, 0.19], [0.955, 0.245],
+		[0.95, 0.305], [0.925, 0.355], [0.91, 0.405], [0.875, 0.435],
+		[0.835, 0.47], [0.79, 0.485], [0.745, 0.46], [0.705, 0.445],
+		[0.665, 0.39], [0.635, 0.34], [0.615, 0.285]
 	], Color("527961"))
 	_draw_continent([
-		[0.78, 0.61], [0.87, 0.58], [0.94, 0.64], [0.96, 0.76],
-		[0.91, 0.85], [0.83, 0.84], [0.79, 0.75]
+		[0.785, 0.61], [0.825, 0.59], [0.875, 0.585], [0.92, 0.615],
+		[0.95, 0.66], [0.96, 0.72], [0.955, 0.775], [0.925, 0.825],
+		[0.88, 0.85], [0.835, 0.84], [0.80, 0.79], [0.78, 0.73]
 	], Color("557c62"))
-	_draw_continent([
-		[0.94, 0.72], [0.98, 0.76], [0.985, 0.84], [0.96, 0.89],
-		[0.94, 0.83]
-	], Color("567d63"))
+
+
+func _draw_geography_details() -> void:
+	var island_fill := Color("5a8165")
+	_draw_island([
+		[0.285, 0.045], [0.33, 0.035], [0.35, 0.075], [0.325, 0.12],
+		[0.285, 0.105], [0.27, 0.07]
+	], island_fill) # Greenland
+	_draw_island([
+		[0.435, 0.175], [0.45, 0.16], [0.46, 0.19], [0.45, 0.235],
+		[0.435, 0.22]
+	], Color("5f876a")) # United Kingdom
+	_draw_island([
+		[0.405, 0.115], [0.417, 0.105], [0.428, 0.116], [0.417, 0.128]
+	], island_fill) # Iceland
+	_draw_island([
+		[0.898, 0.275], [0.91, 0.29], [0.905, 0.335], [0.895, 0.355],
+		[0.888, 0.325]
+	], Color("5a8165")) # Japan
+	_draw_island([
+		[0.80, 0.515], [0.83, 0.51], [0.845, 0.525], [0.825, 0.54]
+	], island_fill) # Sumatra / Java cluster
+	_draw_island([
+		[0.85, 0.50], [0.87, 0.49], [0.88, 0.52], [0.865, 0.55]
+	], island_fill) # Borneo cluster
+	_draw_island([
+		[0.87, 0.44], [0.882, 0.43], [0.89, 0.46], [0.88, 0.485]
+	], island_fill) # Philippines
+	_draw_island([
+		[0.605, 0.645], [0.62, 0.66], [0.618, 0.72], [0.605, 0.75],
+		[0.596, 0.70]
+	], island_fill) # Madagascar
+	_draw_island([
+		[0.945, 0.72], [0.962, 0.735], [0.968, 0.78], [0.955, 0.805],
+		[0.945, 0.775]
+	], Color("5c8368")) # New Zealand north
+	_draw_island([
+		[0.955, 0.81], [0.97, 0.825], [0.968, 0.86], [0.955, 0.875],
+		[0.948, 0.845]
+	], Color("5c8368")) # New Zealand south
+	_draw_island([
+		[0.235, 0.39], [0.25, 0.385], [0.26, 0.40], [0.245, 0.41]
+	], Color("547b61")) # Caribbean
+	_draw_island([
+		[0.735, 0.46], [0.745, 0.47], [0.742, 0.49], [0.733, 0.485]
+	], Color("587f63")) # Sri Lanka
+
+	_draw_lake(Vector2(0.245, 0.255), 5.0)
+	_draw_lake(Vector2(0.265, 0.27), 4.0)
+	_draw_lake(Vector2(0.58, 0.55), 4.0)
+	_draw_lake(Vector2(0.66, 0.31), 5.0)
+
+
+func _draw_island(points: Array, fill: Color) -> void:
+	var polygon := PackedVector2Array()
+	for point in points:
+		polygon.append(
+			_map_to_screen(Vector2(float(point[0]), float(point[1])))
+		)
+	if polygon.size() < 3:
+		return
+	var shadow := PackedVector2Array()
+	for point in polygon:
+		shadow.append(point + Vector2(1.5, 2.0))
+	draw_colored_polygon(shadow, Color(0.01, 0.06, 0.08, 0.20))
+	draw_colored_polygon(polygon, fill)
+	var outline := polygon.duplicate()
+	outline.append(outline[0])
+	draw_polyline(outline, Color(0.50, 0.68, 0.55, 0.72), 1.0, true)
+
+
+func _draw_lake(map_position: Vector2, base_radius: float) -> void:
+	var position := _map_to_screen(map_position)
+	if not _is_screen_visible(position, 12.0):
+		return
+	draw_circle(
+		position,
+		base_radius * clampf(zoom_level, 1.0, 1.8),
+		Color(0.055, 0.20, 0.27, 0.85)
+	)
 
 
 func _draw_continent(points: Array, fill: Color) -> void:
@@ -241,7 +349,13 @@ func _draw_continent(points: Array, fill: Color) -> void:
 	var outline := polygon.duplicate()
 	if not outline.is_empty():
 		outline.append(outline[0])
-		draw_polyline(outline, LAND_EDGE, 1.5, true)
+		draw_polyline(
+			outline,
+			Color(0.53, 0.73, 0.60, 0.22),
+			3.5,
+			true
+		)
+		draw_polyline(outline, LAND_EDGE, 1.4, true)
 
 
 func _draw_region_labels() -> void:
@@ -301,6 +415,79 @@ func _draw_route_arc(from_position: Vector2, to_position: Vector2) -> void:
 	if direction.length_squared() < 0.001:
 		direction = Vector2.RIGHT
 	_draw_plane_marker(plane_position, direction)
+	_draw_route_badge(from_position, to_position)
+
+
+func _draw_route_badge(
+	from_position: Vector2,
+	to_position: Vector2
+) -> void:
+	if route_preview.is_empty():
+		return
+
+	var position := _quadratic_route_point(
+		from_position,
+		to_position,
+		0.50
+	) + Vector2(0, 18)
+	var badge_size := Vector2(184, 46)
+	var badge_position := position - badge_size * 0.5
+	badge_position.x = clampf(
+		badge_position.x,
+		8.0,
+		maxf(8.0, size.x - badge_size.x - 8.0)
+	)
+	badge_position.y = clampf(
+		badge_position.y,
+		56.0,
+		maxf(56.0, size.y - badge_size.y - 42.0)
+	)
+	var rect := Rect2(badge_position, badge_size)
+
+	var status := String(route_preview.get("status", "READY"))
+	var border := Color("65d7ef")
+	var accent := Color("bceffa")
+	if status.begins_with("LOCKED"):
+		border = Color("9caab1")
+		accent = Color("bdc6ca")
+	elif status == "OUT OF RANGE":
+		border = Color("d97768")
+		accent = Color("f1b2a7")
+	elif status == "AIRCRAFT BUSY":
+		border = Color("c58fe4")
+		accent = Color("e4c5f3")
+	elif status == "WAITING PAX":
+		border = Color("d9ad55")
+		accent = Color("f1d794")
+	elif status == "READY":
+		border = Color("72d38d")
+		accent = Color("bcebc8")
+
+	draw_rect(rect.grow(2.0), Color(0.01, 0.07, 0.10, 0.76), true)
+	draw_rect(rect, Color(0.035, 0.15, 0.20, 0.95), true)
+	draw_rect(rect, border, false, 1.5)
+
+	var city := String(route_preview.get("city", "Route")).to_upper()
+	var distance := int(route_preview.get("distance_km", 0))
+	var duration := String(route_preview.get("duration_text", "—"))
+	draw_string(
+		ThemeDB.fallback_font,
+		rect.position + Vector2(10, 17),
+		"%s  •  %d KM" % [city, distance],
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		11,
+		Color("e8f6f8")
+	)
+	draw_string(
+		ThemeDB.fallback_font,
+		rect.position + Vector2(10, 35),
+		"%s  •  %s" % [duration, status],
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		10,
+		accent
+	)
 
 
 func _route_points(

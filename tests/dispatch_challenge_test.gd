@@ -11,11 +11,11 @@ func _run() -> void:
 		"xp": 0
 	}
 
-	if DispatchChallengeRules.is_unlocked(11):
-		_fail("Airport Dispatch must remain locked before level 12.")
+	if DispatchChallengeRules.is_unlocked(7):
+		_fail("Airport Dispatch must remain locked before level 8.")
 		return
-	if not DispatchChallengeRules.is_unlocked(12):
-		_fail("Airport Dispatch should unlock at level 12.")
+	if not DispatchChallengeRules.is_unlocked(8):
+		_fail("Airport Dispatch should unlock at level 8.")
 		return
 	if not DispatchChallengeRules.tier_for_score(29).is_empty():
 		_fail("29 points should remain below the rebalanced Bronze threshold.")
@@ -29,22 +29,22 @@ func _run() -> void:
 	if String(DispatchChallengeRules.tier_for_score(105).get("id", "")) != "gold":
 		_fail("Gold Dispatch should begin at 105 points.")
 		return
-	if DispatchChallengeRules.ensure_state(state, 11, now):
+	if DispatchChallengeRules.ensure_state(state, 7, now):
 		_fail("Locked Dispatch should not initialize persistent mode state.")
 		return
-	if not DispatchChallengeRules.ensure_state(state, 12, now):
+	if not DispatchChallengeRules.ensure_state(state, 8, now):
 		_fail("First unlocked Dispatch access should initialize daily state.")
 		return
 
 	var started := DispatchChallengeRules.start_shift(
 		state,
-		12,
+		8,
 		now
 	)
 	if started.is_empty():
 		_fail("Unlocked player should be able to start a Dispatch shift.")
 		return
-	var running := DispatchChallengeRules.snapshot(started, 12, now)
+	var running := DispatchChallengeRules.snapshot(started, 8, now)
 	if String(running.get("status", "")) != "RUNNING":
 		_fail("New Dispatch shift should be RUNNING.")
 		return
@@ -52,17 +52,17 @@ func _run() -> void:
 		_fail("Dispatch shift should begin with the full three-minute timer.")
 		return
 
-	if DispatchChallengeRules.record_action(started, 12, "turnaround", 2, now + 5) != 11:
+	if DispatchChallengeRules.record_action(started, 8, "turnaround", 2, now + 5) != 11:
 		_fail("Two quick turnarounds should add base points plus the first combo bonus.")
 		return
-	DispatchChallengeRules.record_action(started, 12, "departure", 4, now + 10)
-	DispatchChallengeRules.record_action(started, 12, "return", 3, now + 20)
-	DispatchChallengeRules.record_action(started, 12, "visitor_service", 2, now + 30)
-	if DispatchChallengeRules.record_action(started, 12, "taxi_hold", 1, now + 40) != -4:
+	DispatchChallengeRules.record_action(started, 8, "departure", 4, now + 10)
+	DispatchChallengeRules.record_action(started, 8, "return", 3, now + 20)
+	DispatchChallengeRules.record_action(started, 8, "visitor_service", 2, now + 30)
+	if DispatchChallengeRules.record_action(started, 8, "taxi_hold", 1, now + 40) != -4:
 		_fail("Taxi hold should apply the four-point Dispatch penalty.")
 		return
 
-	var live := DispatchChallengeRules.snapshot(started, 12, now + 40)
+	var live := DispatchChallengeRules.snapshot(started, 8, now + 40)
 	if int(live.get("score", 0)) != 128:
 		_fail("Representative combo shift should total 128 Dispatch points after the hold penalty.")
 		return
@@ -83,10 +83,10 @@ func _run() -> void:
 		return
 
 	var end_time := now + float(DispatchChallengeRules.SHIFT_SECONDS) + 1.0
-	if not DispatchChallengeRules.advance(started, 12, end_time):
+	if not DispatchChallengeRules.advance(started, 8, end_time):
 		_fail("Dispatch shift should become READY when the timer expires.")
 		return
-	var result := DispatchChallengeRules.snapshot(started, 12, end_time)
+	var result := DispatchChallengeRules.snapshot(started, 8, end_time)
 	if String(result.get("status", "")) != "READY":
 		_fail("Expired Dispatch shift should expose a READY result.")
 		return
@@ -96,13 +96,13 @@ func _run() -> void:
 	if not bool(result.get("reward_available", false)):
 		_fail("First Gold Dispatch result of the day should have a reward available.")
 		return
-	if DispatchChallengeRules.record_action(started, 12, "departure", 1, end_time + 1) != 0:
+	if DispatchChallengeRules.record_action(started, 8, "departure", 1, end_time + 1) != 0:
 		_fail("Expired Dispatch shifts must stop accepting score events.")
 		return
 
 	var claimed := DispatchChallengeRules.claim_result(
 		started,
-		12,
+		8,
 		end_time
 	)
 	if claimed.is_empty():
@@ -121,7 +121,7 @@ func _run() -> void:
 		return
 	var claimed_snapshot := DispatchChallengeRules.snapshot(
 		claimed_state,
-		12,
+		8,
 		end_time
 	)
 	if not bool(claimed_snapshot.get("reward_claimed", false)):
@@ -140,29 +140,29 @@ func _run() -> void:
 		"coins": 0,
 		"xp": 0
 	}
-	DispatchChallengeRules.ensure_state(combo_state, 12, now)
+	DispatchChallengeRules.ensure_state(combo_state, 8, now)
 	combo_state = DispatchChallengeRules.start_shift(
 		combo_state,
-		12,
+		8,
 		now
 	)
 	DispatchChallengeRules.record_action(
 		combo_state,
-		12,
+		8,
 		"departure",
 		1,
 		now + 1
 	)
 	DispatchChallengeRules.record_action(
 		combo_state,
-		12,
+		8,
 		"return",
 		1,
 		now + DispatchChallengeRules.COMBO_WINDOW_SECONDS + 2
 	)
 	var expired_combo := DispatchChallengeRules.snapshot(
 		combo_state,
-		12,
+		8,
 		now + DispatchChallengeRules.COMBO_WINDOW_SECONDS + 2
 	)
 	if int(expired_combo.get("combo_count", 0)) != 1:
@@ -172,17 +172,17 @@ func _run() -> void:
 	# Practice remains available after the daily reward, but cannot pay twice.
 	var practice := DispatchChallengeRules.start_shift(
 		claimed_state,
-		12,
+		8,
 		end_time + 10
 	)
 	if practice.is_empty():
 		_fail("Player should be able to start a practice Dispatch shift after claiming.")
 		return
 	var practice_end := end_time + 10 + DispatchChallengeRules.SHIFT_SECONDS + 1
-	DispatchChallengeRules.advance(practice, 12, practice_end)
+	DispatchChallengeRules.advance(practice, 8, practice_end)
 	var practice_claim := DispatchChallengeRules.claim_result(
 		practice,
-		12,
+		8,
 		practice_end
 	)
 	if bool((practice_claim.get("reward", {}) as Dictionary).get("rewarded", true)):
@@ -196,12 +196,12 @@ func _run() -> void:
 		DispatchChallengeRules.DAY_SECONDS * 101 + 120
 	)
 	var daily_state: Dictionary = practice_claim.get("state", {})
-	if not DispatchChallengeRules.ensure_state(daily_state, 12, next_day):
+	if not DispatchChallengeRules.ensure_state(daily_state, 8, next_day):
 		_fail("Dispatch reward window should reset on the next day.")
 		return
 	var next_day_snapshot := DispatchChallengeRules.snapshot(
 		daily_state,
-		12,
+		8,
 		next_day
 	)
 	if bool(next_day_snapshot.get("reward_claimed", true)):

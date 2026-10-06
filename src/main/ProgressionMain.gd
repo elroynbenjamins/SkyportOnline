@@ -1485,12 +1485,16 @@ func _activities_snapshot() -> Dictionary:
 	var challenge_status := "UNLOCKS AT LEVEL %d" % AirportChallengeRules.UNLOCK_LEVEL
 	var challenge_detail := "Weekly score track based on your normal passenger flights."
 	if challenge_unlocked:
-		challenge_status = "%d PTS THIS WEEK" % int(challenge.get("score", 0))
+		challenge_status = "%s • %d PTS" % [
+			String(challenge.get("theme_short_name", "Weekly")).to_upper(),
+			int(challenge.get("score", 0))
+		]
 		var next_target := int(challenge.get("next_target", 0))
 		challenge_detail = (
-			"All weekly milestones complete."
+			"%s • all milestones complete" % String(challenge.get("theme_description", ""))
 			if next_target <= 0
-			else "%d points to the next reward • resets in %s" % [
+			else "%s • %d pts to next reward • %s left" % [
+				String(challenge.get("theme_description", "")),
 				maxi(next_target - int(challenge.get("score", 0)), 0),
 				_format_activity_time(int(challenge.get("seconds_remaining", 0)))
 			]
@@ -1568,7 +1572,11 @@ func _activities_snapshot() -> Dictionary:
 		},
 		"challenge": {
 			"title": "WEEKLY AIRPORT CHALLENGE",
-			"badge": "SOLO WEEKLY",
+			"badge": (
+				String(challenge.get("theme_short_name", "SOLO WEEKLY")).to_upper()
+				if challenge_unlocked
+				else "SOLO WEEKLY"
+			),
 			"status": challenge_status,
 			"detail": challenge_detail,
 			"attention": challenge_attention,

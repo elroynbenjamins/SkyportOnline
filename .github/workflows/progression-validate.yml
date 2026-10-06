@@ -52,6 +52,15 @@ jobs:
           test "$status" -eq 0
           if grep -E 'SCRIPT ERROR|Parse Error|Compile Error' /tmp/skyport-progression-pacing.log; then exit 1; fi
           grep -q 'PROGRESSION_PACING_OK' /tmp/skyport-progression-pacing.log
+      - name: Home-country route network
+        shell: bash
+        run: |
+          status=0
+          timeout 45s godot --headless --path . --script res://tests/home_country_routes_test.gd > /tmp/skyport-home-routes.log 2>&1 || status=$?
+          cat /tmp/skyport-home-routes.log
+          test "$status" -eq 0
+          if grep -E 'SCRIPT ERROR|Parse Error|Compile Error' /tmp/skyport-home-routes.log; then exit 1; fi
+          grep -q 'HOME_COUNTRY_ROUTES_OK' /tmp/skyport-home-routes.log
       - name: Real main-scene gameplay and save reload
         shell: bash
         run: |

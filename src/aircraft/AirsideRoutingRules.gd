@@ -20,70 +20,102 @@ static func find_smooth_path(
 	if not available.has(_cell_key(start)) or goals.is_empty():
 		return []
 
+	# Preserve the original shortest-cell behavior first. Among routes with
+	# the same number of cells, prefer fewer turns and avoid U-turns.
 	var frontier: Array[Dictionary] = [{
 		"cell": start,
 		"direction": -1,
-		"cost": 0.0,
+		"steps": 0,
 		"turns": 0,
 	}]
-	var best: Dictionary = {}
 	var parent: Dictionary = {}
+	var best: Dictionary = {}
 	var start_key := _state_key(start, -1)
-	best[start_key] = 0.0
 	parent[start_key] = ""
+	best[start_key] = {"steps": 0, "turns": 0}
 
+	var cursor := 0
 	var winning_key := ""
-	while not frontier.is_empty():
-		var best_index := _lowest_frontier_index(frontier)
-		var state: Dictionary = frontier[best_index]
-		frontier.remove_at(best_index)
+	var best_goal_steps := 1 << 30
+	var best_goal_turns := 1 << 30
+
+	while cursor < frontier.size():
+		var state: Dictionary = frontier[cursor]
+		cursor += 1
 
 		var cell: Vector2i = state["cell"]
 		var incoming := int(state["direction"])
+		var steps := int(state["steps"])
+		var turns := int(state["turns"])
 		var state_key := _state_key(cell, incoming)
-		var cost := float(state["cost"])
-		if cost > float(best.get(state_key, INF)) + 0.0001:
+
+		if steps > best_goal_steps:
 			continue
 
 		if goals.has(_cell_key(cell)):
-			winning_key = state_key
-			break
+			if (
+				steps < best_goal_steps
+				or (
+					steps == best_goal_steps
+					and turns < best_goal_turns
+				)
+			):
+				best_goal_steps = steps
+				best_goal_turns = turns
+				winning_key = state_key
+			continue
 
 		for direction_index in range(DIRECTIONS.size()):
 			var neighbor := cell + DIRECTIONS[direction_index]
 			if not available.has(_cell_key(neighbor)):
 				continue
 
-			var extra := 1.0
-			var turns := int(state.get("turns", 0))
-			if incoming >= 0 and incoming != direction_index:
-				extra += TURN_PENALTY
-				turns += 1
-				if (incoming + 2) % 4 == direction_index:
-					extra += UTURN_PENALTY
-
-			var next_cost := cost + extra
-			var next_key := _state_key(neighbor, direction_index)
-			if next_cost >= float(best.get(next_key, INF)) - 0.0001:
+			var next_steps := steps + 1
+			if next_steps > best_goal_steps:
 				continue
 
-			best[next_key] = next_cost
+			var next_turns := turns
+			if incoming >= 0 and incoming != direction_index:
+				next_turns += 1
+				if (incoming + 2) % 4 == direction_index:
+					# Strongly disfavor reversing direction when an equal-length
+					# non-U-turn path exists.
+					next_turns += 2
+
+			var next_key := _state_key(neighbor, direction_index)
+			var previous: Dictionary = best.get(next_key, {})
+			if not previous.is_empty():
+				var previous_steps := int(previous.get("steps", 1 << 30))
+				var previous_turns := int(previous.get("turns", 1 << 30))
+				if (
+					next_steps > previous_steps
+					or (
+						next_steps == previous_steps
+						and next_turns >= previous_turns
+					)
+				):
+					continue
+
+			best[next_key] = {
+				"steps": next_steps,
+				"turns": next_turns,
+			}
 			parent[next_key] = state_key
 			frontier.append({
 				"cell": neighbor,
 				"direction": direction_index,
-				"cost": next_cost,
-				"turns": turns,
+				"steps": next_steps,
+				"turns": next_turns,
 			})
 
 	if winning_key.is_empty():
 		return []
 
 	var reversed: Array[Vector2i] = []
-	var cursor := winning_key
-	while not cursor.is_empty():
-		reversed.append(_cell_from_state_key(cursor))
-		cursor = String(parent.get(cursor, ""))
+	var route_cursor := winning_key
+	while not route_cursor.is_empty():
+		reversed.append(_cell_from_state_key(route_cursor))
+		route_cursor = String(parent.get(route_cursor, ""))
 	reversed.reverse()
 	return reversed
 

@@ -58,6 +58,8 @@ func refresh(snapshot: Dictionary) -> void:
 		title_label.text = "EVENTS"
 		timing_label.text = "No event is active."
 		currency_label.text = ""
+		phase_label.text = ""
+		phase_progress_label.text = ""
 		featured_routes_label.text = ""
 		_clear(quest_list)
 		_clear(shop_list)
@@ -125,7 +127,7 @@ func refresh(snapshot: Dictionary) -> void:
 			)
 		else:
 			featured_routes_label.text = (
-				"FEATURED WINTER QUEST ROUTES  •  %s"
+				"PHASE FEATURED ROUTE  •  %s"
 				% " • ".join(featured_names)
 			)
 

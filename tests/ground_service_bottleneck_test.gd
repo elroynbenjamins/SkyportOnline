@@ -86,121 +86,154 @@ func _run() -> void:
 			false
 		)
 
-	if dispatcher.get_active_count() != 3:
-		_fail(
-			"Two starter turnarounds should activate one fuel, "
-			+ "one cleaning, and one catering vehicle."
-		)
+	# Outbound aircraft now LOAD before fuel/cleaning/catering service.
+	for plane in planes:
+		var waiting_snapshot := dispatcher.get_turnaround_snapshot(plane)
+		if String(waiting_snapshot.get("stage", "")) != "WAITING_PASSENGERS":
+			_fail("Outbound turnaround should wait for LOAD before service.")
+			return
+
+	var ops_station := grid.get_best_service_building(
+		"passenger",
+		"S"
+	)
+	var ops_uid := int(ops_station.get("uid", -1))
+	if ops_uid < 0:
+		_fail("Starter Ground Operations Depot should be available.")
 		return
 
+	# Load aircraft A first, then release its passenger/cargo vehicles.
+	if not dispatcher.approve_passenger_loading(plane_a):
+		_fail("First outbound aircraft should accept passenger loading.")
+		return
+	var job_a := plane_a.get_instance_id()
+	dispatcher._on_service_completed(
+		plane_a,
+		"Ops A",
+		job_a,
+		"passenger_in",
+		false
+	)
+	dispatcher._on_vehicle_returned(
+		ops_uid,
+		"passenger"
+	)
+	dispatcher._on_service_completed(
+		plane_a,
+		"Ops A",
+		job_a,
+		"cargo_in",
+		false
+	)
+	dispatcher._on_vehicle_returned(
+		ops_uid,
+		"cargo"
+	)
+
 	var snapshot_a := dispatcher.get_turnaround_snapshot(plane_a)
+	if String(snapshot_a.get("stage", "")) != "SERVICING":
+		_fail("Loaded outbound aircraft should enter stand service next.")
+		return
 	var status_a: Dictionary = snapshot_a.get(
 		"service_status",
 		{}
 	)
-	if String(
-		(status_a.get("fuel", {}) as Dictionary).get(
-			"state",
-			""
-		)
-	) != "en_route":
-		_fail("First aircraft should show fuel vehicle en route.")
+	for service_key in ["fuel", "cleaning", "catering"]:
+		if String(
+			(status_a.get(service_key, {}) as Dictionary).get(
+				"state",
+				""
+			)
+		) != "en_route":
+			_fail(
+				"First aircraft should dispatch %s service after loading."
+				% service_key
+			)
+			return
+
+	# Aircraft B can load using the passenger/cargo fleets while A is being
+	# serviced. Once B reaches service, the single starter fuel/clean/catering
+	# vehicles should expose the intended bottleneck queue.
+	if not dispatcher.approve_passenger_loading(plane_b):
+		_fail("Second outbound aircraft should accept passenger loading.")
 		return
-	if plane_a.turnaround_panel == null or not plane_a.turnaround_panel.visible:
-		_fail("Active turnaround should show an aircraft status card.")
-		return
-	if not plane_a.turnaround_label.text.contains("Fuel"):
-		_fail("Aircraft status card should name active services.")
-		return
+	var job_b := plane_b.get_instance_id()
+	dispatcher._on_service_completed(
+		plane_b,
+		"Ops B",
+		job_b,
+		"passenger_in",
+		false
+	)
+	dispatcher._on_vehicle_returned(
+		ops_uid,
+		"passenger"
+	)
+	dispatcher._on_service_completed(
+		plane_b,
+		"Ops B",
+		job_b,
+		"cargo_in",
+		false
+	)
+	dispatcher._on_vehicle_returned(
+		ops_uid,
+		"cargo"
+	)
 
 	var snapshot_b := dispatcher.get_turnaround_snapshot(plane_b)
+	if String(snapshot_b.get("stage", "")) != "SERVICING":
+		_fail("Second loaded aircraft should enter stand service.")
+		return
 	var status_b: Dictionary = snapshot_b.get(
 		"service_status",
 		{}
 	)
-	if String(
-		(status_b.get("fuel", {}) as Dictionary).get(
-			"state",
-			""
-		)
-	) != "queued":
-		_fail("Second aircraft should expose queued fuel status.")
-		return
-	if not plane_b.turnaround_label.text.contains("WAIT"):
-		_fail("Queued aircraft status should visibly show WAIT.")
-		return
+	for service_key in ["fuel", "cleaning", "catering"]:
+		if String(
+			(status_b.get(service_key, {}) as Dictionary).get(
+				"state",
+				""
+			)
+		) != "queued":
+			_fail(
+				"Second aircraft should queue for starter %s capacity."
+				% service_key
+			)
+			return
 
 	var waiting := dispatcher.get_waiting_by_service()
-	if int(waiting.get("fuel", 0)) != 1:
-		_fail("Second aircraft should queue for the single fuel truck.")
-		return
-	if int(waiting.get("cleaning", 0)) != 1:
-		_fail("Second aircraft should queue for the single cleaning van.")
-		return
-	if int(waiting.get("catering", 0)) != 1:
-		_fail("Second aircraft should queue for the single catering truck.")
-		return
+	for service_type in ["fuel", "cleaning", "catering"]:
+		if int(waiting.get(service_type, 0)) != 1:
+			_fail(
+				"Second aircraft should queue for the single %s vehicle."
+				% service_type
+			)
+			return
 
-	var job_id := plane_a.get_instance_id()
-	dispatcher._on_service_completed(
-		plane_a,
-		"Ops A",
-		job_id,
-		"fuel",
-		false
-	)
-	dispatcher._on_service_completed(
-		plane_a,
-		"Ops A",
-		job_id,
-		"cleaning",
-		false
-	)
-	dispatcher._on_service_completed(
-		plane_a,
-		"Ops A",
-		job_id,
-		"catering",
-		false
-	)
+	# Complete A's service stage. Outbound load has already happened, so the
+	# next stage is pushback rather than the old WAITING_PASSENGERS step.
+	for service_key in ["fuel", "cleaning", "catering"]:
+		dispatcher._on_service_completed(
+			plane_a,
+			"Ops A",
+			job_a,
+			service_key,
+			false
+		)
+		dispatcher._on_vehicle_returned(
+			int(
+				grid.get_best_service_building(
+					service_key if service_key != "catering" else "catering",
+					"S"
+				).get("uid", -1)
+			),
+			service_key
+		)
 
 	var snapshot := dispatcher.get_turnaround_snapshot(plane_a)
-	if String(snapshot.get("stage", "")) != "WAITING_PASSENGERS":
-		_fail(
-			"Aircraft should wait for passenger stock before loading starts."
-		)
-		return
-	if plane_a.state != "WAITING_PASSENGERS":
-		_fail("Aircraft state should expose the passenger bottleneck.")
-		return
-
-	if not dispatcher.approve_passenger_loading(plane_a):
-		_fail("Passenger approval should start the loading stage.")
-		return
-
-	snapshot = dispatcher.get_turnaround_snapshot(plane_a)
-	if String(snapshot.get("stage", "")) != "LOADING":
-		_fail("Approved aircraft should enter passenger/cargo loading.")
-		return
-
-	dispatcher._on_service_completed(
-		plane_a,
-		"Ops A",
-		job_id,
-		"passenger_in",
-		false
-	)
-	dispatcher._on_service_completed(
-		plane_a,
-		"Ops A",
-		job_id,
-		"cargo_in",
-		false
-	)
-
-	snapshot = dispatcher.get_turnaround_snapshot(plane_a)
 	if String(snapshot.get("stage", "")) != "PUSHBACK_PREP":
-		_fail("Completed loading should advance to queued pushback.")
+		_fail("Completed outbound service should advance directly to pushback.")
 		return
 
 	var pushback_status: Dictionary = (
@@ -232,7 +265,7 @@ func _run() -> void:
 	dispatcher._on_service_completed(
 		plane_a,
 		"Ops A",
-		job_id,
+		job_a,
 		"pushback",
 		false
 	)

@@ -107,48 +107,88 @@ func _run() -> void:
 		"Swift purchase should fill the level-2 three-aircraft capacity."
 	)
 
-	# Mid-game route unlocks should line up with aircraft that can actually fly them.
-	var rome := DestinationCatalog.get_destination("rome")
-	var madrid := DestinationCatalog.get_destination("madrid")
-	var istanbul := DestinationCatalog.get_destination("istanbul")
-	check(
-		int(rome.get("unlock_level", 0)) == 10,
-		"Rome should unlock at level 10."
+	# Route progression is derived from the selected home country.
+	DestinationCatalog.configure_home_country("NL")
+	var nl_starter := DestinationCatalog.starter_destination_for_home(
+		"NL",
+		AircraftCatalog.get_profile("pico_p8")
+	)
+	var jp_starter := DestinationCatalog.starter_destination_for_home(
+		"JP",
+		AircraftCatalog.get_profile("pico_p8")
+	)
+	var au_starter := DestinationCatalog.starter_destination_for_home(
+		"AU",
+		AircraftCatalog.get_profile("pico_p8")
 	)
 	check(
-		int(madrid.get("unlock_level", 0)) == 12,
-		"Madrid should unlock at level 12."
+		String(nl_starter.get("country_code", "")) == "NL",
+		"Netherlands airport should receive a domestic level-1 starter route."
 	)
 	check(
-		int(istanbul.get("unlock_level", 0)) == 17,
-		"Istanbul should unlock at level 17."
+		String(jp_starter.get("country_code", "")) == "JP",
+		"Japan airport should receive a domestic level-1 starter route."
 	)
 	check(
-		FlightRules.can_fly(
-			AircraftCatalog.get_profile("arrow_a52"),
-			rome
-		),
-		"Arrow A52 should be able to serve Rome when that route unlocks."
+		String(au_starter.get("country_code", "")) == "AU",
+		"Australia airport should receive a domestic level-1 starter route."
 	)
 	check(
-		FlightRules.can_fly(
-			AircraftCatalog.get_profile("atlas_a64"),
-			madrid
-		),
-		"Atlas A64 should be able to serve Madrid when that route unlocks."
+		String(nl_starter.get("id", ""))
+		!= String(jp_starter.get("id", "")),
+		"Different home countries should produce different starter route IDs."
 	)
 	check(
-		FlightRules.can_fly(
-			AircraftCatalog.get_profile("horizon_h88"),
-			istanbul
-		),
-		"Horizon H88 should be able to serve Istanbul at level 17."
+		int(nl_starter.get("unlock_level", 0)) == 1
+		and int(jp_starter.get("unlock_level", 0)) == 1
+		and int(au_starter.get("unlock_level", 0)) == 1,
+		"Every selectable home country needs a playable level-1 domestic route."
 	)
-	for code in ["IT", "ES", "TR"]:
+	var japan_routes := DestinationCatalog.all_for_home("JP")
+	var netherlands_routes := DestinationCatalog.all_for_home("NL")
+	check(
+		japan_routes.size() == netherlands_routes.size(),
+		"Home country should reshape the same global route network, not remove destination countries."
+	)
+	check(
+		japan_routes.size() >= CountryCatalog.get_countries().size(),
+		"Generated network should retain at least one route for every country."
+	)
+	for code in ["IT", "ES", "TR", "JP", "AU", "BR"]:
 		check(
 			CountryResourceCatalog.resources_for_country(code).size() == 3,
-			"New progression countries must retain three-resource identity: %s" % code
+			"Every route country must retain three-resource identity: %s" % code
 		)
+	var tokyo_from_nl := DestinationCatalog.get_destination_for_home(
+		"NL",
+		"tokyo"
+	)
+	var tokyo_from_kr := DestinationCatalog.get_destination_for_home(
+		"KR",
+		"tokyo"
+	)
+	check(
+		float(tokyo_from_nl.get("distance_km", 0.0))
+		> float(tokyo_from_kr.get("distance_km", 0.0)),
+		"Tokyo should be geographically farther from the Netherlands than from South Korea."
+	)
+	check(
+		float(tokyo_from_nl.get("effective_distance_km", 0.0))
+		> float(tokyo_from_kr.get("effective_distance_km", 0.0)),
+		"Gameplay travel distance should preserve geographic ordering."
+	)
+	var korea_from_japan := DestinationCatalog.get_destination_for_home(
+		"JP",
+		"seoul"
+	)
+	check(
+		FlightRules.can_fly(
+			AircraftCatalog.get_profile("comet_c22"),
+			korea_from_japan
+		),
+		"Japan's nearby South Korea route should become reachable by early-growth aircraft."
+	)
+
 
 	# There should always be another visible milestone nearby.
 	for level in range(1, AirportProgressionPacing.MAX_LEVEL):
@@ -168,10 +208,6 @@ func _run() -> void:
 	check(
 		level_ten_unlocks.has("Arrow A52"),
 		"Level 10 should advertise Arrow A52."
-	)
-	check(
-		level_ten_unlocks.has("Rome route"),
-		"Level 10 should advertise the Rome route."
 	)
 	check(
 		level_ten_unlocks.has("Fleet capacity 7"),

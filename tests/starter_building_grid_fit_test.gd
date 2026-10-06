@@ -147,6 +147,17 @@ func _run() -> void:
 		)
 		return
 
+	var terminal_origin := Vector2i(-1, -1)
+	for building in grid.placed_buildings:
+		if String(building.get("definition_id", "")) == "small_terminal":
+			terminal_origin = building.get("origin", Vector2i(-1, -1))
+			break
+	if terminal_origin != Vector2i(8, 14):
+		_fail(
+			"Starter Terminal should keep a clear ground gap from the Travel Office."
+		)
+		return
+
 	print(
 		"STARTER_BUILDING_GRID_FIT_OK integrated_bases=true "
 		+ "procedural_underlays=false grounded=true raised_site_slab=false width_cap=1.35"

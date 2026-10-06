@@ -14,9 +14,13 @@ var home_hub_label: Label
 var map_canvas: WorldMapCanvas
 var map_hint_label: Label
 var aircraft_list_container: VBoxContainer
+var country_profile_panel: PanelContainer
 var country_badge_rect: TextureRect
 var country_title_label: Label
 var country_status_label: Label
+var country_region_label: Label
+var country_network_label: Label
+var country_goods_label: Label
 var country_picker: OptionButton
 var country_resource_row: HBoxContainer
 var destination_list_container: VBoxContainer
@@ -345,12 +349,28 @@ func _build_details_sidebar() -> void:
 	wrapper.add_theme_constant_override("separation", 7)
 	scroll.add_child(wrapper)
 
+	country_profile_panel = PanelContainer.new()
+	country_profile_panel.custom_minimum_size = Vector2(0, 188)
+	GameUIStyle.apply_panel(country_profile_panel, "reward_tile")
+	wrapper.add_child(country_profile_panel)
+
+	var profile_margin := MarginContainer.new()
+	profile_margin.add_theme_constant_override("margin_left", 10)
+	profile_margin.add_theme_constant_override("margin_right", 10)
+	profile_margin.add_theme_constant_override("margin_top", 8)
+	profile_margin.add_theme_constant_override("margin_bottom", 8)
+	country_profile_panel.add_child(profile_margin)
+
+	var profile_content := VBoxContainer.new()
+	profile_content.add_theme_constant_override("separation", 7)
+	profile_margin.add_child(profile_content)
+
 	var country_header := HBoxContainer.new()
 	country_header.add_theme_constant_override("separation", 10)
-	wrapper.add_child(country_header)
+	profile_content.add_child(country_header)
 
 	country_badge_rect = TextureRect.new()
-	country_badge_rect.custom_minimum_size = Vector2(64, 48)
+	country_badge_rect.custom_minimum_size = Vector2(72, 54)
 	country_badge_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	country_badge_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	country_badge_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -376,6 +396,37 @@ func _build_details_sidebar() -> void:
 	country_status_label.add_theme_font_size_override("font_size", 12)
 	GameUIStyle.muted(country_status_label)
 	country_header_text.add_child(country_status_label)
+
+	var profile_stats := HBoxContainer.new()
+	profile_stats.add_theme_constant_override("separation", 5)
+	profile_content.add_child(profile_stats)
+	country_region_label = _make_country_profile_stat(
+		profile_stats,
+		"REGION"
+	)
+	country_network_label = _make_country_profile_stat(
+		profile_stats,
+		"NETWORK"
+	)
+	country_goods_label = _make_country_profile_stat(
+		profile_stats,
+		"GOODS"
+	)
+
+	var goods_heading := Label.new()
+	goods_heading.text = "REGIONAL GOODS"
+	goods_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	goods_heading.add_theme_font_size_override("font_size", 10)
+	goods_heading.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_MUTED
+	)
+	profile_content.add_child(goods_heading)
+
+	country_resource_row = HBoxContainer.new()
+	country_resource_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	country_resource_row.add_theme_constant_override("separation", 5)
+	profile_content.add_child(country_resource_row)
 
 	country_picker = OptionButton.new()
 	country_picker.custom_minimum_size = Vector2(0, 38)
@@ -403,11 +454,6 @@ func _build_details_sidebar() -> void:
 		country_picker.set_item_metadata(item_index, code)
 	country_picker.item_selected.connect(_on_country_picker_selected)
 	wrapper.add_child(country_picker)
-
-	country_resource_row = HBoxContainer.new()
-	country_resource_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	country_resource_row.add_theme_constant_override("separation", 6)
-	wrapper.add_child(country_resource_row)
 
 	destination_list_container = VBoxContainer.new()
 	destination_list_container.add_theme_constant_override("separation", 4)
@@ -491,6 +537,30 @@ func _build_details_sidebar() -> void:
 	assign_button.pressed.connect(_on_assign_pressed)
 	GameUIStyle.apply_button(assign_button, "primary")
 	shell.add_child(assign_button)
+
+
+func _make_country_profile_stat(
+	parent: HBoxContainer,
+	title: String
+) -> Label:
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.custom_minimum_size = Vector2(0, 44)
+	GameUIStyle.apply_panel(card, "dark")
+	parent.add_child(card)
+
+	var label := Label.new()
+	label.text = title + "\n—"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	card.add_child(label)
+	return label
 
 
 func _make_detail_card(
@@ -1112,9 +1182,19 @@ func _refresh_country_summary() -> void:
 		country_status_label.text = (
 			"Tap any country marker to inspect its resources and routes."
 		)
+		country_status_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_MUTED
+		)
 		if country_badge_rect != null:
 			country_badge_rect.texture = null
 			country_badge_rect.tooltip_text = ""
+		if country_region_label != null:
+			country_region_label.text = "REGION\n—"
+		if country_network_label != null:
+			country_network_label.text = "NETWORK\n—"
+		if country_goods_label != null:
+			country_goods_label.text = "GOODS\n—"
 		_refresh_country_resource_row([])
 		return
 
@@ -1145,26 +1225,45 @@ func _refresh_country_summary() -> void:
 			):
 				country_picker.select(index)
 				break
-	var home_suffix := (
-		"  •  HOME HUB"
-		if selected_country_code == home_country_code
-		else ""
-	)
-	if routes.is_empty():
-		country_status_label.text = "%s  •  No active route yet%s" % [
-			String(country.get("region", "")),
-			home_suffix
-		]
+	var region := String(country.get("region", "Unknown"))
+	var resource_count := (
+		country.get("resources", []) as Array
+	).size()
+	if country_region_label != null:
+		country_region_label.text = "REGION\n%s" % region
+	if country_network_label != null:
+		country_network_label.text = (
+			"NETWORK\n%d / %d" % [unlocked_count, routes.size()]
+			if not routes.is_empty()
+			else "NETWORK\nFuture"
+		)
+	if country_goods_label != null:
+		country_goods_label.text = "GOODS\n%d types" % resource_count
+
+	if selected_country_code == home_country_code:
+		country_status_label.text = "★ HOME HUB  •  %s" % region
+		country_status_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_GOLD
+		)
+	elif routes.is_empty():
+		country_status_label.text = "FUTURE NETWORK  •  %s" % region
+		country_status_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_MUTED
+		)
+	elif unlocked_count > 0:
+		country_status_label.text = "CONNECTED  •  %s" % region
+		country_status_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_SUCCESS
+		)
 	else:
-		country_status_label.text = (
-			"%s  •  %d route%s  •  %d unlocked%s"
-		) % [
-			String(country.get("region", "")),
-			routes.size(),
-			"" if routes.size() == 1 else "s",
-			unlocked_count,
-			home_suffix
-		]
+		country_status_label.text = "LOCKED NETWORK  •  %s" % region
+		country_status_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_ACCENT
+		)
 
 
 func _refresh_country_resource_row(resources: Array) -> void:
@@ -1181,7 +1280,7 @@ func _refresh_country_resource_row(resources: Array) -> void:
 
 		var card := PanelContainer.new()
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.custom_minimum_size = Vector2(0, 76)
+		card.custom_minimum_size = Vector2(0, 70)
 		GameUIStyle.apply_panel(card, "reward_tile")
 		country_resource_row.add_child(card)
 

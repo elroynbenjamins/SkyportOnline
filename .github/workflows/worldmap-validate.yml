@@ -1,0 +1,50 @@
+name: Validate World Map Country UX
+
+on:
+  pull_request:
+    paths:
+      - "src/worldmap/**"
+      - "src/world/CountryCatalog.gd"
+      - "src/data/CountryVisualCatalog.gd"
+      - "src/data/CountryResourceCatalog.gd"
+      - "src/data/DestinationCatalog.gd"
+      - "tests/world_map_country_selection_test.gd"
+      - ".github/workflows/worldmap-validate.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  world-map:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Godot import and class cache
+        shell: bash
+        run: |
+          godot --headless --path . --import --verbose
+          test -s .godot/global_script_class_cache.cfg
+
+      - name: Test World Map country selection
+        shell: bash
+        run: |
+          set +e
+          for attempt in 1 2; do
+            echo "World Map validation attempt $attempt"
+            timeout 25s godot --headless --path . --script res://tests/world_map_country_selection_test.gd
+            status=$?
+            if [ $status -eq 0 ]; then
+              exit 0
+            fi
+            if [ $attempt -eq 1 ]; then
+              echo "Refreshing Godot import and class cache before retry"
+              rm -rf .godot
+              godot --headless --path . --import --verbose || true
+            fi
+          done
+          exit 1

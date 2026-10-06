@@ -80,11 +80,14 @@ func _run() -> void:
 			% str(art_check.get("errors", []))
 		)
 		return
-	if WorldMapCanvas.PRODUCTION_ART_ASSET_COUNT != 9:
-		_fail("World Map should keep the complete production art asset set.")
+	if WorldMapCanvas.PRODUCTION_ART_ASSET_COUNT != 13:
+		_fail("World Map should keep the complete refined production art asset set.")
 		return
-	if WorldMapCanvas.TERRAIN_STAMP_COUNT < 8:
-		_fail("World Map should retain stylized terrain detail stamps.")
+	if WorldMapCanvas.TERRAIN_STAMP_COUNT < 11:
+		_fail("World Map should retain forest, mountain and city terrain detail stamps.")
+		return
+	if WorldMapCanvas.OCEAN_DECORATION_COUNT < 7:
+		_fail("World Map should retain authored cloud and sea-glint atmosphere.")
 		return
 	if WorldMapVisualAssets.texture(WorldMapVisualAssets.OCEAN_TILE) == null:
 		_fail("World Map should load its textured production ocean tile.")
@@ -94,6 +97,15 @@ func _run() -> void:
 		return
 	if WorldMapVisualAssets.texture(WorldMapVisualAssets.AIRPORT_SELECTED) == null:
 		_fail("World Map should load the selected-airport production marker.")
+		return
+	if WorldMapVisualAssets.texture(WorldMapVisualAssets.COUNTRY_FOCUS) == null:
+		_fail("World Map should load the selected-country production focus art.")
+		return
+	if WorldMapVisualAssets.texture(WorldMapVisualAssets.CLOUD_CLUSTER) == null:
+		_fail("World Map should load its authored cloud atmosphere art.")
+		return
+	if WorldMapVisualAssets.texture(WorldMapVisualAssets.TERRAIN_CITY) == null:
+		_fail("World Map should load stylized city terrain art.")
 		return
 	if screen.map_canvas.network_connection_count() < 8:
 		_fail("World Map should expose the wider route network behind the selected route.")
@@ -257,7 +269,7 @@ func _run() -> void:
 	print(
 		"World Map country selection passed: country-first filtering, larger touch "
 		+ "targets, Europe spacing, profile states, zoom/pan, airport markers, "
-		+ "animated routes, production map art, wider route network, zoom-aware airport labels, map route briefing, richer geography, resources, and picker sync."
+		+ "animated routes, refined production map art, coast depth, ocean atmosphere, city/terrain details, wider route network, zoom-aware airport labels, map route briefing, resources, and picker sync."
 	)
 	quit(0)
 

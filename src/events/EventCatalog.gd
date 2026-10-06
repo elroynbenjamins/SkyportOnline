@@ -721,6 +721,61 @@ static func all() -> Array[Dictionary]:
 	]
 
 
+static func resolve_for_home(
+	event: Dictionary,
+	home_country_id: String
+) -> Dictionary:
+	if event.is_empty():
+		return {}
+
+	var resolved := event.duplicate(true)
+	var profile := AircraftCatalog.get_profile("comet_c22")
+	var candidates: Array[Dictionary] = []
+	for destination in DestinationCatalog.unlocked_for_level_for_home(
+		home_country_id,
+		4
+	):
+		if FlightRules.can_fly(profile, destination):
+			candidates.append(destination)
+
+	if candidates.is_empty():
+		return resolved
+
+	var featured: Array[String] = []
+	var start_index := 1 if candidates.size() > 1 else 0
+	for offset in range(3):
+		var index := mini(start_index + offset, candidates.size() - 1)
+		var route_id := String(candidates[index].get("id", ""))
+		if not route_id.is_empty() and not featured.has(route_id):
+			featured.append(route_id)
+	if featured.is_empty():
+		featured.append(String(candidates[0].get("id", "")))
+	while featured.size() < 3:
+		featured.append(featured[featured.size() - 1])
+
+	resolved["featured_destinations"] = featured.duplicate()
+
+	var quests: Array = []
+	for quest_variant in resolved.get("quests", []):
+		var quest: Dictionary = (quest_variant as Dictionary).duplicate(true)
+		if String(quest.get("metric", "")) == "destination_flights":
+			var week_index := clampi(int(quest.get("week", 1)) - 1, 0, 2)
+			var route_id := String(featured[week_index])
+			var destination := DestinationCatalog.get_destination_for_home(
+				home_country_id,
+				route_id
+			)
+			quest["destination_id"] = route_id
+			if not destination.is_empty():
+				quest["title"] = "%s • %s Route" % [
+					String(destination.get("city", "Featured")),
+					String(resolved.get("theme", "Event")).capitalize()
+				]
+		quests.append(quest)
+	resolved["quests"] = quests
+	return resolved
+
+
 static func get_event(event_id: String) -> Dictionary:
 	for event in all():
 		if String(event.get("id", "")) == event_id:

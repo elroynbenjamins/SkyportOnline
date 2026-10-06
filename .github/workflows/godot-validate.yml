@@ -184,6 +184,9 @@ jobs:
       - name: Test runway v2 surface visuals
         run: timeout 25s godot --headless --path . --script res://tests/runway_surface_v2_test.gd
 
+      - name: Test airfield pavement v2 visuals
+        run: timeout 25s godot --headless --path . --script res://tests/airfield_pavement_v2_test.gd
+
       - name: Test landside environment visuals
         run: timeout 20s godot --headless --path . --script res://tests/landside_environment_test.gd
 

@@ -64,7 +64,9 @@ static func all() -> Array[Dictionary]:
 			"rotatable": false,
 			"sizes": PackedStringArray(["S", "M", "L"]),
 			"description": "Connects runways and stands.",
-			"icon_path": "res://assets/pixel/airport_v1/taxiway.svg"
+			"icon_path": "res://assets/production/airfield_v2/taxiway_icon_v2.svg",
+			"art_tier": "surface_v2",
+			"surface_art": "taxiway_v2"
 		},
 		{
 			"id": "service_road",
@@ -78,7 +80,9 @@ static func all() -> Array[Dictionary]:
 			"rotatable": false,
 			"sizes": PackedStringArray(["S", "M", "L"]),
 			"description": "Ground vehicles use service roads to reach aircraft.",
-			"icon_path": "res://assets/pixel/airport_v1/service_road.svg"
+			"icon_path": "res://assets/production/airfield_v2/service_road_icon_v2.svg",
+			"art_tier": "surface_v2",
+			"surface_art": "service_road_v2"
 		},
 		{
 			"id": "small_terminal",

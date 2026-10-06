@@ -1643,7 +1643,7 @@ func _activities_snapshot() -> Dictionary:
 	var dispatch_action := "OPEN DISPATCH"
 	if dispatch_unlocked:
 		match dispatch_status_code:
-				"RUNNING":
+			"RUNNING":
 				dispatch_status = "LIVE • %d PTS • COMBO x%d • %s LEFT" % [
 					int(dispatch.get("score", 0)),
 					int(dispatch.get("combo_count", 0)),

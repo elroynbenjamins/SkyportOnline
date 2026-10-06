@@ -242,9 +242,10 @@ func _process(delta: float) -> void:
 			var dispatch_data := _dispatch_snapshot()
 			if String(dispatch_data.get("status", "")) == "READY":
 				hud.set_operation_status(
-					"Dispatch shift complete • %d points • %s" % [
+					"Dispatch complete • %d pts • %s • max combo x%d" % [
 						int(dispatch_data.get("score", 0)),
-						String(dispatch_data.get("tier_name", "No medal"))
+						String(dispatch_data.get("tier_name", "No medal")),
+						int(dispatch_data.get("max_combo", 0))
 					],
 					"success"
 				)
@@ -1643,18 +1644,23 @@ func _activities_snapshot() -> Dictionary:
 	if dispatch_unlocked:
 		match dispatch_status_code:
 			"RUNNING":
-				dispatch_status = "LIVE • %d PTS • %s LEFT" % [
+				dispatch_status = "LIVE • %d PTS • COMBO x%d • %s LEFT" % [
 					int(dispatch.get("score", 0)),
+					int(dispatch.get("combo_count", 0)),
 					_format_activity_time(int(dispatch.get("remaining_seconds", 0)))
 				]
-				dispatch_detail = "Keep turnarounds, departures and returns moving; taxi holds cost points."
+				dispatch_detail = "Clean operations build bonus points; taxi holds cost 4 points and break the combo."
 			"READY":
-				dispatch_status = "%s • %d PTS" % [
+				dispatch_status = "%s • %d PTS • MAX COMBO x%d" % [
 					String(dispatch.get("tier_name", "RESULT")).to_upper(),
-					int(dispatch.get("score", 0))
+					int(dispatch.get("score", 0)),
+					int(dispatch.get("max_combo", 0))
 				]
 				dispatch_detail = (
-					"Daily reward ready to claim."
+					"Daily reward ready • +%d combo pts • −%d congestion pts." % [
+						int(dispatch.get("combo_bonus", 0)),
+						int(dispatch.get("penalty_points", 0))
+					]
 					if dispatch_attention
 					else "Shift complete • finish the result to start another run."
 				)
@@ -1664,7 +1670,7 @@ func _activities_snapshot() -> Dictionary:
 				dispatch_detail = (
 					"Daily reward already claimed • practice runs still improve your best."
 					if bool(dispatch.get("reward_claimed", false))
-					else "Start a 3-minute live shift for today's Bronze / Silver / Gold reward."
+					else "3-minute shift • Bronze 30 • Silver 65 • Gold 105 • clean combos accelerate scoring."
 				)
 
 	var event_active := bool(current_event_snapshot.get("active", false))
@@ -1783,11 +1789,71 @@ func _activities_snapshot() -> Dictionary:
 
 
 func _dispatch_snapshot() -> Dictionary:
-	return DispatchChallengeRules.snapshot(
+	var data := DispatchChallengeRules.snapshot(
 		_capture_state(),
 		player_level,
 		Time.get_unix_time_from_system()
 	)
+	var operational_aircraft := 0
+	var aircraft_at_stand := 0
+	for aircraft_variant in aircraft_demos:
+		var aircraft := aircraft_variant as AircraftPrototype
+		if aircraft == null or not is_instance_valid(aircraft):
+			continue
+		operational_aircraft += 1
+		if String(aircraft.state) in [
+			"PARKED",
+			"WAITING_FUEL",
+			"UNLOADING",
+			"SERVICING",
+			"WAITING_PASSENGERS",
+			"LOADING",
+			"PUSHBACK_PREP",
+			"READY_FOR_DESTINATION",
+			"READY_FOR_DEPARTURE"
+		]:
+			aircraft_at_stand += 1
+	for visitor_variant in social_visitor_aircraft.values():
+		var visitor := visitor_variant as AircraftPrototype
+		if visitor == null or not is_instance_valid(visitor):
+			continue
+		operational_aircraft += 1
+		if String(visitor.state) in [
+			"PARKED",
+			"WAITING_FUEL",
+			"UNLOADING",
+			"SERVICING",
+			"WAITING_PASSENGERS",
+			"LOADING",
+			"PUSHBACK_PREP",
+			"READY_FOR_DESTINATION",
+			"READY_FOR_DEPARTURE"
+		]:
+			aircraft_at_stand += 1
+	data["airport_aircraft"] = operational_aircraft
+	data["airport_at_stand"] = aircraft_at_stand
+	data["passenger_stock"] = (
+		passenger_economy.get_passengers()
+		if passenger_economy != null
+		else 0
+	)
+	data["passenger_capacity"] = (
+		passenger_economy.get_capacity()
+		if passenger_economy != null
+		else 0
+	)
+	data["runway_queue"] = (
+		runway_dispatcher.get_waiting_count()
+		if runway_dispatcher != null
+		else 0
+	)
+	data["ground_queue"] = (
+		ground_services.get_waiting_count()
+		if ground_services != null
+		else 0
+	)
+	data["inbound_holding"] = pending_arrivals.size()
+	return data
 
 
 func _refresh_dispatch_ui() -> void:
@@ -1800,7 +1866,8 @@ func _refresh_dispatch_ui() -> void:
 		hud.set_dispatch_shift(
 			String(data.get("status", "IDLE")),
 			int(data.get("score", 0)),
-			int(data.get("remaining_seconds", 0))
+			int(data.get("remaining_seconds", 0)),
+			int(data.get("combo_count", 0))
 		)
 
 
@@ -1868,9 +1935,10 @@ func _on_dispatch_claim_requested() -> void:
 	hud.set_player_data(player_level, coins, gems)
 	if bool(reward.get("rewarded", false)):
 		hud.set_operation_status(
-			"%s • %d pts • +%d coins • +%d XP" % [
+			"%s • %d pts • max combo x%d • +%d coins • +%d XP" % [
 				String(reward.get("tier_name", "Dispatch result")),
 				int(reward.get("score", 0)),
+				int(reward.get("max_combo", 0)),
 				int(reward.get("coins", 0)),
 				int(reward.get("xp", 0))
 			],
@@ -1910,14 +1978,24 @@ func _record_dispatch_action(
 	_refresh_dispatch_ui()
 	_refresh_activities_hub()
 	var data := _dispatch_snapshot()
-	hud.set_operation_status(
-		"Dispatch %s%d • %d pts" % [
-			"+" if points > 0 else "",
-			points,
-			int(data.get("score", 0))
-		],
-		"warning" if points < 0 else "success"
-	)
+	if points < 0:
+		hud.set_operation_status(
+			"Dispatch %d • TAXI HOLD • combo broken • %d pts" % [
+				points,
+				int(data.get("score", 0))
+			],
+			"warning"
+		)
+	else:
+		var combo := int(data.get("combo_count", 0))
+		hud.set_operation_status(
+			"Dispatch +%d • %d pts%s" % [
+				points,
+				int(data.get("score", 0)),
+				" • COMBO x%d" % combo if combo >= 2 else ""
+			],
+			"success"
+		)
 	return points
 
 
@@ -1978,7 +2056,12 @@ func _on_aircraft_serviced(
 	label: String
 ) -> void:
 	super._on_aircraft_serviced(aircraft, label)
-	_record_dispatch_action("turnaround")
+	if (
+		aircraft != null
+		and is_instance_valid(aircraft)
+		and not aircraft.is_social_visitor()
+	):
+		_record_dispatch_action("turnaround")
 
 
 func _on_taxi_hold_changed(

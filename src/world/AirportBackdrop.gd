@@ -17,31 +17,39 @@ const ROAD_SHOULDER := Color("a69e8d")
 const ROAD_SURFACE := Color("5b5f5c")
 const ROAD_LINE := Color("dfcc77", 0.76)
 
-const FIELD_TEXTURE: Texture2D = preload(
-	"res://assets/production/environment_v2/distant_fields_v2.svg"
-)
-const TREE_TEXTURE: Texture2D = preload(
-	"res://assets/production/environment_v2/tree_cluster_v2.svg"
-)
-const CONIFER_TEXTURE: Texture2D = preload(
-	"res://assets/production/environment_v2/conifer_cluster_v2.svg"
-)
-const PARKING_TEXTURE: Texture2D = preload(
-	"res://assets/production/environment_v2/parking_lot_v2.svg"
-)
-const HEDGE_TEXTURE: Texture2D = preload(
-	"res://assets/production/environment_v2/hedge_strip_v2.svg"
-)
-const ENTRANCE_TEXTURE: Texture2D = preload(
-	"res://assets/production/environment_v2/entrance_sign_v2.svg"
-)
+const FIELD_TEXTURE_PATH := "res://assets/production/environment_v2/distant_fields_v2.svg"
+const TREE_TEXTURE_PATH := "res://assets/production/environment_v2/tree_cluster_v2.svg"
+const CONIFER_TEXTURE_PATH := "res://assets/production/environment_v2/conifer_cluster_v2.svg"
+const PARKING_TEXTURE_PATH := "res://assets/production/environment_v2/parking_lot_v2.svg"
+const HEDGE_TEXTURE_PATH := "res://assets/production/environment_v2/hedge_strip_v2.svg"
+const ENTRANCE_TEXTURE_PATH := "res://assets/production/environment_v2/entrance_sign_v2.svg"
+
+var field_texture: Texture2D
+var tree_texture: Texture2D
+var conifer_texture: Texture2D
+var parking_texture: Texture2D
+var hedge_texture: Texture2D
+var entrance_texture: Texture2D
 
 
 func _ready() -> void:
 	z_index = -200
 	z_as_relative = false
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	field_texture = _load_texture(FIELD_TEXTURE_PATH)
+	tree_texture = _load_texture(TREE_TEXTURE_PATH)
+	conifer_texture = _load_texture(CONIFER_TEXTURE_PATH)
+	parking_texture = _load_texture(PARKING_TEXTURE_PATH)
+	hedge_texture = _load_texture(HEDGE_TEXTURE_PATH)
+	entrance_texture = _load_texture(ENTRANCE_TEXTURE_PATH)
 	queue_redraw()
+
+
+func _load_texture(path: String) -> Texture2D:
+	var resource = load(path)
+	if resource is Texture2D:
+		return resource as Texture2D
+	return null
 
 
 func _draw() -> void:
@@ -224,50 +232,50 @@ func _draw_environment_scenery() -> void:
 	# Field artwork provides the large authored shapes that were missing from
 	# the previous procedural-only background.
 	_draw_texture_centered(
-		FIELD_TEXTURE,
+		field_texture,
 		Vector2(-650, -35),
 		Vector2(760, 390),
 		0.92
 	)
 	_draw_texture_centered(
-		FIELD_TEXTURE,
+		field_texture,
 		Vector2(675, -15),
 		Vector2(730, 375),
 		0.88
 	)
 	_draw_texture_centered(
-		FIELD_TEXTURE,
+		field_texture,
 		Vector2(-720, 825),
 		Vector2(700, 360),
 		0.76
 	)
 	_draw_texture_centered(
-		FIELD_TEXTURE,
+		field_texture,
 		Vector2(735, 845),
 		Vector2(710, 365),
 		0.78
 	)
 
 	_draw_texture_centered(
-		PARKING_TEXTURE,
+		parking_texture,
 		Vector2(-760, 610),
 		Vector2(430, 252),
 		0.84
 	)
 	_draw_texture_centered(
-		PARKING_TEXTURE,
+		parking_texture,
 		Vector2(790, 625),
 		Vector2(390, 228),
 		0.72
 	)
 
 	for item in [
-		[TREE_TEXTURE, Vector2(-610, 205), Vector2(250, 205), 0.96],
-		[CONIFER_TEXTURE, Vector2(625, 220), Vector2(255, 215), 0.94],
-		[TREE_TEXTURE, Vector2(-620, 710), Vector2(235, 190), 0.90],
-		[CONIFER_TEXTURE, Vector2(650, 735), Vector2(245, 205), 0.91],
-		[TREE_TEXTURE, Vector2(-420, -90), Vector2(205, 165), 0.86],
-		[TREE_TEXTURE, Vector2(445, -70), Vector2(210, 170), 0.86]
+		[tree_texture, Vector2(-610, 205), Vector2(250, 205), 0.96],
+		[conifer_texture, Vector2(625, 220), Vector2(255, 215), 0.94],
+		[tree_texture, Vector2(-620, 710), Vector2(235, 190), 0.90],
+		[conifer_texture, Vector2(650, 735), Vector2(245, 205), 0.91],
+		[tree_texture, Vector2(-420, -90), Vector2(205, 165), 0.86],
+		[tree_texture, Vector2(445, -70), Vector2(210, 170), 0.86]
 	]:
 		_draw_texture_centered(
 			item[0] as Texture2D,
@@ -277,19 +285,19 @@ func _draw_environment_scenery() -> void:
 		)
 
 	_draw_texture_centered(
-		HEDGE_TEXTURE,
+		hedge_texture,
 		Vector2(-520, 720),
 		Vector2(300, 120),
 		0.74
 	)
 	_draw_texture_centered(
-		HEDGE_TEXTURE,
+		hedge_texture,
 		Vector2(545, 740),
 		Vector2(300, 120),
 		0.74
 	)
 	_draw_texture_centered(
-		ENTRANCE_TEXTURE,
+		entrance_texture,
 		Vector2(-610, 805),
 		Vector2(175, 140),
 		0.92

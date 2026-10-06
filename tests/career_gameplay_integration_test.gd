@@ -32,7 +32,37 @@ func _run() -> void:
 	await process_frame
 	check(main.gameplay_started and main.progression_ready, "Guest creation must start the real game.")
 	check(main.player_level == 1, "A new airport starts career progression at level one.")
-	check(main.aircraft_demos.size() == 2, "Fresh career must deploy the two starter Picos.")
+	check(
+		main.aircraft_demos.is_empty(),
+		"Fresh career should wait for the player to build runway/taxi/service infrastructure."
+	)
+
+	# Complete the same starter network a player can build in the 16x16 area.
+	# The dedicated starter-airfield regression tests the individual construction
+	# rules; this progression integration needs an operational network so it can
+	# continue through the real flight/NPC/career loop.
+	var reference_grid := AirportGrid.new()
+	root.add_child(reference_grid)
+	await process_frame
+	var reference_layout := reference_grid.export_airport_layout()
+	var reference_owned := reference_grid.export_owned_parcels()
+	check(
+		main.airport_grid.apply_saved_airport_layout(
+			reference_layout,
+			reference_owned,
+			[]
+		),
+		"Career integration should be able to apply a completed starter network."
+	)
+	main._persist_airport_layout()
+	main._refresh_layout_dependent_systems()
+	await process_frame
+	await process_frame
+	reference_grid.queue_free()
+	check(
+		main.aircraft_demos.size() == 2,
+		"Completed starter network should deploy the two owned starter Picos."
+	)
 	check(main.career_pin != null, "A live career action must replace the static HUD objective.")
 	check(main.career_screen != null, "Career screen must be installed in the actual scene.")
 	main.npc_director.remaining = 0.0

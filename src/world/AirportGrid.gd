@@ -1,6 +1,13 @@
 class_name AirportGrid
 extends Node2D
 
+const PlacementGridV2 := preload(
+	"res://src/build/PlacementGridV2.gd"
+)
+const SpritePlacementV2 := preload(
+	"res://src/build/SpritePlacementV2.gd"
+)
+
 signal parcel_selected(parcel_id: String, data: Dictionary)
 signal build_preview_changed(data: Dictionary)
 signal building_placed(data: Dictionary)
@@ -3447,7 +3454,7 @@ func _footprint_polygon(
 	origin: Vector2i,
 	footprint: Vector2i
 ) -> PackedVector2Array:
-	return BuildingPlacementGrid.footprint_polygon(
+	return PlacementGridV2.footprint_polygon(
 		origin,
 		footprint
 	)
@@ -4667,7 +4674,7 @@ func _sprite_visible_bounds_for_rotation(
 	if image == null:
 		return Rect2i()
 
-	var bounds := BuildingSpritePlacement.visible_bounds(
+	var bounds := SpritePlacementV2.visible_bounds(
 		image,
 		source
 	)
@@ -4716,7 +4723,7 @@ func _building_sprite_rect(
 				)
 			)
 			if bounds.size.x > 0 and bounds.size.y > 0:
-				return BuildingSpritePlacement.grounded_rect(
+				return SpritePlacementV2.grounded_rect(
 					bounds,
 					source_size,
 					_footprint_polygon(
@@ -6478,11 +6485,11 @@ func _tile_points(center: Vector2) -> PackedVector2Array:
 
 
 func tile_to_world(tile: Vector2) -> Vector2:
-	return BuildingPlacementGrid.tile_to_world(tile)
+	return PlacementGridV2.tile_to_world(tile)
 
 
 func world_to_tile(world_position: Vector2) -> Vector2i:
-	return BuildingPlacementGrid.world_to_tile(
+	return PlacementGridV2.world_to_tile(
 		world_position
 	)
 
@@ -7309,7 +7316,7 @@ func _footprint_for(
 	definition: Dictionary,
 	rotation: int
 ) -> Vector2i:
-	return BuildingPlacementGrid.footprint_for(
+	return PlacementGridV2.footprint_for(
 		definition,
 		rotation
 	)
@@ -7319,7 +7326,7 @@ func _cells_for(
 	origin: Vector2i,
 	footprint: Vector2i
 ) -> Array[Vector2i]:
-	return BuildingPlacementGrid.cells_for(
+	return PlacementGridV2.cells_for(
 		origin,
 		footprint
 	)
@@ -7351,7 +7358,7 @@ func _rebuild_occupied_cells() -> void:
 
 
 func _cell_key(cell: Vector2i) -> String:
-	return BuildingPlacementGrid.cell_key(cell)
+	return PlacementGridV2.cell_key(cell)
 
 
 func _tile_in_world(tile: Vector2i) -> bool:
@@ -7483,7 +7490,7 @@ func _footprint_center_world(
 	origin: Vector2i,
 	footprint: Vector2i
 ) -> Vector2:
-	return BuildingPlacementGrid.footprint_center_world(
+	return PlacementGridV2.footprint_center_world(
 		origin,
 		footprint
 	)

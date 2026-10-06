@@ -9,6 +9,7 @@ func _run() -> void:
 	var plane := CareerAircraft.new()
 	root.add_child(plane)
 	await process_frame
+	plane.set_process(false)
 	plane.configure_aircraft_type("pico_p8")
 
 	if plane.get_pico_visual_fx_snapshot().get("engine_running", true):
@@ -112,6 +113,7 @@ func _run() -> void:
 	var static_plane := CareerAircraft.new()
 	root.add_child(static_plane)
 	await process_frame
+	static_plane.set_process(false)
 	static_plane.configure_aircraft_type("swift_s14")
 	if bool(static_plane.get_pico_visual_fx_snapshot().get("engine_running", false)):
 		_fail("Pico-specific propeller FX must not leak onto other aircraft.")

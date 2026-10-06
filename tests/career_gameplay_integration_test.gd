@@ -49,12 +49,6 @@ func _build_required_starter_airside(main) -> bool:
 	if not _place_for_career(
 		main,
 		"small_stand",
-		Vector2i(4, 2)
-	):
-		return false
-	if not _place_for_career(
-		main,
-		"small_stand",
 		Vector2i(4, 5)
 	):
 		return false
@@ -62,10 +56,6 @@ func _build_required_starter_airside(main) -> bool:
 	for cell in [
 		Vector2i(7, 7),
 		Vector2i(7, 6),
-		Vector2i(7, 5),
-		Vector2i(7, 4),
-		Vector2i(7, 3),
-		Vector2i(6, 3),
 		Vector2i(6, 6)
 	]:
 		if not _place_for_career(
@@ -105,7 +95,14 @@ func _run() -> void:
 	)
 	main._refresh_layout_dependent_systems()
 	await process_frame
-	check(main.aircraft_demos.size() == 2, "Two connected starter stands should deploy the two starter Picos.")
+	check(
+		main.aircraft_demos.size() == 1,
+		"One connected starter stand should deploy one Pico; the second waits for another stand."
+	)
+	check(
+		(main.progression.get("owned_aircraft", []) as Array).size() == 2,
+		"Both starter Picos should remain owned even when only one is deployed."
+	)
 	check(main.career_pin != null, "A live career action must replace the static HUD objective.")
 	check(main.career_screen != null, "Career screen must be installed in the actual scene.")
 	main.npc_director.remaining = 0.0

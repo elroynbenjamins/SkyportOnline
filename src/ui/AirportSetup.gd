@@ -11,6 +11,7 @@ var country_map: CountryMap
 var country_picker: OptionButton
 var country_title: Label
 var country_region: Label
+var resource_icons: Array[TextureRect] = []
 var resource_labels: Array[Label] = []
 var confirm_button: Button
 var create_status: Label
@@ -261,16 +262,30 @@ func _build_interface() -> void:
 	for _index in range(3):
 		var resource_panel := PanelContainer.new()
 		resource_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		resource_panel.custom_minimum_size = Vector2(0, 96)
 		GameUIStyle.apply_panel(resource_panel, "raised")
 		resources_row.add_child(resource_panel)
 
+		var resource_content := VBoxContainer.new()
+		resource_content.alignment = BoxContainer.ALIGNMENT_CENTER
+		resource_content.add_theme_constant_override("separation", 2)
+		resource_panel.add_child(resource_content)
+
+		var resource_icon := TextureRect.new()
+		resource_icon.custom_minimum_size = Vector2(46, 46)
+		resource_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		resource_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		resource_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		resource_content.add_child(resource_icon)
+		resource_icons.append(resource_icon)
+
 		var resource_label := Label.new()
-		resource_label.custom_minimum_size = Vector2(0, 66)
+		resource_label.custom_minimum_size = Vector2(0, 40)
 		resource_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		resource_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		resource_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		resource_label.add_theme_font_size_override("font_size", 13)
-		resource_panel.add_child(resource_label)
+		resource_label.add_theme_font_size_override("font_size", 12)
+		resource_content.add_child(resource_label)
 		resource_labels.append(resource_label)
 
 	var probability_note := Label.new()
@@ -383,12 +398,21 @@ func _select_country(country_id: String) -> void:
 	for index in range(resource_labels.size()):
 		if index >= resources.size():
 			resource_labels[index].text = ""
+			if index < resource_icons.size():
+				resource_icons[index].texture = null
 			continue
 		var resource: Dictionary = resources[index]
-		resource_labels[index].text = "%s\n40%% base chance\n%s" % [
-			String(resource.get("name", "Resource")),
-			String(resource.get("use", ""))
-		]
+		var resource_id := String(resource.get("id", ""))
+		resource_labels[index].text = "%s\n40%% base chance" % String(
+			resource.get("name", "Resource")
+		)
+		if index < resource_icons.size():
+			resource_icons[index].texture = (
+				ResourceVisualCatalog.texture_for_resource(resource_id)
+			)
+			resource_icons[index].tooltip_text = String(
+				resource.get("name", "Resource")
+			)
 
 	_refresh_validation()
 

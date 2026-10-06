@@ -6,6 +6,7 @@ signal hold_short_reached
 signal departed
 signal arrival_requested
 signal arrival_completed
+signal ground_transfer_completed
 signal state_changed(state: String)
 signal handling_action_requested(
 	aircraft: AircraftPrototype,
@@ -29,6 +30,8 @@ const EXTERNAL_PUSHBACK_MIN_DISTANCE := 0.35
 
 var departure_route := PackedVector2Array()
 var arrival_route := PackedVector2Array()
+var ground_transfer_route := PackedVector2Array()
+var ground_transfer_index := 0
 var route_index := 0
 var state := "PARKED"
 var aircraft_size := "S"
@@ -206,6 +209,59 @@ func continue_manual_taxi_in() -> bool:
 	taxi_current_speed = 0.0
 	_set_state("TAXIING_IN")
 	return true
+
+
+func stage_for_hangar_departure(
+	points: PackedVector2Array,
+	target_stand_uid: int
+) -> bool:
+	if points.size() < 2 or target_stand_uid < 0:
+		return false
+
+	ground_transfer_route = points.duplicate()
+	ground_transfer_index = 0
+	stand_uid = target_stand_uid
+	taxi_current_speed = 0.0
+	visible = true
+	position = ground_transfer_route[0]
+	if ground_transfer_route.size() >= 2:
+		var direction := (
+			ground_transfer_route[1]
+			- ground_transfer_route[0]
+		).normalized()
+		if direction != Vector2.ZERO:
+			rotation = direction.angle()
+
+	motion_sample_position = global_position
+	motion_sample_initialized = true
+	_set_state("WAITING_HANGAR_TAXI")
+	set_turnaround_status(
+		"Hangar ready\nTap TAXI",
+		"warning"
+	)
+	if manual_handling_enabled:
+		set_handling_action("TAXI")
+	else:
+		begin_hangar_taxi()
+	return true
+
+
+func begin_hangar_taxi() -> bool:
+	if state != "WAITING_HANGAR_TAXI":
+		return false
+	clear_handling_action()
+	taxi_current_speed = 0.0
+	_set_state("TAXIING_TO_STAND")
+	return true
+
+
+func continue_manual_hangar_taxi() -> bool:
+	if (
+		not manual_handling_enabled
+		or state != "WAITING_HANGAR_TAXI"
+	):
+		return false
+	return begin_hangar_taxi()
 
 
 func _handling_action_label(
@@ -993,6 +1049,9 @@ func _process(delta: float) -> void:
 			if delay_remaining <= 0.0:
 				_set_state("ENTERING_RUNWAY")
 
+		"TAXIING_TO_STAND":
+			_process_ground_transfer(delta)
+
 		"TAXIING_OUT":
 			_process_departure_taxi(delta)
 
@@ -1028,6 +1087,66 @@ func _process(delta: float) -> void:
 
 	motion_sample_position = global_position
 	motion_sample_initialized = true
+
+
+func _process_ground_transfer(delta: float) -> void:
+	if ground_transfer_route.size() < 2:
+		return
+	if ground_transfer_index >= ground_transfer_route.size() - 1:
+		_finish_ground_transfer()
+		return
+
+	var target_index := ground_transfer_index + 1
+	if not _request_taxi_segment(
+		ground_transfer_route[ground_transfer_index],
+		ground_transfer_route[target_index]
+	):
+		taxi_current_speed = _approach_taxi_speed(
+			taxi_current_speed,
+			0.0,
+			delta
+		)
+		return
+
+	var target_speed := TaxiMotionRules.speed_for_target(
+		ground_transfer_route,
+		ground_transfer_index,
+		target_index,
+		taxi_speed
+	)
+	taxi_current_speed = _approach_taxi_speed(
+		taxi_current_speed,
+		target_speed,
+		delta
+	)
+
+	if _move_toward_point(
+		ground_transfer_route[target_index],
+		taxi_current_speed,
+		delta,
+		taxi_turn_rate_deg
+	):
+		ground_transfer_index = target_index
+		_release_taxi_segment()
+		if ground_transfer_index >= ground_transfer_route.size() - 1:
+			_finish_ground_transfer()
+
+
+func _finish_ground_transfer() -> void:
+	taxi_current_speed = 0.0
+	_release_taxi_segment()
+	if not ground_transfer_route.is_empty():
+		position = ground_transfer_route[
+			ground_transfer_route.size() - 1
+		]
+	ground_transfer_route = PackedVector2Array()
+	ground_transfer_index = 0
+	_set_state("PARKED")
+	set_turnaround_status(
+		"At loading stand",
+		"success"
+	)
+	ground_transfer_completed.emit()
 
 
 func _process_departure_taxi(delta: float) -> void:
@@ -1524,7 +1643,7 @@ func _set_state(new_state: String) -> void:
 	state = new_state
 
 	match new_state:
-		"TAXIING_OUT":
+		"TAXIING_TO_STAND", "TAXIING_OUT":
 			_start_motion_fx("taxi_start")
 		"TAKEOFF_ROLL":
 			_start_motion_fx("takeoff_start")
@@ -1539,10 +1658,14 @@ func _set_state(new_state: String) -> void:
 			]:
 				_start_motion_fx("runway_exit")
 		"PARKED":
-			if previous_state == "TAXIING_IN":
+			if previous_state in [
+				"TAXIING_IN",
+				"TAXIING_TO_STAND"
+			]:
 				_start_motion_fx("stand_stop")
 
 	if new_state not in [
+		"TAXIING_TO_STAND",
 		"TAXIING_OUT",
 		"TAXIING_IN",
 		"ENTERING_RUNWAY"
@@ -1550,6 +1673,7 @@ func _set_state(new_state: String) -> void:
 		_release_taxi_segment()
 		_set_taxi_hold(false, "")
 	if new_state in [
+		"TAXIING_TO_STAND",
 		"TAXIING_OUT",
 		"HOLD_SHORT",
 		"ENTERING_RUNWAY",

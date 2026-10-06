@@ -472,20 +472,6 @@ func _refresh_charter_ui() -> void:
 		)
 
 
-func _on_navigation_requested(tab: String) -> void:
-	if tab != "charter":
-		super._on_navigation_requested(tab)
-		return
-	if not CharterRules.is_unlocked(player_level):
-		hud.set_operation_status(
-			"Cargo Charter unlocks at Airport Level %d." % CharterRules.UNLOCK_LEVEL,
-			"warning"
-		)
-		return
-	if charter_screen != null:
-		charter_screen.open_screen(_charter_snapshot())
-
-
 func _on_charter_accept_requested(offer_id: String) -> void:
 	var activation := airport_grid.get_charter_district_activation_status()
 	var next := CharterRules.accept_contract(
@@ -1106,6 +1092,18 @@ func _on_navigation_requested(tab: String) -> void:
 		career_screen.close_screen()
 	if mission_pass_screen != null:
 		mission_pass_screen.close_screen()
+	if tab == "charter":
+		if not CharterRules.is_unlocked(player_level):
+			hud.set_operation_status(
+				"Cargo Charter unlocks at Airport Level %d." % CharterRules.UNLOCK_LEVEL,
+				"warning"
+			)
+			return
+		if charter_screen != null:
+			charter_screen.open_screen(_charter_snapshot())
+		return
+	if charter_screen != null and charter_screen.is_open():
+		charter_screen.close_screen()
 	super._on_navigation_requested(tab)
 	if tab in ["social", "alliance"] and social_airport_service != null:
 		social_airport_screen.set_snapshot(_social_only_snapshot(social_airport_service.get_snapshot()))

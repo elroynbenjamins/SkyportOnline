@@ -152,6 +152,10 @@ func _run() -> void:
 		_fail("Fuel truck should retain its animated amber beacon.")
 		return
 
+	if not GroundServiceVehicleArt.ATLAS_PATH.ends_with("ground_service_v2/skyport_ground_service_atlas_v2.svg"):
+		_fail("Ground-service fleet should use the stylized v2 production atlas.")
+		return
+
 	var atlas := GroundServiceVehicleArt.texture()
 	if atlas == null:
 		_fail("Ground-service production atlas should load.")

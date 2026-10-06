@@ -9,6 +9,7 @@ var career_pin: Button
 var mission_pass_screen: MissionPassScreen
 var charter_screen: CharterScreen
 var alliance_operations_screen: AllianceOperationsScreen
+var airport_challenge_screen: AirportChallengeScreen
 var mission_pin: Button
 var mission_billing_bridge: MissionProductBillingBridge
 var pending_mission_ad_id := ""
@@ -105,6 +106,15 @@ func _start_gameplay() -> void:
 			_on_alliance_operations_requested
 		)
 
+	airport_challenge_screen = AirportChallengeScreen.new()
+	airport_challenge_screen.claim_requested.connect(
+		_on_airport_challenge_claim_requested
+	)
+	airport_challenge_screen.close_requested.connect(
+		_on_airport_challenge_closed
+	)
+	add_child(airport_challenge_screen)
+
 	mission_billing_bridge = MissionProductBillingBridge.new()
 	mission_billing_bridge.purchase_verified.connect(_on_mission_purchase_verified)
 	mission_billing_bridge.unavailable.connect(_on_mission_billing_unavailable)
@@ -125,6 +135,13 @@ func _start_gameplay() -> void:
 	):
 		_save_checkpoint()
 	_refresh_alliance_operations_ui()
+	if AirportChallengeRules.ensure_state(
+		progression,
+		player_level,
+		Time.get_unix_time_from_system()
+	):
+		_save_checkpoint()
+	_refresh_airport_challenge_ui()
 	_drain_passenger_rewards()
 	_drain_resource_choice_grants()
 
@@ -175,6 +192,14 @@ func _process(delta: float) -> void:
 		if alliance_changed:
 			_save_checkpoint()
 		_refresh_alliance_operations_ui()
+		var challenge_changed := AirportChallengeRules.ensure_state(
+			progression,
+			player_level,
+			Time.get_unix_time_from_system()
+		)
+		if challenge_changed:
+			_save_checkpoint()
+		_refresh_airport_challenge_ui()
 
 func _notification(what: int) -> void:
 	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST]:
@@ -340,7 +365,7 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 	var mastery_after := _mastery_hours_for_aircraft(aircraft)
 	AirportProgressionRules.record_event(progression, {"id": token, "kind": "flight_return",
 		"aircraft": aircraft.aircraft_type_id, "country": plan.get("country_code", ""), "visitor": false}, player_level)
-	_record_mission_event("flight", {
+	var challenge_payload := {
 		"passengers": boarded,
 		"coins": maxi(coins - coins_before, 0),
 		"xp": maxi(player_xp - xp_before, 0),
@@ -349,7 +374,19 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 		"distance_km": maxi(int(round(float(plan.get("distance_km", 0.0)))), 0),
 		"mastery_minutes": maxi(int(round(maxf(mastery_after - mastery_before, 0.0) * 60.0)), 0),
 		"resources": maxi(resources_after - resources_before, 0)
-	})
+	}
+	_record_mission_event("flight", challenge_payload)
+	var challenge_points := AirportChallengeRules.record_flight(
+		progression,
+		player_level,
+		challenge_payload,
+		Time.get_unix_time_from_system()
+	)
+	if challenge_points > 0:
+		hud.set_operation_status(
+			"%s returned • +%d weekly challenge points" % [label, challenge_points],
+			"success"
+		)
 	AllianceOperationsRules.record_action(
 		progression,
 		"flight",
@@ -365,6 +402,7 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 	_refresh_career_ui()
 	_refresh_mission_ui()
 	_refresh_alliance_operations_ui()
+	_refresh_airport_challenge_ui()
 
 func _on_world_map_flight_assignment_requested(aircraft: AircraftPrototype, destination_id: String) -> void:
 	if not is_instance_valid(aircraft) or not aircraft.can_change_flight_plan():
@@ -655,6 +693,80 @@ func _on_alliance_milestone_claim_requested(
 			String(reward.get("name", "Alliance milestone")),
 			int(reward.get("coins", 0)),
 			int(reward.get("xp", 0))
+		],
+		"success"
+	)
+
+
+func _airport_challenge_snapshot() -> Dictionary:
+	return AirportChallengeRules.snapshot(
+		_capture_state(),
+		player_level,
+		Time.get_unix_time_from_system()
+	)
+
+
+func _refresh_airport_challenge_ui() -> void:
+	if not progression_ready:
+		return
+	var data := _airport_challenge_snapshot()
+	if airport_challenge_screen != null:
+		airport_challenge_screen.set_snapshot(data)
+	if hud != null:
+		hud.set_challenge_available(
+			bool(data.get("unlocked", false)),
+			AirportChallengeRules.claimable_count(
+				progression,
+				player_level,
+				Time.get_unix_time_from_system()
+			) > 0
+		)
+
+
+func _on_airport_challenge_closed() -> void:
+	hud.set_operation_status("Returned to airport operations.")
+
+
+func _on_airport_challenge_claim_requested(milestone_id: String) -> void:
+	var result := AirportChallengeRules.claim_milestone(
+		_capture_state(),
+		player_level,
+		milestone_id,
+		Time.get_unix_time_from_system()
+	)
+	if result.is_empty():
+		hud.set_operation_status(
+			"That weekly challenge reward is not ready yet.",
+			"warning"
+		)
+		return
+	var next: Dictionary = result.get("state", {})
+	var reward: Dictionary = result.get("reward", {})
+	if next.is_empty() or not AirportProgressionStore.save_state(next):
+		hud.set_operation_status(
+			"Challenge reward remains available because progress could not be saved.",
+			"warning"
+		)
+		return
+	progression = next
+	coins = int(next.get("coins", coins))
+	player_xp = int(next.get("xp", player_xp))
+	gems = int(next.get("aero_tokens", next.get("gems", gems)))
+	_update_level()
+	_save_checkpoint()
+	_refresh_career_ui()
+	_refresh_mission_ui()
+	_refresh_charter_ui()
+	_refresh_alliance_operations_ui()
+	_refresh_airport_challenge_ui()
+	hud.set_player_data(player_level, coins, gems)
+	var aero := int(reward.get("aero", 0))
+	hud.set_operation_status(
+		"%s claimed • +%d coins • +%d XP%s" % [
+			String(reward.get("name", "Challenge reward")),
+			int(reward.get("coins", 0)),
+			int(reward.get("xp", 0)),
+			" • +%d Aero" % aero if aero > 0 else ""
 		],
 		"success"
 	)
@@ -1237,6 +1349,16 @@ func _on_navigation_requested(tab: String) -> void:
 		career_screen.close_screen()
 	if mission_pass_screen != null:
 		mission_pass_screen.close_screen()
+	if tab == "challenge":
+		if not AirportChallengeRules.is_unlocked(player_level):
+			hud.set_operation_status(
+				"Weekly Airport Challenge unlocks at Airport Level %d." % AirportChallengeRules.UNLOCK_LEVEL,
+				"warning"
+			)
+			return
+		if airport_challenge_screen != null:
+			airport_challenge_screen.open_screen(_airport_challenge_snapshot())
+		return
 	if tab == "charter":
 		if not CharterRules.is_unlocked(player_level):
 			hud.set_operation_status(
@@ -1251,6 +1373,8 @@ func _on_navigation_requested(tab: String) -> void:
 		charter_screen.close_screen()
 	if alliance_operations_screen != null and alliance_operations_screen.is_open():
 		alliance_operations_screen.close_screen(true)
+	if airport_challenge_screen != null and airport_challenge_screen.is_open():
+		airport_challenge_screen.close_screen(true)
 	super._on_navigation_requested(tab)
 	if tab in ["social", "alliance"] and social_airport_service != null:
 		social_airport_screen.set_snapshot(_social_only_snapshot(social_airport_service.get_snapshot()))

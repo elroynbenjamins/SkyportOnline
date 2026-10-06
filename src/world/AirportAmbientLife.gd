@@ -5,10 +5,10 @@ extends Node2D
 # no service timing, runway authority, economy, or aircraft ownership is changed.
 const DRAW_INTERVAL := 1.0 / 12.0
 const LAYOUT_REFRESH_INTERVAL := 0.75
-const MAX_CREW := 12
+const MAX_CREW := 14
 const MAX_AMBIENT_CARTS := 2
 const MAX_BAGGAGE_TRAINS := 3
-const MAX_APRON_PROPS := 18
+const MAX_APRON_PROPS := 22
 const MAX_TERMINAL_PASSENGERS := 4
 const MAX_PASSENGER_FLOW_SPRITES := 10
 const DIRECT_PASSENGER_WALK_MAX_DISTANCE := 190.0
@@ -262,10 +262,10 @@ static func behavior_profile_for_size(
 			}
 		"M":
 			return {
-				"crew_count": 3,
-				"bustle_speed": 0.92,
-				"service_radius": 37.0,
-				"marshaller_distance": 36.0
+				"crew_count": 4,
+				"bustle_speed": 0.88,
+				"service_radius": 40.0,
+				"marshaller_distance": 39.0
 			}
 		_:
 			return {
@@ -1119,23 +1119,35 @@ func _apron_prop_count_for_aircraft(
 ) -> int:
 	if aircraft == null or not is_instance_valid(aircraft):
 		return 0
+
+	var base := 0
 	match String(aircraft.state):
 		"WAITING_UNLOAD":
-			return 3
+			base = 3
 		"UNLOADING", "LOADING":
-			return 5
+			base = 5
 		"WAITING_SERVICE":
-			return 3
+			base = 3
 		"SERVICING":
-			return 4
+			base = 4
 		"WAITING_FUEL":
-			return 3
+			base = 3
 		"WAITING_PASSENGERS":
-			return 3
+			base = 3
 		"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
-			return 2
+			base = 2
 		_:
 			return 0
+
+	if aircraft.aircraft_size == "M":
+		match String(aircraft.state):
+			"WAITING_UNLOAD", "WAITING_SERVICE", "WAITING_PASSENGERS":
+				base += 1
+			"UNLOADING", "LOADING", "SERVICING":
+				base += 2
+			"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
+				base += 1
+	return base
 
 
 func _aircraft_service_point(
@@ -1239,6 +1251,28 @@ func _draw_apron_staging_props() -> void:
 			)
 			drawn += 1
 
+			if (
+				aircraft.aircraft_size == "M"
+				and state in [
+					"WAITING_UNLOAD",
+					"WAITING_SERVICE",
+					"WAITING_PASSENGERS"
+				]
+				and drawn < MAX_APRON_PROPS
+			):
+				_draw_apron_detail_sprite(
+					passenger_point
+						+ forward * 18.0
+						- side * 18.0,
+					ApronDetailArt.directional_key(
+						"utility",
+						heading
+					),
+					ApronDetailArt.world_size("utility"),
+					0.76
+				)
+				drawn += 1
+
 		if state in ["LOADING", "UNLOADING"]:
 			var cargo_point := _aircraft_service_point(
 				aircraft,
@@ -1294,6 +1328,21 @@ func _draw_apron_staging_props() -> void:
 				)
 				drawn += 1
 
+			if (
+				aircraft.aircraft_size == "M"
+				and drawn < MAX_APRON_PROPS
+			):
+				_draw_apron_detail_sprite(
+					cargo_point
+						- forward * 34.0
+						- side * 15.0,
+					"uld",
+					ApronDetailArt.world_size("uld"),
+					0.78,
+					cos(heading) < 0.0
+				)
+				drawn += 1
+
 		if state in [
 			"SERVICING",
 			"WAITING_FUEL"
@@ -1316,6 +1365,43 @@ func _draw_apron_staging_props() -> void:
 			)
 			drawn += 1
 
+			if (
+				aircraft.aircraft_size == "M"
+				and state == "SERVICING"
+				and drawn < MAX_APRON_PROPS
+			):
+				_draw_apron_detail_sprite(
+					fuel_point
+						+ forward * 16.0
+						+ side * 20.0,
+					ApronDetailArt.directional_key(
+						"utility",
+						heading
+					),
+					ApronDetailArt.world_size("utility"),
+					0.76
+				)
+				drawn += 1
+
+		if (
+			aircraft.aircraft_size == "M"
+			and state in [
+				"PUSHBACK_PREP",
+				"READY_FOR_DEPARTURE"
+			]
+			and drawn < MAX_APRON_PROPS
+		):
+			_draw_apron_detail_sprite(
+				center
+					+ forward * radius * 0.58
+					+ side * radius * 0.70,
+				"cones",
+				ApronDetailArt.world_size("cones"),
+				0.78,
+				true
+			)
+			drawn += 1
+
 
 func get_apron_choreography_snapshot(
 	aircraft: AircraftPrototype
@@ -1324,10 +1410,31 @@ func get_apron_choreography_snapshot(
 		return {}
 
 	var state := String(aircraft.state)
+	var is_medium := aircraft.aircraft_size == "M"
 	return {
 		"state": state,
+		"size": aircraft.aircraft_size,
+		"medium_heavy": is_medium,
 		"prop_count": _apron_prop_count_for_aircraft(aircraft),
 		"crew_count": _crew_count_for_aircraft(aircraft),
+		"cargo_units": (
+			2
+			if is_medium and state in ["UNLOADING", "LOADING"]
+			else (
+				1
+				if state in ["UNLOADING", "LOADING"]
+				else 0
+			)
+		),
+		"support_units": (
+			2
+			if is_medium and state == "SERVICING"
+			else (
+				1
+				if state in ["SERVICING", "WAITING_FUEL"]
+				else 0
+			)
+		),
 		"stairs": state in [
 			"WAITING_UNLOAD",
 			"UNLOADING",

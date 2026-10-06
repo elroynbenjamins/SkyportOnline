@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="512" viewBox="0 0 1024 512">
+<defs>
+  <linearGradient id="stone" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1eee5"/><stop offset=".55" stop-color="#c8c6bd"/><stop offset="1" stop-color="#888f8e"/></linearGradient>
+  <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2f5f3"/><stop offset=".5" stop-color="#aab8bb"/><stop offset="1" stop-color="#63777e"/></linearGradient>
+  <linearGradient id="autumn" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0ae4e"/><stop offset=".45" stop-color="#d66a2e"/><stop offset="1" stop-color="#8f3d28"/></linearGradient>
+  <linearGradient id="winter" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#74c5ea"/><stop offset=".5" stop-color="#2e8cc0"/><stop offset="1" stop-color="#17577e"/></linearGradient>
+  <linearGradient id="green" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#69b55c"/><stop offset="1" stop-color="#2e7242"/></linearGradient>
+  <linearGradient id="snow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#cce8f4"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eefbff" stop-opacity=".72"/><stop offset=".55" stop-color="#8ed7ef" stop-opacity=".40"/><stop offset="1" stop-color="#3d94bc" stop-opacity=".18"/></linearGradient>
+  <filter id="soft" x="-35%" y="-35%" width="170%" height="190%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+
+<!-- row 0 col 0: autumn flag -->
+<g transform="translate(0 0)">
+ <ellipse cx="127" cy="211" rx="69" ry="19" fill="#182522" opacity=".18" filter="url(#soft)"/>
+ <polygon points="79,188 126,164 181,185 132,211" fill="url(#stone)"/><polygon points="79,188 132,211 132,223 79,201" fill="#8e8f88"/><polygon points="132,211 181,185 181,197 132,223" fill="#6f7473"/>
+ <rect x="124" y="74" width="7" height="104" rx="3" fill="url(#steel)"/><circle cx="127.5" cy="72" r="7" fill="#d9b553"/>
+ <path d="M133 82 C158 75 184 83 208 94 L198 119 C175 108 155 108 133 114 Z" fill="url(#autumn)"/>
+ <path d="M141 92 C157 89 173 93 190 99" fill="none" stroke="#f9d46d" stroke-width="5"/>
+ <path d="M153 104 C166 101 178 104 191 109" fill="none" stroke="#f5efe1" stroke-width="3" opacity=".8"/>
+ <g fill="#d46c2d"><circle cx="94" cy="187" r="8"/><circle cx="105" cy="192" r="6"/><circle cx="161" cy="193" r="7"/></g>
+ <g fill="#e7a746"><ellipse cx="103" cy="176" rx="7" ry="4" transform="rotate(-24 103 176)"/><ellipse cx="153" cy="180" rx="8" ry="4" transform="rotate(31 153 180)"/></g>
+</g>
+
+<!-- row 0 col 1: autumn garden A -->
+<g transform="translate(256 0)">
+ <ellipse cx="128" cy="205" rx="94" ry="25" fill="#182522" opacity=".18" filter="url(#soft)"/>
+ <polygon points="48,171 128,133 211,168 131,208" fill="#c1b79e"/><polygon points="48,171 131,208 131,222 48,185" fill="#8d8067"/><polygon points="131,208 211,168 211,183 131,222" fill="#71654f"/>
+ <polygon points="62,169 128,139 196,168 130,199" fill="#6b773f"/>
+ <g fill="#c9572d"><circle cx="90" cy="167" r="12"/><circle cx="109" cy="176" r="10"/><circle cx="173" cy="171" r="11"/></g>
+ <g fill="#e58a35"><circle cx="80" cy="181" r="8"/><circle cx="185" cy="184" r="8"/><circle cx="146" cy="184" r="9"/></g>
+ <g fill="#f1b44e"><ellipse cx="77" cy="151" rx="9" ry="5" transform="rotate(-20 77 151)"/><ellipse cx="111" cy="151" rx="8" ry="4" transform="rotate(28 111 151)"/><ellipse cx="164" cy="153" rx="9" ry="5" transform="rotate(-34 164 153)"/></g>
+ <polygon points="113,154 144,140 172,151 141,166" fill="#9b6a34"/><polygon points="113,154 141,166 141,176 113,165" fill="#6f4b27"/><polygon points="141,166 172,151 172,161 141,176" fill="#5b3d22"/>
+ <rect x="126" y="126" width="5" height="24" rx="2" fill="#606e6e"/><circle cx="128" cy="124" r="7" fill="#ffd274"/><circle cx="128" cy="124" r="3" fill="#fff5b7"/>
+</g>
+
+<!-- row 0 col 2: autumn garden B -->
+<g transform="translate(512 0)">
+ <ellipse cx="128" cy="205" rx="94" ry="25" fill="#182522" opacity=".18" filter="url(#soft)"/>
+ <polygon points="45,168 128,133 208,172 126,208" fill="#c1b79e"/><polygon points="45,168 126,208 126,222 45,182" fill="#71654f"/><polygon points="126,208 208,172 208,187 126,222" fill="#8d8067"/>
+ <polygon points="60,168 128,139 193,171 126,199" fill="#6b773f"/>
+ <g fill="#c9572d"><circle cx="86" cy="173" r="11"/><circle cx="108" cy="166" r="10"/><circle cx="169" cy="178" r="12"/></g>
+ <g fill="#e58a35"><circle cx="73" cy="184" r="8"/><circle cx="187" cy="174" r="8"/><circle cx="145" cy="184" r="9"/></g>
+ <g fill="#f1b44e"><ellipse cx="91" cy="151" rx="9" ry="5" transform="rotate(22 91 151)"/><ellipse cx="146" cy="151" rx="8" ry="4" transform="rotate(-26 146 151)"/><ellipse cx="181" cy="161" rx="9" ry="5" transform="rotate(31 181 161)"/></g>
+ <polygon points="84,151 112,140 143,154 115,166" fill="#9b6a34"/><polygon points="84,151 115,166 115,176 84,162" fill="#5b3d22"/><polygon points="115,166 143,154 143,164 115,176" fill="#6f4b27"/>
+ <rect x="145" y="127" width="5" height="24" rx="2" fill="#606e6e"/><circle cx="147" cy="125" r="7" fill="#ffd274"/><circle cx="147" cy="125" r="3" fill="#fff5b7"/>
+</g>
+
+<!-- row 0 col 3: winter flag -->
+<g transform="translate(768 0)">
+ <ellipse cx="127" cy="211" rx="72" ry="20" fill="#18252b" opacity=".18" filter="url(#soft)"/>
+ <polygon points="76,186 126,162 184,184 133,211" fill="url(#stone)"/><polygon points="76,186 133,211 133,224 76,200" fill="#8a9699"/><polygon points="133,211 184,184 184,198 133,224" fill="#6b7c82"/>
+ <path d="M78 184 Q111 171 137 184 Q160 170 181 184 L177 195 Q154 187 132 197 Q105 188 82 198 Z" fill="url(#snow)"/>
+ <rect x="124" y="73" width="7" height="105" rx="3" fill="url(#steel)"/><circle cx="127.5" cy="71" r="7" fill="#f1d56b"/>
+ <path d="M133 82 C158 73 185 81 210 92 L199 119 C176 108 155 109 133 115 Z" fill="url(#winter)"/>
+ <path d="M142 93 C158 88 174 91 191 98" fill="none" stroke="#f5d45d" stroke-width="5"/>
+ <path d="M154 104 C167 101 180 104 193 109" fill="none" stroke="#edfaff" stroke-width="3"/>
+ <g fill="#e84b57"><circle cx="101" cy="184" r="4"/><circle cx="159" cy="188" r="4"/></g><g fill="#6fc4e7"><circle cx="111" cy="190" r="4"/><circle cx="170" cy="180" r="4"/></g>
+</g>
+
+<!-- row 1 col 0: winter garden A -->
+<g transform="translate(0 256)">
+ <ellipse cx="128" cy="205" rx="98" ry="26" fill="#14242b" opacity=".18" filter="url(#soft)"/>
+ <polygon points="43,172 126,132 215,169 131,211" fill="#aebcc0"/><polygon points="43,172 131,211 131,225 43,187" fill="#76898f"/><polygon points="131,211 215,169 215,184 131,225" fill="#5d747c"/>
+ <path d="M52 169 Q82 154 111 166 Q135 151 158 164 Q188 151 207 168 L200 183 Q177 174 155 184 Q129 173 105 185 Q79 176 57 185 Z" fill="url(#snow)"/>
+ <ellipse cx="129" cy="149" rx="38" ry="42" fill="url(#glass)" stroke="#d9f6ff" stroke-width="4"/>
+ <rect x="101" y="187" width="56" height="12" rx="4" fill="#527786"/><rect x="107" y="193" width="44" height="8" rx="3" fill="#344f5b"/>
+ <g fill="url(#green)"><polygon points="129,112 112,142 146,142"/><polygon points="129,125 106,158 152,158"/><polygon points="129,140 101,176 157,176"/></g>
+ <rect x="125" y="171" width="8" height="15" fill="#76543b"/><circle cx="129" cy="108" r="5" fill="#f2d259"/>
+ <g><rect x="78" y="172" width="18" height="15" fill="#d94a55"/><rect x="81" y="169" width="12" height="4" fill="#f2d05c"/><rect x="165" y="170" width="20" height="16" fill="#2d83b4"/><rect x="173" y="167" width="4" height="21" fill="#f1d25c"/></g>
+ <g fill="#fff"><circle cx="114" cy="133" r="2"/><circle cx="143" cy="142" r="2"/><circle cx="121" cy="158" r="2"/><circle cx="151" cy="128" r="2"/></g>
+</g>
+
+<!-- row 1 col 1: winter garden B -->
+<g transform="translate(256 256)">
+ <ellipse cx="128" cy="205" rx="98" ry="26" fill="#14242b" opacity=".18" filter="url(#soft)"/>
+ <polygon points="42,168 132,132 216,172 126,211" fill="#aebcc0"/><polygon points="42,168 126,211 126,225 42,183" fill="#5d747c"/><polygon points="126,211 216,172 216,187 126,225" fill="#76898f"/>
+ <path d="M52 167 Q82 154 109 165 Q136 150 160 164 Q187 151 207 171 L200 184 Q177 176 156 185 Q130 174 105 184 Q78 176 57 184 Z" fill="url(#snow)"/>
+ <ellipse cx="130" cy="149" rx="38" ry="42" fill="url(#glass)" stroke="#d9f6ff" stroke-width="4"/>
+ <rect x="102" y="187" width="56" height="12" rx="4" fill="#527786"/><rect x="108" y="193" width="44" height="8" rx="3" fill="#344f5b"/>
+ <g fill="url(#green)"><polygon points="130,112 113,142 147,142"/><polygon points="130,125 107,158 153,158"/><polygon points="130,140 102,176 158,176"/></g>
+ <rect x="126" y="171" width="8" height="15" fill="#76543b"/><circle cx="130" cy="108" r="5" fill="#f2d259"/>
+ <g><rect x="72" y="170" width="20" height="16" fill="#2d83b4"/><rect x="80" y="167" width="4" height="21" fill="#f1d25c"/><rect x="168" y="173" width="18" height="15" fill="#d94a55"/><rect x="171" y="170" width="12" height="4" fill="#f2d05c"/></g>
+ <g fill="#fff"><circle cx="113" cy="142" r="2"/><circle cx="145" cy="131" r="2"/><circle cx="120" cy="158" r="2"/><circle cx="149" cy="155" r="2"/></g>
+</g>
+
+<!-- row 1 col 2: winter tree cluster -->
+<g transform="translate(512 256)">
+ <ellipse cx="128" cy="207" rx="84" ry="22" fill="#14242b" opacity=".18" filter="url(#soft)"/>
+ <path d="M53 187 Q90 169 126 183 Q158 168 202 188 L194 203 Q163 192 129 204 Q92 193 59 204 Z" fill="url(#snow)"/>
+ <rect x="124" y="167" width="9" height="25" fill="#76543b"/>
+ <g fill="url(#green)"><polygon points="128,86 99,134 157,134"/><polygon points="128,105 90,158 166,158"/><polygon points="128,128 81,184 175,184"/></g>
+ <circle cx="128" cy="82" r="6" fill="#f3d459"/>
+ <g fill="#ef4b57"><circle cx="110" cy="136" r="4"/><circle cx="144" cy="146" r="4"/><circle cx="128" cy="160" r="4"/></g><g fill="#69c7e9"><circle cx="122" cy="120" r="4"/><circle cx="151" cy="164" r="4"/><circle cx="100" cy="163" r="4"/></g>
+ <g fill="#f4d45d"><circle cx="142" cy="130" r="4"/><circle cx="113" cy="153" r="4"/></g>
+</g>
+
+<!-- row 1 col 3: gift cluster -->
+<g transform="translate(768 256)">
+ <ellipse cx="128" cy="201" rx="89" ry="23" fill="#14242b" opacity=".18" filter="url(#soft)"/>
+ <path d="M48 185 Q91 168 127 183 Q168 167 209 185 L201 201 Q168 191 130 203 Q91 191 56 202 Z" fill="url(#snow)"/>
+ <g>
+  <polygon points="62,164 100,146 131,157 92,176" fill="#d94753"/><polygon points="62,164 92,176 92,197 62,185" fill="#a72f3c"/><polygon points="92,176 131,157 131,178 92,197" fill="#7f2630"/>
+  <path d="M84 154 L106 164" stroke="#f2d05c" stroke-width="5"/><path d="M96 153 L96 190" stroke="#f2d05c" stroke-width="5"/>
+ </g>
+ <g>
+  <polygon points="126,149 164,134 197,147 159,164" fill="#2d87b7"/><polygon points="126,149 159,164 159,188 126,173" fill="#20678e"/><polygon points="159,164 197,147 197,171 159,188" fill="#174c6a"/>
+  <path d="M145 141 L178 153" stroke="#f2d05c" stroke-width="5"/><path d="M162 139 L162 182" stroke="#f2d05c" stroke-width="5"/>
+ </g>
+ <g><polygon points="92,183 122,169 149,180 119,195" fill="#4d9d58"/><polygon points="92,183 119,195 119,210 92,198" fill="#337441"/><polygon points="119,195 149,180 149,195 119,210" fill="#285d35"/><path d="M107 176 L135 187" stroke="#eff5ef" stroke-width="4"/></g>
+</g>
+</svg>

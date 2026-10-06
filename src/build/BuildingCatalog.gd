@@ -407,10 +407,10 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(292, 292),
 			"world_sprite_offsets": [
-				Vector2(0, -81),
+				Vector2(0, -66),
 				Vector2(0, -71)
 			],
-			"world_sprite_offset": Vector2(0, -81)
+			"world_sprite_offset": Vector2(0, -66)
 		},
 		{
 			"id": "basic_fuel",
@@ -470,7 +470,7 @@ static func all() -> Array[Dictionary]:
 			"world_sprite_size": Vector2(220, 220),
 			"world_sprite_offsets": [
 				Vector2(0, -67),
-				Vector2(0, -81)
+				Vector2(0, -66)
 			],
 			"world_sprite_offset": Vector2(0, -67)
 		},

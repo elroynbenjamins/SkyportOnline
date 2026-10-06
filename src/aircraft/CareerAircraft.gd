@@ -103,6 +103,16 @@ func _draw() -> void:
 			width,
 			draw_direction
 		)
+	elif aircraft_type_id == "comet_c22":
+		_draw_comet_operating_fx(
+			width,
+			draw_direction
+		)
+	elif aircraft_type_id == "voyager_v32":
+		_draw_voyager_operating_fx(
+			width,
+			draw_direction
+		)
 	if social_visit:
 		_draw_social_badge()
 	elif event_featured:
@@ -739,6 +749,223 @@ func get_swift_visual_fx_snapshot() -> Dictionary:
 		"propeller_centers": centers,
 		"propeller_count": centers.size(),
 		"navigation_lights": _swift_engine_running(),
+		"landing_lights": _swift_landing_lights_on()
+	}
+
+
+func _comet_engine_running() -> bool:
+	if aircraft_type_id != "comet_c22":
+		return false
+	return _pico_engine_throttle() > 0.0
+
+
+func _comet_propeller_center(
+	direction: String,
+	width: float
+) -> Vector2:
+	var normalized := Vector2(0.27, -0.17)
+	match direction:
+		"se":
+			normalized = Vector2(0.29, 0.13)
+		"sw":
+			normalized = Vector2(-0.29, 0.13)
+		"nw":
+			normalized = Vector2(-0.27, -0.17)
+	return normalized * width
+
+
+func _comet_navigation_points(
+	direction: String,
+	width: float
+) -> Dictionary:
+	var red := Vector2(-0.45, -0.21)
+	var green := Vector2(0.46, 0.05)
+	match direction:
+		"se":
+			red = Vector2(0.45, -0.17)
+			green = Vector2(-0.46, 0.06)
+		"sw":
+			red = Vector2(0.45, 0.14)
+			green = Vector2(-0.45, -0.11)
+		"nw":
+			red = Vector2(-0.45, 0.04)
+			green = Vector2(0.45, -0.16)
+	return {"red": red * width, "green": green * width}
+
+
+func _draw_common_small_prop_lights(
+	navigation: Dictionary,
+	landing_centers: Array[Vector2],
+	landing_on: bool,
+	clock: float
+) -> void:
+	var nav_pulse := 0.58 + 0.12 * sin(clock * 5.3)
+	for entry in [
+		{
+			"position": navigation.get("red", Vector2.ZERO),
+			"color": Color(1.0, 0.24, 0.20, nav_pulse)
+		},
+		{
+			"position": navigation.get("green", Vector2.ZERO),
+			"color": Color(0.22, 1.0, 0.54, nav_pulse)
+		}
+	]:
+		var point: Vector2 = entry.get("position", Vector2.ZERO)
+		var color: Color = entry.get("color", Color.WHITE)
+		draw_circle(
+			point,
+			4.0,
+			Color(color.r, color.g, color.b, color.a * 0.15)
+		)
+		draw_circle(point, 1.6, color)
+
+	var beacon_phase := fmod(clock + 0.09, 1.13)
+	if (
+		beacon_phase < 0.11
+		or (
+			beacon_phase > 0.22
+			and beacon_phase < 0.30
+		)
+	):
+		draw_circle(Vector2.ZERO, 4.8, Color(1.0, 0.14, 0.10, 0.12))
+		draw_circle(Vector2.ZERO, 1.7, Color(1.0, 0.18, 0.14, 0.95))
+
+	var strobe_phase := fmod(clock + 0.17, 1.39)
+	if strobe_phase < 0.07:
+		for point_variant in navigation.values():
+			var point: Vector2 = point_variant
+			draw_circle(point, 5.4, Color(0.92, 0.98, 1.0, 0.18))
+			draw_circle(point, 1.9, Color(0.98, 1.0, 1.0, 0.98))
+
+	if landing_on:
+		for center_variant in landing_centers:
+			var center: Vector2 = center_variant
+			draw_circle(center, 6.0, Color(1.0, 0.94, 0.70, 0.07))
+			draw_circle(center, 2.0, Color(1.0, 0.96, 0.80, 0.90))
+
+
+func _draw_comet_operating_fx(
+	width: float,
+	direction: String
+) -> void:
+	if not _comet_engine_running():
+		return
+	var throttle := _pico_engine_throttle()
+	var clock := get_visual_clock()
+	var center := _comet_propeller_center(direction, width)
+	var radius := width * (0.076 + throttle * 0.024)
+	_draw_turboprop_disc(center, radius, throttle, clock)
+	var navigation := _comet_navigation_points(direction, width)
+	_draw_common_small_prop_lights(
+		navigation,
+		[center * 0.70],
+		_pico_landing_lights_on(),
+		clock
+	)
+
+
+func get_comet_visual_fx_snapshot() -> Dictionary:
+	var direction := direction_for(global_rotation)
+	return {
+		"aircraft_type_id": aircraft_type_id,
+		"engine_running": _comet_engine_running(),
+		"throttle": _pico_engine_throttle(),
+		"propeller_count": 1,
+		"propeller_center": _comet_propeller_center(
+			direction,
+			get_directional_draw_width()
+		),
+		"landing_lights": _pico_landing_lights_on()
+	}
+
+
+func _voyager_engine_running() -> bool:
+	if aircraft_type_id != "voyager_v32":
+		return false
+	return _swift_engine_throttle() > 0.0
+
+
+func _voyager_propeller_centers(
+	direction: String,
+	width: float
+) -> Array[Vector2]:
+	var left := Vector2(-0.15, -0.08)
+	var right := Vector2(0.22, 0.08)
+	match direction:
+		"se":
+			left = Vector2(-0.19, 0.04)
+			right = Vector2(0.20, 0.17)
+		"sw":
+			left = Vector2(-0.20, 0.17)
+			right = Vector2(0.19, 0.04)
+		"nw":
+			left = Vector2(-0.22, 0.08)
+			right = Vector2(0.15, -0.08)
+	return [left * width, right * width]
+
+
+func _voyager_navigation_points(
+	direction: String,
+	width: float
+) -> Dictionary:
+	var red := Vector2(-0.47, -0.20)
+	var green := Vector2(0.47, 0.06)
+	match direction:
+		"se":
+			red = Vector2(0.47, -0.16)
+			green = Vector2(-0.47, 0.07)
+		"sw":
+			red = Vector2(0.46, 0.14)
+			green = Vector2(-0.46, -0.11)
+		"nw":
+			red = Vector2(-0.46, 0.05)
+			green = Vector2(0.46, -0.16)
+	return {"red": red * width, "green": green * width}
+
+
+func _draw_voyager_operating_fx(
+	width: float,
+	direction: String
+) -> void:
+	if not _voyager_engine_running():
+		return
+	var throttle := _swift_engine_throttle()
+	var clock := get_visual_clock()
+	var centers := _voyager_propeller_centers(direction, width)
+	var radius := width * (0.071 + throttle * 0.022)
+	for index in range(centers.size()):
+		_draw_turboprop_disc(
+			centers[index],
+			radius,
+			throttle,
+			clock,
+			float(index) * 0.61
+		)
+	var navigation := _voyager_navigation_points(direction, width)
+	var landing_centers: Array[Vector2] = []
+	for center_variant in centers:
+		var center: Vector2 = center_variant
+		landing_centers.append(center * 0.58)
+	_draw_common_small_prop_lights(
+		navigation,
+		landing_centers,
+		_swift_landing_lights_on(),
+		clock
+	)
+
+
+func get_voyager_visual_fx_snapshot() -> Dictionary:
+	var direction := direction_for(global_rotation)
+	var centers := _voyager_propeller_centers(
+		direction,
+		get_directional_draw_width()
+	)
+	return {
+		"aircraft_type_id": aircraft_type_id,
+		"engine_running": _voyager_engine_running(),
+		"throttle": _swift_engine_throttle(),
+		"propeller_count": centers.size(),
+		"propeller_centers": centers,
 		"landing_lights": _swift_landing_lights_on()
 	}
 

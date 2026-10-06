@@ -142,7 +142,11 @@ static func purchase_aircraft(state: Dictionary, aircraft_id: String, level: int
 		return {}
 	var fleet: Array = state.get("owned_aircraft", [])
 	var cost := int(AIRCRAFT_PRICES[aircraft_id])
-	if fleet.size() >= MAX_OWNED_AIRCRAFT or int(state.get("coins", 0)) < cost:
+	var level_capacity := AirportProgressionPacing.fleet_capacity_for_level(level)
+	if (
+		fleet.size() >= mini(level_capacity, MAX_OWNED_AIRCRAFT)
+		or int(state.get("coins", 0)) < cost
+	):
 		return {}
 	var next := state.duplicate(true)
 	var serial := int(next.get("serial", 2)) + 1

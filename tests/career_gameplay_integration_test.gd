@@ -62,7 +62,9 @@ func _run() -> void:
 				# The production game is tactile by default. Simulate an
 				# attentive player immediately pressing each surfaced action
 				# so this integration test still exercises the full real loop.
-				var handling_action := plane.get_handling_action()
+				var handling_action: String = String(
+					plane.get_handling_action()
+				)
 				if (
 					not handling_action.is_empty()
 					and not plane.is_social_visitor()

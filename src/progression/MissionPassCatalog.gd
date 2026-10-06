@@ -19,7 +19,10 @@ static func daily_templates() -> Array[Dictionary]:
 		{"id": "daily_npc", "metric": "npc_services", "title": "Welcome a Visitor", "base_target": 1, "min_level": 2},
 		{"id": "daily_airtime", "metric": "flight_minutes", "title": "Time in the Air", "base_target": 10, "per_level": 1, "min_level": 1},
 		{"id": "daily_distance", "metric": "flight_distance", "title": "Cover Some Ground", "base_target": 700, "per_level": 25, "min_level": 1},
-		{"id": "daily_mastery", "metric": "mastery_minutes", "title": "Build Aircraft Mastery", "base_target": 120, "per_level": 10, "min_level": 2}
+		{"id": "daily_mastery", "metric": "mastery_minutes", "title": "Build Aircraft Mastery", "base_target": 120, "per_level": 10, "min_level": 2},
+		{"id": "daily_dispatch", "metric": "dispatch_shifts", "title": "Dispatch Duty", "base_target": 1, "min_level": 8, "activity": "dispatch"},
+		{"id": "daily_challenge", "metric": "challenge_points", "title": "Weekly Challenge Push", "base_target": 15, "min_level": 12, "activity": "challenge"},
+		{"id": "daily_alliance", "metric": "alliance_points", "title": "Alliance Contribution", "base_target": 8, "min_level": 15, "activity": "alliance", "requires_enabled": true}
 	]
 
 static func weekly_templates() -> Array[Dictionary]:
@@ -34,7 +37,11 @@ static func weekly_templates() -> Array[Dictionary]:
 		{"id": "weekly_airtime", "metric": "flight_minutes", "title": "Flight-Hour Week", "base_target": 90, "per_level": 5, "min_level": 1},
 		{"id": "weekly_distance", "metric": "flight_distance", "title": "Across the Network", "base_target": 5000, "per_level": 100, "min_level": 1},
 		{"id": "weekly_mastery", "metric": "mastery_minutes", "title": "Fleet Familiarity", "base_target": 900, "per_level": 30, "min_level": 2},
-		{"id": "weekly_resources", "metric": "resources", "title": "Import Run", "base_target": 6, "min_level": 2}
+		{"id": "weekly_resources", "metric": "resources", "title": "Import Run", "base_target": 6, "min_level": 2},
+		{"id": "weekly_dispatch", "metric": "dispatch_shifts", "title": "Dispatch Rotation", "base_target": 3, "min_level": 8, "activity": "dispatch"},
+		{"id": "weekly_challenge", "metric": "challenge_points", "title": "Challenge Week", "base_target": 80, "min_level": 12, "activity": "challenge"},
+		{"id": "weekly_alliance", "metric": "alliance_points", "title": "Alliance Project Support", "base_target": 25, "min_level": 15, "activity": "alliance", "requires_enabled": true},
+		{"id": "weekly_charter", "metric": "charter_contracts", "title": "Cargo Charter Week", "base_target": 1, "min_level": 22, "activity": "charter", "requires_enabled": true}
 	]
 
 static func target_for(template: Dictionary, level: int) -> int:
@@ -68,6 +75,14 @@ static func mission_text(metric: String, target: int) -> String:
 			return "Earn %d minutes toward aircraft Mastery" % target
 		"resources":
 			return "Bring home %d country resources from flights" % target
+		"dispatch_shifts":
+			return "Complete %d Airport Dispatch shift%s" % [target, "" if target == 1 else "s"]
+		"challenge_points":
+			return "Earn %d Weekly Airport Challenge points" % target
+		"alliance_points":
+			return "Contribute %d points to Alliance Operations" % target
+		"charter_contracts":
+			return "Complete %d Cargo Charter contract%s" % [target, "" if target == 1 else "s"]
 		_:
 			return "Make progress: %d" % target
 

@@ -58,6 +58,21 @@ func _run() -> void:
 	if screen.map_canvas.selected_destination_id != "brussels":
 		_fail("Selected airport marker should stay synced to Brussels.")
 		return
+	if String(screen.map_canvas.route_preview.get("city", "")) != "Brussels":
+		_fail("Map route badge should receive the selected Brussels route.")
+		return
+	if int(screen.map_canvas.route_preview.get("distance_km", 0)) != 175:
+		_fail("Map route badge should show the route's real distance.")
+		return
+	if String(screen.map_canvas.route_preview.get("duration_text", "")).is_empty():
+		_fail("Map route badge should receive formatted flight time.")
+		return
+	if not screen.map_canvas.route_preview_text().contains("BRUSSELS"):
+		_fail("Map route badge summary should identify the selected city.")
+		return
+	if WorldMapCanvas.GEOGRAPHY_DETAIL_COUNT < 10:
+		_fail("World Map should keep detailed islands/coastline geography.")
+		return
 
 	var route_phase_before := screen.map_canvas.route_phase
 	screen.map_canvas._process(0.5)
@@ -141,6 +156,11 @@ func _run() -> void:
 	if not screen.assign_button.text.contains("UNLOCKS AT LV 2"):
 		_fail("Locked country route should explain its unlock level.")
 		return
+	if not String(
+		screen.map_canvas.route_preview.get("status", "")
+	).begins_with("LOCKED"):
+		_fail("Map route badge should mirror Frankfurt's locked route state.")
+		return
 
 	var germany_position := screen.map_canvas.country_display_position("DE")
 	var berlin_marker := screen.map_canvas._destination_marker_position(
@@ -163,6 +183,9 @@ func _run() -> void:
 		return
 	if not screen.map_canvas.selected_destination_id.is_empty():
 		_fail("Future country should clear the selected airport marker.")
+		return
+	if not screen.map_canvas.route_preview.is_empty():
+		_fail("Future country should clear the in-map route briefing badge.")
 		return
 	if not screen.details_title.text.contains("NO ACTIVE ROUTE"):
 		_fail("Future country selection should show a no-route state.")
@@ -203,7 +226,7 @@ func _run() -> void:
 	print(
 		"World Map country selection passed: country-first filtering, larger touch "
 		+ "targets, Europe spacing, profile states, zoom/pan, airport markers, "
-		+ "animated routes, resources, and picker sync."
+		+ "animated routes, map route briefing, richer geography, resources, and picker sync."
 	)
 	quit(0)
 

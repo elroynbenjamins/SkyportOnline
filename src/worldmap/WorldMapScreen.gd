@@ -785,6 +785,8 @@ func _refresh_details() -> void:
 		_clear_detail_cards()
 		details_body.text = "No aircraft are available."
 		assign_button.disabled = true
+		if map_canvas != null:
+			map_canvas.set_route_preview({})
 		return
 
 	if selected_aircraft_index >= aircraft.size():
@@ -820,6 +822,8 @@ func _refresh_details() -> void:
 		assign_button.disabled = true
 		if map_canvas != null:
 			map_canvas.set_selected_country(selected_country_code)
+			map_canvas.set_selected_destination("")
+			map_canvas.set_route_preview({})
 		return
 
 	var profile := plane.get_aircraft_profile()
@@ -868,6 +872,15 @@ func _refresh_details() -> void:
 	var range_ok := FlightRules.can_fly(profile, destination)
 	var can_change := plane.can_change_flight_plan()
 	var duration_seconds := FlightRules.duration_seconds(profile, destination)
+	var route_status := "READY"
+	if not level_ok:
+		route_status = "LOCKED LV %d" % required_level
+	elif not range_ok:
+		route_status = "OUT OF RANGE"
+	elif not can_change:
+		route_status = "AIRCRAFT BUSY"
+	elif passenger_stock < required_passengers:
+		route_status = "WAITING PAX"
 	var preview_plan := DynamicDemandRules.apply_to_flight_plan(
 		FlightRules.create_flight_plan(profile, destination),
 		condition
@@ -1056,6 +1069,15 @@ func _refresh_details() -> void:
 	if map_canvas != null:
 		map_canvas.set_selected_country(selected_country_code)
 		map_canvas.set_selected_destination(selected_destination_id)
+		map_canvas.set_route_preview({
+			"city": String(destination.get("city", "Route")),
+			"country_code": String(destination.get("country_code", "")),
+			"distance_km": int(destination.get("distance_km", 0)),
+			"duration_text": FlightRules.format_duration(duration_seconds),
+			"status": route_status,
+			"aircraft": plane.aircraft_display_name,
+			"demand": demand_label
+		})
 
 
 func _refresh_resource_preview(

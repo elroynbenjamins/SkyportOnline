@@ -266,6 +266,9 @@ jobs:
       - name: Test airport terrain visuals
         run: timeout 20s godot --headless --path . --script res://tests/terrain_visual_test.gd
 
+      - name: Test airport background layer
+        run: timeout 20s godot --headless --path . --script res://tests/airport_background_layer_test.gd
+
       - name: Test runway v2 surface visuals
         run: timeout 25s godot --headless --path . --script res://tests/runway_surface_v2_test.gd
 

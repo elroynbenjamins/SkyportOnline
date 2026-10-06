@@ -480,6 +480,19 @@ func _spawn_aircraft_demos() -> void:
 			continue
 
 		var stand_uid := int(route_info.get("stand_uid", -1))
+		var fuel_station := airport_grid.get_best_service_building(
+			"fuel",
+			"S"
+		)
+		if fuel_station.is_empty():
+			continue
+		var fuel_service_route := airport_grid.get_service_route(
+			int(fuel_station.get("uid", -1)),
+			stand_uid
+		)
+		if fuel_service_route.size() < 3:
+			continue
+
 		var hangar_transfer := {}
 		if require_hangar_start:
 			for option in airport_grid.get_hangar_to_stand_routes(
@@ -572,7 +585,7 @@ func _spawn_aircraft_demos() -> void:
 
 	if aircraft_demos.is_empty():
 		hud.set_operation_status(
-			"Connect the hangar and stand to the runway taxiway network.",
+			"Complete the network • runway/taxiway + hangar/stand + service road.",
 			"warning"
 		)
 	else:

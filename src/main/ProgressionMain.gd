@@ -79,6 +79,9 @@ func _start_gameplay() -> void:
 	career_screen.guidance_requested.connect(_guide_career)
 	career_screen.aircraft_purchase_requested.connect(_purchase_career_aircraft)
 	career_screen.npc_toggle_requested.connect(_toggle_npc_traffic)
+	career_screen.activity_requested.connect(
+		_on_career_activity_requested
+	)
 	add_child(career_screen)
 	mission_pass_screen = MissionPassScreen.new()
 	mission_pass_screen.reroll_requested.connect(_on_mission_reroll_requested)
@@ -478,6 +481,10 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 		Time.get_unix_time_from_system()
 	)
 	if challenge_points > 0:
+		_record_mission_event(
+			"challenge_points",
+			{"points": challenge_points}
+		)
 		var challenge_theme := AirportChallengeRules.theme_for_week(
 			AirportChallengeRules.week_key(Time.get_unix_time_from_system())
 		)
@@ -552,8 +559,14 @@ func _airport_career_snapshot() -> Dictionary:
 		"parcels": airport_grid.export_owned_parcels(), "medium_ready": medium_ready}
 
 func _career_snapshot() -> Dictionary:
-	return {"state": _capture_state(), "airport": _airport_career_snapshot(), "level": player_level,
-		"active_owned": deployed_owned.keys(), "npc_enabled": npc_director.enabled}
+	return {
+		"state": _capture_state(),
+		"airport": _airport_career_snapshot(),
+		"level": player_level,
+		"active_owned": deployed_owned.keys(),
+		"npc_enabled": npc_director.enabled,
+		"activities": _activities_snapshot()
+	}
 
 func _mission_snapshot() -> Dictionary:
 	var state := _capture_state()
@@ -666,6 +679,11 @@ func _on_charter_accept_requested(offer_id: String) -> void:
 		)
 		return
 	progression = next
+	if MissionPassRules.enable_activity_missions(
+		progression,
+		"charter"
+	):
+		_save_checkpoint()
 	_refresh_charter_ui()
 	var accepted_active: Dictionary = (
 		(progression.get("charter", {}) as Dictionary).get("active", {})
@@ -699,7 +717,16 @@ func _on_charter_claim_requested() -> void:
 	progression = next
 	coins = int(next.get("coins", coins))
 	player_xp = int(next.get("xp", player_xp))
+	_record_mission_event(
+		"charter_complete",
+		{
+			"resource_amount": int(
+				reward.get("resource_amount", 1)
+			)
+		}
+	)
 	_update_level()
+	_save_checkpoint()
 	_drain_resource_choice_grants()
 	_refresh_career_ui()
 	_refresh_mission_ui()
@@ -901,9 +928,20 @@ func _on_mission_guidance_requested(mission: Dictionary) -> void:
 	mission_pass_screen.close_screen()
 	match metric:
 		"npc_services":
-			career_screen.open_screen(_career_snapshot(), "NPC Visitors")
+			career_screen.open_screen(
+				_career_snapshot(),
+				"NPC Visitors"
+			)
 		"passive_passengers":
 			super._on_navigation_requested("more")
+		"dispatch_shifts":
+			_request_activity_entry("dispatch")
+		"challenge_points":
+			_request_activity_entry("challenge")
+		"alliance_points":
+			_request_activity_entry("alliance")
+		"charter_contracts":
+			_request_activity_entry("charter")
 		_:
 			super._on_navigation_requested("world")
 
@@ -1321,6 +1359,12 @@ func _update_level() -> void:
 	if fleet_screen != null:
 		fleet_screen.player_level = player_level
 
+func _on_career_activity_requested(mode_id: String) -> void:
+	if career_screen != null:
+		career_screen.close_screen()
+	_request_activity_entry(mode_id)
+
+
 func _guide_career(quest: Dictionary) -> void:
 	var objective: Dictionary = quest.get("objective", {})
 	var kind := String(objective.get("kind", ""))
@@ -1479,12 +1523,37 @@ func _record_alliance_activity(
 		or not _has_alliance_contact()
 	):
 		return false
-	return AllianceOperationsRules.record_action(
+	var before := int(
+		(progression.get("alliance_ops", {}) as Dictionary).get(
+			"personal_points",
+			0
+		)
+	)
+	var changed := AllianceOperationsRules.record_action(
 		progression,
 		action,
 		amount,
 		Time.get_unix_time_from_system()
 	)
+	if not changed:
+		return false
+	MissionPassRules.enable_activity_missions(
+		progression,
+		"alliance"
+	)
+	var after := int(
+		(progression.get("alliance_ops", {}) as Dictionary).get(
+			"personal_points",
+			before
+		)
+	)
+	var points_added := maxi(after - before, 0)
+	if points_added > 0:
+		_record_mission_event(
+			"alliance_points",
+			{"points": points_added}
+		)
+	return true
 
 
 func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:
@@ -2085,6 +2154,10 @@ func _on_dispatch_claim_requested() -> void:
 	progression = next
 	coins = int(next.get("coins", coins))
 	player_xp = int(next.get("xp", player_xp))
+	_record_mission_event(
+		"dispatch_complete",
+		{"score": int(reward.get("score", 0))}
+	)
 	_update_level()
 	_save_checkpoint()
 	_refresh_career_ui()

@@ -5,6 +5,7 @@ signal claim_requested(quest_id: String)
 signal guidance_requested(quest: Dictionary)
 signal aircraft_purchase_requested(aircraft_id: String)
 signal npc_toggle_requested(enabled: bool)
+signal activity_requested(mode_id: String)
 signal closed
 
 var root: Control
@@ -161,7 +162,8 @@ func _career(state: Dictionary, level: int) -> void:
 	var card := _card()
 	if quest.is_empty():
 		_text(card, "V1 CAREER COMPLETE", true)
-		_text(card, "Your airport career is complete. Continue building your fleet, hosting visitors and mastering routes.")
+		_text(card, "Your airport career is complete. Continue building your fleet, hosting visitors, mastering routes and exploring Activities.")
+		_add_activity_roadmap(state, level)
 		return
 	var claimed: Dictionary = state.get("claimed", {})
 	_text(card, "%s  •  %d / %d missions completed" % [quest["chapter"], claimed.size(), AirportCareerCatalog.all().size()])
@@ -200,12 +202,20 @@ func _career(state: Dictionary, level: int) -> void:
 		if shown >= 3:
 			break
 
+	_add_activity_roadmap(state, level)
+
+func _add_activity_roadmap(
+	state: Dictionary,
+	level: int
+) -> void:
 	var activity_card := _card()
 	_text(activity_card, "AIRPORT ACTIVITIES", true)
 	_text(
 		activity_card,
-		"New modes unlock gradually as your airport grows. Open a newly unlocked mode once for its short introduction."
+		"New modes unlock gradually as your airport grows. Activity missions can join Daily/Weekly rotation after the related system becomes available."
 	)
+	var activities: Dictionary = data.get("activities", {})
+	var suggested_mode := ""
 	for mode_id in [
 		"missions",
 		"event",
@@ -218,16 +228,40 @@ func _career(state: Dictionary, level: int) -> void:
 		var unlock_level := int(activity.get("unlock_level", 1))
 		var title := String(activity.get("title", mode_id))
 		var status_text := "LV %d" % unlock_level
+		var activity_state: Dictionary = activities.get(mode_id, {})
 		if level >= unlock_level:
 			status_text = (
 				"INTRODUCED"
-				if ActivityProgressionRules.tutorial_seen(state, mode_id)
+				if ActivityProgressionRules.tutorial_seen(
+					state,
+					mode_id
+				)
 				else "NEW"
 			)
+		if (
+			suggested_mode.is_empty()
+			and bool(activity_state.get("new", false))
+			and bool(activity_state.get("enabled", false))
+		):
+			suggested_mode = mode_id
 		_text(
 			activity_card,
 			"%s  •  %s" % [status_text, title]
 		)
+	if not suggested_mode.is_empty():
+		var suggested := ActivityProgressionRules.definition(
+			suggested_mode
+		)
+		_button(
+			activity_card,
+			"INTRODUCE • %s" % String(
+				suggested.get("title", suggested_mode)
+			).to_upper(),
+			func() -> void:
+				activity_requested.emit(suggested_mode),
+			"gold"
+		)
+
 
 func _orders(state: Dictionary, level: int) -> void:
 	_text(body, "Aircraft are bought with ordinary coins, not quest rewards. A purchased plane waits in reserve until a connected, fully serviced stand is free.", true)

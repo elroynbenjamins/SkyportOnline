@@ -72,7 +72,8 @@ static func ensure_state(state: Dictionary, unix_time: float, level: int) -> boo
 			level,
 			"daily",
 			day_key,
-			String(state.get("airport_id", "airport"))
+			String(state.get("airport_id", "airport")),
+			state
 		)
 		pass_state["daily_bonus_awarded"] = false
 		pass_state["free_reroll_used"] = false
@@ -93,7 +94,8 @@ static func ensure_state(state: Dictionary, unix_time: float, level: int) -> boo
 			level,
 			"weekly",
 			catchup_key,
-			String(state.get("airport_id", "airport"))
+			String(state.get("airport_id", "airport")),
+			state
 		))
 		weeks_created[catchup_key] = true
 		changed = true
@@ -182,11 +184,34 @@ static func reroll_daily(
 	if target_index < 0:
 		return false
 
+	var activity_count := 0
+	for index in range(daily.size()):
+		if index == target_index:
+			continue
+		var existing_template_id := String(
+			(daily[index] as Dictionary).get("template_id", "")
+		)
+		for existing_template in MissionPassCatalog.daily_templates():
+			if (
+				String(existing_template.get("id", ""))
+				== existing_template_id
+				and not String(
+					existing_template.get("activity", "")
+				).is_empty()
+			):
+				activity_count += 1
+				break
+
 	var eligible: Array[Dictionary] = []
 	for template in MissionPassCatalog.daily_templates():
-		if level < int(template.get("min_level", 1)):
+		if not _template_available(template, state, level):
 			continue
 		if used_templates.has(String(template.get("id", ""))):
+			continue
+		if (
+			activity_count >= 1
+			and not String(template.get("activity", "")).is_empty()
+		):
 			continue
 		eligible.append(template)
 	if eligible.is_empty():
@@ -509,6 +534,24 @@ static func _advance_missions(
 							seen[country] = true
 							mission["seen"] = seen
 							increment = 1
+			"dispatch_shifts":
+				if event_kind == "dispatch_complete":
+					increment = 1
+			"challenge_points":
+				if event_kind == "challenge_points":
+					increment = maxi(
+						int(payload.get("points", 0)),
+						0
+					)
+			"alliance_points":
+				if event_kind == "alliance_points":
+					increment = maxi(
+						int(payload.get("points", 0)),
+						0
+					)
+			"charter_contracts":
+				if event_kind == "charter_complete":
+					increment = 1
 		if increment <= 0:
 			continue
 		var target := maxi(int(mission.get("target", 1)), 1)
@@ -537,20 +580,149 @@ static func _generate_missions(
 	level: int,
 	period_type: String,
 	period_key: String,
-	airport_id: String
+	airport_id: String,
+	state: Dictionary
 ) -> Array:
-	var eligible: Array[Dictionary] = []
+	var core: Array[Dictionary] = []
+	var activities: Array[Dictionary] = []
 	for template in templates:
-		if level >= int(template.get("min_level", 1)):
-			eligible.append(template)
+		if not _template_available(template, state, level):
+			continue
+		if String(template.get("activity", "")).is_empty():
+			core.append(template)
+		else:
+			activities.append(template)
+
 	var result: Array = []
-	if eligible.is_empty():
+	if core.is_empty() and activities.is_empty():
 		return result
-	var start := absi(hash("%s:%s:%s" % [airport_id, period_type, period_key])) % eligible.size()
-	for offset in range(mini(count, eligible.size())):
-		var template := eligible[(start + offset) % eligible.size()]
-		result.append(_mission_from_template(template, level, period_type, period_key, 0))
+
+	var seed := absi(hash("%s:%s:%s" % [
+		airport_id,
+		period_type,
+		period_key
+	]))
+	var include_activity := (
+		not activities.is_empty()
+		and (
+			period_type == "weekly"
+			or seed % 2 == 0
+		)
+	)
+	var core_slots := maxi(
+		count - (1 if include_activity else 0),
+		0
+	)
+	if not core.is_empty():
+		var core_start := seed % core.size()
+		for offset in range(mini(core_slots, core.size())):
+			var template := core[
+				(core_start + offset) % core.size()
+			]
+			result.append(
+				_mission_from_template(
+					template,
+					level,
+					period_type,
+					period_key,
+					0
+				)
+			)
+
+	if include_activity:
+		var activity_seed := absi(
+			hash("%s:%s:%s:activity" % [
+				airport_id,
+				period_type,
+				period_key
+			])
+		)
+		var activity_template := activities[
+			activity_seed % activities.size()
+		]
+		result.append(
+			_mission_from_template(
+				activity_template,
+				level,
+				period_type,
+				period_key,
+				0
+			)
+		)
+
+	if result.size() < count:
+		var fallback: Array[Dictionary] = core + activities
+		for template in fallback:
+			if result.size() >= count:
+				break
+			var template_id := String(template.get("id", ""))
+			var already_used := false
+			for mission_variant in result:
+				if (
+					String(
+						(mission_variant as Dictionary).get(
+							"template_id",
+							""
+						)
+					)
+					== template_id
+				):
+					already_used = true
+					break
+			if already_used:
+				continue
+			result.append(
+				_mission_from_template(
+					template,
+					level,
+					period_type,
+					period_key,
+					0
+				)
+			)
 	return result
+
+
+static func _template_available(
+	template: Dictionary,
+	state: Dictionary,
+	level: int
+) -> bool:
+	if level < int(template.get("min_level", 1)):
+		return false
+	var activity := String(template.get("activity", ""))
+	if activity.is_empty():
+		return true
+	if not ActivityProgressionRules.is_level_unlocked(
+		activity,
+		level
+	):
+		return false
+	if not bool(template.get("requires_enabled", false)):
+		return true
+	var enabled: Dictionary = state.get(
+		"activity_mission_enabled",
+		{}
+	)
+	return bool(enabled.get(activity, false))
+
+
+static func enable_activity_missions(
+	state: Dictionary,
+	activity_id: String
+) -> bool:
+	if ActivityProgressionRules.definition(activity_id).is_empty():
+		return false
+	var enabled: Dictionary = state.get(
+		"activity_mission_enabled",
+		{}
+	).duplicate(true)
+	if bool(enabled.get(activity_id, false)):
+		return false
+	enabled[activity_id] = true
+	state["activity_mission_enabled"] = enabled
+	return true
+
 
 static func _mission_from_template(
 	template: Dictionary,
@@ -567,6 +739,7 @@ static func _mission_from_template(
 		"period_type": period_type,
 		"period_key": period_key,
 		"metric": String(template.get("metric", "")),
+		"activity": String(template.get("activity", "")),
 		"title": String(template.get("title", "Mission")),
 		"description": MissionPassCatalog.mission_text(String(template.get("metric", "")), target),
 		"target": target,

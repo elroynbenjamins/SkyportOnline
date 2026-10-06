@@ -151,11 +151,31 @@ func _start_gameplay() -> void:
 		String(current_profile.get("account_type", "guest"))
 	)
 
-	airport_grid.apply_saved_airport_layout(
-		current_profile.get("airport_layout", []),
-		current_profile.get("owned_parcels", []),
-		current_profile.get("airport_storage", [])
+	var saved_layout: Array = current_profile.get(
+		"airport_layout",
+		[]
 	)
+	var saved_storage: Array = current_profile.get(
+		"airport_storage",
+		[]
+	)
+	airport_grid.apply_saved_airport_layout(
+		saved_layout,
+		current_profile.get("owned_parcels", []),
+		saved_storage
+	)
+	if saved_layout.is_empty() and saved_storage.is_empty():
+		var starter := airport_grid.prepare_new_airport_builder_layout()
+		_persist_airport_layout()
+		hud.set_operation_status(
+			"Build your airfield • place RUNWAY + STAND, then connect TAXIWAYS",
+			"warning"
+		)
+		if (
+			int(starter.get("owned_width_tiles", 0)) < 16
+			or int(starter.get("owned_height_tiles", 0)) < 16
+		):
+			push_warning("Builder starter land should be at least 16x16 tiles.")
 	hud.set_stored_buildings(
 		airport_grid.get_stored_buildings()
 	)
@@ -435,56 +455,95 @@ func _setup_runway_strategy_panel() -> void:
 func _spawn_aircraft_demos() -> void:
 	var routes: Array[Dictionary] = airport_grid.get_departure_routes("S")
 	if routes.is_empty():
-		hud.set_operation_status("No connected S-class stand/runway.", "warning")
+		hud.set_operation_status(
+			"Build a runway + stand and connect them with taxiways.",
+			"warning"
+		)
 		return
 
-	var count := mini(routes.size(), 2)
-	for index in range(count):
-		var route_info: Dictionary = routes[index]
-		var route: PackedVector2Array = route_info.get("route", PackedVector2Array())
+	var target_count := mini(routes.size(), 2)
+	if aircraft_demos.size() >= target_count:
+		return
+
+	var connected_hangars := airport_grid.get_connected_hangars("S")
+	var require_hangar_start := not connected_hangars.is_empty()
+	var spawned := aircraft_demos.size()
+
+	for route_info in routes:
+		if spawned >= target_count:
+			break
+		var route: PackedVector2Array = route_info.get(
+			"route",
+			PackedVector2Array()
+		)
 		if route.size() < 2:
 			continue
 
-		var label := "SO-%03d" % (index + 1)
-		var aircraft := CareerAircraft.new()
+		var stand_uid := int(route_info.get("stand_uid", -1))
+		if stand_occupancy.has(stand_uid):
+			continue
 
-		var profile_ids: Array[String] = ["pico_p8", "pico_p8"]
-		var default_destinations: Array[String] = ["brussels", "brussels"]
-		var profile_id: String = profile_ids[index % profile_ids.size()]
-		var destination_id: String = default_destinations[
-			index % default_destinations.size()
-		]
-		aircraft.configure_aircraft_type(profile_id)
-		aircraft.configure_taxi_traffic(taxi_traffic)
-		aircraft.configure_handling_mode(
-			true,
-			false
+		var fuel_station := airport_grid.get_best_service_building(
+			"fuel",
+			"S"
 		)
+		if fuel_station.is_empty():
+			continue
+		var fuel_service_route := airport_grid.get_service_route(
+			int(fuel_station.get("uid", -1)),
+			stand_uid
+		)
+		if fuel_service_route.size() < 3:
+			continue
+
+		var hangar_transfer := {}
+		if require_hangar_start:
+			var transfer_options := airport_grid.get_hangar_to_stand_routes(
+				stand_uid,
+				"S"
+			)
+			if not transfer_options.is_empty():
+				hangar_transfer = transfer_options[0].duplicate(true)
+			if hangar_transfer.is_empty():
+				continue
+
+		var label := "SO-%03d" % (spawned + 1)
+		var aircraft := CareerAircraft.new()
+		aircraft.configure_aircraft_type("pico_p8")
+		aircraft.configure_taxi_traffic(taxi_traffic)
+		aircraft.configure_handling_mode(true, false)
 		aircraft.handling_action_requested.connect(
 			_on_aircraft_handling_action_requested
 		)
 
-		var destination := DestinationCatalog.get_destination(destination_id)
+		var destination := DestinationCatalog.get_destination("brussels")
 		var initial_plan := _create_current_flight_plan(
 			aircraft.get_aircraft_profile(),
 			destination
 		)
 		aircraft.assign_flight_plan(initial_plan)
 		aircraft.name = label
-		aircraft.z_index = 80 + index
+		aircraft.z_index = 80 + spawned
 		aircraft.state_changed.connect(
 			_on_demo_aircraft_state_changed.bind(aircraft, label)
 		)
-		aircraft.departed.connect(_on_demo_aircraft_departed.bind(aircraft, label))
+		aircraft.departed.connect(
+			_on_demo_aircraft_departed.bind(aircraft, label)
+		)
 		aircraft.arrival_requested.connect(
 			_on_demo_arrival_requested.bind(aircraft, label)
 		)
 		aircraft.arrival_completed.connect(
 			_on_demo_arrival_completed.bind(aircraft, label)
 		)
+		aircraft.predeparture_transfer_completed.connect(
+			_on_predeparture_transfer_completed.bind(
+				aircraft,
+				label
+			)
+		)
 		add_child(aircraft)
 
-		var stand_uid := int(route_info.get("stand_uid", -1))
 		var runway_uid := int(route_info.get("runway_uid", -1))
 		aircraft.set_departure_route(
 			route,
@@ -498,15 +557,58 @@ func _spawn_aircraft_demos() -> void:
 			aircraft,
 			current_event_snapshot
 		)
-		ground_services.request_turnaround(
-			aircraft,
-			label,
-			false,
-			aircraft.uses_manual_handling()
+
+		if not hangar_transfer.is_empty():
+			var transfer_route: PackedVector2Array = hangar_transfer.get(
+				"route",
+				PackedVector2Array()
+			)
+			if aircraft.set_predeparture_transfer_route(transfer_route):
+				hud.set_operation_status(
+					"%s leaving hangar • taxiing to loading stand" % label
+				)
+			else:
+				ground_services.request_turnaround(
+					aircraft,
+					label,
+					false,
+					aircraft.uses_manual_handling()
+				)
+		else:
+			ground_services.request_turnaround(
+				aircraft,
+				label,
+				false,
+				aircraft.uses_manual_handling()
+			)
+		spawned += 1
+
+	if aircraft_demos.is_empty():
+		hud.set_operation_status(
+			"Complete the network • runway/taxiway + hangar/stand + service road.",
+			"warning"
+		)
+	else:
+		hud.set_operation_status(
+			"%d aircraft entering the departure flow" % aircraft_demos.size()
 		)
 
+
+func _on_predeparture_transfer_completed(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
 	hud.set_operation_status(
-		"%d aircraft awaiting turnaround" % aircraft_demos.size()
+		"%s at loading stand • fuel truck and loading can begin" % label,
+		"success"
+	)
+	ground_services.request_turnaround(
+		aircraft,
+		label,
+		false,
+		aircraft.uses_manual_handling()
 	)
 
 
@@ -835,6 +937,7 @@ func _live_operations_snapshot() -> Dictionary:
 
 		var state := String(aircraft.state)
 		if state in [
+			"TAXIING_TO_STAND",
 			"TAXIING_OUT",
 			"TAXIING_IN",
 			"ENTERING_RUNWAY"
@@ -1033,6 +1136,10 @@ func _on_demo_aircraft_state_changed(
 	label: String
 ) -> void:
 	match state:
+		"TAXIING_TO_STAND":
+			hud.set_operation_status(
+				"%s leaving hangar • taxiing to loading stand" % label
+			)
 		"TAXIING_OUT":
 			_release_stand(aircraft)
 			hud.set_operation_status(
@@ -4686,6 +4793,12 @@ func _refresh_layout_dependent_systems() -> void:
 		)
 	if ground_services != null:
 		ground_services.refresh_after_layout_change()
+	if (
+		gameplay_started
+		and aircraft_demos.size() < 2
+		and not airport_grid.get_departure_routes("S").is_empty()
+	):
+		_spawn_aircraft_demos()
 	_refresh_operations_analytics()
 
 

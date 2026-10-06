@@ -23,6 +23,12 @@ const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.35
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
+const BUILDER_STARTER_PARCELS := [
+	"north_west",
+	"north",
+	"west",
+	"home"
+]
 
 const TERRAIN_BACKGROUND := Color("557f4b")
 const OWNED_GRASS_VARIANTS := [
@@ -302,6 +308,81 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("service_road", Vector2i(15, 15), 0)
 	_place_building_internal("service_road", Vector2i(15, 14), 0)
 	_rebuild_occupied_cells()
+
+
+func prepare_new_airport_builder_layout() -> Dictionary:
+	# New airports begin with a roomy 16x16 owned construction zone. The
+	# player places the runway, stands and taxiways themselves; only the
+	# landside/service core and a starter hangar are pre-positioned.
+	for parcel_id in BUILDER_STARTER_PARCELS:
+		if parcels.has(parcel_id):
+			parcels[parcel_id]["owned"] = true
+
+	placed_buildings.clear()
+	stored_buildings.clear()
+	next_building_uid = 1
+
+	_place_building_internal("small_hangar", Vector2i(1, 8), 0)
+	_place_building_internal("basic_fuel", Vector2i(5, 8), 0)
+	_place_building_internal("travel_office", Vector2i(5, 11), 0)
+	_place_building_internal("small_terminal", Vector2i(9, 13), 0)
+	_place_building_internal("ground_ops_depot", Vector2i(12, 13), 0)
+
+	# A starter service-road spine gives fuel/ops vehicles a sensible base;
+	# the player extends it toward whichever stands they choose to build.
+	for cell in [
+		Vector2i(7, 8),
+		Vector2i(7, 9),
+		Vector2i(7, 10),
+		Vector2i(7, 11),
+		Vector2i(7, 12),
+		Vector2i(8, 12),
+		Vector2i(9, 12),
+		Vector2i(10, 12),
+		Vector2i(11, 12),
+		Vector2i(12, 12)
+	]:
+		_place_building_internal("service_road", cell, 0)
+
+	selected_id = ""
+	_rebuild_occupied_cells()
+	_recalculate_airside_network()
+	_refresh_parcel_labels()
+	_refresh_building_labels()
+	_refresh_charter_turnaround_visual()
+	queue_redraw()
+
+	return {
+		"owned_parcels": export_owned_parcels(),
+		"owned_width_tiles": PARCEL_SIZE * 2,
+		"owned_height_tiles": PARCEL_SIZE * 2,
+		"runways": int(airside_status.get("runways", 0)),
+		"stands": int(airside_status.get("stands_total", 0)),
+		"hangars": int(airside_status.get("hangars_total", 0)),
+		"next_steps": PackedStringArray([
+			"Place a Short Runway",
+			"Place a Small Stand",
+			"Connect runway, stand and hangar with Taxiways",
+			"Extend Service Roads to the stand"
+		])
+	}
+
+
+func get_builder_starter_snapshot() -> Dictionary:
+	var owned_count := 0
+	for parcel_id in BUILDER_STARTER_PARCELS:
+		if (
+			parcels.has(parcel_id)
+			and bool(parcels[parcel_id].get("owned", false))
+		):
+			owned_count += 1
+	return {
+		"starter_parcels_owned": owned_count,
+		"starter_parcels_total": BUILDER_STARTER_PARCELS.size(),
+		"owned_width_tiles": PARCEL_SIZE * 2,
+		"owned_height_tiles": PARCEL_SIZE * 2,
+		"airside": get_airside_status()
+	}
 
 
 func _add_parcel(id: String, px: int, py: int, level: int, cost: int, owned: bool) -> void:
@@ -8200,6 +8281,148 @@ func get_best_service_building(service_type: String, aircraft_size: String) -> D
 	if compatible.is_empty():
 		return {}
 	return compatible[0].duplicate(true)
+
+
+func get_connected_hangars(
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var connected: Array = airside_status.get("connected_uids", [])
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not String(
+				definition.get("id", "")
+			).contains("hangar")
+			or not _definition_supports_size(
+				definition,
+				aircraft_size
+			)
+		):
+			continue
+		if connected.has(int(building.get("uid", -1))):
+			result.append(building.duplicate(true))
+	return result
+
+
+func get_hangar_to_stand_routes(
+	stand_uid: int,
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var stand := _building_by_uid(stand_uid)
+	if stand.is_empty():
+		return result
+	var stand_definition := BuildingCatalog.get_definition(
+		String(stand.get("definition_id", ""))
+	)
+	if (
+		stand_definition.is_empty()
+		or not String(
+			stand_definition.get("id", "")
+		).contains("stand")
+	):
+		return result
+
+	var reachable_keys: Array = airside_status.get(
+		"reachable_taxiway_cells",
+		[]
+	)
+	var reachable: Dictionary = {}
+	for key_variant in reachable_keys:
+		var key := String(key_variant)
+		var parts := key.split(":")
+		if parts.size() != 2:
+			continue
+		reachable[key] = Vector2i(
+			int(parts[0]),
+			int(parts[1])
+		)
+
+	if reachable.is_empty():
+		return result
+
+	var stand_fp := _footprint_for(
+		stand_definition,
+		int(stand.get("rotation", 0))
+	)
+	var stand_cells := _cells_for(
+		stand.get("origin", Vector2i.ZERO),
+		stand_fp
+	)
+	var goals := _adjacent_cells_in_set(
+		stand_cells,
+		reachable
+	)
+	if goals.is_empty():
+		return result
+
+	for hangar in get_connected_hangars(aircraft_size):
+		var hangar_definition := BuildingCatalog.get_definition(
+			String(hangar.get("definition_id", ""))
+		)
+		if hangar_definition.is_empty():
+			continue
+		var hangar_fp := _footprint_for(
+			hangar_definition,
+			int(hangar.get("rotation", 0))
+		)
+		var starts := _adjacent_cells_in_set(
+			_cells_for(
+				hangar.get("origin", Vector2i.ZERO),
+				hangar_fp
+			),
+			reachable
+		)
+		if starts.is_empty():
+			continue
+		var taxi_path := _road_path_between(
+			starts,
+			goals,
+			reachable
+		)
+		if taxi_path.is_empty():
+			continue
+
+		var points := PackedVector2Array()
+		points.append(
+			_footprint_center_world(
+				hangar.get("origin", Vector2i.ZERO),
+				hangar_fp
+			)
+		)
+		var distance := 0.0
+		var previous := points[0]
+		for cell in taxi_path:
+			var point := tile_to_world(
+				Vector2(cell.x, cell.y)
+			)
+			points.append(point)
+			distance += previous.distance_to(point)
+			previous = point
+		var stand_position := _footprint_center_world(
+			stand.get("origin", Vector2i.ZERO),
+			stand_fp
+		)
+		points.append(stand_position)
+		distance += previous.distance_to(stand_position)
+		result.append({
+			"hangar_uid": int(hangar.get("uid", -1)),
+			"stand_uid": stand_uid,
+			"taxi_distance": distance,
+			"route": points
+		})
+
+	result.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return float(a.get("taxi_distance", 0.0)) < float(
+				b.get("taxi_distance", 0.0)
+			)
+	)
+	return result
 
 
 func get_service_route(station_uid: int, stand_uid: int) -> PackedVector2Array:

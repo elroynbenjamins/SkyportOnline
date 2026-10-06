@@ -6,6 +6,7 @@ signal hold_short_reached
 signal departed
 signal arrival_requested
 signal arrival_completed
+signal predeparture_transfer_completed
 signal state_changed(state: String)
 signal handling_action_requested(
 	aircraft: AircraftPrototype,
@@ -29,6 +30,7 @@ const EXTERNAL_PUSHBACK_MIN_DISTANCE := 0.35
 
 var departure_route := PackedVector2Array()
 var arrival_route := PackedVector2Array()
+var predeparture_transfer_route := PackedVector2Array()
 var route_index := 0
 var state := "PARKED"
 var aircraft_size := "S"
@@ -891,6 +893,86 @@ func set_departure_route(
 	queue_redraw()
 
 
+func set_predeparture_transfer_route(
+	points: PackedVector2Array
+) -> bool:
+	if points.size() < 2:
+		return false
+	predeparture_transfer_route = TaxiMotionRules.refined_route(
+		points,
+		aircraft_size,
+		aircraft_profile
+	)
+	if predeparture_transfer_route.size() < 2:
+		predeparture_transfer_route = points.duplicate()
+	route_index = 0
+	taxi_current_speed = 0.0
+	visible = true
+	position = predeparture_transfer_route[0]
+	var first_direction := (
+		predeparture_transfer_route[1]
+		- predeparture_transfer_route[0]
+	).normalized()
+	if first_direction != Vector2.ZERO:
+		rotation = first_direction.angle()
+	_set_state("TAXIING_TO_STAND")
+	set_turnaround_status(
+		"Leaving hangar\nTaxi to load stand"
+	)
+	return true
+
+
+func _process_predeparture_transfer(delta: float) -> void:
+	if (
+		predeparture_transfer_route.size() < 2
+		or route_index >= predeparture_transfer_route.size() - 1
+	):
+		taxi_current_speed = 0.0
+		predeparture_transfer_route = PackedVector2Array()
+		_set_state("WAITING_FUEL")
+		predeparture_transfer_completed.emit()
+		return
+
+	var target_index := route_index + 1
+	if not _request_taxi_segment(
+		predeparture_transfer_route[route_index],
+		predeparture_transfer_route[target_index]
+	):
+		taxi_current_speed = _approach_taxi_speed(
+			taxi_current_speed,
+			0.0,
+			delta
+		)
+		return
+
+	var target_speed := TaxiMotionRules.speed_for_target(
+		predeparture_transfer_route,
+		route_index,
+		target_index,
+		taxi_speed
+	)
+	if target_index >= predeparture_transfer_route.size() - 1:
+		target_speed = minf(target_speed, taxi_speed * 0.48)
+	taxi_current_speed = _approach_taxi_speed(
+		taxi_current_speed,
+		target_speed,
+		delta
+	)
+	if _move_toward_point(
+		predeparture_transfer_route[target_index],
+		taxi_current_speed,
+		delta,
+		taxi_turn_rate_deg
+	):
+		route_index = target_index
+		_release_taxi_segment()
+		if route_index >= predeparture_transfer_route.size() - 1:
+			taxi_current_speed = 0.0
+			predeparture_transfer_route = PackedVector2Array()
+			_set_state("WAITING_FUEL")
+			predeparture_transfer_completed.emit()
+
+
 func set_arrival_route(
 	points: PackedVector2Array,
 	assigned_stand_uid: int,
@@ -988,6 +1070,9 @@ func _process(delta: float) -> void:
 	_sync_turnaround_status_transform()
 	_sync_handling_action_transform()
 	match state:
+		"TAXIING_TO_STAND":
+			_process_predeparture_transfer(delta)
+
 		"CLEARED":
 			delay_remaining -= delta
 			if delay_remaining <= 0.0:
@@ -1367,7 +1452,11 @@ func _set_taxi_hold(
 			"TAXI HOLD\n%s" % reason.capitalize(),
 			"warning"
 		)
-	elif state in ["TAXIING_OUT", "TAXIING_IN"]:
+	elif state in [
+		"TAXIING_TO_STAND",
+		"TAXIING_OUT",
+		"TAXIING_IN"
+	]:
 		clear_turnaround_status()
 
 
@@ -1524,7 +1613,7 @@ func _set_state(new_state: String) -> void:
 	state = new_state
 
 	match new_state:
-		"TAXIING_OUT":
+		"TAXIING_TO_STAND", "TAXIING_OUT":
 			_start_motion_fx("taxi_start")
 		"TAKEOFF_ROLL":
 			_start_motion_fx("takeoff_start")
@@ -1543,6 +1632,7 @@ func _set_state(new_state: String) -> void:
 				_start_motion_fx("stand_stop")
 
 	if new_state not in [
+		"TAXIING_TO_STAND",
 		"TAXIING_OUT",
 		"TAXIING_IN",
 		"ENTERING_RUNWAY"
@@ -1550,6 +1640,7 @@ func _set_state(new_state: String) -> void:
 		_release_taxi_segment()
 		_set_taxi_hold(false, "")
 	if new_state in [
+		"TAXIING_TO_STAND",
 		"TAXIING_OUT",
 		"HOLD_SHORT",
 		"ENTERING_RUNWAY",

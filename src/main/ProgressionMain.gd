@@ -347,14 +347,29 @@ func _deploy_reserve_aircraft() -> void:
 		aircraft.set_meta("career_flight_token", String(saved.get("token", "")))
 		aircraft.set_meta("passengers_paid", bool(saved.get("paid", false)))
 		var plan: Dictionary = saved.get("plan", {})
-		if plan.is_empty() and runtime.is_empty() and uid in ["owned-1", "owned-2"]:
-			plan = _create_current_flight_plan(profile, DestinationCatalog.get_destination("brussels"))
+		if (
+			plan.is_empty()
+			and saved.is_empty()
+			and uid in ["owned-1", "owned-2"]
+		):
+			plan = _create_current_flight_plan(
+				profile,
+				DestinationCatalog.get_destination("brussels")
+			)
 		aircraft.assign_flight_plan(plan)
 		var label := String(aircraft.name)
 		aircraft.state_changed.connect(_on_demo_aircraft_state_changed.bind(aircraft, label))
 		aircraft.departed.connect(_on_demo_aircraft_departed.bind(aircraft, label))
 		aircraft.arrival_requested.connect(_on_demo_arrival_requested.bind(aircraft, label))
-		aircraft.arrival_completed.connect(_on_demo_arrival_completed.bind(aircraft, label))
+		aircraft.arrival_completed.connect(
+			_on_demo_arrival_completed.bind(aircraft, label)
+		)
+		aircraft.predeparture_transfer_completed.connect(
+			_on_predeparture_transfer_completed.bind(
+				aircraft,
+				label
+			)
+		)
 		add_child(aircraft)
 		deployed_owned[uid] = aircraft
 		aircraft_demos.append(aircraft)
@@ -370,8 +385,54 @@ func _deploy_reserve_aircraft() -> void:
 				_on_demo_arrival_requested(aircraft, label)
 		else:
 			var stand_uid := int(route_info.get("stand_uid", -1))
-			aircraft.set_departure_route(route_info["route"], String(profile["size"]), stand_uid, int(route_info.get("runway_uid", -1)))
+			var aircraft_size := String(profile.get("size", "S"))
+			var fuel_station := airport_grid.get_best_service_building(
+				"fuel",
+				aircraft_size
+			)
+			if fuel_station.is_empty():
+				aircraft.queue_free()
+				deployed_owned.erase(uid)
+				aircraft_demos.erase(aircraft)
+				continue
+			var fuel_route := airport_grid.get_service_route(
+				int(fuel_station.get("uid", -1)),
+				stand_uid
+			)
+			if fuel_route.size() < 3:
+				aircraft.queue_free()
+				deployed_owned.erase(uid)
+				aircraft_demos.erase(aircraft)
+				continue
+
+			aircraft.set_departure_route(
+				route_info["route"],
+				aircraft_size,
+				stand_uid,
+				int(route_info.get("runway_uid", -1))
+			)
 			stand_occupancy[stand_uid] = aircraft
+
+			var hangar_routes := airport_grid.get_hangar_to_stand_routes(
+				stand_uid,
+				aircraft_size
+			)
+			if not hangar_routes.is_empty():
+				var transfer_route: PackedVector2Array = (
+					hangar_routes[0] as Dictionary
+				).get(
+					"route",
+					PackedVector2Array()
+				)
+				if aircraft.set_predeparture_transfer_route(
+					transfer_route
+				):
+					hud.set_operation_status(
+						"%s leaving hangar • taxiing to loading stand"
+						% label
+					)
+					continue
+
 			ground_services.request_turnaround(
 				aircraft,
 				label,

@@ -10,6 +10,63 @@ func check(condition: bool, message: String) -> void:
 	if not condition:
 		errors.append(message)
 
+func _place_for_career(
+	main,
+	building_id: String,
+	cell: Vector2i
+) -> bool:
+	var preview: Dictionary = main.airport_grid.set_build_preview(
+		building_id,
+		main.airport_grid.tile_to_world(
+			Vector2(cell.x, cell.y)
+		),
+		0
+	)
+	if not bool(preview.get("valid", false)):
+		return false
+	return not main.airport_grid.confirm_build_preview().is_empty()
+
+
+func _build_required_starter_airside(main) -> bool:
+	# Career integration now mirrors the real new-player requirement:
+	# construct runway, two stands, taxiways and service-road access before
+	# the two starter Picos can leave the hangar.
+	if not _place_for_career(
+		main,
+		"short_runway",
+		Vector2i(0, 0)
+	):
+		return false
+
+	for y in range(2, 8):
+		if not _place_for_career(
+			main,
+			"taxiway",
+			Vector2i(3, y)
+		):
+			return false
+
+	if not _place_for_career(
+		main,
+		"small_stand",
+		Vector2i(4, 5)
+	):
+		return false
+
+	for cell in [
+		Vector2i(7, 7),
+		Vector2i(7, 6),
+		Vector2i(6, 6)
+	]:
+		if not _place_for_career(
+			main,
+			"service_road",
+			cell
+		):
+			return false
+	return true
+
+
 func _run() -> void:
 	_cleanup()
 	var scene = load("res://src/main/Main.tscn")
@@ -32,7 +89,20 @@ func _run() -> void:
 	await process_frame
 	check(main.gameplay_started and main.progression_ready, "Guest creation must start the real game.")
 	check(main.player_level == 1, "A new airport starts career progression at level one.")
-	check(main.aircraft_demos.size() == 2, "Fresh career must deploy the two starter Picos.")
+	check(
+		_build_required_starter_airside(main),
+		"Fresh career test should be able to construct the required starter airside network."
+	)
+	main._refresh_layout_dependent_systems()
+	await process_frame
+	check(
+		main.aircraft_demos.size() == 1,
+		"One connected starter stand should deploy one Pico; the second waits for another stand."
+	)
+	check(
+		(main.progression.get("owned_aircraft", []) as Array).size() == 2,
+		"Both starter Picos should remain owned even when only one is deployed."
+	)
 	check(main.career_pin != null, "A live career action must replace the static HUD objective.")
 	check(main.career_screen != null, "Career screen must be installed in the actual scene.")
 	main.npc_director.remaining = 0.0

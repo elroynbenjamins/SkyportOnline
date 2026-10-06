@@ -17,6 +17,7 @@ signal aircraft_serviced(
 )
 
 var airport_grid: AirportGrid
+var fuel_economy: FuelEconomy
 var pending_requests: Array[Dictionary] = []
 var station_active: Dictionary = {}
 var stand_approach_active: Dictionary = {}
@@ -39,6 +40,10 @@ const ANALYTICS_SERVICE_TYPES: Array[String] = [
 
 func configure(grid: AirportGrid) -> void:
 	airport_grid = grid
+
+
+func configure_fuel_economy(economy: FuelEconomy) -> void:
+	fuel_economy = economy
 
 
 func set_global_service_speed_multiplier(value: float) -> void:
@@ -748,7 +753,12 @@ func _enqueue_service_request(
 		"label": label,
 		"service_key": service_key,
 		"service_type": service_type,
-		"base_duration": base_duration
+		"base_duration": base_duration,
+		"fuel_required": (
+			_fuel_required_for_aircraft(aircraft)
+			if service_type == "fuel"
+			else 0
+		)
 	})
 
 
@@ -771,6 +781,44 @@ func _try_dispatch() -> void:
 			var service_type := String(
 				request.get("service_type", "fuel")
 			)
+			if service_type == "fuel" and fuel_economy != null:
+				var fuel_required := maxi(
+					int(request.get("fuel_required", 0)),
+					0
+				)
+				if (
+					fuel_required > 0
+					and fuel_economy.get_fuel() < fuel_required
+				):
+					if not bool(
+						request.get("fuel_warning_emitted", false)
+					):
+						request["fuel_warning_emitted"] = true
+						pending_requests[index] = request
+						if int(request.get("job_id", -1)) >= 0:
+							_set_service_status(
+								int(request.get("job_id", -1)),
+								String(request.get("service_key", "fuel")),
+								"queued",
+								0.0
+							)
+						aircraft.set_turnaround_status(
+							"Fuel low • need %d • have %d" % [
+								fuel_required,
+								fuel_economy.get_fuel()
+							],
+							"warning"
+						)
+						status_changed.emit(
+							"%s waiting for fuel stock • need %d, have %d" % [
+								String(request.get("label", "Aircraft")),
+								fuel_required,
+								fuel_economy.get_fuel()
+							],
+							"warning"
+						)
+					continue
+
 			var stations := airport_grid.get_compatible_service_buildings(
 				service_type,
 				aircraft.aircraft_size
@@ -789,6 +837,14 @@ func _try_dispatch() -> void:
 			if service_type == "pushback":
 				var clearance := aircraft.reserve_pushback_path()
 				if not bool(clearance.get("allowed", false)):
+					continue
+
+			if service_type == "fuel" and fuel_economy != null:
+				var required := maxi(
+					int(request.get("fuel_required", 0)),
+					0
+				)
+				if required > 0 and not fuel_economy.spend_fuel(required):
 					continue
 
 			pending_requests.remove_at(index)
@@ -1481,6 +1537,19 @@ func _turnaround_blocking_reason(
 	if int(metrics.get("en_route_count", 0)) > 0:
 		return "Ground vehicles en route"
 	return ""
+
+
+func _fuel_required_for_aircraft(
+	aircraft: AircraftPrototype
+) -> int:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return 0
+	if aircraft.is_social_visitor():
+		return 0
+	return FuelRules.required_for_plan(
+		aircraft.get_aircraft_profile(),
+		aircraft.get_flight_plan()
+	)
 
 
 func _profile_for_aircraft(

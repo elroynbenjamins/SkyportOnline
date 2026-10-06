@@ -18,9 +18,19 @@ func configure(
 ) -> void:
 	passenger_economy = economy
 	if not override_event.is_empty():
+		# Explicit overrides are primarily used by deterministic tests and
+		# development tools; preserve their supplied route fixtures.
 		event_definition = override_event.duplicate(true)
 	else:
-		event_definition = EventCatalog.active_event(_now_unix())
+		event_definition = EventCatalog.resolve_for_home(
+		EventCatalog.active_event(_now_unix()),
+		String(
+			ProfileStore.load_profile().get(
+				"country_id",
+				DestinationCatalog.get_home_country_id()
+			)
+		)
+	)
 
 	if event_definition.is_empty():
 		state = {}
@@ -44,10 +54,20 @@ func set_now_override(value: int) -> void:
 
 
 func refresh_from_catalog() -> void:
-	if now_override >= 0:
-		event_definition = EventCatalog.active_event(now_override)
-	else:
-		event_definition = EventCatalog.active_event()
+	var raw_event := (
+		EventCatalog.active_event(now_override)
+		if now_override >= 0
+		else EventCatalog.active_event()
+	)
+	event_definition = EventCatalog.resolve_for_home(
+		raw_event,
+		String(
+			ProfileStore.load_profile().get(
+				"country_id",
+				DestinationCatalog.get_home_country_id()
+			)
+		)
+	)
 
 	if event_definition.is_empty():
 		state = {}

@@ -1,0 +1,555 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="864" viewBox="0 0 768 864">
+<rect width="768" height="864" fill="none"/>
+<g id="nl_flowers" transform="translate(0 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">FL</text>
+</g>
+<g id="nl_dairy" transform="translate(96 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#69a9c8" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#f2eee2" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M34 24h25l4 10v34H30V34z" fill="#f7fbff"/><path d="M34 24l5-8h16l4 8" fill="#d6edf7"/><path d="M36 42h21v15H36z" fill="#69a9c8"/><circle cx="46.5" cy="49.5" r="5" fill="#f7fbff"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">DA</text>
+</g>
+<g id="nl_horticulture" transform="translate(192 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">HO</text>
+</g>
+<g id="be_chocolate" transform="translate(288 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#653b2b" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#b87744" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <ellipse cx="38" cy="44" rx="13" ry="19" transform="rotate(-28 38 44)" fill="#5d3527"/><path d="M37 28c8 8 9 19 3 31" fill="none" stroke="#c99569" stroke-width="3"/><ellipse cx="58" cy="51" rx="11" ry="16" transform="rotate(25 58 51)" fill="#6a3c29"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">CH</text>
+</g>
+<g id="be_chemicals" transform="translate(384 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9d5a31" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e9a34d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="39" y="20" width="18" height="10" rx="3" fill="#f6e0bb"/><path d="M36 30h24l5 12v25H31V42z" fill="#f1b14f"/><path d="M36 49h24v12H36z" fill="#fff1cf"/><path d="M48 35v10" stroke="#ffffff" stroke-width="4"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">SC</text>
+</g>
+<g id="be_precision_parts" transform="translate(480 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PP</text>
+</g>
+<g id="de_machinery" transform="translate(576 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">MA</text>
+</g>
+<g id="de_automotive_parts" transform="translate(672 0)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">AP</text>
+</g>
+<g id="de_industrial_tools" transform="translate(0 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">IT</text>
+</g>
+<g id="dk_pharma_goods" transform="translate(96 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#f1d7d7" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e75d67" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <g transform="rotate(-32 48 46)"><rect x="24" y="35" width="48" height="22" rx="11" fill="#ffffff"/><path d="M48 35h13a11 11 0 0 1 0 22H48z" fill="#e65d67"/><path d="M48 35v22" stroke="#b73e48" stroke-width="3"/></g>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PG</text>
+</g>
+<g id="dk_design_goods" transform="translate(192 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#a56f2c" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e8c85e" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l8 18 20 2-15 13 5 20-18-10-18 10 5-20-15-13 20-2z" fill="#fff0a4" stroke="#c18a2d" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">DG</text>
+</g>
+<g id="dk_renewable_parts" transform="translate(288 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#3e7f93" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#85c9d9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="42" r="7" fill="#f8ffff"/><path d="M48 15l7 22-7 5-7-5zM21 55l21-9 6 4-1 8zM75 55l-21-9-6 4 1 8z" fill="#e8fbff"/><path d="M48 48v24" stroke="#d4f0f4" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">RP</text>
+</g>
+<g id="gb_aerospace_parts" transform="translate(384 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#54798e" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d9e7ee" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M17 48l22-6 8-22 8 2-2 20 23 7-2 7-23-2-11 18-7-3 7-18-21 4z" fill="#f5fbff" stroke="#65869a" stroke-width="2"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">AP</text>
+</g>
+<g id="gb_financial_docs" transform="translate(480 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9c8a52" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e9e0bc" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M29 18h30l10 10v46H29z" fill="#fff8df"/><path d="M59 18v12h12" fill="none" stroke="#aa9661" stroke-width="3"/><path d="M36 40h25M36 49h22M36 58h18" stroke="#8f825f" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">FD</text>
+</g>
+<g id="gb_specialty_goods" transform="translate(576 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#a56f2c" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e8c85e" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l8 18 20 2-15 13 5 20-18-10-18 10 5-20-15-13 20-2z" fill="#fff0a4" stroke="#c18a2d" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">SG</text>
+</g>
+<g id="fr_luxury_goods" transform="translate(672 96)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#a56f2c" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e8c85e" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l8 18 20 2-15 13 5 20-18-10-18 10 5-20-15-13 20-2z" fill="#fff0a4" stroke="#c18a2d" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">LG</text>
+</g>
+<g id="fr_gourmet_food" transform="translate(0 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9b5c2f" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#eaa052" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <ellipse cx="48" cy="58" rx="27" ry="12" fill="#9b5c2f"/><path d="M24 53c4-18 13-28 24-28s20 10 24 28z" fill="#f2bd66"/><circle cx="38" cy="43" r="4" fill="#6e9c55"/><circle cx="51" cy="37" r="4" fill="#d65a4e"/><circle cx="58" cy="47" r="4" fill="#6e9c55"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">GF</text>
+</g>
+<g id="fr_cosmetics" transform="translate(96 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9d5a31" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e9a34d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="39" y="20" width="18" height="10" rx="3" fill="#f6e0bb"/><path d="M36 30h24l5 12v25H31V42z" fill="#f1b14f"/><path d="M36 49h24v12H36z" fill="#fff1cf"/><path d="M48 35v10" stroke="#ffffff" stroke-width="4"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">CO</text>
+</g>
+<g id="es_olive_products" transform="translate(192 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">OP</text>
+</g>
+<g id="es_ceramic_materials" transform="translate(288 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#3e668f" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#78a8d6" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M34 22h28l-3 10 7 12-6 25H36l-6-25 7-12z" fill="#7eaede"/><path d="M35 39h26M36 49h24M39 59h18" stroke="#f2d36d" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">CM</text>
+</g>
+<g id="es_citrus_goods" transform="translate(384 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">CG</text>
+</g>
+<g id="it_fashion_goods" transform="translate(480 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#823c57" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d86876" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M24 31h42l8 10-13 24H28L18 48z" fill="#e57d8c"/><path d="M25 36h36M22 45h45M26 54h36" stroke="#ffdfe4" stroke-width="3"/><circle cx="27" cy="35" r="7" fill="#8d425f"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">FG</text>
+</g>
+<g id="it_machine_components" transform="translate(576 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">MC</text>
+</g>
+<g id="it_specialty_foods" transform="translate(672 192)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9b5c2f" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#eaa052" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <ellipse cx="48" cy="58" rx="27" ry="12" fill="#9b5c2f"/><path d="M24 53c4-18 13-28 24-28s20 10 24 28z" fill="#f2bd66"/><circle cx="38" cy="43" r="4" fill="#6e9c55"/><circle cx="51" cy="37" r="4" fill="#d65a4e"/><circle cx="58" cy="47" r="4" fill="#6e9c55"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">SF</text>
+</g>
+<g id="us_flight_computers" transform="translate(0 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#263f52" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#5f7f94" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="28" y="27" width="40" height="40" rx="5" fill="#324a5b" stroke="#93c2d8" stroke-width="4"/><rect x="39" y="38" width="18" height="18" fill="#e5b957"/><path d="M20 34h8M20 46h8M20 58h8M68 34h8M68 46h8M68 58h8M34 19v8M46 19v8M58 19v8M34 67v8M46 67v8M58 67v8" stroke="#c9dbe4" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">FC</text>
+</g>
+<g id="us_aerospace_systems" transform="translate(96 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#54798e" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d9e7ee" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M17 48l22-6 8-22 8 2-2 20 23 7-2 7-23-2-11 18-7-3 7-18-21 4z" fill="#f5fbff" stroke="#65869a" stroke-width="2"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">AS</text>
+</g>
+<g id="us_industrial_chemicals" transform="translate(192 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9d5a31" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e9a34d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="39" y="20" width="18" height="10" rx="3" fill="#f6e0bb"/><path d="M36 30h24l5 12v25H31V42z" fill="#f1b14f"/><path d="M36 49h24v12H36z" fill="#fff1cf"/><path d="M48 35v10" stroke="#ffffff" stroke-width="4"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">IC</text>
+</g>
+<g id="ca_timber" transform="translate(288 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#6e422a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#b87543" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <g fill="#9b5e35" stroke="#e8b47b" stroke-width="3"><rect x="20" y="31" width="47" height="15" rx="7" transform="rotate(-12 20 31)"/><rect x="28" y="48" width="44" height="15" rx="7" transform="rotate(8 28 48)"/></g><circle cx="24" cy="41" r="7" fill="#d8a266"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">TI</text>
+</g>
+<g id="ca_potash" transform="translate(384 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#84643c" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#caa56b" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M34 27h28l-5 9c9 8 12 17 10 30H29c-2-13 1-22 10-30z" fill="#c9a66e" stroke="#7e6038" stroke-width="3"/><path d="M37 35h22M39 52h18" stroke="#f3dfb6" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PO</text>
+</g>
+<g id="ca_aircraft_components" transform="translate(480 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#54798e" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d9e7ee" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M17 48l22-6 8-22 8 2-2 20 23 7-2 7-23-2-11 18-7-3 7-18-21 4z" fill="#f5fbff" stroke="#65869a" stroke-width="2"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">AC</text>
+</g>
+<g id="mx_vehicle_parts" transform="translate(576 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">VP</text>
+</g>
+<g id="mx_silver_components" transform="translate(672 288)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">SC</text>
+</g>
+<g id="mx_fresh_produce" transform="translate(0 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">FP</text>
+</g>
+<g id="br_coffee" transform="translate(96 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#653b2b" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#b87744" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <ellipse cx="38" cy="44" rx="13" ry="19" transform="rotate(-28 38 44)" fill="#5d3527"/><path d="M37 28c8 8 9 19 3 31" fill="none" stroke="#c99569" stroke-width="3"/><ellipse cx="58" cy="51" rx="11" ry="16" transform="rotate(25 58 51)" fill="#6a3c29"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">CO</text>
+</g>
+<g id="br_biofuel" transform="translate(192 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9d5a31" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e9a34d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="39" y="20" width="18" height="10" rx="3" fill="#f6e0bb"/><path d="M36 30h24l5 12v25H31V42z" fill="#f1b14f"/><path d="M36 49h24v12H36z" fill="#fff1cf"/><path d="M48 35v10" stroke="#ffffff" stroke-width="4"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">BI</text>
+</g>
+<g id="br_regional_aircraft_parts" transform="translate(288 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#54798e" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d9e7ee" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M17 48l22-6 8-22 8 2-2 20 23 7-2 7-23-2-11 18-7-3 7-18-21 4z" fill="#f5fbff" stroke="#65869a" stroke-width="2"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">RA</text>
+</g>
+<g id="za_industrial_minerals" transform="translate(384 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">IM</text>
+</g>
+<g id="za_platinum_components" transform="translate(480 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PC</text>
+</g>
+<g id="za_fruit_exports" transform="translate(576 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">FE</text>
+</g>
+<g id="eg_cotton" transform="translate(672 384)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#823c57" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d86876" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M24 31h42l8 10-13 24H28L18 48z" fill="#e57d8c"/><path d="M25 36h36M22 45h45M26 54h36" stroke="#ffdfe4" stroke-width="3"/><circle cx="27" cy="35" r="7" fill="#8d425f"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">CO</text>
+</g>
+<g id="eg_fertilizer" transform="translate(0 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#84643c" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#caa56b" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M34 27h28l-5 9c9 8 12 17 10 30H29c-2-13 1-22 10-30z" fill="#c9a66e" stroke="#7e6038" stroke-width="3"/><path d="M37 35h22M39 52h18" stroke="#f3dfb6" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">FE</text>
+</g>
+<g id="eg_heat_resistant_glass" transform="translate(96 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#476f7b" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#91c6d5" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="46" cy="44" r="24" fill="#d8f4fa" stroke="#557c87" stroke-width="4"/><circle cx="46" cy="44" r="8" fill="#6fa9ba"/><path d="M46 44l14-12M46 20v6M25 44h6M61 44h6M46 62v6" stroke="#4f7581" stroke-width="3"/><rect x="59" y="57" width="13" height="8" rx="3" fill="#8dbecb"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">HR</text>
+</g>
+<g id="ae_petrochemicals" transform="translate(192 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#9d5a31" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e9a34d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="39" y="20" width="18" height="10" rx="3" fill="#f6e0bb"/><path d="M36 30h24l5 12v25H31V42z" fill="#f1b14f"/><path d="M36 49h24v12H36z" fill="#fff1cf"/><path d="M48 35v10" stroke="#ffffff" stroke-width="4"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PE</text>
+</g>
+<g id="ae_aluminum" transform="translate(288 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">AL</text>
+</g>
+<g id="ae_premium_goods" transform="translate(384 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#a56f2c" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e8c85e" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l8 18 20 2-15 13 5 20-18-10-18 10 5-20-15-13 20-2z" fill="#fff0a4" stroke="#c18a2d" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PG</text>
+</g>
+<g id="tr_textiles" transform="translate(480 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#823c57" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d86876" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M24 31h42l8 10-13 24H28L18 48z" fill="#e57d8c"/><path d="M25 36h36M22 45h45M26 54h36" stroke="#ffdfe4" stroke-width="3"/><circle cx="27" cy="35" r="7" fill="#8d425f"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">TE</text>
+</g>
+<g id="tr_machinery" transform="translate(576 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">TM</text>
+</g>
+<g id="tr_hazelnuts" transform="translate(672 480)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">HA</text>
+</g>
+<g id="in_pharmaceuticals" transform="translate(0 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#f1d7d7" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#e75d67" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <g transform="rotate(-32 48 46)"><rect x="24" y="35" width="48" height="22" rx="11" fill="#ffffff"/><path d="M48 35h13a11 11 0 0 1 0 22H48z" fill="#e65d67"/><path d="M48 35v22" stroke="#b73e48" stroke-width="3"/></g>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PH</text>
+</g>
+<g id="in_composite_textiles" transform="translate(96 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#823c57" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d86876" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M24 31h42l8 10-13 24H28L18 48z" fill="#e57d8c"/><path d="M25 36h36M22 45h45M26 54h36" stroke="#ffdfe4" stroke-width="3"/><circle cx="27" cy="35" r="7" fill="#8d425f"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">CT</text>
+</g>
+<g id="in_electrical_relays" transform="translate(192 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#263f52" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#5f7f94" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="28" y="27" width="40" height="40" rx="5" fill="#324a5b" stroke="#93c2d8" stroke-width="4"/><rect x="39" y="38" width="18" height="18" fill="#e5b957"/><path d="M20 34h8M20 46h8M20 58h8M68 34h8M68 46h8M68 58h8M34 19v8M46 19v8M58 19v8M34 67v8M46 67v8M58 67v8" stroke="#c9dbe4" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">ER</text>
+</g>
+<g id="cn_microelectronics" transform="translate(288 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#263f52" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#5f7f94" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="28" y="27" width="40" height="40" rx="5" fill="#324a5b" stroke="#93c2d8" stroke-width="4"/><rect x="39" y="38" width="18" height="18" fill="#e5b957"/><path d="M20 34h8M20 46h8M20 58h8M68 34h8M68 46h8M68 58h8M34 19v8M46 19v8M58 19v8M34 67v8M46 67v8M58 67v8" stroke="#c9dbe4" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">MI</text>
+</g>
+<g id="cn_rare_earth_parts" transform="translate(384 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">RE</text>
+</g>
+<g id="cn_automation_machinery" transform="translate(480 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">AM</text>
+</g>
+<g id="jp_precision_electronics" transform="translate(576 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#263f52" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#5f7f94" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="28" y="27" width="40" height="40" rx="5" fill="#324a5b" stroke="#93c2d8" stroke-width="4"/><rect x="39" y="38" width="18" height="18" fill="#e5b957"/><path d="M20 34h8M20 46h8M20 58h8M68 34h8M68 46h8M68 58h8M34 19v8M46 19v8M58 19v8M34 67v8M46 67v8M58 67v8" stroke="#c9dbe4" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PE</text>
+</g>
+<g id="jp_robotics_parts" transform="translate(672 576)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#4b5a62" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#9aa9b1" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="48" cy="46" r="22" fill="#70828b" stroke="#e8f0f3" stroke-width="4"/><circle cx="48" cy="46" r="8" fill="#d9b65c"/><path d="M48 18v10M48 64v10M20 46h10M66 46h10M29 27l7 7M60 58l7 7M67 27l-7 7M36 58l-7 7" stroke="#edf5f7" stroke-width="5"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">RP</text>
+</g>
+<g id="jp_optical_instruments" transform="translate(0 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#476f7b" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#91c6d5" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="46" cy="44" r="24" fill="#d8f4fa" stroke="#557c87" stroke-width="4"/><circle cx="46" cy="44" r="8" fill="#6fa9ba"/><path d="M46 44l14-12M46 20v6M25 44h6M61 44h6M46 62v6" stroke="#4f7581" stroke-width="3"/><rect x="59" y="57" width="13" height="8" rx="3" fill="#8dbecb"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">OI</text>
+</g>
+<g id="kr_semiconductors" transform="translate(96 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#263f52" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#5f7f94" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="28" y="27" width="40" height="40" rx="5" fill="#324a5b" stroke="#93c2d8" stroke-width="4"/><rect x="39" y="38" width="18" height="18" fill="#e5b957"/><path d="M20 34h8M20 46h8M20 58h8M68 34h8M68 46h8M68 58h8M34 19v8M46 19v8M58 19v8M34 67v8M46 67v8M58 67v8" stroke="#c9dbe4" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">SE</text>
+</g>
+<g id="kr_battery_cells" transform="translate(192 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#3d7137" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#77b56b" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="29" y="29" width="38" height="38" rx="5" fill="#dff3dc" stroke="#456f42" stroke-width="4"/><rect x="40" y="22" width="16" height="7" rx="2" fill="#dff3dc"/><path d="M49 34l-10 17h9l-4 13 14-19h-9z" fill="#75b46b"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">BC</text>
+</g>
+<g id="kr_display_panels" transform="translate(288 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#263f52" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#5f7f94" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <rect x="28" y="27" width="40" height="40" rx="5" fill="#324a5b" stroke="#93c2d8" stroke-width="4"/><rect x="39" y="38" width="18" height="18" fill="#e5b957"/><path d="M20 34h8M20 46h8M20 58h8M68 34h8M68 46h8M68 58h8M34 19v8M46 19v8M58 19v8M34 67v8M46 67v8M58 67v8" stroke="#c9dbe4" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">DP</text>
+</g>
+<g id="id_natural_rubber" transform="translate(384 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#263239" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#53636b" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 19c9 13 18 25 18 36a18 18 0 0 1-36 0c0-11 9-23 18-36z" fill="#52636b" stroke="#c8d6dc" stroke-width="3"/><path d="M39 56c4 4 11 5 17 2" fill="none" stroke="#eef5f7" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">NR</text>
+</g>
+<g id="id_nickel_components" transform="translate(480 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">NC</text>
+</g>
+<g id="id_tropical_products" transform="translate(576 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#2c7d4a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#58b86d" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 22c-9 6-15 15-16 26 10-2 18-8 23-17 1 8-1 16-6 23" fill="none" stroke="#f7fff8" stroke-width="5" stroke-linecap="round"/><path d="M45 51c-10-7-18-8-25-5 4 9 12 14 24 14" fill="none" stroke="#e4f7e8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">TP</text>
+</g>
+<g id="au_iron_ore" transform="translate(672 672)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">IO</text>
+</g>
+<g id="au_wool" transform="translate(0 768)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#823c57" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#d86876" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M24 31h42l8 10-13 24H28L18 48z" fill="#e57d8c"/><path d="M25 36h36M22 45h45M26 54h36" stroke="#ffdfe4" stroke-width="3"/><circle cx="27" cy="35" r="7" fill="#8d425f"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">WO</text>
+</g>
+<g id="au_lithium_components" transform="translate(96 768)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#526577" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#8fa7b9" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M48 18l22 18-10 31H36L25 38z" fill="#a9bed0" stroke="#516578" stroke-width="4"/><path d="M48 18v49M25 38h45M36 67l12-29 12 29" fill="none" stroke="#d9e8f1" stroke-width="3"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">LC</text>
+</g>
+<g id="nz_dairy_products" transform="translate(192 768)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#69a9c8" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#f2eee2" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <path d="M34 24h25l4 10v34H30V34z" fill="#f7fbff"/><path d="M34 24l5-8h16l4 8" fill="#d6edf7"/><path d="M36 42h21v15H36z" fill="#69a9c8"/><circle cx="46.5" cy="49.5" r="5" fill="#f7fbff"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">DP</text>
+</g>
+<g id="nz_timber_goods" transform="translate(288 768)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#6e422a" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#b87543" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <g fill="#9b5e35" stroke="#e8b47b" stroke-width="3"><rect x="20" y="31" width="47" height="15" rx="7" transform="rotate(-12 20 31)"/><rect x="28" y="48" width="44" height="15" rx="7" transform="rotate(8 28 48)"/></g><circle cx="24" cy="41" r="7" fill="#d8a266"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">TG</text>
+</g>
+<g id="nz_weather_instruments" transform="translate(384 768)">
+  <rect x="6" y="6" width="84" height="84" rx="17" fill="#476f7b" opacity="0.24"/>
+  <rect x="9" y="8" width="78" height="76" rx="15" fill="#91c6d5" stroke="#eaf7fa" stroke-opacity="0.36" stroke-width="2"/>
+  <ellipse cx="48" cy="69" rx="25" ry="7" fill="#102f39" opacity="0.20"/>
+  <circle cx="46" cy="44" r="24" fill="#d8f4fa" stroke="#557c87" stroke-width="4"/><circle cx="46" cy="44" r="8" fill="#6fa9ba"/><path d="M46 44l14-12M46 20v6M25 44h6M61 44h6M46 62v6" stroke="#4f7581" stroke-width="3"/><rect x="59" y="57" width="13" height="8" rx="3" fill="#8dbecb"/>
+  <rect x="60" y="61" width="24" height="19" rx="7" fill="#0b2935" opacity="0.92"/>
+  <text x="72" y="75" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="10" font-weight="700" fill="#ffffff">WI</text>
+</g>
+</svg>

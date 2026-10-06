@@ -323,19 +323,29 @@ func _build_details_sidebar() -> void:
 	root.add_child(panel)
 	GameUIStyle.apply_panel(panel, "screen_focus")
 
-	var wrapper := VBoxContainer.new()
-	wrapper.add_theme_constant_override("separation", 10)
-	panel.add_child(wrapper)
+	var shell := VBoxContainer.new()
+	shell.add_theme_constant_override("separation", 7)
+	panel.add_child(shell)
 
 	var heading := Label.new()
 	heading.text = "2  COUNTRY & ROUTE"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	GameUIStyle.heading(heading, 16)
-	wrapper.add_child(heading)
+	shell.add_child(heading)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	shell.add_child(scroll)
+
+	var wrapper := VBoxContainer.new()
+	wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wrapper.add_theme_constant_override("separation", 7)
+	scroll.add_child(wrapper)
 
 	country_title_label = Label.new()
 	country_title_label.text = "Select a country"
-	GameUIStyle.heading(country_title_label, 21)
+	GameUIStyle.heading(country_title_label, 20)
 	country_title_label.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_GOLD
@@ -349,7 +359,7 @@ func _build_details_sidebar() -> void:
 	wrapper.add_child(country_status_label)
 
 	country_picker = OptionButton.new()
-	country_picker.custom_minimum_size = Vector2(0, 40)
+	country_picker.custom_minimum_size = Vector2(0, 38)
 	GameUIStyle.apply_button(country_picker, "secondary", true)
 	for country in CountryCatalog.get_countries():
 		var code := String(country.get("id", ""))
@@ -373,13 +383,13 @@ func _build_details_sidebar() -> void:
 	wrapper.add_child(country_picker)
 
 	destination_list_container = VBoxContainer.new()
-	destination_list_container.add_theme_constant_override("separation", 5)
+	destination_list_container.add_theme_constant_override("separation", 4)
 	wrapper.add_child(destination_list_container)
 
 	for destination in DestinationCatalog.all():
 		var destination_id := String(destination.get("id", ""))
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(0, 42)
+		button.custom_minimum_size = Vector2(0, 38)
 		button.pressed.connect(
 			_on_destination_pressed.bind(destination_id)
 		)
@@ -395,13 +405,13 @@ func _build_details_sidebar() -> void:
 
 	details_title = Label.new()
 	details_title.text = "Select a route"
-	GameUIStyle.heading(details_title, 20)
+	GameUIStyle.heading(details_title, 19)
 	wrapper.add_child(details_title)
 
 	var info_grid := GridContainer.new()
 	info_grid.columns = 2
-	info_grid.add_theme_constant_override("h_separation", 7)
-	info_grid.add_theme_constant_override("v_separation", 7)
+	info_grid.add_theme_constant_override("h_separation", 6)
+	info_grid.add_theme_constant_override("v_separation", 6)
 	wrapper.add_child(info_grid)
 
 	route_card_label = _make_detail_card(
@@ -427,7 +437,7 @@ func _build_details_sidebar() -> void:
 
 	resource_preview_row = HBoxContainer.new()
 	resource_preview_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	resource_preview_row.custom_minimum_size = Vector2(0, 48)
+	resource_preview_row.custom_minimum_size = Vector2(0, 42)
 	resource_preview_row.add_theme_constant_override("separation", 8)
 	wrapper.add_child(resource_preview_row)
 
@@ -438,9 +448,9 @@ func _build_details_sidebar() -> void:
 	wrapper.add_child(secondary_heading)
 
 	details_body = Label.new()
-	details_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	details_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	details_body.add_theme_font_size_override("font_size", 14)
+	details_body.custom_minimum_size = Vector2(0, 86)
+	details_body.add_theme_font_size_override("font_size", 13)
 	details_body.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_TEXT
@@ -449,11 +459,11 @@ func _build_details_sidebar() -> void:
 
 	assign_button = Button.new()
 	assign_button.text = "4  DISPATCH FLIGHT"
-	assign_button.custom_minimum_size = Vector2(0, 58)
+	assign_button.custom_minimum_size = Vector2(0, 54)
 	assign_button.add_theme_font_size_override("font_size", 16)
 	assign_button.pressed.connect(_on_assign_pressed)
 	GameUIStyle.apply_button(assign_button, "primary")
-	wrapper.add_child(assign_button)
+	shell.add_child(assign_button)
 
 
 func _make_detail_card(
@@ -463,7 +473,7 @@ func _make_detail_card(
 ) -> Label:
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.custom_minimum_size = Vector2(0, 88)
+	card.custom_minimum_size = Vector2(0, 76)
 	GameUIStyle.apply_panel(card, "reward_tile")
 	parent.add_child(card)
 

@@ -138,8 +138,44 @@ func _run() -> void:
 		first_stand_uid,
 		"fuel"
 	)
+	if not station.is_empty():
+		_fail(
+			"Fuel station should not dispatch before the player builds a service road."
+		)
+		return
+
+	var service_cells: Array[Vector2i] = [
+		Vector2i(12, 11),
+		Vector2i(12, 10),
+		Vector2i(12, 9),
+		Vector2i(12, 8),
+		Vector2i(12, 7),
+		Vector2i(11, 8),
+		Vector2i(10, 8),
+		Vector2i(9, 8),
+		Vector2i(8, 8),
+		Vector2i(7, 8)
+	]
+	for service_cell in service_cells:
+		grid._place_building_internal(
+			"service_road",
+			service_cell,
+			0
+		)
+	grid._rebuild_occupied_cells()
+	dispatcher.refresh_after_layout_change()
+
+	candidates = grid.get_compatible_service_buildings(
+		"fuel",
+		"S"
+	)
+	station = dispatcher._first_available_station(
+		candidates,
+		first_stand_uid,
+		"fuel"
+	)
 	if station.is_empty():
-		_fail("Dispatcher should find a fuel station for starter stand.")
+		_fail("Player-built service road should unlock fuel dispatch.")
 		return
 	if absf(
 		float(

@@ -40,6 +40,8 @@ var expansion_banner_tween: Tween
 var operation_toast_panel: PanelContainer
 var operation_toast_label: Label
 var operation_toast_tween: Tween
+var dispatch_shift_panel: PanelContainer
+var dispatch_shift_label: Label
 var bottom_nav_panel: PanelContainer
 var active_status_chip := ""
 var status_details: Dictionary = {}
@@ -266,6 +268,7 @@ func _build_interface() -> void:
 
 	_build_expansion_banner(root)
 	_build_operation_toast(root)
+	_build_dispatch_shift_indicator(root)
 
 	status_detail_panel = PanelContainer.new()
 	status_detail_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -483,6 +486,48 @@ func _build_operation_toast(root: Control) -> void:
 	operation_toast_label.add_theme_font_size_override("font_size", 14)
 	operation_toast_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	operation_toast_panel.add_child(operation_toast_label)
+
+
+func _build_dispatch_shift_indicator(root: Control) -> void:
+	dispatch_shift_panel = PanelContainer.new()
+	dispatch_shift_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	dispatch_shift_panel.offset_left = -330
+	dispatch_shift_panel.offset_top = -148
+	dispatch_shift_panel.offset_right = -16
+	dispatch_shift_panel.offset_bottom = -90
+	dispatch_shift_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dispatch_shift_panel.visible = false
+	root.add_child(dispatch_shift_panel)
+	GameUIStyle.apply_panel(dispatch_shift_panel, "raised")
+
+	dispatch_shift_label = Label.new()
+	dispatch_shift_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dispatch_shift_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	dispatch_shift_label.add_theme_font_size_override("font_size", 15)
+	dispatch_shift_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
+	dispatch_shift_panel.add_child(dispatch_shift_label)
+
+
+func set_dispatch_shift(
+	status: String,
+	score: int,
+	remaining_seconds: int
+) -> void:
+	if dispatch_shift_panel == null or dispatch_shift_label == null:
+		return
+	var running := status == "RUNNING"
+	dispatch_shift_panel.visible = running
+	if not running:
+		return
+	var total := maxi(remaining_seconds, 0)
+	dispatch_shift_label.text = "✦ DISPATCH  %d:%02d  •  %d PTS" % [
+		int(total / 60),
+		total % 60,
+		maxi(score, 0)
+	]
 
 
 func _show_operation_toast(text: String, tone: String) -> void:

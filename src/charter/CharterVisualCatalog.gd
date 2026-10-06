@@ -1,33 +1,35 @@
 class_name CharterVisualCatalog
 extends RefCounted
 
-const BUILDING_KEYS := PackedStringArray([
+const BUILDING_KEYS := [
 	"cargo_charter_office",
 	"cargo_warehouse",
 	"logistics_gate_checkpoint",
 	"cargo_aircraft_stand"
-])
+]
 
-const SURFACE_KEYS := PackedStringArray([
+const SURFACE_KEYS := [
 	"loading_dock_pad",
 	"service_road_tile",
 	"container_storage_pad",
 	"pallet_sorting_yard"
-])
+]
 
-const OPTIONAL_VEHICLE_KEYS := PackedStringArray([
+const OPTIONAL_VEHICLE_KEYS := [
 	"cargo_plane",
 	"cargo_tug",
 	"forklift",
 	"conveyor",
 	"service_pickup"
-])
+]
 
 
 static func required_asset_keys() -> PackedStringArray:
 	var result := PackedStringArray()
-	result.append_array(BUILDING_KEYS)
-	result.append_array(SURFACE_KEYS)
+	for key in BUILDING_KEYS:
+		result.append(String(key))
+	for key in SURFACE_KEYS:
+		result.append(String(key))
 	return result
 
 

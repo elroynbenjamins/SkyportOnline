@@ -137,6 +137,23 @@ func _stats_text(
 			]
 		)
 
+	var fuel_stats := ServiceUpgradeCatalog.effective_fuel_stats(
+		building_id,
+		level
+	)
+	if not fuel_stats.is_empty():
+		parts.append(
+			"Storage %d • +%.2f fuel/min" % [
+				int(fuel_stats.get("fuel_storage", 0)),
+				float(
+					fuel_stats.get(
+						"fuel_delivery_per_minute",
+						0.0
+					)
+				)
+			]
+		)
+
 	return "%s:
 %s" % [
 		prefix,
@@ -330,8 +347,8 @@ func _build_ui() -> void:
 
 	var note := Label.new()
 	note.text = (
-		"Internal upgrades improve speed and fleet capacity only. "
-		+ "The building keeps the same visual."
+		"Internal upgrades improve service performance. Fuel depots also "
+		+ "increase storage and delivery rate. Building visuals stay the same."
 	)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.add_theme_font_size_override("font_size", 13)

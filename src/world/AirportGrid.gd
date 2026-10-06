@@ -7501,11 +7501,11 @@ func _create_parcel_labels() -> void:
 		var parcel: Dictionary = parcels[id]
 		var label := Label.new()
 		label.name = "Parcel_%s" % id
-		label.size = Vector2(190, 70)
+		label.size = Vector2(168, 54)
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 18)
+		label.add_theme_font_size_override("font_size", 14)
 		label.add_theme_color_override("font_color", Color("f5f7f6"))
 		label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 		label.add_theme_constant_override("shadow_offset_x", 2)
@@ -7515,7 +7515,11 @@ func _create_parcel_labels() -> void:
 			int(parcel["px"]) * PARCEL_SIZE + (PARCEL_SIZE - 1) * 0.5,
 			int(parcel["py"]) * PARCEL_SIZE + (PARCEL_SIZE - 1) * 0.5
 		)
-		label.position = tile_to_world(center_tile) - label.size * 0.5 + Vector2(0, -18)
+		label.position = (
+			tile_to_world(center_tile)
+			- label.size * 0.5
+			+ Vector2(0, -10)
+		)
 		add_child(label)
 		parcel_labels[id] = label
 		_update_parcel_label(id)

@@ -186,8 +186,8 @@ func _build_interface() -> void:
 	level_box.add_child(level_label)
 
 	var identity_card := PanelContainer.new()
-	identity_card.custom_minimum_size = Vector2(210, 62)
-	identity_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity_card.custom_minimum_size = Vector2(250, 62)
+	identity_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	GameUIStyle.apply_panel(identity_card, "hud_identity")
 	top_row.add_child(identity_card)
 
@@ -287,7 +287,13 @@ func _build_interface() -> void:
 	var settings_button := Button.new()
 	settings_button.text = ""
 	settings_button.custom_minimum_size = Vector2(48, 48)
-	_apply_button_icon(settings_button, _hud_icon("more"), 26)
+	_apply_button_icon(
+		settings_button,
+		ProductionUIAssets.texture(
+			ProductionUIAssets.SETTINGS_ICON
+		),
+		29
+	)
 	settings_button.tooltip_text = "Settings and more"
 	GameUIStyle.apply_button(settings_button, "dock", true)
 	settings_button.pressed.connect(
@@ -303,6 +309,7 @@ func _build_interface() -> void:
 	objective_panel.offset_bottom = 117
 	root.add_child(objective_panel)
 	GameUIStyle.apply_panel(objective_panel, "hud_task")
+	objective_panel.visible = false
 
 	var objective := Label.new()
 	objective.text = "BUILD YOUR AIRPORT • EXPAND"
@@ -982,6 +989,7 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_panel.offset_bottom = -62
 	root.add_child(catalog_panel)
 	GameUIStyle.apply_panel(catalog_panel, "hud_drawer")
+	catalog_panel.visible = false
 
 	var catalog_wrapper := VBoxContainer.new()
 	catalog_wrapper.add_theme_constant_override("separation", 5)
@@ -1090,8 +1098,8 @@ func _build_bottom_navigation(root: Control) -> void:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		button.custom_minimum_size = Vector2(104, 62)
-		button.add_theme_font_size_override("font_size", 12)
+		button.custom_minimum_size = Vector2(88, 66)
+		button.add_theme_font_size_override("font_size", 10)
 
 		var tab: String = item.to_lower()
 		_apply_button_icon(button, _nav_icon_for(tab), 27)
@@ -1241,7 +1249,7 @@ func set_airport_identity(
 	if title_label == null:
 		return
 
-	title_label.text = airport_name.to_upper()
+	title_label.text = airport_name
 	if airport_meta_label != null:
 		var account_label := "GUEST" if account_type == "guest" else "LINKED"
 		airport_meta_label.text = "%s • %s • %s" % [

@@ -1,7 +1,7 @@
 class_name DispatchChallengeRules
 extends RefCounted
 
-const UNLOCK_LEVEL := 12
+const UNLOCK_LEVEL := ActivityProgressionRules.DISPATCH_UNLOCK_LEVEL
 const SHIFT_SECONDS := 180
 const DAY_SECONDS := 86400
 const COMBO_WINDOW_SECONDS := 30

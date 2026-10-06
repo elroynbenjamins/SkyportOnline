@@ -103,8 +103,14 @@ func _refresh() -> void:
 		GameUIStyle.apply_button(tabs[title], "selected" if title == selected_tab else "nav", true)
 	var state: Dictionary = data.get("state", {})
 	var level := int(data.get("level", 1))
-	header.text = "AIRPORT CAREER  •  LV %d  •  XP %d / %d  •  COINS %d" % [
-		level, int(state.get("xp", 0)), AirportProgressionRules.xp_for_level(mini(level + 1, 30)), int(state.get("coins", 0))]
+	var stage := AirportProgressionPacing.stage_for_level(level)
+	header.text = "AIRPORT CAREER  •  LV %d  •  %s  •  XP %d / %d  •  COINS %d" % [
+		level,
+		String(stage.get("name", "Airport")),
+		int(state.get("xp", 0)),
+		AirportProgressionRules.xp_for_level(mini(level + 1, 30)),
+		int(state.get("coins", 0))
+	]
 	match selected_tab:
 		"Career": _career(state, level)
 		"Aircraft Orders": _orders(state, level)
@@ -163,6 +169,7 @@ func _career(state: Dictionary, level: int) -> void:
 	if quest.is_empty():
 		_text(card, "V1 CAREER COMPLETE", true)
 		_text(card, "Your airport career is complete. Continue building your fleet, hosting visitors, mastering routes and exploring Activities.")
+		_add_level_progression_card(state, level)
 		_add_activity_roadmap(state, level)
 		return
 	var claimed: Dictionary = state.get("claimed", {})
@@ -202,7 +209,49 @@ func _career(state: Dictionary, level: int) -> void:
 		if shown >= 3:
 			break
 
+	_add_level_progression_card(state, level)
 	_add_activity_roadmap(state, level)
+
+
+func _add_level_progression_card(
+	state: Dictionary,
+	level: int
+) -> void:
+	var stage := AirportProgressionPacing.stage_for_level(level)
+	var card := _card()
+	_text(
+		card,
+		"%s • LEVEL PROGRESSION" % String(
+			stage.get("name", "Airport")
+		).to_upper(),
+		true
+	)
+	_text(
+		card,
+		String(stage.get("description", "Keep growing your airport."))
+	)
+	var fleet_size := (state.get("owned_aircraft", []) as Array).size()
+	var capacity := AirportProgressionPacing.fleet_capacity_for_level(level)
+	_text(
+		card,
+		"FLEET LICENSE • %d / %d AIRCRAFT" % [
+			fleet_size,
+			capacity
+		]
+	)
+	var current_unlocks := AirportProgressionPacing.unlock_names(level)
+	if not current_unlocks.is_empty():
+		_text(
+			card,
+			"THIS LEVEL • %s" % " • ".join(current_unlocks)
+		)
+	_text(
+		card,
+		"NEXT MILESTONE • %s" % AirportProgressionPacing.next_unlock_text(
+			level
+		)
+	)
+
 
 func _add_activity_roadmap(
 	state: Dictionary,
@@ -264,7 +313,18 @@ func _add_activity_roadmap(
 
 
 func _orders(state: Dictionary, level: int) -> void:
-	_text(body, "Aircraft are bought with ordinary coins, not quest rewards. A purchased plane waits in reserve until a connected, fully serviced stand is free.", true)
+	var fleet_size := (state.get("owned_aircraft", []) as Array).size()
+	var fleet_capacity := AirportProgressionPacing.fleet_capacity_for_level(
+		level
+	)
+	_text(
+		body,
+		"FLEET LICENSE • %d / %d AIRCRAFT\nAircraft are bought with ordinary coins. Capacity grows with airport level; purchased planes wait in reserve until a compatible connected stand is free." % [
+			fleet_size,
+			fleet_capacity
+		],
+		true
+	)
 	var active: Array = data.get("active_owned", [])
 	for profile in AircraftCatalog.all():
 		var id := String(profile["id"])
@@ -289,10 +349,22 @@ func _orders(state: Dictionary, level: int) -> void:
 		var label := "BUY • %d COINS" % cost
 		if level < int(profile["unlock_level"]):
 			label = "UNLOCKS AT LV %d" % int(profile["unlock_level"])
+		elif fleet_size >= fleet_capacity:
+			label = "FLEET FULL • %d / %d • LEVEL UP" % [
+				fleet_size,
+				fleet_capacity
+			]
 		elif int(state.get("coins", 0)) < cost:
-			label = "NEED %d MORE COINS" % (cost - int(state.get("coins", 0)))
+			label = "NEED %d MORE COINS" % (
+				cost - int(state.get("coins", 0))
+			)
 		var button := _button(details, label, _purchase.bind(id))
-		button.disabled = level < int(profile["unlock_level"]) or int(state.get("coins", 0)) < cost or (state.get("owned_aircraft", []) as Array).size() >= AirportProgressionRules.MAX_OWNED_AIRCRAFT
+		button.disabled = (
+			level < int(profile["unlock_level"])
+			or int(state.get("coins", 0)) < cost
+			or fleet_size >= fleet_capacity
+			or fleet_size >= AirportProgressionRules.MAX_OWNED_AIRCRAFT
+		)
 		if profile["size"] == "M" and not bool((data.get("airport", {}) as Dictionary).get("medium_ready", false)):
 			_text(details, "Reserve only until a Regional Runway (LV 12), medium stand and connected services are ready.")
 

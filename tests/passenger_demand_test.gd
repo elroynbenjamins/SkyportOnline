@@ -23,16 +23,22 @@ func _run() -> void:
 		brussels,
 		0.0
 	)
-	if int(pico_brussels.get("route_requirement", 0)) != 6:
-		_fail("Fresh Pico P8 should need 6 passengers for Brussels.")
-		return
-	if int(pico_brussels.get("mastery_requirement", 0)) != 6:
-		_fail("Unmastered Brussels demand should remain 6.")
+	var brussels_factor := PassengerDemandRules.base_load_factor(
+		brussels
+	)
+	var expected_pico_brussels := clampi(
+		int(ceil(float(pico.get("passengers", 0)) * brussels_factor)),
+		1,
+		int(pico.get("passengers", 0))
+	)
+	if int(pico_brussels.get("route_requirement", 0)) != expected_pico_brussels:
+		_fail("Generated Brussels demand should follow its route load factor.")
 		return
 	if absf(
-		float(pico_brussels.get("adjusted_load_factor", 0.0)) - 0.65
+		float(pico_brussels.get("adjusted_load_factor", 0.0))
+		- brussels_factor
 	) > 0.001:
-		_fail("Brussels should use a 65% base load factor.")
+		_fail("Preview should expose the generated Brussels load factor.")
 		return
 
 	var pico_london := PassengerDemandRules.preview(
@@ -40,8 +46,16 @@ func _run() -> void:
 		london,
 		0.0
 	)
-	if int(pico_london.get("route_requirement", 0)) != 8:
-		_fail("Busy London route should fill the 8-seat Pico P8.")
+	var london_factor := PassengerDemandRules.base_load_factor(
+		london
+	)
+	var expected_pico_london := clampi(
+		int(ceil(float(pico.get("passengers", 0)) * london_factor)),
+		1,
+		int(pico.get("passengers", 0))
+	)
+	if int(pico_london.get("route_requirement", 0)) != expected_pico_london:
+		_fail("Generated London demand should follow its route load factor.")
 		return
 
 	var mastered_brussels := PassengerDemandRules.preview(
@@ -49,8 +63,12 @@ func _run() -> void:
 		brussels,
 		10.0
 	)
-	if int(mastered_brussels.get("mastery_requirement", 0)) != 5:
-		_fail("Star 1 Pico should reduce Brussels demand from 6 to 5.")
+	var expected_mastered := AircraftMastery.passenger_requirement(
+		expected_pico_brussels,
+		10.0
+	)
+	if int(mastered_brussels.get("mastery_requirement", 0)) != expected_mastered:
+		_fail("Mastery reduction should apply to generated route demand.")
 		return
 
 	var comet_brussels := PassengerDemandRules.preview(
@@ -58,8 +76,13 @@ func _run() -> void:
 		brussels,
 		0.0
 	)
-	if int(comet_brussels.get("route_requirement", 0)) != 15:
-		_fail("Comet C22 should need 15 passengers on Brussels.")
+	var expected_comet_brussels := clampi(
+		int(ceil(float(comet.get("passengers", 0)) * brussels_factor)),
+		1,
+		int(comet.get("passengers", 0))
+	)
+	if int(comet_brussels.get("route_requirement", 0)) != expected_comet_brussels:
+		_fail("Larger aircraft demand should use the same generated route factor.")
 		return
 
 	var boosted := PassengerDemandRules.preview(
@@ -68,8 +91,18 @@ func _run() -> void:
 		0.0,
 		1.25
 	)
-	if int(boosted.get("route_requirement", 0)) != 7:
-		_fail("A +25% demand modifier should raise Pico Brussels to 7.")
+	var boosted_factor := clampf(
+		brussels_factor * 1.25,
+		PassengerDemandRules.MIN_LOAD_FACTOR,
+		PassengerDemandRules.MAX_LOAD_FACTOR
+	)
+	var expected_boosted := clampi(
+		int(ceil(float(pico.get("passengers", 0)) * boosted_factor)),
+		1,
+		int(pico.get("passengers", 0))
+	)
+	if int(boosted.get("route_requirement", 0)) != expected_boosted:
+		_fail("Demand modifiers should scale generated route demand.")
 		return
 
 	var capped := PassengerDemandRules.preview(
@@ -78,20 +111,21 @@ func _run() -> void:
 		0.0,
 		2.0
 	)
-	if int(capped.get("route_requirement", 0)) != 8:
+	if int(capped.get("route_requirement", 0)) != int(pico.get("passengers", 0)):
 		_fail("Demand modifiers should never exceed full seat capacity.")
 		return
 
 	var plan := FlightRules.create_flight_plan(pico, brussels)
 	if absf(
-		float(plan.get("passenger_load_factor", 0.0)) - 0.65
+		float(plan.get("passenger_load_factor", 0.0))
+		- brussels_factor
 	) > 0.001:
-		_fail("Flight plan should snapshot the route load factor.")
+		_fail("Flight plan should snapshot the generated route load factor.")
 		return
 	if String(
 		plan.get("passenger_demand_label", "")
-	) != "Feeder":
-		_fail("Flight plan should snapshot the route demand label.")
+	) != String(brussels.get("demand_label", "")):
+		_fail("Flight plan should snapshot the generated route demand label.")
 		return
 
 	plan["passenger_demand_modifier"] = 1.25
@@ -99,13 +133,13 @@ func _run() -> void:
 		pico,
 		plan,
 		0.0
-	) != 7:
-		_fail("Boarding should use the demand snapshot stored in the plan.")
+	) != expected_boosted:
+		_fail("Boarding should use the generated demand snapshot stored in the plan.")
 		return
 
 	print(
-		"Passenger demand passed: Pico Brussels 6, London 8, "
-		+ "Mastery Brussels 5, event-modified Brussels 7."
+		"Passenger demand passed: generated home-relative route factors, "
+		+ "Mastery reduction, modifiers and flight-plan snapshot."
 	)
 	quit(0)
 

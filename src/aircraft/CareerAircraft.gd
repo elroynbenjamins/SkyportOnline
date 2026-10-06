@@ -67,7 +67,12 @@ func _draw() -> void:
 	if texture == null:
 		super._draw()
 		return
-	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
+	if state == "EN_ROUTE":
+		return
+	if (
+		state == "HOLDING_FOR_ARRIVAL"
+		and not visible
+	):
 		return
 	_draw_shadow()
 	_draw_motion_feedback()

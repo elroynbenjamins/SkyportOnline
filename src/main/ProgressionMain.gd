@@ -7,6 +7,7 @@ var legacy_airport := false
 var career_screen: AirportCareerScreen
 var career_pin: Button
 var mission_pass_screen: MissionPassScreen
+var charter_screen: CharterScreen
 var mission_pin: Button
 var mission_billing_bridge: MissionProductBillingBridge
 var pending_mission_ad_id := ""
@@ -83,6 +84,13 @@ func _start_gameplay() -> void:
 	mission_pass_screen.booster_activate_requested.connect(_on_booster_activate_requested)
 	mission_pass_screen.resource_choice_requested.connect(_on_pass_resource_choice_requested)
 	add_child(mission_pass_screen)
+
+	charter_screen = CharterScreen.new()
+	charter_screen.accept_requested.connect(_on_charter_accept_requested)
+	charter_screen.claim_requested.connect(_on_charter_claim_requested)
+	charter_screen.close_requested.connect(_on_charter_closed)
+	add_child(charter_screen)
+
 	mission_billing_bridge = MissionProductBillingBridge.new()
 	mission_billing_bridge.purchase_verified.connect(_on_mission_purchase_verified)
 	mission_billing_bridge.unavailable.connect(_on_mission_billing_unavailable)
@@ -94,6 +102,9 @@ func _start_gameplay() -> void:
 	_apply_live_boosters(true)
 	_refresh_career_ui()
 	_refresh_mission_ui()
+	if CharterRules.ensure_state(progression, player_level, Time.get_unix_time_from_system()):
+		_save_checkpoint()
+	_refresh_charter_ui()
 	_drain_passenger_rewards()
 	_drain_resource_choice_grants()
 
@@ -128,8 +139,15 @@ func _process(delta: float) -> void:
 		_drain_passenger_rewards()
 		_drain_resource_choice_grants()
 		_apply_live_boosters()
+		var charter_changed := CharterRules.advance(
+			progression,
+			Time.get_unix_time_from_system()
+		)
+		if charter_changed:
+			_save_checkpoint()
 		_refresh_career_ui()
 		_refresh_mission_ui()
+		_refresh_charter_ui()
 
 func _notification(what: int) -> void:
 	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST]:
@@ -406,6 +424,142 @@ func _refresh_mission_ui() -> void:
 		AirportProgressionRules.xp_for_level(mini(player_level + 1, AirportProgressionRules.MAX_LEVEL)),
 		player_level >= AirportProgressionRules.MAX_LEVEL
 	)
+
+func _charter_parcel_owned() -> bool:
+	return (airport_grid.export_owned_parcels() as Array).has(
+		CharterDistrictLayout.PARCEL_ID
+	)
+
+
+func _charter_parcel_ready() -> bool:
+	return bool(
+		airport_grid.get_charter_district_activation_status().get(
+			"can_activate",
+			false
+		)
+	)
+
+
+func _charter_snapshot() -> Dictionary:
+	return CharterRules.snapshot(
+		_capture_state(),
+		player_level,
+		_charter_parcel_owned(),
+		_charter_parcel_ready(),
+		Time.get_unix_time_from_system()
+	)
+
+
+func _refresh_charter_ui() -> void:
+	if not progression_ready:
+		return
+	var unlocked := CharterRules.is_unlocked(player_level)
+	var active: Dictionary = (
+		(progression.get("charter", {}) as Dictionary).get("active", {})
+	)
+	var attention := String(active.get("phase", "")) == "READY"
+	hud.set_charter_available(unlocked, attention)
+	if charter_screen != null:
+		charter_screen.set_snapshot(_charter_snapshot())
+	if airport_grid != null:
+		airport_grid.set_charter_visual_state(
+			CharterRules.visual_snapshot(
+				progression,
+				player_level,
+				_charter_parcel_owned(),
+				Time.get_unix_time_from_system()
+			)
+		)
+
+
+func _on_navigation_requested(tab: String) -> void:
+	if tab != "charter":
+		super._on_navigation_requested(tab)
+		return
+	if not CharterRules.is_unlocked(player_level):
+		hud.set_operation_status(
+			"Cargo Charter unlocks at Airport Level %d." % CharterRules.UNLOCK_LEVEL,
+			"warning"
+		)
+		return
+	if charter_screen != null:
+		charter_screen.open_screen(_charter_snapshot())
+
+
+func _on_charter_accept_requested(offer_id: String) -> void:
+	var activation := airport_grid.get_charter_district_activation_status()
+	var next := CharterRules.accept_contract(
+		_capture_state(),
+		offer_id,
+		player_level,
+		bool(activation.get("can_activate", false)),
+		Time.get_unix_time_from_system()
+	)
+	if next.is_empty():
+		hud.set_operation_status(
+			String(activation.get("reason", "Cargo Charter cannot start right now.")),
+			"warning"
+		)
+		return
+	if not AirportProgressionStore.save_state(next):
+		hud.set_operation_status(
+			"Charter was not accepted because progress could not be saved.",
+			"warning"
+		)
+		return
+	progression = next
+	_refresh_charter_ui()
+	hud.set_operation_status(
+		"Cargo Charter accepted • loading has started in the Logistics District.",
+		"success"
+	)
+
+
+func _on_charter_claim_requested() -> void:
+	var result := CharterRules.claim_contract(
+		_capture_state(),
+		player_level,
+		Time.get_unix_time_from_system()
+	)
+	if result.is_empty():
+		hud.set_operation_status("Charter reward is not ready yet.", "warning")
+		return
+	var next: Dictionary = result.get("state", {})
+	var reward: Dictionary = result.get("reward", {})
+	if next.is_empty() or not AirportProgressionStore.save_state(next):
+		hud.set_operation_status(
+			"Charter reward remains available because progress could not be saved.",
+			"warning"
+		)
+		return
+	progression = next
+	coins = int(next.get("coins", coins))
+	player_xp = int(next.get("xp", player_xp))
+	_update_level()
+	_drain_resource_choice_grants()
+	_refresh_career_ui()
+	_refresh_mission_ui()
+	_refresh_charter_ui()
+	hud.set_player_data(player_level, coins, gems)
+	ProfileStore.add_economy_stats({
+		"charters_completed": 1,
+		"charter_coins": int(reward.get("coins", 0)),
+		"charter_xp": int(reward.get("xp", 0)),
+		"resources_earned": maxi(int(reward.get("resource_amount", 1)), 0)
+	})
+	hud.set_operation_status(
+		"Cargo Charter complete • %s • +%d coins • +%d XP" % [
+			String(reward.get("city", "route")),
+			int(reward.get("coins", 0)),
+			int(reward.get("xp", 0))
+		],
+		"success"
+	)
+
+
+func _on_charter_closed() -> void:
+	hud.set_operation_status("Returned to airport operations.")
+
 
 func _open_missions() -> void:
 	if career_screen != null:

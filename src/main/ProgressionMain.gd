@@ -487,12 +487,7 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 			],
 			"success"
 		)
-	AllianceOperationsRules.record_action(
-		progression,
-		"flight",
-		1,
-		Time.get_unix_time_from_system()
-	)
+	_record_alliance_activity("flight")
 	# A completed route is not an implicit order to charge passengers and fly it again.
 	aircraft.assign_flight_plan({})
 	aircraft.set_meta("passengers_paid", false)
@@ -750,7 +745,11 @@ func _refresh_alliance_operations_ui() -> void:
 	)
 	if hud != null:
 		hud.set_alliance_activity_attention(
-			_has_alliance_contact()
+			ActivityProgressionRules.is_level_unlocked(
+				"alliance",
+				player_level
+			)
+			and _has_alliance_contact()
 			and AllianceOperationsRules.claimable_count(
 				progression,
 				Time.get_unix_time_from_system()
@@ -1439,12 +1438,7 @@ func _on_social_aircraft_departed(aircraft: AircraftPrototype, label: String, vi
 			coins += int(floor(float(reward.get("coins", 0)) * float(rank.get("coin_bonus", 0.0))))
 		progression["friendships"] = FriendshipRules.record_completion(ledger, request, Time.get_date_string_from_system(true))
 		if String(request.get("relationship", "")) == "alliance":
-			AllianceOperationsRules.record_action(
-				progression,
-				"alliance_visit",
-				1,
-				Time.get_unix_time_from_system()
-			)
+			_record_alliance_activity("alliance_visit")
 	_record_dispatch_action("visitor_service")
 	_update_level()
 	_save_checkpoint()
@@ -1466,14 +1460,29 @@ func _on_social_passenger_gift_requested(
 		and not bool(before.get("sent_today", false))
 		and bool(after.get("sent_today", false))
 	):
-		AllianceOperationsRules.record_action(
-			progression,
-			"alliance_gift",
-			1,
-			Time.get_unix_time_from_system()
-		)
+		_record_alliance_activity("alliance_gift")
 		_save_checkpoint()
 		_refresh_alliance_operations_ui()
+
+
+func _record_alliance_activity(
+	action: String,
+	amount: int = 1
+) -> bool:
+	if (
+		not ActivityProgressionRules.is_level_unlocked(
+			"alliance",
+			player_level
+		)
+		or not _has_alliance_contact()
+	):
+		return false
+	return AllianceOperationsRules.record_action(
+		progression,
+		action,
+		amount,
+		Time.get_unix_time_from_system()
+	)
 
 
 func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:

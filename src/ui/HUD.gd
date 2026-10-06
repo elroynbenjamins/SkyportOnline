@@ -113,6 +113,7 @@ func _ready() -> void:
 	_build_interface()
 
 
+
 func _build_interface() -> void:
 	interface_root = Control.new()
 	var root := interface_root
@@ -122,42 +123,43 @@ func _build_interface() -> void:
 
 	var top_panel := PanelContainer.new()
 	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_panel.offset_left = 16
-	top_panel.offset_top = 8
-	top_panel.offset_right = -16
-	top_panel.offset_bottom = 78
+	top_panel.offset_left = 10
+	top_panel.offset_top = 6
+	top_panel.offset_right = -10
+	top_panel.offset_bottom = 60
 	root.add_child(top_panel)
 	GameUIStyle.apply_panel(top_panel, "hud_top")
 
 	var top_margin := MarginContainer.new()
-	top_margin.add_theme_constant_override("margin_left", 8)
-	top_margin.add_theme_constant_override("margin_right", 8)
-	top_margin.add_theme_constant_override("margin_top", 6)
-	top_margin.add_theme_constant_override("margin_bottom", 6)
+	top_margin.add_theme_constant_override("margin_left", 5)
+	top_margin.add_theme_constant_override("margin_right", 5)
+	top_margin.add_theme_constant_override("margin_top", 3)
+	top_margin.add_theme_constant_override("margin_bottom", 3)
 	top_panel.add_child(top_margin)
 
 	var top_row := HBoxContainer.new()
-	top_row.add_theme_constant_override("separation", 8)
+	top_row.add_theme_constant_override("separation", 5)
 	top_margin.add_child(top_row)
 
 	var level_card := PanelContainer.new()
-	level_card.custom_minimum_size = Vector2(112, 0)
+	level_card.custom_minimum_size = Vector2(82, 0)
 	GameUIStyle.apply_panel(level_card, "hud_level")
 	top_row.add_child(level_card)
+
 	var level_box := VBoxContainer.new()
 	level_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	level_box.add_theme_constant_override("separation", 2)
+	level_box.add_theme_constant_override("separation", 0)
 	level_card.add_child(level_box)
 
 	level_label = Label.new()
 	level_label.text = "LV 1"
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level_label.add_theme_font_size_override("font_size", 20)
+	level_label.add_theme_font_size_override("font_size", 15)
 	level_label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
 	level_box.add_child(level_label)
 
 	xp_progress = ProgressBar.new()
-	xp_progress.custom_minimum_size = Vector2(104, 8)
+	xp_progress.custom_minimum_size = Vector2(72, 5)
 	xp_progress.show_percentage = false
 	xp_progress.min_value = 0.0
 	xp_progress.max_value = 1.0
@@ -166,37 +168,38 @@ func _build_interface() -> void:
 	level_box.add_child(xp_progress)
 
 	xp_label = Label.new()
-	xp_label.text = "0 / 100 XP"
+	xp_label.text = "0/100"
 	xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	xp_label.add_theme_font_size_override("font_size", 10)
+	xp_label.add_theme_font_size_override("font_size", 8)
 	GameUIStyle.muted(xp_label)
 	level_box.add_child(xp_label)
 
 	var identity_box := VBoxContainer.new()
+	identity_box.custom_minimum_size = Vector2(176, 0)
 	identity_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	identity_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	identity_box.add_theme_constant_override("separation", 1)
+	identity_box.add_theme_constant_override("separation", 0)
 	top_row.add_child(identity_box)
 
 	title_label = Label.new()
 	title_label.text = "SKYPORT"
-	title_label.add_theme_font_size_override("font_size", 19)
+	title_label.add_theme_font_size_override("font_size", 14)
 	title_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	identity_box.add_child(title_label)
 
 	airport_meta_label = Label.new()
-	airport_meta_label.text = "✈ APT  •  AIRPORT OPERATIONS"
-	airport_meta_label.add_theme_font_size_override("font_size", 10)
+	airport_meta_label.text = "APT • AIRPORT"
+	airport_meta_label.add_theme_font_size_override("font_size", 9)
 	GameUIStyle.muted(airport_meta_label)
 	identity_box.add_child(airport_meta_label)
 
 	var passenger_chip := _build_hud_resource_chip(
 		top_row,
-		"PASSENGERS",
+		"PAX",
 		"0 / 0",
-		"+0.0 / MIN",
+		"+0.0/m",
 		"hud_passenger",
-		168
+		124
 	)
 	passenger_label = passenger_chip["value"] as Label
 	passenger_rate_label = passenger_chip["detail"] as Label
@@ -205,28 +208,29 @@ func _build_interface() -> void:
 		top_row,
 		"FUEL",
 		"0 / 0",
-		"+0.0 / MIN",
+		"+0.0/m",
 		"hud_fuel",
-		154
+		112
 	)
 	fuel_label = fuel_chip["value"] as Label
 	fuel_rate_label = fuel_chip["detail"] as Label
 	fuel_panel = fuel_chip["panel"] as PanelContainer
+
 	fuel_order_button = Button.new()
-	fuel_order_button.text = "ORDER FUEL • 750"
-	fuel_order_button.custom_minimum_size = Vector2(0, 22)
-	fuel_order_button.add_theme_font_size_override("font_size", 9)
-	GameUIStyle.apply_button(fuel_order_button, "secondary")
+	fuel_order_button.text = "+"
+	fuel_order_button.tooltip_text = "Order fuel • 750 coins"
+	fuel_order_button.custom_minimum_size = Vector2(32, 38)
+	GameUIStyle.apply_button(fuel_order_button, "secondary", true)
 	fuel_order_button.pressed.connect(_on_fuel_order_pressed)
-	(fuel_chip["box"] as VBoxContainer).add_child(fuel_order_button)
+	top_row.add_child(fuel_order_button)
 
 	var coin_chip := _build_hud_resource_chip(
 		top_row,
 		"COINS",
 		"0",
-		"AIRPORT FUNDS",
+		"",
 		"hud_coin",
-		126
+		96
 	)
 	coins_label = coin_chip["value"] as Label
 
@@ -234,40 +238,41 @@ func _build_interface() -> void:
 		top_row,
 		"AERO",
 		"0",
-		"PREMIUM",
+		"",
 		"hud_premium",
-		118
+		82
 	)
 	gems_label = aero_chip["value"] as Label
 
 	var objective_panel := PanelContainer.new()
 	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	objective_panel.offset_left = -402
-	objective_panel.offset_top = 86
-	objective_panel.offset_right = -16
-	objective_panel.offset_bottom = 148
+	objective_panel.offset_left = -300
+	objective_panel.offset_top = 66
+	objective_panel.offset_right = -10
+	objective_panel.offset_bottom = 101
 	root.add_child(objective_panel)
-	GameUIStyle.apply_panel(objective_panel, "raised")
+	GameUIStyle.apply_panel(objective_panel, "hud_task")
 
 	var objective := Label.new()
-	objective.text = "BUILD YOUR AIRPORT\nPlace infrastructure and expand"
+	objective.text = "TASK • BUILD & EXPAND YOUR AIRPORT"
 	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	objective.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	objective.add_theme_font_size_override("font_size", 15)
+	objective.add_theme_font_size_override("font_size", 11)
+	objective.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	objective_panel.add_child(objective)
 
 	var status_strip := HBoxContainer.new()
 	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	status_strip.offset_left = 16
-	status_strip.offset_top = 86
-	status_strip.offset_right = 850
-	status_strip.offset_bottom = 142
-	status_strip.add_theme_constant_override("separation", 6)
+	status_strip.offset_left = 10
+	status_strip.offset_top = 66
+	status_strip.offset_right = 610
+	status_strip.offset_bottom = 101
+	status_strip.add_theme_constant_override("separation", 4)
 	root.add_child(status_strip)
 
 	airside_status_chip = Button.new()
-	airside_status_chip.text = "AIRFIELD\nCHECKING..."
-	airside_status_chip.custom_minimum_size = Vector2(168, 50)
+	airside_status_chip.text = "AIR • CHECKING"
+	airside_status_chip.custom_minimum_size = Vector2(132, 34)
 	GameUIStyle.apply_button(airside_status_chip, "nav", true)
 	airside_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("airside")
@@ -275,8 +280,8 @@ func _build_interface() -> void:
 	status_strip.add_child(airside_status_chip)
 
 	operation_status_chip = Button.new()
-	operation_status_chip.text = "GROUND OPS\nPREPARING..."
-	operation_status_chip.custom_minimum_size = Vector2(188, 50)
+	operation_status_chip.text = "OPS • PREPARING"
+	operation_status_chip.custom_minimum_size = Vector2(150, 34)
 	GameUIStyle.apply_button(operation_status_chip, "nav", true)
 	operation_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("operations")
@@ -284,8 +289,8 @@ func _build_interface() -> void:
 	status_strip.add_child(operation_status_chip)
 
 	atc_status_chip = Button.new()
-	atc_status_chip.text = "ATC\nCLEAR"
-	atc_status_chip.custom_minimum_size = Vector2(188, 50)
+	atc_status_chip.text = "ATC • CLEAR"
+	atc_status_chip.custom_minimum_size = Vector2(136, 34)
 	GameUIStyle.apply_button(atc_status_chip, "nav", true)
 	atc_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("atc")
@@ -293,8 +298,8 @@ func _build_interface() -> void:
 	status_strip.add_child(atc_status_chip)
 
 	handling_attention_button = Button.new()
-	handling_attention_button.text = "NEXT ACTION\nNONE"
-	handling_attention_button.custom_minimum_size = Vector2(188, 50)
+	handling_attention_button.text = "NEXT • NONE"
+	handling_attention_button.custom_minimum_size = Vector2(160, 34)
 	handling_attention_button.visible = false
 	handling_attention_button.pressed.connect(
 		_on_handling_attention_pressed
@@ -312,42 +317,42 @@ func _build_interface() -> void:
 
 	status_detail_panel = PanelContainer.new()
 	status_detail_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	status_detail_panel.offset_left = 16
-	status_detail_panel.offset_top = 148
-	status_detail_panel.offset_right = 650
-	status_detail_panel.offset_bottom = 230
+	status_detail_panel.offset_left = 10
+	status_detail_panel.offset_top = 106
+	status_detail_panel.offset_right = 620
+	status_detail_panel.offset_bottom = 244
 	status_detail_panel.visible = false
 	root.add_child(status_detail_panel)
-	GameUIStyle.apply_panel(status_detail_panel, "raised")
+	GameUIStyle.apply_panel(status_detail_panel, "hud_status_detail")
 
 	var detail_row := HBoxContainer.new()
-	detail_row.add_theme_constant_override("separation", 12)
+	detail_row.add_theme_constant_override("separation", 8)
 	status_detail_panel.add_child(detail_row)
 
 	var detail_text := VBoxContainer.new()
 	detail_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_text.add_theme_constant_override("separation", 2)
 	detail_row.add_child(detail_text)
 
 	status_detail_title = Label.new()
 	status_detail_title.text = "AIRPORT STATUS"
-	GameUIStyle.heading(status_detail_title, 15)
+	GameUIStyle.heading(status_detail_title, 13)
 	detail_text.add_child(status_detail_title)
 
 	status_detail_body = Label.new()
 	status_detail_body.text = "Select a status chip for details."
 	status_detail_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_detail_body.add_theme_font_size_override("font_size", 13)
+	status_detail_body.add_theme_font_size_override("font_size", 11)
 	GameUIStyle.muted(status_detail_body)
 	detail_text.add_child(status_detail_body)
 
 	var detail_close := Button.new()
 	detail_close.text = "✕"
-	detail_close.custom_minimum_size = Vector2(44, 44)
+	detail_close.custom_minimum_size = Vector2(34, 34)
 	GameUIStyle.apply_button(detail_close, "secondary", true)
 	detail_close.pressed.connect(_close_status_detail)
 	detail_row.add_child(detail_close)
 
-	# Legacy labels remain as lightweight data sinks for existing setters/tests.
 	airside_status_label = Label.new()
 	operation_status_label = Label.new()
 	atc_status_label = Label.new()
@@ -375,12 +380,12 @@ func _build_interface() -> void:
 
 	build_hint = Label.new()
 	build_hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	build_hint.offset_left = 18
-	build_hint.offset_top = -192
-	build_hint.offset_right = 760
-	build_hint.offset_bottom = -160
+	build_hint.offset_left = 12
+	build_hint.offset_top = -118
+	build_hint.offset_right = 700
+	build_hint.offset_bottom = -94
 	build_hint.text = "Tap BUILD for construction tools"
-	build_hint.add_theme_font_size_override("font_size", 14)
+	build_hint.add_theme_font_size_override("font_size", 11)
 	build_hint.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_MUTED
@@ -395,7 +400,6 @@ func _build_interface() -> void:
 	_build_bottom_navigation(root)
 
 
-
 func _build_hud_resource_chip(
 	parent: HBoxContainer,
 	caption: String,
@@ -405,7 +409,7 @@ func _build_hud_resource_chip(
 	minimum_width: int
 ) -> Dictionary:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(minimum_width, 0)
+	panel.custom_minimum_size = Vector2(minimum_width, 38)
 	GameUIStyle.apply_panel(panel, panel_variant)
 	parent.add_child(panel)
 
@@ -414,26 +418,31 @@ func _build_hud_resource_chip(
 	box.add_theme_constant_override("separation", 0)
 	panel.add_child(box)
 
+	var meta_row := HBoxContainer.new()
+	meta_row.add_theme_constant_override("separation", 4)
+	box.add_child(meta_row)
+
 	var caption_label := Label.new()
 	caption_label.text = caption
-	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	caption_label.add_theme_font_size_override("font_size", 10)
+	caption_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	caption_label.add_theme_font_size_override("font_size", 8)
 	GameUIStyle.muted(caption_label)
-	box.add_child(caption_label)
-
-	var value_label := Label.new()
-	value_label.text = value_text
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	value_label.add_theme_font_size_override("font_size", 18)
-	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
-	box.add_child(value_label)
+	meta_row.add_child(caption_label)
 
 	var detail_label := Label.new()
 	detail_label.text = detail_text
-	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	detail_label.add_theme_font_size_override("font_size", 9)
+	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	detail_label.add_theme_font_size_override("font_size", 8)
 	GameUIStyle.muted(detail_label)
-	box.add_child(detail_label)
+	detail_label.visible = not detail_text.is_empty()
+	meta_row.add_child(detail_label)
+
+	var value_label := Label.new()
+	value_label.text = value_text
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	value_label.add_theme_font_size_override("font_size", 14)
+	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
+	box.add_child(value_label)
 
 	return {
 		"panel": panel,
@@ -442,9 +451,9 @@ func _build_hud_resource_chip(
 		"detail": detail_label
 	}
 
-
 func _on_fuel_order_pressed() -> void:
 	fuel_order_requested.emit()
+
 
 
 func set_handling_attention(
@@ -462,11 +471,11 @@ func set_handling_attention(
 
 	var suffix := ""
 	if pending_count > 1:
-		suffix = "  +%d" % (pending_count - 1)
-	handling_attention_button.text = "NEXT • %s%s\n%s" % [
+		suffix = " +%d" % (pending_count - 1)
+	handling_attention_button.text = "%s • %s%s" % [
 		normalized_action,
-		suffix,
-		aircraft_label
+		aircraft_label,
+		suffix
 	]
 	handling_attention_button.tooltip_text = (
 		"Focus the next aircraft waiting for %s."
@@ -474,33 +483,33 @@ func set_handling_attention(
 	)
 	handling_attention_button.visible = true
 
-
 func _on_handling_attention_pressed() -> void:
 	handling_attention_requested.emit()
+
 
 
 func _build_expansion_banner(root: Control) -> void:
 	expansion_banner = PanelContainer.new()
 	expansion_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	expansion_banner.offset_left = 360
-	expansion_banner.offset_top = 100
-	expansion_banner.offset_right = -360
-	expansion_banner.offset_bottom = 176
+	expansion_banner.offset_left = 330
+	expansion_banner.offset_top = 68
+	expansion_banner.offset_right = -330
+	expansion_banner.offset_bottom = 122
 	expansion_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expansion_banner.visible = false
 	root.add_child(expansion_banner)
-	GameUIStyle.apply_panel(expansion_banner, "raised")
+	GameUIStyle.apply_panel(expansion_banner, "hud_task")
 
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 12)
+	row.add_theme_constant_override("separation", 8)
 	expansion_banner.add_child(row)
 
 	var icon := Label.new()
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.text = "✦"
-	icon.add_theme_font_size_override("font_size", 26)
+	icon.add_theme_font_size_override("font_size", 18)
 	icon.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_GOLD
@@ -510,6 +519,7 @@ func _build_expansion_banner(root: Control) -> void:
 	var text_box := VBoxContainer.new()
 	text_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_box.add_theme_constant_override("separation", 0)
 	row.add_child(text_box)
 
 	expansion_banner_title = Label.new()
@@ -518,7 +528,7 @@ func _build_expansion_banner(root: Control) -> void:
 	expansion_banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	expansion_banner_title.add_theme_font_size_override(
 		"font_size",
-		18
+		14
 	)
 	expansion_banner_title.add_theme_color_override(
 		"font_color",
@@ -534,20 +544,19 @@ func _build_expansion_banner(root: Control) -> void:
 	expansion_banner_detail.max_lines_visible = 2
 	expansion_banner_detail.add_theme_font_size_override(
 		"font_size",
-		12
+		10
 	)
 	GameUIStyle.muted(expansion_banner_detail)
 	text_box.add_child(expansion_banner_detail)
 
 
-
 func _build_operation_toast(root: Control) -> void:
 	operation_toast_panel = PanelContainer.new()
 	operation_toast_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	operation_toast_panel.offset_left = -285
-	operation_toast_panel.offset_top = -162
-	operation_toast_panel.offset_right = 285
-	operation_toast_panel.offset_bottom = -104
+	operation_toast_panel.offset_left = -250
+	operation_toast_panel.offset_top = -116
+	operation_toast_panel.offset_right = 250
+	operation_toast_panel.offset_bottom = -72
 	operation_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	operation_toast_panel.visible = false
 	operation_toast_panel.modulate.a = 0.0
@@ -560,7 +569,7 @@ func _build_operation_toast(root: Control) -> void:
 	operation_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operation_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	operation_toast_label.max_lines_visible = 2
-	operation_toast_label.add_theme_font_size_override("font_size", 14)
+	operation_toast_label.add_theme_font_size_override("font_size", 12)
 	operation_toast_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	operation_toast_panel.add_child(operation_toast_label)
 
@@ -568,25 +577,24 @@ func _build_operation_toast(root: Control) -> void:
 func _build_dispatch_shift_indicator(root: Control) -> void:
 	dispatch_shift_panel = PanelContainer.new()
 	dispatch_shift_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	dispatch_shift_panel.offset_left = -330
-	dispatch_shift_panel.offset_top = -148
-	dispatch_shift_panel.offset_right = -16
-	dispatch_shift_panel.offset_bottom = -90
+	dispatch_shift_panel.offset_left = -292
+	dispatch_shift_panel.offset_top = -112
+	dispatch_shift_panel.offset_right = -10
+	dispatch_shift_panel.offset_bottom = -68
 	dispatch_shift_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dispatch_shift_panel.visible = false
 	root.add_child(dispatch_shift_panel)
-	GameUIStyle.apply_panel(dispatch_shift_panel, "raised")
+	GameUIStyle.apply_panel(dispatch_shift_panel, "hud_task")
 
 	dispatch_shift_label = Label.new()
 	dispatch_shift_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dispatch_shift_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	dispatch_shift_label.add_theme_font_size_override("font_size", 15)
+	dispatch_shift_label.add_theme_font_size_override("font_size", 12)
 	dispatch_shift_label.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_GOLD
 	)
 	dispatch_shift_panel.add_child(dispatch_shift_label)
-
 
 func set_dispatch_shift(
 	status: String,
@@ -649,96 +657,101 @@ func _show_operation_toast(text: String, tone: String) -> void:
 	)
 
 
+
 func _build_context_panel(root: Control) -> void:
 	parcel_panel = PanelContainer.new()
 	parcel_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	parcel_panel.offset_left = 12
-	parcel_panel.offset_top = -180
-	parcel_panel.offset_right = -450
-	parcel_panel.offset_bottom = -82
+	parcel_panel.offset_left = 10
+	parcel_panel.offset_top = -130
+	parcel_panel.offset_right = -382
+	parcel_panel.offset_bottom = -62
 	root.add_child(parcel_panel)
-	GameUIStyle.apply_panel(parcel_panel, "raised")
+	GameUIStyle.apply_panel(parcel_panel, "hud_context")
 
 	var parcel_row := HBoxContainer.new()
-	parcel_row.add_theme_constant_override("separation", 16)
+	parcel_row.add_theme_constant_override("separation", 8)
 	parcel_panel.add_child(parcel_row)
 
 	var parcel_text := VBoxContainer.new()
 	parcel_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parcel_text.add_theme_constant_override("separation", 1)
 	parcel_row.add_child(parcel_text)
 
 	parcel_title = Label.new()
 	parcel_title.text = "EXPAND LAND"
-	parcel_title.add_theme_font_size_override("font_size", 20)
+	parcel_title.add_theme_font_size_override("font_size", 15)
 	parcel_text.add_child(parcel_title)
 
 	parcel_requirements = Label.new()
 	parcel_requirements.text = "Select an expansion parcel"
-	parcel_requirements.add_theme_font_size_override("font_size", 13)
+	parcel_requirements.add_theme_font_size_override("font_size", 11)
 	parcel_requirements.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	parcel_requirements.max_lines_visible = 3
+	parcel_requirements.max_lines_visible = 2
 	parcel_text.add_child(parcel_requirements)
 
 	purchase_button = Button.new()
-	purchase_button.custom_minimum_size = Vector2(210, 92)
+	purchase_button.custom_minimum_size = Vector2(150, 50)
 	purchase_button.text = "SELECT LAND"
 	purchase_button.disabled = true
 	purchase_button.pressed.connect(_on_purchase_pressed)
-	GameUIStyle.apply_button(purchase_button, "gold")
+	GameUIStyle.apply_button(purchase_button, "gold", true)
 	parcel_row.add_child(purchase_button)
 
 	build_action_panel = PanelContainer.new()
 	build_action_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	build_action_panel.offset_left = 12
-	build_action_panel.offset_top = -154
-	build_action_panel.offset_right = -450
-	build_action_panel.offset_bottom = -82
+	build_action_panel.offset_left = 10
+	build_action_panel.offset_top = -124
+	build_action_panel.offset_right = -382
+	build_action_panel.offset_bottom = -62
 	build_action_panel.visible = false
 	root.add_child(build_action_panel)
-	GameUIStyle.apply_panel(build_action_panel, "raised")
+	GameUIStyle.apply_panel(build_action_panel, "hud_context")
 
 	var build_row := HBoxContainer.new()
-	build_row.add_theme_constant_override("separation", 10)
+	build_row.add_theme_constant_override("separation", 6)
 	build_action_panel.add_child(build_row)
 
 	var build_text := VBoxContainer.new()
 	build_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	build_text.add_theme_constant_override("separation", 1)
 	build_row.add_child(build_text)
 
 	build_title = Label.new()
 	build_title.text = "PLACE BUILDING"
-	build_title.add_theme_font_size_override("font_size", 19)
+	build_title.add_theme_font_size_override("font_size", 14)
 	build_text.add_child(build_title)
 
 	build_status = Label.new()
 	build_status.text = "Tap owned land to preview placement."
-	build_status.add_theme_font_size_override("font_size", 14)
+	build_status.add_theme_font_size_override("font_size", 11)
+	build_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	build_status.max_lines_visible = 2
 	build_text.add_child(build_status)
 
 	store_button = Button.new()
-	store_button.custom_minimum_size = Vector2(104, 72)
-	store_button.text = "📦\nSTORE"
+	store_button.custom_minimum_size = Vector2(84, 48)
+	store_button.text = "📦 STORE"
 	store_button.visible = false
 	store_button.pressed.connect(_on_store_building_pressed)
 	GameUIStyle.apply_button(store_button, "secondary", true)
 	build_row.add_child(store_button)
 
 	rotate_button = Button.new()
-	rotate_button.custom_minimum_size = Vector2(92, 72)
-	rotate_button.text = "↻\nROTATE"
+	rotate_button.custom_minimum_size = Vector2(82, 48)
+	rotate_button.text = "↻ ROTATE"
 	rotate_button.pressed.connect(_on_rotate_pressed)
 	GameUIStyle.apply_button(rotate_button, "secondary", true)
 	build_row.add_child(rotate_button)
 
 	var cancel_button := Button.new()
-	cancel_button.custom_minimum_size = Vector2(92, 72)
-	cancel_button.text = "✕\nCANCEL"
+	cancel_button.custom_minimum_size = Vector2(82, 48)
+	cancel_button.text = "✕ CANCEL"
 	cancel_button.pressed.connect(_on_cancel_building_pressed)
 	GameUIStyle.apply_button(cancel_button, "danger", true)
 	build_row.add_child(cancel_button)
 
 	expand_here_button = Button.new()
-	expand_here_button.custom_minimum_size = Vector2(166, 72)
+	expand_here_button.custom_minimum_size = Vector2(128, 48)
 	expand_here_button.text = "EXPAND HERE"
 	expand_here_button.visible = false
 	expand_here_button.disabled = true
@@ -747,41 +760,43 @@ func _build_context_panel(root: Control) -> void:
 	)
 	GameUIStyle.apply_button(
 		expand_here_button,
-		"gold"
+		"gold",
+		true
 	)
 	build_row.add_child(expand_here_button)
 
 	place_button = Button.new()
-	place_button.custom_minimum_size = Vector2(150, 72)
+	place_button.custom_minimum_size = Vector2(118, 48)
 	place_button.text = "PLACE"
 	place_button.disabled = true
 	place_button.pressed.connect(_on_confirm_building_pressed)
-	GameUIStyle.apply_button(place_button, "primary")
+	GameUIStyle.apply_button(place_button, "primary", true)
 	build_row.add_child(place_button)
 
 
 func _build_airport_edit_panel(root: Control) -> void:
 	airport_edit_panel = PanelContainer.new()
 	airport_edit_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	airport_edit_panel.offset_left = 12
-	airport_edit_panel.offset_top = -154
-	airport_edit_panel.offset_right = -450
-	airport_edit_panel.offset_bottom = -82
+	airport_edit_panel.offset_left = 10
+	airport_edit_panel.offset_top = -124
+	airport_edit_panel.offset_right = -382
+	airport_edit_panel.offset_bottom = -62
 	airport_edit_panel.visible = false
 	root.add_child(airport_edit_panel)
-	GameUIStyle.apply_panel(airport_edit_panel, "raised")
+	GameUIStyle.apply_panel(airport_edit_panel, "hud_context")
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 6)
 	airport_edit_panel.add_child(row)
 
 	var text_box := VBoxContainer.new()
 	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_box.add_theme_constant_override("separation", 1)
 	row.add_child(text_box)
 
 	var title := Label.new()
 	title.text = "EDIT AIRPORT"
-	title.add_theme_font_size_override("font_size", 19)
+	title.add_theme_font_size_override("font_size", 14)
 	title.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_ACCENT
@@ -792,12 +807,12 @@ func _build_airport_edit_panel(root: Control) -> void:
 	airport_edit_status.text = (
 		"Tap a movable building • changes save when confirmed"
 	)
-	airport_edit_status.add_theme_font_size_override("font_size", 14)
+	airport_edit_status.add_theme_font_size_override("font_size", 11)
 	text_box.add_child(airport_edit_status)
 
 	storage_button = Button.new()
-	storage_button.custom_minimum_size = Vector2(126, 72)
-	storage_button.text = "📦\nSTORAGE"
+	storage_button.custom_minimum_size = Vector2(112, 48)
+	storage_button.text = "📦 STORAGE"
 	storage_button.pressed.connect(
 		_on_storage_pressed
 	)
@@ -809,8 +824,8 @@ func _build_airport_edit_panel(root: Control) -> void:
 	row.add_child(storage_button)
 
 	undo_airport_edit_button = Button.new()
-	undo_airport_edit_button.custom_minimum_size = Vector2(112, 72)
-	undo_airport_edit_button.text = "↶\nUNDO"
+	undo_airport_edit_button.custom_minimum_size = Vector2(86, 48)
+	undo_airport_edit_button.text = "↶ UNDO"
 	undo_airport_edit_button.disabled = true
 	undo_airport_edit_button.pressed.connect(
 		_on_undo_airport_edit_pressed
@@ -823,14 +838,15 @@ func _build_airport_edit_panel(root: Control) -> void:
 	row.add_child(undo_airport_edit_button)
 
 	done_airport_edit_button = Button.new()
-	done_airport_edit_button.custom_minimum_size = Vector2(126, 72)
-	done_airport_edit_button.text = "✓\nDONE"
+	done_airport_edit_button.custom_minimum_size = Vector2(88, 48)
+	done_airport_edit_button.text = "✓ DONE"
 	done_airport_edit_button.pressed.connect(
 		_on_done_airport_edit_pressed
 	)
 	GameUIStyle.apply_button(
 		done_airport_edit_button,
-		"primary"
+		"primary",
+		true
 	)
 	row.add_child(done_airport_edit_button)
 
@@ -838,47 +854,48 @@ func _build_airport_edit_panel(root: Control) -> void:
 func _build_storage_panel(root: Control) -> void:
 	storage_panel = PanelContainer.new()
 	storage_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	storage_panel.offset_left = -438
-	storage_panel.offset_top = 158
+	storage_panel.offset_left = -374
+	storage_panel.offset_top = 108
 	storage_panel.offset_right = -8
-	storage_panel.offset_bottom = -82
+	storage_panel.offset_bottom = -62
 	storage_panel.visible = false
 	root.add_child(storage_panel)
-	GameUIStyle.apply_panel(storage_panel, "dark")
+	GameUIStyle.apply_panel(storage_panel, "hud_drawer")
 
 	var wrapper := VBoxContainer.new()
-	wrapper.add_theme_constant_override("separation", 6)
+	wrapper.add_theme_constant_override("separation", 5)
 	storage_panel.add_child(wrapper)
 
 	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 6)
+	header.add_theme_constant_override("separation", 5)
 	wrapper.add_child(header)
 
 	var title := Label.new()
 	title.text = "AIRPORT STORAGE"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	GameUIStyle.heading(title, 15)
+	GameUIStyle.heading(title, 14)
 	header.add_child(title)
 
 	storage_count_label = Label.new()
 	storage_count_label.text = "0 STORED"
 	storage_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	storage_count_label.add_theme_font_size_override("font_size", 10)
 	GameUIStyle.muted(storage_count_label)
 	header.add_child(storage_count_label)
 
 	var close_button := Button.new()
 	close_button.text = "✕"
-	close_button.custom_minimum_size = Vector2(38, 34)
+	close_button.custom_minimum_size = Vector2(32, 30)
 	GameUIStyle.apply_button(close_button, "secondary", true)
 	close_button.pressed.connect(_on_storage_pressed)
 	header.add_child(close_button)
 
 	var help := Label.new()
 	help.text = (
-		"Stored buildings keep levels/upgrades but pause all airport effects."
+		"Stored buildings keep upgrades but pause airport effects."
 	)
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	help.add_theme_font_size_override("font_size", 12)
+	help.add_theme_font_size_override("font_size", 10)
 	GameUIStyle.muted(help)
 	wrapper.add_child(help)
 
@@ -889,53 +906,53 @@ func _build_storage_panel(root: Control) -> void:
 
 	storage_list = VBoxContainer.new()
 	storage_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	storage_list.add_theme_constant_override("separation", 6)
+	storage_list.add_theme_constant_override("separation", 5)
 	scroll.add_child(storage_list)
 
 
 func _build_catalog_panel(root: Control) -> void:
 	catalog_panel = PanelContainer.new()
 	catalog_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	catalog_panel.offset_left = -422
-	catalog_panel.offset_top = 158
-	catalog_panel.offset_right = -12
-	catalog_panel.offset_bottom = -86
+	catalog_panel.offset_left = -374
+	catalog_panel.offset_top = 108
+	catalog_panel.offset_right = -8
+	catalog_panel.offset_bottom = -62
 	root.add_child(catalog_panel)
-	GameUIStyle.apply_panel(catalog_panel, "context")
+	GameUIStyle.apply_panel(catalog_panel, "hud_drawer")
 
 	var catalog_wrapper := VBoxContainer.new()
-	catalog_wrapper.add_theme_constant_override("separation", 7)
+	catalog_wrapper.add_theme_constant_override("separation", 5)
 	catalog_panel.add_child(catalog_wrapper)
 
 	var catalog_header_row := HBoxContainer.new()
-	catalog_header_row.add_theme_constant_override("separation", 6)
+	catalog_header_row.add_theme_constant_override("separation", 5)
 	catalog_wrapper.add_child(catalog_header_row)
 
 	var catalog_header := Label.new()
-	catalog_header.text = "BUILD TRAY"
+	catalog_header.text = "BUILD"
 	catalog_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	catalog_header.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	GameUIStyle.heading(catalog_header, 17)
+	GameUIStyle.heading(catalog_header, 14)
 	catalog_header.add_theme_color_override("font_color", GameUIStyle.COLOR_ACCENT)
 	catalog_header_row.add_child(catalog_header)
 
 	catalog_count_label = Label.new()
 	catalog_count_label.text = "0 AVAILABLE"
 	catalog_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	catalog_count_label.add_theme_font_size_override("font_size", 10)
+	catalog_count_label.add_theme_font_size_override("font_size", 9)
 	GameUIStyle.muted(catalog_count_label)
 	catalog_header_row.add_child(catalog_count_label)
 
 	edit_airport_button = Button.new()
-	edit_airport_button.text = "EDIT AIRPORT"
-	edit_airport_button.custom_minimum_size = Vector2(118, 36)
+	edit_airport_button.text = "EDIT"
+	edit_airport_button.custom_minimum_size = Vector2(62, 30)
 	GameUIStyle.apply_button(edit_airport_button, "gold", true)
 	edit_airport_button.pressed.connect(_on_airport_edit_pressed)
 	catalog_header_row.add_child(edit_airport_button)
 
 	catalog_close_button = Button.new()
 	catalog_close_button.text = "✕"
-	catalog_close_button.custom_minimum_size = Vector2(38, 36)
+	catalog_close_button.custom_minimum_size = Vector2(32, 30)
 	GameUIStyle.apply_button(catalog_close_button, "secondary", true)
 	catalog_close_button.pressed.connect(_on_catalog_close_pressed)
 	catalog_header_row.add_child(catalog_close_button)
@@ -943,15 +960,15 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_help_label = Label.new()
 	catalog_help_label.text = "Tap a building to place it"
 	catalog_help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	catalog_help_label.add_theme_font_size_override("font_size", 11)
+	catalog_help_label.add_theme_font_size_override("font_size", 10)
 	GameUIStyle.muted(catalog_help_label)
 	catalog_wrapper.add_child(catalog_help_label)
 	catalog_help_label.visible = false
 
 	var filters := GridContainer.new()
 	filters.columns = 6
-	filters.add_theme_constant_override("h_separation", 4)
-	filters.add_theme_constant_override("v_separation", 4)
+	filters.add_theme_constant_override("h_separation", 3)
+	filters.add_theme_constant_override("v_separation", 3)
 	catalog_wrapper.add_child(filters)
 
 	for filter_data in [
@@ -965,7 +982,7 @@ func _build_catalog_panel(root: Control) -> void:
 		var chip := Button.new()
 		chip.text = String(filter_data[0])
 		chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		chip.custom_minimum_size = Vector2(0, 38)
+		chip.custom_minimum_size = Vector2(0, 30)
 		var category := String(filter_data[1])
 		GameUIStyle.apply_button(
 			chip,
@@ -986,31 +1003,31 @@ func _build_catalog_panel(root: Control) -> void:
 	grid.columns = 2
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation", 6)
-	grid.add_theme_constant_override("v_separation", 6)
+	grid.add_theme_constant_override("h_separation", 5)
+	grid.add_theme_constant_override("v_separation", 5)
 	scroll.add_child(grid)
 
 
 func _build_bottom_navigation(root: Control) -> void:
 	bottom_nav_panel = PanelContainer.new()
 	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_nav_panel.offset_left = 16
-	bottom_nav_panel.offset_top = -78
-	bottom_nav_panel.offset_right = -16
-	bottom_nav_panel.offset_bottom = -8
+	bottom_nav_panel.offset_left = 10
+	bottom_nav_panel.offset_top = -56
+	bottom_nav_panel.offset_right = -10
+	bottom_nav_panel.offset_bottom = -6
 	root.add_child(bottom_nav_panel)
 	GameUIStyle.apply_panel(bottom_nav_panel, "dock")
 
 	var nav_row := HBoxContainer.new()
-	nav_row.add_theme_constant_override("separation", 6)
+	nav_row.add_theme_constant_override("separation", 4)
 	bottom_nav_panel.add_child(nav_row)
 
 	for item in ["BUILD", "FLEET", "WORLD", "ACTIVITIES", "SOCIAL", "MORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0, 58)
-		button.add_theme_font_size_override("font_size", 15)
+		button.custom_minimum_size = Vector2(0, 40)
+		button.add_theme_font_size_override("font_size", 12)
 
 		var tab: String = item.to_lower()
 		GameUIStyle.apply_button(
@@ -1032,7 +1049,6 @@ func _build_bottom_navigation(root: Control) -> void:
 			social_nav_button = button
 
 		nav_row.add_child(button)
-
 
 func set_charter_available(value: bool, attention: bool = false) -> void:
 	charter_activity_attention = value and attention
@@ -1115,6 +1131,7 @@ func set_interface_visible(value: bool) -> void:
 		interface_root.visible = value
 
 
+
 func set_airport_identity(
 	airport_name: String,
 	airport_code: String,
@@ -1126,8 +1143,8 @@ func set_airport_identity(
 
 	title_label.text = airport_name.to_upper()
 	if airport_meta_label != null:
-		var account_label := "GUEST AIRPORT" if account_type == "guest" else "LINKED AIRPORT"
-		airport_meta_label.text = "✈ %s  •  %s  •  %s" % [
+		var account_label := "GUEST" if account_type == "guest" else "LINKED"
+		airport_meta_label.text = "%s • %s • %s" % [
 			airport_code.to_upper(),
 			country_name.to_upper(),
 			account_label
@@ -1152,9 +1169,9 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(188, 78)
+		button.custom_minimum_size = Vector2(164, 62)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override("font_size", 12)
+		button.add_theme_font_size_override("font_size", 11)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
@@ -1171,7 +1188,6 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	_update_catalog_buttons()
 	_apply_catalog_filter()
-
 
 func _on_catalog_filter_pressed(category: String) -> void:
 	selected_catalog_category = category
@@ -1289,6 +1305,7 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 
 
 
+
 func set_level_progress(
 	xp: int,
 	level_start_xp: int,
@@ -1301,14 +1318,14 @@ func set_level_progress(
 		xp_progress.min_value = 0.0
 		xp_progress.max_value = 1.0
 		xp_progress.value = 1.0
-		xp_label.text = "MAX LEVEL"
+		xp_label.text = "MAX"
 		return
 	var span := maxi(next_level_xp - level_start_xp, 1)
 	var earned := clampi(xp - level_start_xp, 0, span)
 	xp_progress.min_value = 0.0
 	xp_progress.max_value = float(span)
 	xp_progress.value = float(earned)
-	xp_label.text = "%s / %s XP" % [
+	xp_label.text = "%s/%s" % [
 		_format_number(earned),
 		_format_number(span)
 	]
@@ -1326,7 +1343,7 @@ func set_passenger_data(
 		capacity
 	]
 	if passenger_rate_label != null:
-		passenger_rate_label.text = "+%.1f / MIN" % per_minute
+		passenger_rate_label.text = "+%.1f/m" % per_minute
 
 
 func set_fuel_data(
@@ -1355,19 +1372,19 @@ func set_fuel_data(
 	if fuel_rate_label != null:
 		match status:
 			"critical":
-				fuel_rate_label.text = "CRITICAL • +%.1f / MIN" % per_minute
+				fuel_rate_label.text = "CRIT • +%.1f/m" % per_minute
 				fuel_rate_label.add_theme_color_override(
 					"font_color",
 					GameUIStyle.COLOR_DANGER
 				)
 			"low":
-				fuel_rate_label.text = "LOW • +%.1f / MIN" % per_minute
+				fuel_rate_label.text = "LOW • +%.1f/m" % per_minute
 				fuel_rate_label.add_theme_color_override(
 					"font_color",
 					GameUIStyle.COLOR_WARNING
 				)
 			_:
-				fuel_rate_label.text = "+%.1f / MIN" % per_minute
+				fuel_rate_label.text = "+%.1f/m" % per_minute
 				GameUIStyle.muted(fuel_rate_label)
 
 	if fuel_panel != null:
@@ -1384,13 +1401,14 @@ func set_fuel_data(
 
 	if fuel_order_button != null:
 		fuel_order_button.disabled = capacity <= 0 or fuel >= capacity
+		fuel_order_button.tooltip_text = "Order fuel • 750 coins"
 		GameUIStyle.apply_button(
 			fuel_order_button,
 			"danger"
 			if status == "critical"
-			else ("gold" if status == "low" else "secondary")
+			else ("gold" if status == "low" else "secondary"),
+			true
 		)
-
 
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:
 	current_parcel = parcel.duplicate(true)
@@ -1733,6 +1751,7 @@ func show_stored_building_preview(
 	place_button.disabled = false
 
 
+
 func set_stored_buildings(
 	buildings: Array[Dictionary]
 ) -> void:
@@ -1745,7 +1764,7 @@ func set_stored_buildings(
 	var count := buildings.size()
 	storage_count_label.text = "%d STORED" % count
 	if storage_button != null:
-		storage_button.text = "📦\nSTORAGE %d" % count
+		storage_button.text = "📦 STORAGE %d" % count
 
 	if count <= 0:
 		var empty_label := Label.new()
@@ -1753,7 +1772,7 @@ func set_stored_buildings(
 			"No stored buildings. Select a movable building and tap STORE."
 		)
 		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		empty_label.add_theme_font_size_override("font_size", 13)
+		empty_label.add_theme_font_size_override("font_size", 11)
 		GameUIStyle.muted(empty_label)
 		storage_list.add_child(empty_label)
 		return
@@ -1767,9 +1786,9 @@ func set_stored_buildings(
 			continue
 
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(390, 64)
+		button.custom_minimum_size = Vector2(330, 54)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_size_override("font_size", 13)
+		button.add_theme_font_size_override("font_size", 11)
 		var footprint: Vector2i = definition.get(
 			"footprint",
 			Vector2i.ONE
@@ -1779,7 +1798,8 @@ func set_stored_buildings(
 				footprint.y,
 				footprint.x
 			)
-		button.text = "%s\nLV %d • %dx%d • PLACE FREE" % [
+		button.text = "%s • LV %d
+%dx%d • PLACE FREE" % [
 			String(definition.get("name", "Building")),
 			int(building.get("upgrade_level", 1)),
 			footprint.x,
@@ -1796,7 +1816,6 @@ func set_stored_buildings(
 			_on_stored_building_pressed.bind(uid)
 		)
 		storage_list.add_child(button)
-
 
 func _reset_expand_here_action() -> void:
 	active_expand_parcel_id = ""
@@ -2495,6 +2514,7 @@ func set_airside_status(status: Dictionary) -> void:
 	)
 
 
+
 func _set_status_chip(
 	key: String,
 	chip: Button,
@@ -2509,7 +2529,7 @@ func _set_status_chip(
 		"tone": tone
 	}
 	if chip != null:
-		chip.text = "%s\n%s" % [
+		chip.text = "%s • %s" % [
 			_status_icon(key),
 			compact
 		]
@@ -2529,12 +2549,11 @@ func _set_status_chip(
 func _status_icon(key: String) -> String:
 	match key:
 		"airside":
-			return "AIRFIELD"
+			return "AIR"
 		"operations":
-			return "GROUND OPS"
+			return "OPS"
 		_:
 			return "ATC"
-
 
 func _status_button_kind(
 	tone: String,
@@ -2551,12 +2570,12 @@ func _status_button_kind(
 			return "nav"
 
 
+
 func _compact_status(text: String) -> String:
 	var compact := text.replace("\n", " • ")
-	if compact.length() > 28:
-		compact = compact.substr(0, 25) + "..."
+	if compact.length() > 20:
+		compact = compact.substr(0, 17) + "..."
 	return compact.to_upper()
-
 
 func _on_status_chip_pressed(key: String) -> void:
 	if active_status_chip == key and status_detail_panel.visible:

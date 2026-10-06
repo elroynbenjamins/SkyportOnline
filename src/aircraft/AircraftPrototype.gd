@@ -71,6 +71,9 @@ var motion_sample_position := Vector2.ZERO
 var motion_sample_initialized := false
 var externally_moving := false
 var external_motion_speed := 0.0
+var visual_clock := 0.0
+var visual_redraw_accumulator := 0.0
+var landing_roll_target_speed := 0.0
 
 
 func _ready() -> void:
@@ -954,7 +957,15 @@ func begin_arrival_after_clearance() -> void:
 
 
 func _process(delta: float) -> void:
+	visual_clock += delta
 	_update_external_motion_feedback(delta)
+	if _uses_live_aircraft_fx():
+		visual_redraw_accumulator += delta
+		if visual_redraw_accumulator >= 0.05:
+			visual_redraw_accumulator = 0.0
+			queue_redraw()
+	else:
+		visual_redraw_accumulator = 0.0
 	if not motion_fx_kind.is_empty():
 		motion_fx_elapsed += delta
 		if motion_fx_elapsed >= _motion_fx_duration():
@@ -1193,9 +1204,27 @@ func _process_landing_roll(delta: float) -> void:
 		return
 
 	var runway_exit_index := 1
-	var current_speed := maxf(landing_speed - float(route_index) * 15.0, taxi_speed)
+	var threshold := arrival_route[0]
+	var runway_exit := arrival_route[runway_exit_index]
+	var rollout_length := maxf(
+		threshold.distance_to(runway_exit),
+		1.0
+	)
+	var remaining := position.distance_to(runway_exit)
+	var rollout_ratio := clampf(
+		remaining / rollout_length,
+		0.0,
+		1.0
+	)
+	var rollout_floor := taxi_speed * 0.78
+	var current_speed := lerpf(
+		rollout_floor,
+		landing_speed,
+		rollout_ratio
+	)
+	landing_roll_target_speed = current_speed
 	if _move_toward_point(
-		arrival_route[runway_exit_index],
+		runway_exit,
 		current_speed,
 		delta,
 		190.0
@@ -1642,6 +1671,8 @@ func get_motion_feedback_snapshot() -> Dictionary:
 		"handling_action": pending_handling_action,
 		"manual_handling": manual_handling_enabled,
 		"handling_automation": handling_automation_enabled,
+		"visual_clock": visual_clock,
+		"landing_roll_target_speed": landing_roll_target_speed,
 		"takeoff_speed_ratio": clampf(
 			takeoff_velocity / maxf(takeoff_speed, 1.0),
 			0.0,
@@ -2078,6 +2109,30 @@ func _draw_shadow() -> void:
 		0.0,
 		Vector2.ONE
 	)
+
+
+func _uses_live_aircraft_fx() -> bool:
+	if aircraft_type_id != "pico_p8" or not visible:
+		return false
+	return state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH",
+		"LANDING_ROLL",
+		"WAITING_TAXI_IN",
+		"TAXIING_IN",
+		"PUSHBACK_PREP",
+		"TAXIING_OUT",
+		"HOLD_SHORT",
+		"CLEARED",
+		"ENTERING_RUNWAY",
+		"LINE_UP",
+		"TAKEOFF_ROLL",
+		"CLIMBING"
+	]
+
+
+func get_visual_clock() -> float:
+	return visual_clock
 
 
 func _exit_tree() -> void:

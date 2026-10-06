@@ -135,11 +135,15 @@ var preview_mode := "build"
 var preview_ignore_uid := -1
 var preview_stored_uid := -1
 var selected_synergy_uid := -1
+var charter_visual_state: Dictionary = {}
+var charter_move_preview: Dictionary = {}
+var charter_turnaround_visual: CharterTurnaroundVisual
 
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_initialize_parcels()
+	_ensure_charter_turnaround_visual()
 	_initialize_starter_airport()
 	_recalculate_airside_network()
 	_create_parcel_labels()
@@ -294,6 +298,7 @@ func _draw() -> void:
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
 	_draw_starter_apron_surface()
+	_draw_charter_logistics_district()
 	_draw_buildings()
 	_draw_new_build_construction_fx()
 	_draw_airside_props()
@@ -304,6 +309,7 @@ func _draw() -> void:
 	_draw_runway_hold_short_markings()
 	_draw_runway_operational_indicators()
 	_draw_airside_warnings()
+	_draw_charter_structure_preview()
 	_draw_build_preview()
 	_draw_preview_snap_fx()
 	_draw_placement_confirm_fx()
@@ -3333,6 +3339,262 @@ func _draw_synergy_facility_detail(
 			)
 
 
+func set_charter_visual_state(snapshot: Dictionary) -> void:
+	charter_visual_state = snapshot.duplicate(true)
+	_refresh_charter_turnaround_visual()
+	queue_redraw()
+
+
+func get_charter_visual_state() -> Dictionary:
+	return charter_visual_state.duplicate(true)
+
+
+func get_charter_district_activation_status() -> Dictionary:
+	var parcel := _parcel_progression_data(CharterDistrictLayout.PARCEL_ID)
+	if parcel.is_empty():
+		return {
+			"can_activate": false,
+			"reason": "Logistics District is unavailable.",
+			"conflict_uids": []
+		}
+	var base_tile := _charter_district_base_tile()
+	var conflicts: Array[int] = []
+	var seen: Dictionary = {}
+	for relative_cell in CharterDistrictLayout.reserved_relative_cells():
+		var key := _cell_key(base_tile + relative_cell)
+		if not occupied_cells.has(key):
+			continue
+		var uid := int(occupied_cells[key])
+		if not seen.has(uid):
+			seen[uid] = true
+			conflicts.append(uid)
+	conflicts.sort()
+	var owned := bool(parcel.get("owned", false))
+	var ready := owned and conflicts.is_empty()
+	var reason := "Ready for Cargo Charter."
+	if not owned:
+		reason = "Own the Logistics District first."
+	elif not conflicts.is_empty():
+		reason = "Move existing buildings out of the Cargo Charter footprint."
+	return {
+		"can_activate": ready,
+		"reason": reason,
+		"parcel_owned": owned,
+		"conflict_uids": conflicts
+	}
+
+
+func get_charter_district_visual_snapshot() -> Dictionary:
+	var activation := get_charter_district_activation_status()
+	var unlocked := bool(charter_visual_state.get("unlocked", false))
+	return {
+		"active": unlocked and bool(activation.get("can_activate", false)),
+		"unlocked": unlocked,
+		"parcel_owned": bool(activation.get("parcel_owned", false)),
+		"conflict_uids": activation.get("conflict_uids", []),
+		"future_pads": CharterDistrictLayout.future_pad_items().size(),
+		"reason": String(activation.get("reason", ""))
+	}
+
+
+func _ensure_charter_turnaround_visual() -> void:
+	if charter_turnaround_visual != null and is_instance_valid(charter_turnaround_visual):
+		return
+	charter_turnaround_visual = CharterTurnaroundVisual.new()
+	charter_turnaround_visual.name = "CharterTurnaroundVisual"
+	charter_turnaround_visual.z_index = 72
+	charter_turnaround_visual.visible = false
+	add_child(charter_turnaround_visual)
+
+
+func _charter_district_base_tile() -> Vector2i:
+	if not parcels.has(CharterDistrictLayout.PARCEL_ID):
+		return Vector2i.ZERO
+	var parcel: Dictionary = parcels[CharterDistrictLayout.PARCEL_ID]
+	return Vector2i(
+		int(parcel.get("px", 0)) * PARCEL_SIZE,
+		int(parcel.get("py", 0)) * PARCEL_SIZE
+	)
+
+
+func _charter_district_visible() -> bool:
+	if not bool(charter_visual_state.get("unlocked", false)):
+		return false
+	return bool(get_charter_district_activation_status().get("can_activate", false))
+
+
+func _charter_cell_reserved(cell: Vector2i) -> bool:
+	if not _charter_district_visible():
+		return false
+	var relative := cell - _charter_district_base_tile()
+	return CharterDistrictLayout.reserved_relative_cells().has(relative)
+
+
+func _refresh_charter_turnaround_visual() -> void:
+	_ensure_charter_turnaround_visual()
+	if not _charter_district_visible():
+		charter_turnaround_visual.clear_charter_visuals()
+		return
+	var stand_item: Dictionary = {}
+	for item in CharterDistrictLayout.structure_items():
+		if String(item.get("id", "")) == "cargo_aircraft_stand":
+			stand_item = item
+			break
+	if stand_item.is_empty():
+		charter_turnaround_visual.clear_charter_visuals()
+		return
+	var origin := _charter_district_base_tile() + (stand_item.get("origin", Vector2i.ZERO) as Vector2i)
+	var footprint := CharterDistrictLayout.footprint_for_item(stand_item)
+	charter_turnaround_visual.position = _footprint_center_world(origin, footprint)
+	var live_state := charter_visual_state.duplicate(true)
+	live_state["active"] = bool(charter_visual_state.get("turnaround_active", false))
+	charter_turnaround_visual.set_charter_visual_state(live_state)
+
+
+func _draw_charter_logistics_district() -> void:
+	if not _charter_district_visible():
+		return
+	var base_tile := _charter_district_base_tile()
+	var ground := _footprint_polygon(base_tile, Vector2i(8, 6))
+	if ground.size() >= 4:
+		var shadow := PackedVector2Array()
+		for point_variant in ground:
+			shadow.append((point_variant as Vector2) + Vector2(7, 9))
+		draw_colored_polygon(shadow, Color(0.03, 0.05, 0.05, 0.24))
+		draw_colored_polygon(ground, Color("b6b3aa"))
+	for item in CharterDistrictLayout.all_visual_items():
+		var definition := CharterVisualCatalog.visual_for(String(item.get("id", "")))
+		if definition.is_empty():
+			continue
+		var origin := base_tile + (item.get("origin", Vector2i.ZERO) as Vector2i)
+		var footprint := CharterDistrictLayout.footprint_for_item(item)
+		_draw_charter_visual_item(
+			definition,
+			origin,
+			footprint,
+			int(item.get("rotation", 0)) % 2
+		)
+	for pad in CharterDistrictLayout.future_pad_items():
+		var pad_origin := base_tile + (pad.get("origin", Vector2i.ZERO) as Vector2i)
+		var pad_footprint: Vector2i = pad.get("footprint", Vector2i(2, 2))
+		var polygon := _footprint_polygon(pad_origin, pad_footprint)
+		if polygon.size() >= 4:
+			draw_colored_polygon(polygon, Color("9c9b92", 0.20))
+			draw_polyline(PackedVector2Array([
+				polygon[0], polygon[1], polygon[2], polygon[3], polygon[0]
+			]), Color("f2d36f", 0.34), 1.2)
+
+
+func _draw_charter_visual_item(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int,
+	modulate: Color = Color.WHITE
+) -> void:
+	if String(definition.get("anchor", "center")) != "bottom_center":
+		_draw_building_sprite(definition, origin, footprint, rotation, modulate)
+		return
+	var sprite_path := _sprite_path_for_rotation(definition, rotation)
+	if sprite_path.is_empty():
+		return
+	var texture := _get_building_texture(sprite_path)
+	if texture == null:
+		return
+	var polygon := _footprint_polygon(origin, footprint)
+	if polygon.size() < 4:
+		return
+	var draw_size: Vector2 = definition.get("world_sprite_size", Vector2(160, 120))
+	var offset := _sprite_offset_for_rotation(definition, rotation)
+	var lift := float(definition.get("bottom_anchor_lift", 0.0))
+	var anchor_point := (polygon[2] as Vector2) + offset + Vector2(0, -lift)
+	draw_texture_rect(
+		texture,
+		Rect2(anchor_point - Vector2(draw_size.x * 0.5, draw_size.y), draw_size),
+		false,
+		modulate
+	)
+
+
+func set_charter_structure_preview(
+	visual_id: String,
+	world_origin: Vector2i,
+	rotation: int = 0
+) -> Dictionary:
+	var status := get_charter_structure_placement_status(
+		visual_id,
+		world_origin,
+		rotation
+	)
+	charter_move_preview = {
+		"visual_id": visual_id,
+		"origin": world_origin,
+		"rotation": rotation % 2,
+		"status": status.duplicate(true)
+	}
+	queue_redraw()
+	return status
+
+
+func clear_charter_structure_preview() -> void:
+	if charter_move_preview.is_empty():
+		return
+	charter_move_preview = {}
+	queue_redraw()
+
+
+func get_charter_structure_placement_status(
+	visual_id: String,
+	world_origin: Vector2i,
+	rotation: int = 0
+) -> Dictionary:
+	var relative_origin := world_origin - _charter_district_base_tile()
+	var result := CharterDistrictLayout.placement_status(
+		visual_id,
+		relative_origin,
+		rotation
+	)
+	result["origin"] = world_origin
+	result["relative_origin"] = relative_origin
+	return result
+
+
+func _draw_charter_structure_preview() -> void:
+	if charter_move_preview.is_empty() or not _charter_district_visible():
+		return
+	var visual_id := String(charter_move_preview.get("visual_id", ""))
+	var definition := CharterVisualCatalog.visual_for(visual_id)
+	if definition.is_empty():
+		return
+	var origin: Vector2i = charter_move_preview.get("origin", Vector2i.ZERO)
+	var rotation := int(charter_move_preview.get("rotation", 0)) % 2
+	var item := {
+		"id": visual_id,
+		"origin": origin - _charter_district_base_tile(),
+		"rotation": rotation
+	}
+	var footprint := CharterDistrictLayout.footprint_for_item(item)
+	var status: Dictionary = charter_move_preview.get("status", {})
+	var valid := bool(status.get("valid", false))
+	var polygon := _footprint_polygon(origin, footprint)
+	if polygon.size() < 4:
+		return
+	var fill := PREVIEW_VALID if valid else PREVIEW_INVALID
+	draw_colored_polygon(polygon, fill)
+	var outline := Color("8ff0ae", 0.98) if valid else Color("ff6f69", 0.98)
+	draw_polyline(PackedVector2Array([
+		polygon[0], polygon[1], polygon[2], polygon[3], polygon[0]
+	]), outline, 3.0)
+	var ghost := Color(0.92, 1.0, 0.95, 0.76) if valid else Color(1.0, 0.56, 0.54, 0.72)
+	_draw_charter_visual_item(
+		definition,
+		origin,
+		footprint,
+		rotation,
+		ghost
+	)
+
+
 func set_event_visual_state(
 	snapshot: Dictionary,
 	owned_cosmetics: Dictionary
@@ -4836,6 +5098,13 @@ func _taxiway_visually_connects_to(cell: Vector2i) -> bool:
 
 
 func _get_building_texture(path: String) -> Texture2D:
+	if CharterVisualPack.is_uri(path):
+		var charter_texture := CharterVisualPack.texture_from_uri(path)
+		if charter_texture != null:
+			building_textures[path] = charter_texture
+			return charter_texture
+		return null
+
 	if building_textures.has(path):
 		return building_textures[path] as Texture2D
 
@@ -5541,6 +5810,7 @@ func purchase_parcel(parcel_id: String) -> bool:
 	parcel_unlock_fx[parcel_id] = 0.0
 	set_process(true)
 	_refresh_parcel_labels()
+	_refresh_charter_turnaround_visual()
 	queue_redraw()
 	if selected_id == parcel_id:
 		parcel_selected.emit(
@@ -6138,6 +6408,15 @@ func _get_placement_status(
 				"reason": "Outside the airport map.",
 				"origin": origin,
 				"footprint": footprint
+			}
+
+		if _charter_cell_reserved(cell):
+			return {
+				"valid": false,
+				"reason": "Reserved for Cargo Charter logistics.",
+				"origin": origin,
+				"footprint": footprint,
+				"charter_reserved": true
 			}
 
 		var cell_key := _cell_key(cell)
@@ -8231,6 +8510,7 @@ func apply_saved_airport_layout(
 	_rebuild_occupied_cells()
 	_recalculate_airside_network()
 	_refresh_building_labels()
+	_refresh_charter_turnaround_visual()
 	queue_redraw()
 	return true
 

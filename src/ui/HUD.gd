@@ -88,6 +88,7 @@ var active_building_id := ""
 var active_build_mode := ""
 var active_expand_parcel_id := ""
 var event_nav_button: Button
+var charter_nav_button: Button
 var social_nav_button: Button
 var nav_buttons: Dictionary = {}
 
@@ -873,7 +874,7 @@ func _build_bottom_navigation(root: Control) -> void:
 	nav_row.add_theme_constant_override("separation", 6)
 	bottom_nav_panel.add_child(nav_row)
 
-	for item in ["BUILD", "FLEET", "WORLD", "EVENT", "SOCIAL", "MORE"]:
+	for item in ["BUILD", "FLEET", "WORLD", "CHARTER", "EVENT", "SOCIAL", "MORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -893,13 +894,31 @@ func _build_bottom_navigation(root: Control) -> void:
 		else:
 			button.pressed.connect(_on_navigation_pressed.bind(tab))
 
-		if tab == "event":
+		if tab == "charter":
+			charter_nav_button = button
+			button.visible = false
+		elif tab == "event":
 			event_nav_button = button
 			button.visible = false
 		elif tab == "social":
 			social_nav_button = button
 
 		nav_row.add_child(button)
+
+
+func set_charter_available(value: bool, attention: bool = false) -> void:
+	if charter_nav_button == null:
+		return
+	charter_nav_button.visible = value
+	if not value:
+		charter_nav_button.text = "CHARTER"
+		return
+	charter_nav_button.text = "CHARTER •" if attention else "CHARTER"
+	GameUIStyle.apply_button(
+		charter_nav_button,
+		"gold" if attention else "dock",
+		true
+	)
 
 
 func set_event_available(

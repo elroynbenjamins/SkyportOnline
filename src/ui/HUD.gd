@@ -514,7 +514,8 @@ func _build_dispatch_shift_indicator(root: Control) -> void:
 func set_dispatch_shift(
 	status: String,
 	score: int,
-	remaining_seconds: int
+	remaining_seconds: int,
+	combo_count: int = 0
 ) -> void:
 	if dispatch_shift_panel == null or dispatch_shift_label == null:
 		return
@@ -523,10 +524,11 @@ func set_dispatch_shift(
 	if not running:
 		return
 	var total := maxi(remaining_seconds, 0)
-	dispatch_shift_label.text = "✦ DISPATCH  %d:%02d  •  %d PTS" % [
+	dispatch_shift_label.text = "✦ DISPATCH  %d:%02d  •  %d PTS%s" % [
 		int(total / 60),
 		total % 60,
-		maxi(score, 0)
+		maxi(score, 0),
+		"  •  COMBO x%d" % combo_count if combo_count >= 2 else ""
 	]
 
 

@@ -238,16 +238,22 @@ static func _destination_from_country(
 			float(country.get("hub_lon", 0.0))
 		)
 	)
+	var is_domestic := home_id == country_id
+	var map_position := Vector2(
+		float(country.get("map_x", 0.5)),
+		float(country.get("map_y", 0.5))
+	)
+	if is_domestic:
+		map_position += Vector2(0.025, 0.035)
+		map_position.x = clampf(map_position.x, 0.04, 0.96)
+		map_position.y = clampf(map_position.y, 0.06, 0.92)
 	return _build_destination(
 		String(country.get("route_id", country_id.to_lower())),
 		String(country.get("hub_city", country.get("name", country_id))),
 		country_id,
 		real_distance,
-		Vector2(
-			float(country.get("map_x", 0.5)),
-			float(country.get("map_y", 0.5))
-		),
-		home_id == country_id
+		map_position,
+		is_domestic
 	)
 
 

@@ -2564,7 +2564,7 @@ func _on_fuel_economy_changed(
 	if not updated.is_empty():
 		current_profile = updated
 	if ground_services != null:
-		ground_services.refresh_after_layout_change()
+		ground_services.call_deferred("refresh_after_layout_change")
 
 
 func _on_fuel_order_requested() -> void:

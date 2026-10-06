@@ -1,5 +1,19 @@
 extends CanvasLayer
 
+const HUD_ICON_BUILD: Texture2D = preload("res://assets/ui/hud/build.svg")
+const HUD_ICON_FLEET: Texture2D = preload("res://assets/ui/hud/fleet.svg")
+const HUD_ICON_WORLD: Texture2D = preload("res://assets/ui/hud/world.svg")
+const HUD_ICON_ACTIVITIES: Texture2D = preload("res://assets/ui/hud/activities.svg")
+const HUD_ICON_SOCIAL: Texture2D = preload("res://assets/ui/hud/social.svg")
+const HUD_ICON_MORE: Texture2D = preload("res://assets/ui/hud/more.svg")
+const HUD_ICON_PASSENGERS: Texture2D = preload("res://assets/ui/hud/passengers.svg")
+const HUD_ICON_FUEL: Texture2D = preload("res://assets/ui/hud/fuel.svg")
+const HUD_ICON_COINS: Texture2D = preload("res://assets/ui/hud/coins.svg")
+const HUD_ICON_AERO: Texture2D = preload("res://assets/ui/hud/aero.svg")
+const HUD_ICON_AIRFIELD: Texture2D = preload("res://assets/ui/hud/airfield.svg")
+const HUD_ICON_OPS: Texture2D = preload("res://assets/ui/hud/ops.svg")
+const HUD_ICON_ATC: Texture2D = preload("res://assets/ui/hud/atc.svg")
+
 signal purchase_expansion_requested
 signal building_selected(building_id: String)
 signal rotate_building_requested
@@ -23,12 +37,16 @@ var xp_progress: ProgressBar
 var xp_label: Label
 var passenger_label: Label
 var passenger_rate_label: Label
+var passenger_icon: TextureRect
 var fuel_label: Label
 var fuel_rate_label: Label
+var fuel_icon: TextureRect
 var fuel_order_button: Button
 var fuel_panel: PanelContainer
 var coins_label: Label
+var coins_icon: TextureRect
 var gems_label: Label
+var gems_icon: TextureRect
 var airside_status_label: Label
 var operation_status_label: Label
 var atc_status_label: Label
@@ -199,10 +217,12 @@ func _build_interface() -> void:
 		"0 / 0",
 		"+0.0/m",
 		"hud_passenger",
-		124
+		124,
+		HUD_ICON_PASSENGERS
 	)
 	passenger_label = passenger_chip["value"] as Label
 	passenger_rate_label = passenger_chip["detail"] as Label
+	passenger_icon = passenger_chip["icon"] as TextureRect
 
 	var fuel_chip := _build_hud_resource_chip(
 		top_row,
@@ -210,10 +230,12 @@ func _build_interface() -> void:
 		"0 / 0",
 		"+0.0/m",
 		"hud_fuel",
-		112
+		112,
+		HUD_ICON_FUEL
 	)
 	fuel_label = fuel_chip["value"] as Label
 	fuel_rate_label = fuel_chip["detail"] as Label
+	fuel_icon = fuel_chip["icon"] as TextureRect
 	fuel_panel = fuel_chip["panel"] as PanelContainer
 
 	fuel_order_button = Button.new()
@@ -230,9 +252,11 @@ func _build_interface() -> void:
 		"0",
 		"",
 		"hud_coin",
-		96
+		96,
+		HUD_ICON_COINS
 	)
 	coins_label = coin_chip["value"] as Label
+	coins_icon = coin_chip["icon"] as TextureRect
 
 	var aero_chip := _build_hud_resource_chip(
 		top_row,
@@ -240,9 +264,11 @@ func _build_interface() -> void:
 		"0",
 		"",
 		"hud_premium",
-		82
+		82,
+		HUD_ICON_AERO
 	)
 	gems_label = aero_chip["value"] as Label
+	gems_icon = aero_chip["icon"] as TextureRect
 
 	var objective_panel := PanelContainer.new()
 	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -273,6 +299,7 @@ func _build_interface() -> void:
 	airside_status_chip = Button.new()
 	airside_status_chip.text = "AIR • CHECKING"
 	airside_status_chip.custom_minimum_size = Vector2(132, 34)
+	_apply_button_icon(airside_status_chip, HUD_ICON_AIRFIELD, 18)
 	GameUIStyle.apply_button(airside_status_chip, "nav", true)
 	airside_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("airside")
@@ -282,6 +309,7 @@ func _build_interface() -> void:
 	operation_status_chip = Button.new()
 	operation_status_chip.text = "OPS • PREPARING"
 	operation_status_chip.custom_minimum_size = Vector2(150, 34)
+	_apply_button_icon(operation_status_chip, HUD_ICON_OPS, 18)
 	GameUIStyle.apply_button(operation_status_chip, "nav", true)
 	operation_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("operations")
@@ -291,6 +319,7 @@ func _build_interface() -> void:
 	atc_status_chip = Button.new()
 	atc_status_chip.text = "ATC • CLEAR"
 	atc_status_chip.custom_minimum_size = Vector2(136, 34)
+	_apply_button_icon(atc_status_chip, HUD_ICON_ATC, 18)
 	GameUIStyle.apply_button(atc_status_chip, "nav", true)
 	atc_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("atc")
@@ -406,17 +435,33 @@ func _build_hud_resource_chip(
 	value_text: String,
 	detail_text: String,
 	panel_variant: String,
-	minimum_width: int
+	minimum_width: int,
+	icon_texture: Texture2D = null
 ) -> Dictionary:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(minimum_width, 38)
 	GameUIStyle.apply_panel(panel, panel_variant)
 	parent.add_child(panel)
 
+	var content_row := HBoxContainer.new()
+	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	content_row.add_theme_constant_override("separation", 5)
+	panel.add_child(content_row)
+
+	var icon_rect := TextureRect.new()
+	icon_rect.custom_minimum_size = Vector2(20, 20)
+	icon_rect.texture = icon_texture
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_rect.visible = icon_texture != null
+	content_row.add_child(icon_rect)
+
 	var box := VBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_theme_constant_override("separation", 0)
-	panel.add_child(box)
+	content_row.add_child(box)
 
 	var meta_row := HBoxContainer.new()
 	meta_row.add_theme_constant_override("separation", 4)
@@ -447,6 +492,7 @@ func _build_hud_resource_chip(
 	return {
 		"panel": panel,
 		"box": box,
+		"icon": icon_rect,
 		"value": value_label,
 		"detail": detail_label
 	}
@@ -1030,6 +1076,7 @@ func _build_bottom_navigation(root: Control) -> void:
 		button.add_theme_font_size_override("font_size", 12)
 
 		var tab: String = item.to_lower()
+		_apply_button_icon(button, _nav_icon_for(tab), 20)
 		GameUIStyle.apply_button(
 			button,
 			"dock_selected" if tab == "build" else "dock",
@@ -1049,6 +1096,36 @@ func _build_bottom_navigation(root: Control) -> void:
 			social_nav_button = button
 
 		nav_row.add_child(button)
+
+func _apply_button_icon(
+	button: Button,
+	texture: Texture2D,
+	max_width: int
+) -> void:
+	if button == null or texture == null:
+		return
+	button.icon = texture
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	button.icon_max_width = max_width
+	button.expand_icon = true
+
+
+func _nav_icon_for(tab: String) -> Texture2D:
+	match tab:
+		"build":
+			return HUD_ICON_BUILD
+		"fleet":
+			return HUD_ICON_FLEET
+		"world":
+			return HUD_ICON_WORLD
+		"activities":
+			return HUD_ICON_ACTIVITIES
+		"social":
+			return HUD_ICON_SOCIAL
+		_:
+			return HUD_ICON_MORE
+
 
 func set_charter_available(value: bool, attention: bool = false) -> void:
 	charter_activity_attention = value and attention

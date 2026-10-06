@@ -82,7 +82,7 @@ func _run() -> void:
 		_fail("Airport fuel warning should clear above 25%.")
 		return
 
-	var hud := load("res://src/ui/HUD.gd").new()
+	var hud = load("res://src/ui/HUD.gd").new()
 	root.add_child(hud)
 	await process_frame
 	hud.set_fuel_data(30, 360, 1.45)

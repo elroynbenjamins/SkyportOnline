@@ -924,6 +924,7 @@ func _live_operations_snapshot() -> Dictionary:
 
 		var state := String(aircraft.state)
 		if state in [
+			"TAXIING_TO_STAND",
 			"TAXIING_OUT",
 			"TAXIING_IN",
 			"ENTERING_RUNWAY"
@@ -1122,6 +1123,10 @@ func _on_demo_aircraft_state_changed(
 	label: String
 ) -> void:
 	match state:
+		"TAXIING_TO_STAND":
+			hud.set_operation_status(
+				"%s leaving hangar • taxiing to loading stand" % label
+			)
 		"TAXIING_OUT":
 			_release_stand(aircraft)
 			hud.set_operation_status(

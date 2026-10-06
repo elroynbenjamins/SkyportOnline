@@ -38,7 +38,10 @@ const LOCKED_GRASS_VARIANTS := [
 	Color("384c43"),
 	Color("455a4e")
 ]
-const GRID_LINE := Color("d9efc8", 0.025)
+const OWNED_GRASS_BASE := Color("70a459")
+const AVAILABLE_GRASS_BASE := Color("797f53")
+const LOCKED_GRASS_BASE := Color("405449")
+const GRID_LINE := Color("d9efc8", 0.08)
 const LOCKED_GRID_LINE := Color("97aaa0", 0.11)
 const AVAILABLE_GRID_LINE := Color("e4c96d", 0.16)
 const TERRAIN_PATCH_LIGHT := Color("9ac875", 0.08)
@@ -415,37 +418,54 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 			else "locked"
 		)
 
+	var show_placement_grid := _placement_grid_visible()
 	for y in range(start_y, start_y + PARCEL_SIZE):
 		for x in range(start_x, start_x + PARCEL_SIZE):
 			var tile := Vector2i(x, y)
 			var center := tile_to_world(Vector2(x, y))
 			var points := _tile_points(center)
-			var fill := _terrain_color_for(
-				tile,
-				terrain_state
-			)
-			var line := _terrain_line_for_state(
-				terrain_state
+			var fill := (
+				_terrain_color_for(tile, terrain_state)
+				if show_placement_grid
+				else _terrain_surface_color_for_state(
+					terrain_state
+				)
 			)
 
 			draw_colored_polygon(points, fill)
-			if line.a > 0.0:
-				draw_polyline(
-					PackedVector2Array([
-						points[0],
-						points[1],
-						points[2],
-						points[3],
-						points[0]
-					]),
-					line,
-					1.0
+			if show_placement_grid:
+				var line := _terrain_line_for_state(
+					terrain_state
 				)
+				if line.a > 0.0:
+					draw_polyline(
+						PackedVector2Array([
+							points[0],
+							points[1],
+							points[2],
+							points[3],
+							points[0]
+						]),
+						line,
+						1.0
+					)
 			_draw_terrain_detail(
 				tile,
 				center,
 				terrain_state
 			)
+
+
+func _terrain_surface_color_for_state(
+	state: String
+) -> Color:
+	match state:
+		"available":
+			return AVAILABLE_GRASS_BASE
+		"locked":
+			return LOCKED_GRASS_BASE
+		_:
+			return OWNED_GRASS_BASE
 
 
 func _terrain_hash(
@@ -5881,8 +5901,19 @@ func _placement_focus_active() -> bool:
 	)
 
 
+func _placement_grid_visible() -> bool:
+	# The construction grid is a tool, not part of the normal airport view.
+	# Show it only while the player is actively placing, moving or restoring
+	# a building. Normal play keeps the terrain seamless.
+	return _placement_focus_active()
+
+
 func is_placement_focus_active() -> bool:
 	return _placement_focus_active()
+
+
+func is_placement_grid_visible() -> bool:
+	return _placement_grid_visible()
 
 
 func is_preview_snap_feedback_active() -> bool:
@@ -6327,12 +6358,26 @@ func _draw_selected_outline() -> void:
 	var parcel: Dictionary = parcels[selected_id]
 	var sx := int(parcel["px"]) * PARCEL_SIZE
 	var sy := int(parcel["py"]) * PARCEL_SIZE
+	var perimeter := _footprint_polygon(
+		Vector2i(sx, sy),
+		Vector2i(PARCEL_SIZE, PARCEL_SIZE)
+	)
+	if perimeter.size() < 4:
+		return
 
-	for y in range(sy, sy + PARCEL_SIZE):
-		for x in range(sx, sx + PARCEL_SIZE):
-			if x == sx or x == sx + PARCEL_SIZE - 1 or y == sy or y == sy + PARCEL_SIZE - 1:
-				var p := _tile_points(tile_to_world(Vector2(x, y)))
-				draw_polyline(PackedVector2Array([p[0], p[1], p[2], p[3], p[0]]), SELECTED_LINE, 2.5)
+	# Selecting expansion land should highlight the parcel, not reveal the
+	# construction-cell grid. Keep normal land browsing as one clean boundary.
+	draw_polyline(
+		PackedVector2Array([
+			perimeter[0],
+			perimeter[1],
+			perimeter[2],
+			perimeter[3],
+			perimeter[0]
+		]),
+		SELECTED_LINE,
+		2.5
+	)
 
 
 func _tile_points(center: Vector2) -> PackedVector2Array:

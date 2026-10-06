@@ -145,6 +145,9 @@ var selected_synergy_uid := -1
 var charter_visual_state: Dictionary = {}
 var charter_move_preview: Dictionary = {}
 var charter_turnaround_visual: CharterTurnaroundVisual
+var fuel_warning_level := "normal"
+var fuel_warning_ratio := 1.0
+var fuel_warning_elapsed := 0.0
 
 
 func _ready() -> void:
@@ -221,6 +224,13 @@ func _process(delta: float) -> void:
 		active = true
 		runway_feedback_elapsed = fmod(
 			runway_feedback_elapsed + delta,
+			TAU
+		)
+
+	if fuel_warning_level != "normal":
+		active = true
+		fuel_warning_elapsed = fmod(
+			fuel_warning_elapsed + delta * 3.0,
 			TAU
 		)
 
@@ -1848,6 +1858,91 @@ func _draw_buildings() -> void:
 						Color(0.05, 0.10, 0.10, 0.19)
 					)
 
+		if String(definition.get("service", "")) == "fuel":
+			_draw_fuel_warning_badge(
+				origin,
+				footprint
+			)
+
+
+func set_fuel_status(fuel: int, capacity: int) -> void:
+	var ratio := 1.0
+	var level := "normal"
+	if capacity > 0:
+		ratio = clampf(
+			float(maxi(fuel, 0)) / float(capacity),
+			0.0,
+			1.0
+		)
+		if ratio <= 0.10:
+			level = "critical"
+		elif ratio <= 0.25:
+			level = "low"
+
+	var changed := (
+		level != fuel_warning_level
+		or absf(ratio - fuel_warning_ratio) > 0.001
+	)
+	fuel_warning_level = level
+	fuel_warning_ratio = ratio
+	if level != "normal":
+		set_process(true)
+	if changed:
+		queue_redraw()
+
+
+func get_fuel_status_snapshot() -> Dictionary:
+	return {
+		"level": fuel_warning_level,
+		"ratio": fuel_warning_ratio
+	}
+
+
+func _draw_fuel_warning_badge(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> void:
+	if fuel_warning_level == "normal":
+		return
+
+	var pulse := 0.72 + sin(fuel_warning_elapsed) * 0.18
+	var warning_color := (
+		Color("ef6a64", pulse)
+		if fuel_warning_level == "critical"
+		else Color("f1bd4a", pulse)
+	)
+	var outline := _footprint_polygon(origin, footprint)
+	if outline.size() >= 4:
+		for index in range(outline.size()):
+			draw_line(
+				outline[index],
+				outline[(index + 1) % outline.size()],
+				warning_color,
+				3.0
+			)
+
+	var center := _footprint_center_world(origin, footprint)
+	var badge := center + Vector2(
+		0,
+		-58.0 - float(footprint.y) * 8.0
+	)
+	draw_circle(
+		badge + Vector2(2, 3),
+		13.0,
+		Color(0.02, 0.04, 0.05, 0.42)
+	)
+	draw_circle(badge, 11.0, warning_color)
+	draw_line(
+		badge + Vector2(0, -5),
+		badge + Vector2(0, 2),
+		Color("fff7e5"),
+		3.0
+	)
+	draw_circle(
+		badge + Vector2(0, 6),
+		1.8,
+		Color("fff7e5")
+	)
 
 
 func get_apron_micro_detail_snapshot() -> Dictionary:
@@ -7512,6 +7607,10 @@ func get_compatible_service_buildings(
 			definition,
 			int(building["rotation"])
 		)
+		var fuel_stats := ServiceUpgradeCatalog.effective_fuel_stats(
+			building_id,
+			level
+		)
 		results.append({
 			"uid": int(building["uid"]),
 			"definition_id": building_id,
@@ -7524,11 +7623,24 @@ func get_compatible_service_buildings(
 			"service_speed": maxf(service_speed, 0.1),
 			"vehicle_capacity": maxi(vehicle_capacity, 1),
 			"fuel_storage": maxi(
-				int(definition.get("fuel_storage", 0)),
+				int(
+					fuel_stats.get(
+						"fuel_storage",
+						definition.get("fuel_storage", 0)
+					)
+				),
 				0
 			),
 			"fuel_delivery_per_minute": maxf(
-				float(definition.get("fuel_delivery_per_minute", 0.0)),
+				float(
+					fuel_stats.get(
+						"fuel_delivery_per_minute",
+						definition.get(
+							"fuel_delivery_per_minute",
+							0.0
+						)
+					)
+				),
 				0.0
 			),
 			"sizes": definition.get("sizes", PackedStringArray())

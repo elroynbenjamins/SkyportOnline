@@ -27,6 +27,16 @@ func _run() -> void:
 		_fail("Both starter stands should connect to the runway through taxiway.")
 		return
 
+	if int(starter.get("hangars_total", 0)) != 1:
+		_fail("Starter reference airport should include one small hangar.")
+		return
+	if int(starter.get("hangars_connected", 0)) != 1:
+		_fail("Starter hangar should connect to the same taxi network as the stands.")
+		return
+	if int(starter.get("taxiways", 0)) != 15:
+		_fail("Starter reference airport should expose the larger 15-tile taxi network.")
+		return
+
 	var starter_routes := grid.get_departure_routes("S")
 	if starter_routes.size() != 2:
 		_fail("Starter airport should expose two S-class departure routes.")
@@ -59,6 +69,30 @@ func _run() -> void:
 		)
 		if service_route.size() < 3:
 			_fail("Fuel truck should have a service-road route to each starter stand.")
+			return
+
+	for route_info in starter_routes:
+		var stand_uid := int(route_info.get("stand_uid", -1))
+		var ground_flow := grid.get_departure_ground_flow_for_stand(
+			stand_uid,
+			"S"
+		)
+		var hangar_route: PackedVector2Array = ground_flow.get(
+			"hangar_to_stand_route",
+			PackedVector2Array()
+		)
+		if hangar_route.size() < 3:
+			_fail("Each starter stand should have a physical hangar-to-stand taxi route.")
+			return
+		if String(ground_flow.get("fuel_mode", "")) != "truck_to_stand":
+			_fail("Early fuel should be truck-to-stand rather than an aircraft fuel stop.")
+			return
+		var fuel_route: PackedVector2Array = ground_flow.get(
+			"fuel_service_route",
+			PackedVector2Array()
+		)
+		if fuel_route.size() < 3:
+			_fail("Fuel station should reach each stand via service road.")
 			return
 
 	var dispatcher := GroundServiceDispatcher.new()
@@ -287,7 +321,7 @@ func _run() -> void:
 	grid.select_parcel("east")
 	grid.purchase_selected()
 
-	var disconnected_position := grid.tile_to_world(Vector2(15, 10))
+	var disconnected_position := grid.tile_to_world(Vector2(12, 4))
 	var preview := grid.set_build_preview("small_stand", disconnected_position, 0)
 	if not bool(preview.get("valid", false)):
 		_fail("Disconnected stand test placement should be buildable.")
@@ -305,7 +339,7 @@ func _run() -> void:
 		_fail("Third stand should remain disconnected before adding taxiway.")
 		return
 
-	var connector_position := grid.tile_to_world(Vector2(14, 10))
+	var connector_position := grid.tile_to_world(Vector2(12, 3))
 	var connector_preview := grid.set_build_preview("taxiway", connector_position, 0)
 	if not bool(connector_preview.get("valid", false)):
 		_fail("Connector taxiway test placement should be valid.")
@@ -320,10 +354,19 @@ func _run() -> void:
 	var rapid_grid := AirportGrid.new()
 	root.add_child(rapid_grid)
 	await process_frame
-	rapid_grid.select_parcel("east")
-	rapid_grid.purchase_selected()
 
-	var rapid_position := rapid_grid.tile_to_world(Vector2(16, 13))
+	for road_tile in [Vector2i(10, 11), Vector2i(10, 12)]:
+		var road_preview := rapid_grid.set_build_preview(
+			"service_road",
+			rapid_grid.tile_to_world(Vector2(road_tile.x, road_tile.y)),
+			0
+		)
+		if not bool(road_preview.get("valid", false)):
+			_fail("Rapid-fuel test service-road extension should be valid.")
+			return
+		rapid_grid.confirm_build_preview()
+
+	var rapid_position := rapid_grid.tile_to_world(Vector2(11, 12))
 	var rapid_preview := rapid_grid.set_build_preview("rapid_small_fuel", rapid_position, 0)
 	if not bool(rapid_preview.get("valid", false)):
 		_fail("Rapid fuel station test placement should be valid on expanded land.")

@@ -1327,22 +1327,17 @@ func _update_level() -> void:
 			gems += aero_awarded
 			progression["aero_tokens"] = gems
 			progression["gems"] = gems
-		var activity_unlocks: Array[String] = []
-		for mode_id in ActivityProgressionRules.definitions():
-			var unlock_level := ActivityProgressionRules.unlock_level(
-				String(mode_id)
-			)
-			if unlock_level > old_level and unlock_level <= player_level:
-				activity_unlocks.append(
-					String(
-						ActivityProgressionRules.definition(
-							String(mode_id)
-						).get("title", mode_id)
-					)
-				)
+		var unlocked_names: Array[String] = []
+		for reached_level in range(old_level + 1, player_level + 1):
+			for name_variant in AirportProgressionPacing.unlock_names(
+				reached_level
+			):
+				var unlock_name := String(name_variant)
+				if not unlocked_names.has(unlock_name):
+					unlocked_names.append(unlock_name)
 		var unlock_text := (
-			" • NEW: %s" % " / ".join(activity_unlocks)
-			if not activity_unlocks.is_empty()
+			" • UNLOCKED: %s" % " / ".join(unlocked_names)
+			if not unlocked_names.is_empty()
 			else ""
 		)
 		hud.set_operation_status(

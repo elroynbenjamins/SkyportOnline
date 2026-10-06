@@ -16,6 +16,7 @@ var map_hint_label: Label
 var aircraft_list_container: VBoxContainer
 var country_title_label: Label
 var country_status_label: Label
+var country_picker: OptionButton
 var destination_list_container: VBoxContainer
 var details_title: Label
 var route_card_label: Label
@@ -346,6 +347,30 @@ func _build_details_sidebar() -> void:
 	country_status_label.add_theme_font_size_override("font_size", 12)
 	GameUIStyle.muted(country_status_label)
 	wrapper.add_child(country_status_label)
+
+	country_picker = OptionButton.new()
+	country_picker.custom_minimum_size = Vector2(0, 40)
+	GameUIStyle.apply_button(country_picker, "secondary", true)
+	for country in CountryCatalog.get_countries():
+		var code := String(country.get("id", ""))
+		var routes := _destinations_for_country(code)
+		var route_badge := (
+			" • %d route%s" % [
+				routes.size(),
+				"" if routes.size() == 1 else "s"
+			]
+			if not routes.is_empty()
+			else " • resources"
+		)
+		country_picker.add_item("%s  %s%s" % [
+			code,
+			String(country.get("name", "Country")),
+			route_badge
+		])
+		var item_index := country_picker.item_count - 1
+		country_picker.set_item_metadata(item_index, code)
+	country_picker.item_selected.connect(_on_country_picker_selected)
+	wrapper.add_child(country_picker)
 
 	destination_list_container = VBoxContainer.new()
 	destination_list_container.add_theme_constant_override("separation", 5)
@@ -939,6 +964,14 @@ func _on_country_selected(country_code: String) -> void:
 	_select_country(country_code)
 
 
+func _on_country_picker_selected(index: int) -> void:
+	if country_picker == null:
+		return
+	_select_country(
+		String(country_picker.get_item_metadata(index))
+	)
+
+
 func _on_country_hovered(country_code: String) -> void:
 	if map_hint_label == null:
 		return
@@ -1054,6 +1087,14 @@ func _refresh_country_summary() -> void:
 		String(country.get("id", "")),
 		String(country.get("name", "Country"))
 	]
+	if country_picker != null:
+		for index in range(country_picker.item_count):
+			if (
+				String(country_picker.get_item_metadata(index))
+				== selected_country_code
+			):
+				country_picker.select(index)
+				break
 	var home_suffix := (
 		"  •  HOME HUB"
 		if selected_country_code == home_country_code

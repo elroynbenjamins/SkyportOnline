@@ -249,6 +249,9 @@ func _setup_aircraft_context_card() -> void:
 	aircraft_context_card.social_requested.connect(
 		_on_aircraft_context_social_requested
 	)
+	aircraft_context_card.handling_action_requested.connect(
+		_on_aircraft_handling_action_requested
+	)
 	add_child(aircraft_context_card)
 
 
@@ -425,6 +428,13 @@ func _spawn_aircraft_demos() -> void:
 		]
 		aircraft.configure_aircraft_type(profile_id)
 		aircraft.configure_taxi_traffic(taxi_traffic)
+		aircraft.configure_handling_mode(
+			true,
+			false
+		)
+		aircraft.handling_action_requested.connect(
+			_on_aircraft_handling_action_requested
+		)
 
 		var destination := DestinationCatalog.get_destination(destination_id)
 		var initial_plan := _create_current_flight_plan(
@@ -460,7 +470,12 @@ func _spawn_aircraft_demos() -> void:
 			aircraft,
 			current_event_snapshot
 		)
-		ground_services.request_turnaround(aircraft, label, false)
+		ground_services.request_turnaround(
+			aircraft,
+			label,
+			false,
+			aircraft.uses_manual_handling()
+		)
 
 	hud.set_operation_status(
 		"%d aircraft awaiting turnaround" % aircraft_demos.size()
@@ -536,7 +551,58 @@ func _on_aircraft_serviced(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
-	runway_dispatcher.request_departure(aircraft, label)
+	runway_dispatcher.request_departure(
+		aircraft,
+		label
+	)
+
+
+func _on_aircraft_handling_action_requested(
+	aircraft: AircraftPrototype,
+	action: String
+) -> void:
+	if (
+		aircraft == null
+		or not is_instance_valid(aircraft)
+	):
+		return
+
+	var normalized := action.to_upper()
+	var label := String(aircraft.name)
+	match normalized:
+		"LAND":
+			if aircraft.state != "HOLDING_FOR_ARRIVAL":
+				return
+			aircraft.clear_handling_action()
+			runway_dispatcher.request_arrival(
+				aircraft,
+				label
+			)
+			hud.set_operation_status(
+				"%s requested landing clearance" % label
+			)
+		"TAXI":
+			if aircraft.continue_manual_taxi_in():
+				hud.set_operation_status(
+					"%s taxiing to stand" % label
+				)
+		"UNLOAD", "SERVICE", "SEND":
+			if ground_services.advance_manual_handling(
+				aircraft,
+				normalized
+			):
+				hud.set_operation_status(
+					"%s • %s started" % [
+						label,
+						normalized.capitalize()
+					],
+					"success"
+				)
+		"LOAD":
+			_attempt_boarding_and_departure(
+				aircraft,
+				label
+			)
 
 
 func _on_passenger_boarding_requested(
@@ -556,7 +622,44 @@ func _on_passenger_boarding_requested(
 			"success"
 		)
 		return
-	_attempt_boarding_and_departure(aircraft, label)
+
+	if (
+		aircraft != null
+		and is_instance_valid(aircraft)
+		and aircraft.uses_manual_handling()
+		and not aircraft.uses_handling_automation()
+	):
+		if not _is_passenger_waiter(aircraft):
+			pending_passenger_departures.append({
+				"aircraft": aircraft,
+				"label": label,
+				"manual": true
+			})
+		var required := _passenger_requirement(
+			aircraft
+		)
+		aircraft.set_handling_action("LOAD")
+		aircraft.set_turnaround_status(
+			"Passengers %d / %d\nTap LOAD" % [
+				passenger_economy.get_passengers(),
+				required
+			],
+			(
+				"success"
+				if passenger_economy.get_passengers() >= required
+				else "warning"
+			)
+		)
+		hud.set_operation_status(
+			"%s ready to load • tap LOAD" % label,
+			"warning"
+		)
+		return
+
+	_attempt_boarding_and_departure(
+		aircraft,
+		label
+	)
 
 
 func _on_runway_status(text: String, tone: String) -> void:
@@ -937,11 +1040,26 @@ func _on_demo_aircraft_state_changed(
 			hud.set_operation_status("%s landing" % label)
 		"TAXIING_IN":
 			hud.set_operation_status("%s taxiing to stand" % label)
+		"WAITING_TAXI_IN":
+			hud.set_operation_status(
+				"%s clear of runway • tap TAXI" % label,
+				"warning"
+			)
 		"PARKED":
 			hud.set_operation_status("%s parked at stand" % label, "success")
+		"WAITING_UNLOAD":
+			hud.set_operation_status(
+				"%s at stand • tap UNLOAD" % label,
+				"warning"
+			)
 		"UNLOADING":
 			hud.set_operation_status(
 				"%s unloading passengers / cargo" % label
+			)
+		"WAITING_SERVICE":
+			hud.set_operation_status(
+				"%s unload complete • tap SERVICE" % label,
+				"warning"
 			)
 		"SERVICING":
 			hud.set_operation_status(
@@ -970,10 +1088,16 @@ func _on_demo_aircraft_state_changed(
 				"warning"
 			)
 		"READY_FOR_DEPARTURE":
-			hud.set_operation_status(
-				"%s ready • waiting for runway" % label,
-				"warning"
-			)
+			if aircraft.get_handling_action() == "SEND":
+				hud.set_operation_status(
+					"%s turnaround complete • tap SEND" % label,
+					"warning"
+				)
+			else:
+				hud.set_operation_status(
+					"%s ready • waiting for runway" % label,
+					"warning"
+				)
 		"WAITING_FUEL":
 			hud.set_operation_status("%s parked • fuel required" % label)
 
@@ -1081,10 +1205,20 @@ func _assign_arrival_if_possible(
 		stand_uid,
 		runway_uid
 	)
-	runway_dispatcher.request_arrival(
-		aircraft,
-		label
-	)
+	if (
+		aircraft.uses_manual_handling()
+		and not aircraft.is_social_visitor()
+	):
+		aircraft.stage_for_manual_arrival()
+		hud.set_operation_status(
+			"%s inbound • tap LAND" % label,
+			"warning"
+		)
+	else:
+		runway_dispatcher.request_arrival(
+			aircraft,
+			label
+		)
 
 	if candidates.size() > 1:
 		hud.set_operation_status(
@@ -1152,7 +1286,12 @@ func _on_demo_arrival_completed(
 		int(route_info.get("stand_uid", -1)),
 		int(route_info.get("runway_uid", -1))
 	)
-	ground_services.request_turnaround(aircraft, label, true)
+	ground_services.request_turnaround(
+		aircraft,
+		label,
+		true,
+		aircraft.uses_manual_handling()
+	)
 
 
 func _apply_completed_flight_reward(
@@ -2374,6 +2513,7 @@ func _attempt_boarding_and_departure(
 		_remove_passenger_waiter(aircraft)
 		aircraft.record_boarded_passengers(required)
 		_record_boarded_passengers(required)
+		aircraft.clear_handling_action()
 		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(
 			"%s received %d passengers • boarding started" % [
@@ -2388,18 +2528,36 @@ func _attempt_boarding_and_departure(
 	if not _is_passenger_waiter(aircraft):
 		pending_passenger_departures.append({
 			"aircraft": aircraft,
-			"label": label
+			"label": label,
+			"manual": (
+				aircraft.uses_manual_handling()
+				and not aircraft.uses_handling_automation()
+			)
 		})
 
+	var manual_wait := (
+		aircraft.uses_manual_handling()
+		and not aircraft.uses_handling_automation()
+	)
+	if manual_wait:
+		aircraft.set_handling_action("LOAD")
 	aircraft.set_turnaround_status(
-		"Passengers %d / %d\nWAITING" % [
+		(
+			"Passengers %d / %d\nTap LOAD"
+			if manual_wait
+			else "Passengers %d / %d\nWAITING"
+		) % [
 			passenger_economy.get_passengers(),
 			required
 		],
 		"warning"
 	)
 	hud.set_operation_status(
-		"%s waiting for passengers • %d / %d available" % [
+		(
+			"%s needs passengers before LOAD • %d / %d available"
+			if manual_wait
+			else "%s waiting for passengers • %d / %d available"
+		) % [
 			label,
 			passenger_economy.get_passengers(),
 			required
@@ -2423,6 +2581,14 @@ func _try_board_waiting_aircraft() -> void:
 			pending_passenger_departures.remove_at(index)
 			continue
 
+		if (
+			bool(request.get("manual", false))
+			and aircraft.uses_manual_handling()
+			and not aircraft.uses_handling_automation()
+		):
+			index += 1
+			continue
+
 		var required := _passenger_requirement(aircraft)
 		if passenger_economy.get_passengers() < required:
 			index += 1
@@ -2435,6 +2601,7 @@ func _try_board_waiting_aircraft() -> void:
 		pending_passenger_departures.remove_at(index)
 		aircraft.record_boarded_passengers(required)
 		_record_boarded_passengers(required)
+		aircraft.clear_handling_action()
 		ground_services.approve_passenger_loading(aircraft)
 		hud.set_operation_status(
 			"%s received %d passengers • boarding started" % [
@@ -2453,13 +2620,36 @@ func _refresh_waiting_passenger_cards() -> void:
 		if aircraft == null or not is_instance_valid(aircraft):
 			continue
 		var required := _passenger_requirement(aircraft)
+		var manual_wait := (
+			aircraft.uses_manual_handling()
+			and not aircraft.uses_handling_automation()
+		)
+		if manual_wait:
+			aircraft.set_handling_action("LOAD")
 		aircraft.set_turnaround_status(
-			"Passengers %d / %d\nWAITING" % [
+			(
+				"Passengers %d / %d\nTap LOAD"
+				if manual_wait
+				else "Passengers %d / %d\nWAITING"
+			) % [
 				passenger_economy.get_passengers(),
 				required
 			],
-			"warning"
+			(
+				"success"
+				if manual_wait
+				and passenger_economy.get_passengers() >= required
+				else "warning"
+			)
 		)
+		else:
+			aircraft.set_turnaround_status(
+				"Passengers %d / %d\nWAITING" % [
+					passenger_economy.get_passengers(),
+					required
+				],
+				"warning"
+			)
 
 
 func _record_boarded_passengers(amount: int) -> void:

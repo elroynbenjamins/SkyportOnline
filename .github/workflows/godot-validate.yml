@@ -94,6 +94,9 @@ jobs:
       - name: Test progression pacing
         run: timeout 25s godot --headless --path . --script res://tests/progression_pacing_test.gd
 
+      - name: Test home-country route network
+        run: timeout 25s godot --headless --path . --script res://tests/home_country_routes_test.gd
+
       - name: Test Airport Dispatch
         run: timeout 25s godot --headless --path . --script res://tests/dispatch_challenge_test.gd
 

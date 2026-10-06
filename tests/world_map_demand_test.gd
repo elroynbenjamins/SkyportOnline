@@ -6,6 +6,7 @@ func _init() -> void:
 
 
 func _run() -> void:
+	DestinationCatalog.configure_home_country("NL")
 	var plane := AircraftPrototype.new()
 	root.add_child(plane)
 	plane.name = "SO-001"
@@ -15,11 +16,16 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 
+	var destination := DestinationCatalog.get_destination("brussels")
+	if destination.is_empty():
+		_fail("Brussels should remain available as a stable route ID.")
+		return
 	var normal_time := _find_condition_time("brussels", "normal")
 	if normal_time < 0:
 		_fail("Test should find a Normal Brussels demand slot.")
 		return
 	screen.set_demand_time_override(normal_time)
+	screen.selected_destination_id = "brussels"
 
 	var planes: Array[AircraftPrototype] = [plane]
 	screen.open_map(
@@ -43,13 +49,35 @@ func _run() -> void:
 		_fail("World Map should open for demand preview.")
 		return
 
-	if not screen.route_card_label.text.contains("Feeder • 65% load"):
-		_fail("Route card should show Brussels Feeder demand at 65%.")
+	var demand_preview := PassengerDemandRules.preview(
+		plane.get_aircraft_profile(),
+		destination,
+		10.0,
+		1.0
+	)
+	var demand_label := String(
+		demand_preview.get("demand_label", "Standard")
+	)
+	var load_pct := float(
+		demand_preview.get("adjusted_load_factor", 1.0)
+	) * 100.0
+	var route_required := int(
+		demand_preview.get("route_requirement", 0)
+	)
+	var mastery_required := int(
+		demand_preview.get("mastery_requirement", 0)
+	)
+	if not screen.route_card_label.text.contains(
+		"%s • %.0f%% load" % [demand_label, load_pct]
+	):
+		_fail("Route card should use the generated home-relative demand data.")
 		return
 
-	if not screen.route_card_label.text.contains("6 → 5 pax"):
+	if not screen.route_card_label.text.contains(
+		"%d → %d pax" % [route_required, mastery_required]
+	):
 		_fail(
-			"Route card should show route demand → Mastery demand."
+			"Route card should show generated route demand → Mastery demand."
 		)
 		return
 

@@ -122,6 +122,14 @@ static func all() -> Dictionary:
 	}
 
 
+static func country_codes() -> Array[String]:
+	var result: Array[String] = []
+	for code_variant in all().keys():
+		result.append(String(code_variant))
+	result.sort()
+	return result
+
+
 static func resources_for_country(country_code: String) -> Array[Dictionary]:
 	var catalog := all()
 	if not catalog.has(country_code):

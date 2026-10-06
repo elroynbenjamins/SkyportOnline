@@ -22,8 +22,8 @@ static func chance_for_flight(
 		-0.20,
 		0.20
 	)
-	var duration_modifier := _duration_modifier(
-		float(flight_plan.get("duration_seconds", 0.0))
+	var duration_modifier := _route_distance_modifier(
+		float(flight_plan.get("distance_km", 0.0))
 	)
 	var size_modifier := _size_modifier(
 		String(aircraft_profile.get("size", "S"))
@@ -40,8 +40,8 @@ static func modifier_breakdown(
 	aircraft_profile: Dictionary,
 	flight_plan: Dictionary
 ) -> Dictionary:
-	var duration_seconds := float(
-		flight_plan.get("duration_seconds", 0.0)
+	var route_distance_km := float(
+		flight_plan.get("distance_km", 0.0)
 	)
 	var size := String(aircraft_profile.get("size", "S"))
 	return {
@@ -56,7 +56,8 @@ static func modifier_breakdown(
 			-0.20,
 			0.20
 		),
-		"duration_modifier": _duration_modifier(duration_seconds),
+		"duration_modifier": _route_distance_modifier(route_distance_km),
+		"route_distance_modifier": _route_distance_modifier(route_distance_km),
 		"size_modifier": _size_modifier(size),
 		"final_chance": chance_for_flight(
 			aircraft_profile,
@@ -127,15 +128,17 @@ static func probability_summary(
 	}
 
 
-static func _duration_modifier(duration_seconds: float) -> float:
-	var minutes := duration_seconds / 60.0
-	if minutes < 5.0:
+static func _route_distance_modifier(
+	distance_km: float
+) -> float:
+	var distance := maxf(distance_km, 0.0)
+	if distance < 450.0:
 		return -0.10
-	if minutes < 10.0:
+	if distance < 900.0:
 		return -0.05
-	if minutes < 20.0:
+	if distance < 2000.0:
 		return 0.0
-	if minutes < 40.0:
+	if distance < 5000.0:
 		return 0.05
 	return 0.10
 

@@ -80,7 +80,12 @@ func open_map(
 		maxi(aircraft.size() - 1, 0)
 	)
 
-	if selected_destination_id.is_empty():
+	if (
+		selected_destination_id.is_empty()
+		or DestinationCatalog.get_destination(
+			selected_destination_id
+		).is_empty()
+	):
 		var unlocked := DestinationCatalog.unlocked_for_level(player_level)
 		if not unlocked.is_empty():
 			selected_destination_id = String(unlocked[0]["id"])
@@ -198,7 +203,11 @@ func _build_top_bar() -> void:
 	title_box.add_child(network_meta_label)
 
 	var origin := Label.new()
-	origin.text = "★ HOME HUB  •  %s" % DestinationCatalog.DEVELOPMENT_HOME_NAME.to_upper()
+	var origin_country := DestinationCatalog.home_country()
+	origin.text = "★ HOME HUB  •  %s, %s" % [
+		DestinationCatalog.home_hub_name().to_upper(),
+		String(origin_country.get("id", "")).to_upper()
+	]
 	origin.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	origin.add_theme_font_size_override("font_size", 12)
 	GameUIStyle.muted(origin)
@@ -261,11 +270,19 @@ func _build_map_area() -> void:
 	map_canvas.clip_contents = true
 	panel.add_child(map_canvas)
 
+	var home_country := DestinationCatalog.home_country()
 	var home := Label.new()
-	home.text = "★ %s" % DestinationCatalog.DEVELOPMENT_HOME_NAME
+	home.text = "★ %s" % DestinationCatalog.home_hub_name()
 	home.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	home.add_theme_font_size_override("font_size", 14)
-	_place_map_control(home, WorldMapCanvas.HOME_POSITION, Vector2(150, 34))
+	_place_map_control(
+		home,
+		Vector2(
+			float(home_country.get("map_x", 0.5)),
+			float(home_country.get("map_y", 0.5))
+		),
+		Vector2(150, 34)
+	)
 	map_canvas.add_child(home)
 
 	for destination in DestinationCatalog.all():

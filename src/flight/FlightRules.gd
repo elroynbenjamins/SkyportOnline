@@ -15,7 +15,12 @@ static func can_fly(
 		return false
 
 	var range_km := float(aircraft_profile.get("range_km", 0.0))
-	var distance_km := float(destination.get("distance_km", 0.0))
+	var distance_km := float(
+		destination.get(
+			"effective_distance_km",
+			destination.get("distance_km", 0.0)
+		)
+	)
 	return range_km >= distance_km
 
 
@@ -30,7 +35,12 @@ static func duration_minutes(
 		float(aircraft_profile.get("cruise_speed_kph", 1.0)),
 		1.0
 	)
-	var distance_km := float(destination.get("distance_km", 0.0))
+	var distance_km := float(
+		destination.get(
+			"effective_distance_km",
+			destination.get("distance_km", 0.0)
+		)
+	)
 	var timer_factor := maxf(
 		float(aircraft_profile.get("timer_factor", 1.0)),
 		0.1
@@ -65,8 +75,19 @@ static func create_flight_plan(
 		"country": String(destination.get("country", "")),
 		"country_code": String(destination.get("country_code", "")),
 		"distance_km": float(destination.get("distance_km", 0.0)),
+		"effective_distance_km": float(
+			destination.get(
+				"effective_distance_km",
+				destination.get("distance_km", 0.0)
+			)
+		),
 		"flight_hours": (
-			float(destination.get("distance_km", 0.0))
+			float(
+				destination.get(
+					"effective_distance_km",
+					destination.get("distance_km", 0.0)
+				)
+			)
 			/ maxf(
 				float(aircraft_profile.get("cruise_speed_kph", 1.0)),
 				1.0
@@ -98,3 +119,30 @@ static func format_duration(seconds: float) -> String:
 	if remaining_seconds == 0:
 		return "%dm" % minutes
 	return "%dm %02ds" % [minutes, remaining_seconds]
+
+
+static func fuel_service_multiplier(
+	flight_plan: Dictionary
+) -> float:
+	if flight_plan.is_empty():
+		return 1.0
+	var distance := maxf(
+		float(
+			flight_plan.get(
+				"effective_distance_km",
+				flight_plan.get("distance_km", 0.0)
+			)
+		),
+		0.0
+	)
+	if distance <= 300.0:
+		return 1.0
+	if distance <= 600.0:
+		return 1.05
+	if distance <= 1000.0:
+		return 1.10
+	if distance <= 1600.0:
+		return 1.15
+	if distance <= 2350.0:
+		return 1.20
+	return 1.25

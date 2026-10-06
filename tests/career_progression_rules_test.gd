@@ -34,19 +34,25 @@ func _run() -> void:
 	check(AirportCareerCatalog.all().size() == 28, "Expected 28 V1 career missions.")
 
 	var state := AirportProgressionRules.new_state("rules-test")
+	state["home_country_id"] = "NL"
+	var first_quest := AirportProgressionRules.active_quest(state)
+	var first_objective: Dictionary = first_quest.get("objective", {})
+	var first_country := String(first_objective.get("country", ""))
+	check(not first_country.is_empty(), "Home-relative first Career route should resolve a country.")
 	check(AirportProgressionRules.level_for_xp(99) == 1, "XP level boundary before level two.")
 	check(AirportProgressionRules.level_for_xp(100) == 2, "XP level boundary at level two.")
-	var event := {"id": "flight-1", "kind": "flight_return", "country": "DE", "aircraft": "pico_p8", "visitor": false}
+	var wrong_country := "DE" if first_country != "DE" else "BE"
+	var event := {"id": "flight-1", "kind": "flight_return", "country": wrong_country, "aircraft": "pico_p8", "visitor": false}
 	AirportProgressionRules.record_event(state, event, 1)
 	check(int((state["progress"] as Dictionary).get("first_circuit", 0)) == 0, "Wrong country must not advance first flight mission.")
-	event = {"id": "flight-2", "kind": "flight_return", "country": "BE", "aircraft": "swift_s14"}
+	event = {"id": "flight-2", "kind": "flight_return", "country": first_country, "aircraft": "swift_s14"}
 	AirportProgressionRules.record_event(state, event, 1)
 	check(int((state["progress"] as Dictionary).get("first_circuit", 0)) == 0, "Wrong model must not advance first flight mission.")
-	event = {"id": "flight-3", "kind": "flight_return", "country": "BE", "aircraft": "pico_p8", "visitor": true}
+	event = {"id": "flight-3", "kind": "flight_return", "country": first_country, "aircraft": "pico_p8", "visitor": true}
 	AirportProgressionRules.record_event(state, event, 1)
 	check(int((state["progress"] as Dictionary).get("first_circuit", 0)) == 0, "Visitors must not count as owned flight returns.")
-	event = {"id": "flight-4", "kind": "flight_return", "country": "BE", "aircraft": "pico_p8"}
-	check(AirportProgressionRules.record_event(state, event, 1), "Correct return should be accepted.")
+	event = {"id": "flight-4", "kind": "flight_return", "country": first_country, "aircraft": "pico_p8"}
+	check(AirportProgressionRules.record_event(state, event, 1), "Correct home-relative return should be accepted.")
 	check(not AirportProgressionRules.record_event(state, event, 1), "Replayed return event must be rejected.")
 	var claimed := AirportProgressionRules.claim(state, "first_circuit", {}, 1)
 	check(not claimed.is_empty(), "Completed mission should be claimable.")

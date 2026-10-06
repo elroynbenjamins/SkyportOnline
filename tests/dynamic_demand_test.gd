@@ -93,8 +93,13 @@ func _run() -> void:
 		0.0
 	)
 
-	if normal_pax != 15:
-		_fail("Comet Brussels Normal demand should be 15 passengers.")
+	var expected_normal_pax := PassengerDemandRules.base_route_requirement(
+		comet,
+		brussels,
+		1.0
+	)
+	if normal_pax != expected_normal_pax:
+		_fail("Normal demand should use the generated Brussels route factor.")
 		return
 	if surge_pax <= normal_pax:
 		_fail("Surge should increase route passenger demand.")
@@ -106,11 +111,19 @@ func _run() -> void:
 		_fail("Priority Contract should be at least as demanding as Surge.")
 		return
 
-	if int(contract_plan.get("coin_reward", 0)) != 525:
-		_fail("Priority Contract should raise Brussels coins from 420 to 525.")
+	var expected_contract_coins := int(round(
+		float(base_plan.get("coin_reward", 0))
+		* float(contract.get("coin_multiplier", 1.0))
+	))
+	var expected_contract_xp := int(round(
+		float(base_plan.get("xp_reward", 0))
+		* float(contract.get("xp_multiplier", 1.0))
+	))
+	if int(contract_plan.get("coin_reward", 0)) != expected_contract_coins:
+		_fail("Priority Contract should apply its coin multiplier to the generated route reward.")
 		return
-	if int(contract_plan.get("xp_reward", 0)) != 38:
-		_fail("Priority Contract should raise Brussels XP from 32 to 38.")
+	if int(contract_plan.get("xp_reward", 0)) != expected_contract_xp:
+		_fail("Priority Contract should apply its XP multiplier to the generated route reward.")
 		return
 
 	if String(
@@ -133,19 +146,21 @@ func _run() -> void:
 		_fail("Route history test profile should be created.")
 		return
 
+	var base_coins := int(base_plan.get("coin_reward", 0))
+	var base_xp := int(base_plan.get("xp_reward", 0))
 	profile = ProfileStore.record_route_completion(
 		"brussels",
-		15,
-		420,
-		32,
+		normal_pax,
+		base_coins,
+		base_xp,
 		1,
 		"normal"
 	)
 	profile = ProfileStore.record_route_completion(
 		"brussels",
-		18,
-		525,
-		38,
+		contract_pax,
+		expected_contract_coins,
+		expected_contract_xp,
 		2,
 		"contract"
 	)
@@ -158,11 +173,11 @@ func _run() -> void:
 	if int(entry.get("flights_completed", 0)) != 2:
 		_fail("Route history should count completed flights.")
 		return
-	if int(entry.get("passengers_boarded", 0)) != 33:
-		_fail("Route history should sum boarded passengers.")
+	if int(entry.get("passengers_boarded", 0)) != normal_pax + contract_pax:
+		_fail("Route history should sum generated boarded passenger counts.")
 		return
-	if int(entry.get("coins_earned", 0)) != 945:
-		_fail("Route history should sum route coins.")
+	if int(entry.get("coins_earned", 0)) != base_coins + expected_contract_coins:
+		_fail("Route history should sum generated route coins.")
 		return
 	if int(entry.get("resources_earned", 0)) != 3:
 		_fail("Route history should sum route resources.")

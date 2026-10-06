@@ -28,6 +28,17 @@ func _run() -> void:
 			_fail("Destination country %s has no three-resource definition." % country_code)
 			return
 
+	var visual_check := ResourceVisualCatalog.validate_catalog()
+	if not bool(visual_check.get("valid", false)):
+		_fail(
+			"Country resource visual validation failed: %s"
+			% str(visual_check.get("errors", []))
+		)
+		return
+	if not FileAccess.file_exists(ResourceVisualCatalog.ATLAS_PATH):
+		_fail("Country resource icon atlas is missing.")
+		return
+
 	var none := ResourceDropRules.evaluate_resources("NL", [0.40, 0.75, 0.99])
 	if _success_count(none) != 0:
 		_fail("Rolls at or above 40% should not drop a resource.")

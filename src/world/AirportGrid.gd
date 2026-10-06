@@ -6358,12 +6358,26 @@ func _draw_selected_outline() -> void:
 	var parcel: Dictionary = parcels[selected_id]
 	var sx := int(parcel["px"]) * PARCEL_SIZE
 	var sy := int(parcel["py"]) * PARCEL_SIZE
+	var perimeter := _footprint_polygon(
+		Vector2i(sx, sy),
+		Vector2i(PARCEL_SIZE, PARCEL_SIZE)
+	)
+	if perimeter.size() < 4:
+		return
 
-	for y in range(sy, sy + PARCEL_SIZE):
-		for x in range(sx, sx + PARCEL_SIZE):
-			if x == sx or x == sx + PARCEL_SIZE - 1 or y == sy or y == sy + PARCEL_SIZE - 1:
-				var p := _tile_points(tile_to_world(Vector2(x, y)))
-				draw_polyline(PackedVector2Array([p[0], p[1], p[2], p[3], p[0]]), SELECTED_LINE, 2.5)
+	# Selecting expansion land should highlight the parcel, not reveal the
+	# construction-cell grid. Keep normal land browsing as one clean boundary.
+	draw_polyline(
+		PackedVector2Array([
+			perimeter[0],
+			perimeter[1],
+			perimeter[2],
+			perimeter[3],
+			perimeter[0]
+		]),
+		SELECTED_LINE,
+		2.5
+	)
 
 
 func _tile_points(center: Vector2) -> PackedVector2Array:

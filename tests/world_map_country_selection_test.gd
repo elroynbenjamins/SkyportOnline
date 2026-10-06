@@ -73,6 +73,12 @@ func _run() -> void:
 	if WorldMapCanvas.GEOGRAPHY_DETAIL_COUNT < 10:
 		_fail("World Map should keep detailed islands/coastline geography.")
 		return
+	if screen.map_canvas.network_connection_count() < 8:
+		_fail("World Map should expose the wider route network behind the selected route.")
+		return
+	if screen.map_canvas.airport_labels_visible():
+		_fail("Airport labels should stay decluttered at world zoom.")
+		return
 
 	var route_phase_before := screen.map_canvas.route_phase
 	screen.map_canvas._process(0.5)
@@ -87,6 +93,9 @@ func _run() -> void:
 	screen.map_canvas.focus_country("DE", 2.05)
 	if absf(screen.map_canvas.zoom_level - 2.05) > 0.01:
 		_fail("Country focus should apply a close map zoom.")
+		return
+	if not screen.map_canvas.airport_labels_visible():
+		_fail("Airport/city labels should appear after zooming into a country.")
 		return
 	var focused_center := screen.map_canvas.view_center
 	screen.map_canvas._pan_by_screen_delta(Vector2(20, 0))
@@ -226,7 +235,7 @@ func _run() -> void:
 	print(
 		"World Map country selection passed: country-first filtering, larger touch "
 		+ "targets, Europe spacing, profile states, zoom/pan, airport markers, "
-		+ "animated routes, map route briefing, richer geography, resources, and picker sync."
+		+ "animated routes, wider route network, zoom-aware airport labels, map route briefing, richer geography, resources, and picker sync."
 	)
 	quit(0)
 

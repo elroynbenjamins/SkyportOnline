@@ -464,7 +464,6 @@ func _refresh_shop(snapshot: Dictionary) -> void:
 	var last_category := ""
 	for item_variant in snapshot.get("shop", []):
 		var item: Dictionary = item_variant
-		var button := Button.new()
 		var item_id := String(item.get("id", ""))
 		var item_type := String(item.get("type", ""))
 		var category := _shop_category_name(item_type)
@@ -476,44 +475,190 @@ func _refresh_shop(snapshot: Dictionary) -> void:
 		var sold_out := bool(item.get("sold_out", false))
 		var can_afford := bool(item.get("can_afford", false))
 		var owned := bool(item.get("owned", false))
-		var reward_text := "COSMETIC"
-		match item_type:
-			"passengers":
-				reward_text = "+%d PASSENGERS" % int(
-					item.get("passengers", 0)
-				)
-			"coins":
-				reward_text = "+%d COINS" % int(
-					item.get("coins", 0)
-				)
-			"resource_choice":
-				reward_text = "CHOOSE 1 COUNTRY RESOURCE"
+		var purpose_tag := String(
+			item.get("purpose_tag", "")
+		)
+		var value_hint := String(
+			item.get("value_hint", "")
+		)
+		var reward_text := _shop_reward_text(item)
 
-		var limit_text := "%d LEFT" % remaining
-		if sold_out or owned:
-			limit_text = "OWNED / SOLD OUT"
+		var card := PanelContainer.new()
+		GameUIStyle.apply_panel(
+			card,
+			"raised" if can_afford and not sold_out and not owned else "dark"
+		)
+		shop_list.add_child(card)
 
-		button.text = "%s\n%s  •  %d 🎟  •  %s" % [
-			String(item.get("name", "Event Item")),
-			reward_text,
-			int(item.get("price", 0)),
-			limit_text
-		]
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(0, 62)
-		button.disabled = sold_out or owned or not can_afford
-		var shop_kind := "event" if can_afford and not sold_out and not owned else "secondary"
+		var wrapper := VBoxContainer.new()
+		wrapper.add_theme_constant_override("separation", 5)
+		card.add_child(wrapper)
+
+		var header := HBoxContainer.new()
+		header.add_theme_constant_override("separation", 8)
+		wrapper.add_child(header)
+
+		var title := Label.new()
+		title.text = String(item.get("name", "Event Item"))
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title.add_theme_font_size_override("font_size", 14)
+		title.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_TEXT
+		)
+		header.add_child(title)
+
+		if not purpose_tag.is_empty():
+			header.add_child(
+				_build_purpose_chip(purpose_tag)
+			)
+
+		if not value_hint.is_empty():
+			var hint := Label.new()
+			hint.text = value_hint
+			hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			hint.add_theme_font_size_override("font_size", 11)
+			GameUIStyle.muted(hint)
+			wrapper.add_child(hint)
+
+		var footer := HBoxContainer.new()
+		footer.add_theme_constant_override("separation", 8)
+		wrapper.add_child(footer)
+
+		var reward_label := Label.new()
+		reward_label.text = reward_text
+		reward_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		reward_label.add_theme_font_size_override("font_size", 12)
+		reward_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_ACCENT
+		)
+		footer.add_child(reward_label)
+
+		var price_label := Label.new()
+		price_label.text = "%d 🎟" % int(
+			item.get("price", 0)
+		)
+		price_label.add_theme_font_size_override("font_size", 12)
+		price_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_GOLD
+		)
+		footer.add_child(price_label)
+
+		var remaining_label := Label.new()
+		remaining_label.text = (
+			"OWNED"
+			if owned
+			else "SOLD OUT"
+			if sold_out
+			else "%d LEFT" % remaining
+		)
+		remaining_label.add_theme_font_size_override("font_size", 11)
+		remaining_label.add_theme_color_override(
+			"font_color",
+			GameUIStyle.COLOR_SUCCESS
+			if owned
+			else GameUIStyle.COLOR_MUTED
+		)
+		footer.add_child(remaining_label)
+
+		var action_button := Button.new()
+		action_button.custom_minimum_size = Vector2(94, 34)
 		if owned:
-			shop_kind = "selected"
-		GameUIStyle.apply_button(button, shop_kind, true)
-		button.pressed.connect(
+			action_button.text = "✓ OWNED"
+		elif sold_out:
+			action_button.text = "SOLD OUT"
+		elif not can_afford:
+			action_button.text = "NEED 🎟"
+		elif item_type == "resource_choice":
+			action_button.text = "SELECT"
+		else:
+			action_button.text = "BUY"
+
+		action_button.disabled = (
+			sold_out
+			or owned
+			or not can_afford
+		)
+		var action_kind := (
+			"event"
+			if can_afford and not sold_out and not owned
+			else "selected"
+			if owned
+			else "secondary"
+		)
+		GameUIStyle.apply_button(
+			action_button,
+			action_kind,
+			true
+		)
+		action_button.pressed.connect(
 			func() -> void:
 				if item_type == "resource_choice":
 					_open_resource_choice(item)
 				else:
 					shop_purchase_requested.emit(item_id)
 		)
-		shop_list.add_child(button)
+		footer.add_child(action_button)
+
+
+func _shop_reward_text(item: Dictionary) -> String:
+	var item_type := String(item.get("type", ""))
+	match item_type:
+		"passengers":
+			return "+%d PASSENGERS" % int(
+				item.get("passengers", 0)
+			)
+		"coins":
+			return "+%d COINS" % int(
+				item.get("coins", 0)
+			)
+		"resource_choice":
+			return "CHOOSE 1 COUNTRY RESOURCE"
+		"cosmetic":
+			return "PERMANENT COSMETIC"
+		_:
+			return "EVENT REWARD"
+
+
+func _build_purpose_chip(purpose_tag: String) -> PanelContainer:
+	var color := _purpose_color(purpose_tag)
+	var chip := PanelContainer.new()
+	chip.add_theme_stylebox_override(
+		"panel",
+		GameUIStyle.panel(
+			color.darkened(0.68),
+			color,
+			7,
+			1,
+			false
+		)
+	)
+
+	var label := Label.new()
+	label.text = purpose_tag
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override(
+		"font_color",
+		color.lightened(0.18)
+	)
+	chip.add_child(label)
+	return chip
+
+
+func _purpose_color(purpose_tag: String) -> Color:
+	match purpose_tag:
+		"PERMANENT":
+			return GameUIStyle.COLOR_GOLD
+		"AIRPORT FLOW":
+			return GameUIStyle.COLOR_ACCENT
+		"INFRASTRUCTURE":
+			return GameUIStyle.COLOR_WARNING
+		"UPGRADE TARGET":
+			return GameUIStyle.COLOR_SUCCESS
+		_:
+			return GameUIStyle.COLOR_MUTED
 
 
 func _refresh_alliance(snapshot: Dictionary) -> void:

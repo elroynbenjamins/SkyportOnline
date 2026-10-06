@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="1152" viewBox="0 0 768 1152">
+<defs>
+  <linearGradient id="concrete" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eef0ec"/><stop offset=".52" stop-color="#cfd4d1"/><stop offset="1" stop-color="#a7afad"/></linearGradient>
+  <linearGradient id="asphalt" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#69757a"/><stop offset=".55" stop-color="#505c61"/><stop offset="1" stop-color="#354249"/></linearGradient>
+  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5ebae4"/><stop offset=".52" stop-color="#2d8fc4"/><stop offset="1" stop-color="#175f8b"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#bceaf4"/><stop offset=".52" stop-color="#64b7d2"/><stop offset="1" stop-color="#2d7088"/></linearGradient>
+  <linearGradient id="white" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".55" stop-color="#e7eceb"/><stop offset="1" stop-color="#b9c2c3"/></linearGradient>
+  <linearGradient id="tank" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffdf8"/><stop offset=".45" stop-color="#dfe5e3"/><stop offset=".78" stop-color="#b8c2c1"/><stop offset="1" stop-color="#929d9d"/></linearGradient>
+  <linearGradient id="yellow" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe276"/><stop offset=".55" stop-color="#f1c84b"/><stop offset="1" stop-color="#c88c2d"/></linearGradient>
+  <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ef6b61"/><stop offset="1" stop-color="#b84540"/></linearGradient>
+  <linearGradient id="green" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#78b95a"/><stop offset="1" stop-color="#3f7d43"/></linearGradient>
+  <filter id="soft" x="-35%" y="-35%" width="170%" height="190%"><feGaussianBlur stdDeviation="6"/></filter>
+</defs>
+
+<!-- CELL 0,0 Medium Stand A -->
+<g transform="translate(0 0)">
+ <ellipse cx="193" cy="314" rx="152" ry="38" fill="#172226" opacity=".20" filter="url(#soft)"/>
+ <polygon points="42,219 189,144 341,220 194,297" fill="#8d9697"/>
+ <polygon points="52,216 189,151 331,220 194,288" fill="url(#concrete)"/>
+ <polyline points="52,216 189,151 331,220" fill="none" stroke="#fff" stroke-width="3" opacity=".25"/>
+ <polyline points="194,288 331,220" fill="none" stroke="#667174" stroke-width="4" opacity=".35"/>
+ <path d="M193 163 L194 278" stroke="#f0c84c" stroke-width="6" stroke-linecap="round"/>
+ <path d="M172 191 Q194 180 216 191" fill="none" stroke="#f0c84c" stroke-width="4"/>
+ <path d="M157 217 Q194 198 231 217" fill="none" stroke="#f0c84c" stroke-width="4"/>
+ <line x1="133" y1="250" x2="255" y2="250" stroke="#f5efe4" stroke-width="4"/>
+ <line x1="145" y1="259" x2="243" y2="259" stroke="#f5efe4" stroke-width="2.5" stroke-dasharray="10 8"/>
+ <polyline points="87,229 112,270 162,291" fill="none" stroke="#db5c55" stroke-width="3"/>
+ <polyline points="301,228 278,269 228,291" fill="none" stroke="#db5c55" stroke-width="3"/>
+ <g fill="#d6f7ff" stroke="#26363c" stroke-width="2">
+  <circle cx="76" cy="226" r="4"/><circle cx="103" cy="239" r="4"/><circle cx="286" cy="239" r="4"/><circle cx="313" cy="226" r="4"/>
+  <circle cx="126" cy="263" r="4"/><circle cx="261" cy="263" r="4"/>
+ </g>
+ <g fill="#f1c84b" opacity=".9">
+  <rect x="78" y="250" width="20" height="8" rx="2" transform="rotate(27 88 254)"/>
+  <rect x="291" y="249" width="20" height="8" rx="2" transform="rotate(-27 301 253)"/>
+ </g>
+ <g>
+  <polygon points="70,203 90,193 110,202 90,213" fill="#dbe4e4"/><polygon points="70,203 90,213 90,228 70,219" fill="#96a6aa"/><polygon points="90,213 110,202 110,217 90,228" fill="#73878e"/>
+  <polygon points="278,203 298,193 318,202 298,213" fill="#dbe4e4"/><polygon points="278,203 298,213 298,228 278,219" fill="#96a6aa"/><polygon points="298,213 318,202 318,217 298,228" fill="#73878e"/>
+ </g>
+</g>
+
+<!-- CELL 1,0 Medium Stand B -->
+<g transform="translate(384 0)">
+ <ellipse cx="191" cy="314" rx="152" ry="38" fill="#172226" opacity=".20" filter="url(#soft)"/>
+ <polygon points="44,220 195,144 340,219 190,297" fill="#8d9697"/>
+ <polygon points="54,219 195,151 330,216 190,288" fill="url(#concrete)"/>
+ <polyline points="54,219 195,151 330,216" fill="none" stroke="#fff" stroke-width="3" opacity=".25"/>
+ <polyline points="190,288 330,216" fill="none" stroke="#667174" stroke-width="4" opacity=".35"/>
+ <path d="M195 163 L190 278" stroke="#f0c84c" stroke-width="6" stroke-linecap="round"/>
+ <path d="M173 191 Q195 180 217 191" fill="none" stroke="#f0c84c" stroke-width="4"/>
+ <path d="M156 217 Q190 199 228 217" fill="none" stroke="#f0c84c" stroke-width="4"/>
+ <line x1="132" y1="250" x2="254" y2="250" stroke="#f5efe4" stroke-width="4"/>
+ <line x1="144" y1="259" x2="242" y2="259" stroke="#f5efe4" stroke-width="2.5" stroke-dasharray="10 8"/>
+ <polyline points="88,228 111,269 161,291" fill="none" stroke="#db5c55" stroke-width="3"/>
+ <polyline points="300,228 277,269 227,291" fill="none" stroke="#db5c55" stroke-width="3"/>
+ <g fill="#d6f7ff" stroke="#26363c" stroke-width="2">
+  <circle cx="77" cy="225" r="4"/><circle cx="104" cy="239" r="4"/><circle cx="285" cy="239" r="4"/><circle cx="312" cy="225" r="4"/>
+  <circle cx="126" cy="263" r="4"/><circle cx="260" cy="263" r="4"/>
+ </g>
+ <g fill="#f1c84b" opacity=".9">
+  <rect x="79" y="249" width="20" height="8" rx="2" transform="rotate(27 89 253)"/>
+  <rect x="290" y="248" width="20" height="8" rx="2" transform="rotate(-27 300 252)"/>
+ </g>
+ <g>
+  <polygon points="69,202 89,192 109,201 89,212" fill="#dbe4e4"/><polygon points="69,202 89,212 89,227 69,218" fill="#73878e"/><polygon points="89,212 109,201 109,216 89,227" fill="#96a6aa"/>
+  <polygon points="279,202 299,192 319,201 299,212" fill="#dbe4e4"/><polygon points="279,202 299,212 299,227 279,218" fill="#73878e"/><polygon points="299,212 319,201 319,216 299,227" fill="#96a6aa"/>
+ </g>
+</g>
+
+<!-- CELL 0,1 Regional Fuel A -->
+<g transform="translate(0 384)">
+ <ellipse cx="193" cy="315" rx="147" ry="39" fill="#172226" opacity=".22" filter="url(#soft)"/>
+ <polygon points="49,225 184,154 340,225 201,300" fill="#8e9793"/>
+ <polygon points="60,222 185,161 328,225 201,291" fill="#d2d6d1"/>
+ <polygon points="72,221 183,168 316,225 201,281" fill="#6f7778"/>
+ <g>
+  <ellipse cx="141" cy="194" rx="30" ry="18" fill="#9daaaa"/><rect x="111" y="194" width="60" height="57" fill="url(#tank)"/><ellipse cx="141" cy="251" rx="30" ry="18" fill="#9ca7a7"/>
+  <ellipse cx="220" cy="188" rx="30" ry="18" fill="#a7b3b2"/><rect x="190" y="188" width="60" height="60" fill="url(#tank)"/><ellipse cx="220" cy="248" rx="30" ry="18" fill="#98a4a4"/>
+  <path d="M120 205 H162" stroke="#f1c84b" stroke-width="5"/><path d="M199 201 H241" stroke="#f1c84b" stroke-width="5"/>
+  <rect x="135" y="168" width="12" height="12" rx="3" fill="#e9eef0"/><rect x="214" y="162" width="12" height="12" rx="3" fill="#e9eef0"/>
+ </g>
+ <g>
+  <polygon points="241,228 282,207 318,223 277,245" fill="url(#white)"/><polygon points="241,228 277,245 277,276 241,259" fill="#a2b0b3"/><polygon points="277,245 318,223 318,254 277,276" fill="#7b9097"/>
+  <polygon points="251,226 281,211 306,222 276,238" fill="url(#blue)"/><rect x="254" y="244" width="17" height="15" fill="url(#glass)"/>
+  <rect x="285" y="235" width="22" height="8" rx="2" fill="#f1c84b"/>
+ </g>
+ <g stroke="#f1c84b" stroke-width="4" fill="none"><path d="M165 231 L185 242 L206 231"/><path d="M242 250 L225 259"/></g>
+ <g stroke="#40545b" stroke-width="5"><line x1="104" y1="253" x2="104" y2="279"/><line x1="109" y1="253" x2="109" y2="279"/></g>
+ <g fill="#f1c84b"><rect x="83" y="263" width="52" height="5" rx="2"/><rect x="77" y="274" width="63" height="5" rx="2"/></g>
+ <g fill="#e65a51"><circle cx="88" cy="253" r="4"/><circle cx="136" cy="271" r="4"/></g>
+</g>
+
+<!-- CELL 1,1 Regional Fuel B -->
+<g transform="translate(384 384)">
+ <ellipse cx="191" cy="315" rx="147" ry="39" fill="#172226" opacity=".22" filter="url(#soft)"/>
+ <polygon points="45,224 202,154 338,225 198,300" fill="#8e9793"/>
+ <polygon points="56,223 201,161 326,222 198,291" fill="#d2d6d1"/>
+ <polygon points="68,223 200,168 314,220 198,281" fill="#6f7778"/>
+ <g>
+  <ellipse cx="246" cy="194" rx="30" ry="18" fill="#9daaaa"/><rect x="216" y="194" width="60" height="57" fill="url(#tank)"/><ellipse cx="246" cy="251" rx="30" ry="18" fill="#9ca7a7"/>
+  <ellipse cx="167" cy="188" rx="30" ry="18" fill="#a7b3b2"/><rect x="137" y="188" width="60" height="60" fill="url(#tank)"/><ellipse cx="167" cy="248" rx="30" ry="18" fill="#98a4a4"/>
+  <path d="M225 205 H267" stroke="#f1c84b" stroke-width="5"/><path d="M146 201 H188" stroke="#f1c84b" stroke-width="5"/>
+  <rect x="240" y="168" width="12" height="12" rx="3" fill="#e9eef0"/><rect x="161" y="162" width="12" height="12" rx="3" fill="#e9eef0"/>
+ </g>
+ <g>
+  <polygon points="66,223 102,207 143,228 107,245" fill="url(#white)"/><polygon points="66,223 107,245 107,276 66,254" fill="#7b9097"/><polygon points="107,245 143,228 143,259 107,276" fill="#a2b0b3"/>
+  <polygon points="78,222 103,211 133,226 108,238" fill="url(#blue)"/><rect x="113" y="244" width="17" height="15" fill="url(#glass)"/>
+  <rect x="76" y="235" width="22" height="8" rx="2" fill="#f1c84b"/>
+ </g>
+ <g stroke="#f1c84b" stroke-width="4" fill="none"><path d="M222 231 L202 242 L181 231"/><path d="M145 250 L162 259"/></g>
+ <g stroke="#40545b" stroke-width="5"><line x1="280" y1="253" x2="280" y2="279"/><line x1="285" y1="253" x2="285" y2="279"/></g>
+ <g fill="#f1c84b"><rect x="253" y="263" width="52" height="5" rx="2"/><rect x="248" y="274" width="63" height="5" rx="2"/></g>
+ <g fill="#e65a51"><circle cx="299" cy="253" r="4"/><circle cx="251" cy="271" r="4"/></g>
+</g>
+
+<!-- CELL 0,2 Rapid Regional Fuel A -->
+<g transform="translate(0 768)">
+ <ellipse cx="193" cy="320" rx="162" ry="42" fill="#172226" opacity=".23" filter="url(#soft)"/>
+ <polygon points="34,228 183,149 352,228 201,307" fill="#8a9390"/>
+ <polygon points="46,226 184,157 340,228 201,298" fill="#d1d5d0"/>
+ <polygon points="58,226 184,164 328,228 201,289" fill="#697275"/>
+ <g>
+  <ellipse cx="119" cy="194" rx="27" ry="16" fill="#aab5b4"/><rect x="92" y="194" width="54" height="55" fill="url(#tank)"/><ellipse cx="119" cy="249" rx="27" ry="16" fill="#98a4a4"/>
+  <ellipse cx="187" cy="183" rx="29" ry="17" fill="#adb8b7"/><rect x="158" y="183" width="58" height="61" fill="url(#tank)"/><ellipse cx="187" cy="244" rx="29" ry="17" fill="#98a4a4"/>
+  <ellipse cx="257" cy="194" rx="27" ry="16" fill="#aab5b4"/><rect x="230" y="194" width="54" height="55" fill="url(#tank)"/><ellipse cx="257" cy="249" rx="27" ry="16" fill="#98a4a4"/>
+  <path d="M101 206 H137" stroke="#f1c84b" stroke-width="4"/><path d="M168 197 H206" stroke="#f1c84b" stroke-width="4"/><path d="M239 206 H275" stroke="#f1c84b" stroke-width="4"/>
+ </g>
+ <g>
+  <polygon points="267,233 305,214 337,228 298,249" fill="url(#white)"/><polygon points="267,233 298,249 298,278 267,262" fill="#9fadb0"/><polygon points="298,249 337,228 337,257 298,278" fill="#778b92"/>
+  <polygon points="277,231 304,218 326,228 299,242" fill="url(#blue)"/><rect x="279" y="248" width="14" height="13" fill="url(#glass)"/>
+ </g>
+ <g stroke="#f1c84b" stroke-width="5" fill="none">
+  <path d="M82 258 H284"/><path d="M88 273 H278"/>
+ </g>
+ <g fill="#e95c52"><rect x="79" y="252" width="6" height="28"/><rect x="281" y="252" width="6" height="28"/></g>
+ <g fill="url(#yellow)">
+  <polygon points="72,245 91,236 112,245 93,255"/><polygon points="72,245 93,255 93,267 72,257"/><polygon points="93,255 112,245 112,257 93,267"/>
+  <polygon points="121,260 140,251 161,260 142,270"/><polygon points="121,260 142,270 142,282 121,272"/><polygon points="142,270 161,260 161,272 142,282"/>
+ </g>
+</g>
+
+<!-- CELL 1,2 Rapid Regional Fuel B -->
+<g transform="translate(384 768)">
+ <ellipse cx="191" cy="320" rx="162" ry="42" fill="#172226" opacity=".23" filter="url(#soft)"/>
+ <polygon points="32,228 201,149 350,228 198,307" fill="#8a9390"/>
+ <polygon points="44,228 200,157 338,226 198,298" fill="#d1d5d0"/>
+ <polygon points="56,228 199,164 326,226 198,289" fill="#697275"/>
+ <g>
+  <ellipse cx="266" cy="194" rx="27" ry="16" fill="#aab5b4"/><rect x="239" y="194" width="54" height="55" fill="url(#tank)"/><ellipse cx="266" cy="249" rx="27" ry="16" fill="#98a4a4"/>
+  <ellipse cx="198" cy="183" rx="29" ry="17" fill="#adb8b7"/><rect x="169" y="183" width="58" height="61" fill="url(#tank)"/><ellipse cx="198" cy="244" rx="29" ry="17" fill="#98a4a4"/>
+  <ellipse cx="128" cy="194" rx="27" ry="16" fill="#aab5b4"/><rect x="101" y="194" width="54" height="55" fill="url(#tank)"/><ellipse cx="128" cy="249" rx="27" ry="16" fill="#98a4a4"/>
+  <path d="M248 206 H284" stroke="#f1c84b" stroke-width="4"/><path d="M179 197 H217" stroke="#f1c84b" stroke-width="4"/><path d="M110 206 H146" stroke="#f1c84b" stroke-width="4"/>
+ </g>
+ <g>
+  <polygon points="51,228 83,214 121,233 90,249" fill="url(#white)"/><polygon points="51,228 90,249 90,278 51,257" fill="#778b92"/><polygon points="90,249 121,233 121,262 90,278" fill="#9fadb0"/>
+  <polygon points="62,228 84,218 111,231 89,242" fill="url(#blue)"/><rect x="96" y="248" width="14" height="13" fill="url(#glass)"/>
+ </g>
+ <g stroke="#f1c84b" stroke-width="5" fill="none">
+  <path d="M103 258 H305"/><path d="M109 273 H299"/>
+ </g>
+ <g fill="#e95c52"><rect x="100" y="252" width="6" height="28"/><rect x="302" y="252" width="6" height="28"/></g>
+ <g fill="url(#yellow)">
+  <polygon points="277,245 296,236 317,245 298,255"/><polygon points="277,245 298,255 298,267 277,257"/><polygon points="298,255 317,245 317,257 298,267"/>
+  <polygon points="228,260 247,251 268,260 249,270"/><polygon points="228,260 249,270 249,282 228,272"/><polygon points="249,270 268,260 268,272 249,282"/>
+ </g>
+</g>
+</svg>

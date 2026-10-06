@@ -7,6 +7,7 @@ const PRODUCTION_BUILDING_ATLAS := "res://assets/production/airport_buildings_v2
 const PRODUCTION_SERVICE_BUILDING_ATLAS_A := "res://assets/production/service_buildings_v2/service_buildings_v2a.webp"
 const PRODUCTION_SERVICE_BUILDING_ATLAS_B := "res://assets/production/service_buildings_v2/service_buildings_v2b.webp"
 const PRODUCTION_SEASONAL_DECOR_ATLAS := "res://assets/production/seasonal_decor_v2/seasonal_decor_atlas_v2.svg"
+const PRODUCTION_REGIONAL_FACILITIES_ATLAS := "res://assets/production/regional_facilities_v2/regional_facilities_v2.svg"
 
 
 static func all() -> Array[Dictionary]:
@@ -485,19 +486,19 @@ static func all() -> Array[Dictionary]:
 			"rotatable": true,
 			"sizes": PackedStringArray(["S", "M"]),
 			"description": "Larger turnaround stand for small and medium aircraft.",
-			"icon_path": "res://assets/pixel/airport_v1/stand_small.svg",
-			"art_tier": "canonical_v2",
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"art_tier": "regional_v2",
+			"world_ground_pad": false,
+			"world_sprite_atlas_path": PRODUCTION_REGIONAL_FACILITIES_ATLAS,
 			"world_sprite_regions": [
-				Rect2(896, 0, 448, 448),
-				Rect2(1344, 0, 448, 448)
+				Rect2(0, 0, 384, 384),
+				Rect2(384, 0, 384, 384)
 			],
-			"world_sprite_size": Vector2(276, 276),
+			"world_sprite_size": Vector2(300, 300),
 			"world_sprite_offsets": [
-				Vector2(0, -40),
-				Vector2(0, -47)
+				Vector2(0, -77),
+				Vector2(0, -77)
 			],
-			"world_sprite_offset": Vector2(0, -40)
+			"world_sprite_offset": Vector2(0, -77)
 		},
 		{
 			"id": "regional_fuel",
@@ -516,19 +517,19 @@ static func all() -> Array[Dictionary]:
 			"service": "fuel",
 			"service_speed": 1.0,
 			"vehicle_capacity": 2,
-			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
-			"art_tier": "canonical_v2",
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
+			"art_tier": "regional_v2",
+			"world_ground_pad": false,
+			"world_sprite_atlas_path": PRODUCTION_REGIONAL_FACILITIES_ATLAS,
 			"world_sprite_regions": [
-				Rect2(896, 448, 448, 448),
-				Rect2(1344, 448, 448, 448)
+				Rect2(0, 384, 384, 384),
+				Rect2(384, 384, 384, 384)
 			],
-			"world_sprite_size": Vector2(280, 280),
+			"world_sprite_size": Vector2(306, 306),
 			"world_sprite_offsets": [
-				Vector2(0, -52),
-				Vector2(0, -67)
+				Vector2(0, -81),
+				Vector2(0, -81)
 			],
-			"world_sprite_offset": Vector2(0, -52)
+			"world_sprite_offset": Vector2(0, -81)
 		},
 		{
 			"id": "regional_runway",
@@ -671,19 +672,19 @@ static func all() -> Array[Dictionary]:
 			"service": "fuel",
 			"service_speed": 1.5,
 			"vehicle_capacity": 3,
-			"icon_path": "res://assets/pixel/airport_v1/fuel_rapid.svg",
-			"art_tier": "canonical_v2",
-			"world_sprite_atlas_path": PRODUCTION_SERVICE_BUILDING_ATLAS_B,
+			"art_tier": "regional_v2",
+			"world_ground_pad": false,
+			"world_sprite_atlas_path": PRODUCTION_REGIONAL_FACILITIES_ATLAS,
 			"world_sprite_regions": [
-				Rect2(0, 448, 448, 448),
-				Rect2(448, 448, 448, 448)
+				Rect2(0, 768, 384, 384),
+				Rect2(384, 768, 384, 384)
 			],
-			"world_sprite_size": Vector2(330, 330),
+			"world_sprite_size": Vector2(348, 348),
 			"world_sprite_offsets": [
-				Vector2(0, -93),
-				Vector2(0, -91)
+				Vector2(0, -98),
+				Vector2(0, -98)
 			],
-			"world_sprite_offset": Vector2(0, -93)
+			"world_sprite_offset": Vector2(0, -98)
 		}
 	]
 

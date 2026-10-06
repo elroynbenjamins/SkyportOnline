@@ -10,6 +10,22 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 
+	var starter_setup := grid.get_starter_construction_snapshot()
+	if int(starter_setup.get("starter_width_tiles", 0)) != 16:
+		_fail("Starter construction area should be 16 tiles wide.")
+		return
+	if int(starter_setup.get("starter_height_tiles", 0)) != 16:
+		_fail("Starter construction area should be 16 tiles tall.")
+		return
+	if bool(starter_setup.get("ready_for_first_departure", true)):
+		_fail("Player should need to build the initial airport network.")
+		return
+	if int(grid.get_airside_status().get("runways", 0)) != 0:
+		_fail("Starter runway must be player-placed.")
+		return
+
+	_build_player_starter_network(grid)
+
 	if not grid.building_labels.is_empty():
 		_fail(
 			"Connected starter airport should keep detailed building art free of generic floating labels."
@@ -18,13 +34,28 @@ func _run() -> void:
 
 	var starter := grid.get_airside_status()
 	if int(starter.get("runways", 0)) != 1:
-		_fail("Starter airport should have one runway.")
+		_fail("Player-built starter network should have one runway.")
 		return
 	if int(starter.get("stands_total", 0)) != 2:
 		_fail("Starter airport should have two stands.")
 		return
 	if int(starter.get("stands_connected", 0)) != 2:
 		_fail("Both starter stands should connect to the runway through taxiway.")
+		return
+	if int(starter.get("hangars_connected", 0)) != 1:
+		_fail("Starter hangar should connect to the stand taxi network.")
+		return
+
+	starter_setup = grid.get_starter_construction_snapshot()
+	if not bool(starter_setup.get("ready_for_first_departure", false)):
+		_fail("Completed starter networks should unlock first aircraft operations.")
+		return
+	var hangar_route: PackedVector2Array = starter_setup.get(
+		"hangar_to_stand_route",
+		PackedVector2Array()
+	)
+	if hangar_route.size() < 3:
+		_fail("Hangar should expose a taxi route to the loading stand.")
 		return
 
 	var starter_routes := grid.get_departure_routes("S")
@@ -386,6 +417,60 @@ func _run() -> void:
 
 	print("Landscape airport operations and full aircraft lifecycle tests passed.")
 	quit(0)
+
+
+func _build_player_starter_network(grid: AirportGrid) -> void:
+	grid._place_building_internal(
+		"short_runway",
+		Vector2i(4, 1),
+		0
+	)
+
+	var taxi_cells: Array[Vector2i] = [
+		Vector2i(4, 3),
+		Vector2i(5, 3),
+		Vector2i(6, 3),
+		Vector2i(7, 3),
+		Vector2i(8, 3),
+		Vector2i(9, 3),
+		Vector2i(10, 3),
+		Vector2i(4, 4),
+		Vector2i(4, 5),
+		Vector2i(4, 6),
+		Vector2i(6, 4),
+		Vector2i(6, 5),
+		Vector2i(10, 4),
+		Vector2i(10, 5)
+	]
+	for cell in taxi_cells:
+		grid._place_building_internal(
+			"taxiway",
+			cell,
+			0
+		)
+
+	var service_cells: Array[Vector2i] = [
+		Vector2i(12, 11),
+		Vector2i(12, 10),
+		Vector2i(12, 9),
+		Vector2i(12, 8),
+		Vector2i(12, 7),
+		Vector2i(11, 8),
+		Vector2i(10, 8),
+		Vector2i(9, 8),
+		Vector2i(8, 8),
+		Vector2i(7, 8)
+	]
+	for cell in service_cells:
+		grid._place_building_internal(
+			"service_road",
+			cell,
+			0
+		)
+
+	grid._rebuild_occupied_cells()
+	grid._recalculate_airside_network()
+	grid._refresh_building_labels()
 
 
 func _fail(message: String) -> void:

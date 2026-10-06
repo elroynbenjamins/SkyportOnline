@@ -136,6 +136,9 @@ func _start_gameplay() -> void:
 	hud.set_interface_visible(true)
 	camera_controller.set_process_unhandled_input(true)
 
+	DestinationCatalog.configure_home_country(
+		String(current_profile.get("country_id", ""))
+	)
 	var country := CountryCatalog.get_country(
 		String(current_profile.get("country_id", ""))
 	)
@@ -430,11 +433,7 @@ func _spawn_aircraft_demos() -> void:
 		var aircraft := CareerAircraft.new()
 
 		var profile_ids: Array[String] = ["pico_p8", "pico_p8"]
-		var default_destinations: Array[String] = ["brussels", "brussels"]
 		var profile_id: String = profile_ids[index % profile_ids.size()]
-		var destination_id: String = default_destinations[
-			index % default_destinations.size()
-		]
 		aircraft.configure_aircraft_type(profile_id)
 		aircraft.configure_taxi_traffic(taxi_traffic)
 		aircraft.configure_handling_mode(
@@ -445,7 +444,9 @@ func _spawn_aircraft_demos() -> void:
 			_on_aircraft_handling_action_requested
 		)
 
-		var destination := DestinationCatalog.get_destination(destination_id)
+		var destination := DestinationCatalog.starter_destination(
+			aircraft.get_aircraft_profile()
+		)
 		var initial_plan := _create_current_flight_plan(
 			aircraft.get_aircraft_profile(),
 			destination

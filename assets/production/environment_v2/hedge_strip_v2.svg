@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="190" viewBox="0 0 560 190">
+  <defs><linearGradient id="hedge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#74b853"/><stop offset=".55" stop-color="#4f9445"/><stop offset="1" stop-color="#316d3a"/></linearGradient></defs>
+  <ellipse cx="280" cy="143" rx="245" ry="25" fill="#243129" opacity=".20"/>
+  <polygon points="34,131 261,49 523,117 295,166" fill="#b9b9ae"/>
+  <polygon points="48,128 263,55 506,117 293,157" fill="#7f866f"/>
+  <g fill="url(#hedge)" stroke="#356b38" stroke-width="2">
+    <ellipse cx="82" cy="112" rx="38" ry="30"/><ellipse cx="125" cy="99" rx="40" ry="31"/><ellipse cx="169" cy="86" rx="41" ry="31"/><ellipse cx="214" cy="73" rx="41" ry="31"/><ellipse cx="260" cy="68" rx="42" ry="31"/><ellipse cx="306" cy="78" rx="42" ry="31"/><ellipse cx="352" cy="88" rx="42" ry="31"/><ellipse cx="398" cy="99" rx="42" ry="31"/><ellipse cx="444" cy="110" rx="41" ry="31"/><ellipse cx="486" cy="119" rx="35" ry="28"/>
+  </g>
+  <g fill="#9bcf6b" opacity=".65"><circle cx="110" cy="88" r="8"/><circle cx="202" cy="64" r="8"/><circle cx="337" cy="77" r="8"/><circle cx="425" cy="103" r="8"/></g>
+  <g fill="#f0c94d"><circle cx="66" cy="136" r="4"/><circle cx="150" cy="112" r="4"/><circle cx="379" cy="119" r="4"/><circle cx="470" cy="137" r="4"/></g>
+</svg>

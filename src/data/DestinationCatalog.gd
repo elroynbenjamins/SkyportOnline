@@ -53,7 +53,15 @@ static func home_hub_name() -> String:
 
 
 static func all() -> Array[Dictionary]:
-	var home := home_country()
+	return all_for_home(_home_country_id)
+
+
+static func all_for_home(
+	home_country_id: String
+) -> Array[Dictionary]:
+	var home := CountryCatalog.get_country(home_country_id)
+	if home.is_empty():
+		home = CountryCatalog.get_country(DEFAULT_HOME_COUNTRY_ID)
 	var result: Array[Dictionary] = []
 	for country_variant in CountryCatalog.get_countries():
 		var country: Dictionary = country_variant
@@ -85,15 +93,35 @@ static func all() -> Array[Dictionary]:
 
 
 static func get_destination(destination_id: String) -> Dictionary:
-	for destination in all():
+	return get_destination_for_home(
+		_home_country_id,
+		destination_id
+	)
+
+
+static func get_destination_for_home(
+	home_country_id: String,
+	destination_id: String
+) -> Dictionary:
+	for destination in all_for_home(home_country_id):
 		if String(destination.get("id", "")) == destination_id:
 			return destination.duplicate(true)
 	return {}
 
 
 static func unlocked_for_level(level: int) -> Array[Dictionary]:
+	return unlocked_for_level_for_home(
+		_home_country_id,
+		level
+	)
+
+
+static func unlocked_for_level_for_home(
+	home_country_id: String,
+	level: int
+) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	for destination in all():
+	for destination in all_for_home(home_country_id):
 		if level >= int(destination.get("unlock_level", 1)):
 			result.append(destination.duplicate(true))
 	return result
@@ -102,11 +130,24 @@ static func unlocked_for_level(level: int) -> Array[Dictionary]:
 static func starter_destination(
 	aircraft_profile: Dictionary = {}
 ) -> Dictionary:
+	return starter_destination_for_home(
+		_home_country_id,
+		aircraft_profile
+	)
+
+
+static func starter_destination_for_home(
+	home_country_id: String,
+	aircraft_profile: Dictionary = {}
+) -> Dictionary:
 	var profile := aircraft_profile
 	if profile.is_empty():
 		profile = AircraftCatalog.get_profile("pico_p8")
 
-	for destination in unlocked_for_level(1):
+	for destination in unlocked_for_level_for_home(
+		home_country_id,
+		1
+	):
 		if FlightRules.can_fly(profile, destination):
 			return destination
 	return {}
@@ -117,12 +158,29 @@ static func career_destination(
 	level: int,
 	route_rank: int = 0
 ) -> Dictionary:
+	return career_destination_for_home(
+		_home_country_id,
+		aircraft_id,
+		level,
+		route_rank
+	)
+
+
+static func career_destination_for_home(
+	home_country_id: String,
+	aircraft_id: String,
+	level: int,
+	route_rank: int = 0
+) -> Dictionary:
 	var profile := AircraftCatalog.get_profile(aircraft_id)
 	if profile.is_empty():
 		return {}
 
 	var candidates: Array[Dictionary] = []
-	for destination in unlocked_for_level(level):
+	for destination in unlocked_for_level_for_home(
+		home_country_id,
+		level
+	):
 		if FlightRules.can_fly(profile, destination):
 			candidates.append(destination)
 

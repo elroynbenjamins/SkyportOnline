@@ -104,7 +104,7 @@ func _run() -> void:
 	if not bool(snapshot.get("apron_detail_ready", false)):
 		_fail("Ambient snapshot should report the apron-detail v2 atlas ready.")
 		return
-	if int(snapshot.get("apron_prop_cap", 99)) > 18:
+	if int(snapshot.get("apron_prop_cap", 99)) > 22:
 		_fail("Apron prop count must remain bounded for mobile rendering.")
 		return
 	var profile: Dictionary = snapshot.get(

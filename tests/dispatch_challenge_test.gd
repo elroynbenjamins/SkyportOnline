@@ -40,22 +40,34 @@ func _run() -> void:
 		_fail("Dispatch shift should begin with the full three-minute timer.")
 		return
 
-	if DispatchChallengeRules.record_action(started, 12, "turnaround", 2, now + 5) != 10:
-		_fail("Two completed turnarounds should add 10 Dispatch points.")
+	if DispatchChallengeRules.record_action(started, 12, "turnaround", 2, now + 5) != 11:
+		_fail("Two quick turnarounds should add base points plus the first combo bonus.")
 		return
 	DispatchChallengeRules.record_action(started, 12, "departure", 4, now + 10)
 	DispatchChallengeRules.record_action(started, 12, "return", 3, now + 20)
 	DispatchChallengeRules.record_action(started, 12, "visitor_service", 2, now + 30)
-	if DispatchChallengeRules.record_action(started, 12, "taxi_hold", 1, now + 40) != -2:
-		_fail("Taxi hold should apply the two-point Dispatch penalty.")
+	if DispatchChallengeRules.record_action(started, 12, "taxi_hold", 1, now + 40) != -4:
+		_fail("Taxi hold should apply the four-point Dispatch penalty.")
 		return
 
 	var live := DispatchChallengeRules.snapshot(started, 12, now + 40)
-	if int(live.get("score", 0)) != 96:
-		_fail("Representative live shift should total 96 Dispatch points.")
+	if int(live.get("score", 0)) != 128:
+		_fail("Representative combo shift should total 128 Dispatch points after the hold penalty.")
 		return
 	if int(live.get("taxi_holds", 0)) != 1:
 		_fail("Dispatch shift should track taxi-hold incidents.")
+		return
+	if int(live.get("max_combo", 0)) != 11:
+		_fail("Eleven clean operations before the hold should register max combo x11.")
+		return
+	if int(live.get("combo_bonus", 0)) != 34:
+		_fail("Representative clean streak should award 34 combo bonus points.")
+		return
+	if int(live.get("penalty_points", 0)) != 4:
+		_fail("Dispatch result should track four points lost to the taxi hold.")
+		return
+	if int(live.get("combo_count", -1)) != 0:
+		_fail("Taxi hold must immediately break the live combo.")
 		return
 
 	var end_time := now + float(DispatchChallengeRules.SHIFT_SECONDS) + 1.0
@@ -67,7 +79,7 @@ func _run() -> void:
 		_fail("Expired Dispatch shift should expose a READY result.")
 		return
 	if String(result.get("tier_id", "")) != "gold":
-		_fail("96 Dispatch points should earn the Gold tier.")
+		_fail("128 Dispatch points should earn the rebalanced Gold tier.")
 		return
 	if not bool(result.get("reward_available", false)):
 		_fail("First Gold Dispatch result of the day should have a reward available.")
@@ -103,8 +115,46 @@ func _run() -> void:
 	if not bool(claimed_snapshot.get("reward_claimed", false)):
 		_fail("Daily Dispatch reward should be marked claimed after payout.")
 		return
-	if int(claimed_snapshot.get("best_score", 0)) != 96:
-		_fail("Dispatch should preserve the player's best daily score.")
+	if int(claimed_snapshot.get("best_score", 0)) != 128:
+		_fail("Dispatch should preserve the player's final daily score after penalties.")
+		return
+	if int(reward.get("max_combo", 0)) != 11 or int(reward.get("combo_bonus", 0)) != 34:
+		_fail("Dispatch reward summary should preserve combo performance.")
+		return
+
+	# Combo expires after 30 seconds and restarts from x1.
+	var combo_state := {
+		"airport_id": "dispatch-combo-test",
+		"coins": 0,
+		"xp": 0
+	}
+	DispatchChallengeRules.ensure_state(combo_state, 12, now)
+	combo_state = DispatchChallengeRules.start_shift(
+		combo_state,
+		12,
+		now
+	)
+	DispatchChallengeRules.record_action(
+		combo_state,
+		12,
+		"departure",
+		1,
+		now + 1
+	)
+	DispatchChallengeRules.record_action(
+		combo_state,
+		12,
+		"return",
+		1,
+		now + DispatchChallengeRules.COMBO_WINDOW_SECONDS + 2
+	)
+	var expired_combo := DispatchChallengeRules.snapshot(
+		combo_state,
+		12,
+		now + DispatchChallengeRules.COMBO_WINDOW_SECONDS + 2
+	)
+	if int(expired_combo.get("combo_count", 0)) != 1:
+		_fail("Dispatch combo should restart at x1 after the 30-second window expires.")
 		return
 
 	# Practice remains available after the daily reward, but cannot pay twice.
@@ -156,27 +206,34 @@ func _run() -> void:
 	if not screen.is_open():
 		_fail("Dispatch screen should open with mode snapshot.")
 		return
-	if not screen.action_button.text.contains("START 3-MINUTE SHIFT"):
-		_fail("Fresh daily Dispatch screen should offer a rewarded shift.")
+	if not screen.action_button.text.contains("START DAILY DISPATCH SHIFT"):
+		_fail("Fresh daily Dispatch screen should clearly offer the rewarded daily shift.")
+		return
+	if not screen.combo_label.text.contains("COMBO BONUS"):
+		_fail("Dispatch start presentation should explain the combo opportunity.")
 		return
 	screen.close_screen(true)
 
 	var hud := preload("res://src/ui/HUD.gd").new()
 	root.add_child(hud)
 	await process_frame
-	hud.set_dispatch_shift("RUNNING", 42, 125)
+	hud.set_dispatch_shift("RUNNING", 42, 125, 4)
 	if hud.dispatch_shift_panel == null or not hud.dispatch_shift_panel.visible:
 		_fail("Live Dispatch HUD indicator should be visible during a running shift.")
 		return
-	if not hud.dispatch_shift_label.text.contains("2:05") or not hud.dispatch_shift_label.text.contains("42 PTS"):
-		_fail("Live Dispatch HUD should show the exact countdown and score.")
+	if (
+		not hud.dispatch_shift_label.text.contains("2:05")
+		or not hud.dispatch_shift_label.text.contains("42 PTS")
+		or not hud.dispatch_shift_label.text.contains("COMBO x4")
+	):
+		_fail("Live Dispatch HUD should show the exact countdown, score and active combo.")
 		return
 	hud.set_dispatch_shift("READY", 42, 0)
 	if hud.dispatch_shift_panel.visible:
 		_fail("Live Dispatch HUD indicator should hide after the shift ends.")
 		return
 
-	print("Airport Dispatch passed: timer, live HUD, scoring, penalty, Gold reward, practice and daily reset.")
+	print("Airport Dispatch passed: combo scoring, live HUD, penalties, medal balance, practice and daily reset.")
 	quit(0)
 
 func _fail(message: String) -> void:

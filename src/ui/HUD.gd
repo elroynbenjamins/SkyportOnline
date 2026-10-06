@@ -470,11 +470,11 @@ func _build_hud_resource_chip(
 
 	var content_row := HBoxContainer.new()
 	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	content_row.add_theme_constant_override("separation", 5)
+	content_row.add_theme_constant_override("separation", 6)
 	panel.add_child(content_row)
 
 	var icon_rect := TextureRect.new()
-	icon_rect.custom_minimum_size = Vector2(20, 20)
+	icon_rect.custom_minimum_size = Vector2(26, 26)
 	icon_rect.texture = icon_texture
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -488,31 +488,23 @@ func _build_hud_resource_chip(
 	box.add_theme_constant_override("separation", 0)
 	content_row.add_child(box)
 
-	var meta_row := HBoxContainer.new()
-	meta_row.add_theme_constant_override("separation", 4)
-	box.add_child(meta_row)
-
 	var caption_label := Label.new()
 	caption_label.text = caption
-	caption_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	caption_label.add_theme_font_size_override("font_size", 8)
-	GameUIStyle.muted(caption_label)
-	meta_row.add_child(caption_label)
-
-	var detail_label := Label.new()
-	detail_label.text = detail_text
-	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	detail_label.add_theme_font_size_override("font_size", 8)
-	GameUIStyle.muted(detail_label)
-	detail_label.visible = not detail_text.is_empty()
-	meta_row.add_child(detail_label)
+	caption_label.visible = false
+	box.add_child(caption_label)
 
 	var value_label := Label.new()
 	value_label.text = value_text
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	value_label.add_theme_font_size_override("font_size", 14)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", 16)
 	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	box.add_child(value_label)
+
+	var detail_label := Label.new()
+	detail_label.text = detail_text
+	detail_label.visible = false
+	box.add_child(detail_label)
 
 	return {
 		"panel": panel,
@@ -1083,25 +1075,26 @@ func _build_bottom_navigation(root: Control) -> void:
 	bottom_nav_panel = PanelContainer.new()
 	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_nav_panel.offset_left = 16
-	bottom_nav_panel.offset_top = -56
+	bottom_nav_panel.offset_top = -82
 	bottom_nav_panel.offset_right = -16
-	bottom_nav_panel.offset_bottom = -6
+	bottom_nav_panel.offset_bottom = -8
 	root.add_child(bottom_nav_panel)
 	GameUIStyle.apply_panel(bottom_nav_panel, "dock")
 
 	var nav_row := HBoxContainer.new()
-	nav_row.add_theme_constant_override("separation", 4)
+	nav_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	nav_row.add_theme_constant_override("separation", 8)
 	bottom_nav_panel.add_child(nav_row)
 
 	for item in ["BUILD", "FLEET", "WORLD", "ACTIVITIES", "SOCIAL", "MORE"]:
 		var button := Button.new()
 		button.text = item
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0, 40)
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		button.custom_minimum_size = Vector2(104, 62)
 		button.add_theme_font_size_override("font_size", 12)
 
 		var tab: String = item.to_lower()
-		_apply_button_icon(button, _nav_icon_for(tab), 20)
+		_apply_button_icon(button, _nav_icon_for(tab), 27)
 		GameUIStyle.apply_button(
 			button,
 			"dock_selected" if tab == "build" else "dock",

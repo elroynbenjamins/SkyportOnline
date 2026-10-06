@@ -52,6 +52,36 @@ func _run() -> void:
 	if not screen.country_goods_label.text.contains("3 types"):
 		_fail("Country profile should summarize its three regional goods.")
 		return
+	if screen.map_canvas.destinations.size() != DestinationCatalog.all().size():
+		_fail("World Map should receive every configured route destination.")
+		return
+	if screen.map_canvas.selected_destination_id != "brussels":
+		_fail("Selected airport marker should stay synced to Brussels.")
+		return
+
+	var route_phase_before := screen.map_canvas.route_phase
+	screen.map_canvas._process(0.5)
+	if screen.map_canvas.route_phase <= route_phase_before:
+		_fail("Selected international route should animate on the map.")
+		return
+
+	screen.map_canvas.zoom_in()
+	if screen.map_canvas.zoom_level <= 1.0:
+		_fail("World Map should support zooming in.")
+		return
+	screen.map_canvas.focus_country("DE", 2.05)
+	if absf(screen.map_canvas.zoom_level - 2.05) > 0.01:
+		_fail("Country focus should apply a close map zoom.")
+		return
+	var focused_center := screen.map_canvas.view_center
+	screen.map_canvas._pan_by_screen_delta(Vector2(20, 0))
+	if screen.map_canvas.view_center.is_equal_approx(focused_center):
+		_fail("Zoomed World Map should support drag-style panning.")
+		return
+	screen.map_canvas.reset_view()
+	if absf(screen.map_canvas.zoom_level - 1.0) > 0.001:
+		_fail("World view reset should return to 100% zoom.")
+		return
 	if not screen.destination_buttons["brussels"].visible:
 		_fail("Selected-country route button should be visible.")
 		return
@@ -95,6 +125,13 @@ func _run() -> void:
 	if screen.selected_destination_id != "frankfurt":
 		_fail("Germany should preview its first route.")
 		return
+	if screen.map_canvas.selected_destination_id != "frankfurt":
+		_fail("Selected airport marker should stay synced to Frankfurt.")
+		return
+	var germany_routes := screen.map_canvas._routes_for_selected_country()
+	if germany_routes.size() != 2:
+		_fail("Germany should expose Frankfurt and Berlin airport markers.")
+		return
 	if not screen.destination_buttons["frankfurt"].visible:
 		_fail("Frankfurt should appear after selecting Germany.")
 		return
@@ -105,12 +142,27 @@ func _run() -> void:
 		_fail("Locked country route should explain its unlock level.")
 		return
 
+	var germany_position := screen.map_canvas.country_display_position("DE")
+	var berlin_marker := screen.map_canvas._destination_marker_position(
+		germany_position,
+		1,
+		germany_routes.size()
+	)
+	screen.map_canvas._begin_pointer(berlin_marker)
+	screen.map_canvas._end_pointer(berlin_marker)
+	if screen.selected_destination_id != "berlin":
+		_fail("Airport marker taps should select the matching route directly.")
+		return
+
 	screen._select_country("JP")
 	if screen.selected_country_code != "JP":
 		_fail("Countries without active routes should still be selectable.")
 		return
 	if not screen.selected_destination_id.is_empty():
 		_fail("Future countries should not keep a route from another country.")
+		return
+	if not screen.map_canvas.selected_destination_id.is_empty():
+		_fail("Future country should clear the selected airport marker.")
 		return
 	if not screen.details_title.text.contains("NO ACTIVE ROUTE"):
 		_fail("Future country selection should show a no-route state.")
@@ -150,7 +202,8 @@ func _run() -> void:
 
 	print(
 		"World Map country selection passed: country-first filtering, larger touch "
-		+ "targets, Europe spacing, profile states, resources, and picker sync."
+		+ "targets, Europe spacing, profile states, zoom/pan, airport markers, "
+		+ "animated routes, resources, and picker sync."
 	)
 	quit(0)
 

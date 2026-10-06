@@ -13,6 +13,7 @@ var network_meta_label: Label
 var home_hub_label: Label
 var map_canvas: WorldMapCanvas
 var map_hint_label: Label
+var map_zoom_label: Label
 var aircraft_list_container: VBoxContainer
 var country_profile_panel: PanelContainer
 var country_badge_rect: TextureRect
@@ -295,6 +296,8 @@ func _build_map_area() -> void:
 	map_canvas.set_countries(CountryCatalog.get_countries())
 	map_canvas.country_selected.connect(_on_country_selected)
 	map_canvas.country_hovered.connect(_on_country_hovered)
+	map_canvas.destination_selected.connect(_on_map_destination_selected)
+	map_canvas.view_changed.connect(_on_map_view_changed)
 	panel.add_child(map_canvas)
 
 	var hint_panel := PanelContainer.new()
@@ -308,7 +311,9 @@ func _build_map_area() -> void:
 	GameUIStyle.apply_panel(hint_panel, "dark")
 
 	map_hint_label = Label.new()
-	map_hint_label.text = "Tap a country marker to inspect routes and resources."
+	map_hint_label.text = (
+		"Tap country • airport dots choose routes • drag to pan • scroll / + − to zoom"
+	)
 	map_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	map_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	map_hint_label.add_theme_font_size_override("font_size", 12)
@@ -317,6 +322,60 @@ func _build_map_area() -> void:
 		GameUIStyle.COLOR_MUTED
 	)
 	hint_panel.add_child(map_hint_label)
+
+	var map_controls := PanelContainer.new()
+	map_controls.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	map_controls.offset_left = -248
+	map_controls.offset_top = -54
+	map_controls.offset_right = -10
+	map_controls.offset_bottom = -10
+	map_controls.mouse_filter = Control.MOUSE_FILTER_STOP
+	map_canvas.add_child(map_controls)
+	GameUIStyle.apply_panel(map_controls, "dark")
+
+	var control_row := HBoxContainer.new()
+	control_row.add_theme_constant_override("separation", 4)
+	map_controls.add_child(control_row)
+
+	map_zoom_label = Label.new()
+	map_zoom_label.text = "100%"
+	map_zoom_label.custom_minimum_size = Vector2(48, 34)
+	map_zoom_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	map_zoom_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	map_zoom_label.add_theme_font_size_override("font_size", 11)
+	map_zoom_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	control_row.add_child(map_zoom_label)
+
+	var zoom_out_button := Button.new()
+	zoom_out_button.text = "−"
+	zoom_out_button.custom_minimum_size = Vector2(34, 34)
+	zoom_out_button.pressed.connect(_on_map_zoom_out_pressed)
+	GameUIStyle.apply_button(zoom_out_button, "secondary", true)
+	control_row.add_child(zoom_out_button)
+
+	var zoom_in_button := Button.new()
+	zoom_in_button.text = "+"
+	zoom_in_button.custom_minimum_size = Vector2(34, 34)
+	zoom_in_button.pressed.connect(_on_map_zoom_in_pressed)
+	GameUIStyle.apply_button(zoom_in_button, "secondary", true)
+	control_row.add_child(zoom_in_button)
+
+	var focus_button := Button.new()
+	focus_button.text = "FOCUS"
+	focus_button.custom_minimum_size = Vector2(58, 34)
+	focus_button.pressed.connect(_on_map_focus_pressed)
+	GameUIStyle.apply_button(focus_button, "secondary", true)
+	control_row.add_child(focus_button)
+
+	var reset_button := Button.new()
+	reset_button.text = "WORLD"
+	reset_button.custom_minimum_size = Vector2(58, 34)
+	reset_button.pressed.connect(_on_map_reset_pressed)
+	GameUIStyle.apply_button(reset_button, "secondary", true)
+	control_row.add_child(reset_button)
 
 
 func _build_details_sidebar() -> void:
@@ -996,6 +1055,7 @@ func _refresh_details() -> void:
 
 	if map_canvas != null:
 		map_canvas.set_selected_country(selected_country_code)
+		map_canvas.set_selected_destination(selected_destination_id)
 
 
 func _refresh_resource_preview(
@@ -1071,12 +1131,50 @@ func _on_country_selected(country_code: String) -> void:
 	_select_country(country_code)
 
 
+func _on_map_destination_selected(destination_id: String) -> void:
+	_on_destination_pressed(destination_id)
+
+
+func _on_map_view_changed(value: float) -> void:
+	if map_zoom_label != null:
+		map_zoom_label.text = "%d%%" % int(round(value * 100.0))
+
+
+func _on_map_zoom_out_pressed() -> void:
+	if map_canvas != null:
+		map_canvas.zoom_out()
+
+
+func _on_map_zoom_in_pressed() -> void:
+	if map_canvas != null:
+		map_canvas.zoom_in()
+
+
+func _on_map_focus_pressed() -> void:
+	if map_canvas == null or selected_country_code.is_empty():
+		return
+	var country := CountryCatalog.get_country(selected_country_code)
+	var target_zoom := 1.55
+	if String(country.get("region", "")).contains("Europe"):
+		target_zoom = 2.05
+	map_canvas.focus_country(selected_country_code, target_zoom)
+
+
+func _on_map_reset_pressed() -> void:
+	if map_canvas != null:
+		map_canvas.reset_view()
+
+
 func _on_country_picker_selected(index: int) -> void:
 	if country_picker == null:
 		return
-	_select_country(
-		String(country_picker.get_item_metadata(index))
-	)
+	var country_code := String(country_picker.get_item_metadata(index))
+	_select_country(country_code)
+	if map_canvas != null:
+		map_canvas.focus_country(
+			country_code,
+			maxf(map_canvas.zoom_level, 1.65)
+		)
 
 
 func _on_country_hovered(country_code: String) -> void:
@@ -1084,7 +1182,7 @@ func _on_country_hovered(country_code: String) -> void:
 		return
 	if country_code.is_empty():
 		map_hint_label.text = (
-			"Tap a country marker to inspect routes and resources."
+			"Tap country • airport dots choose routes • drag to pan • scroll / + − to zoom"
 		)
 		return
 
@@ -1148,20 +1246,27 @@ func _refresh_map_state() -> void:
 
 	var route_codes: Array[String] = []
 	var unlocked_codes: Array[String] = []
+	var map_destinations: Array[Dictionary] = []
 	for destination in DestinationCatalog.all():
 		var country_code := String(destination.get("country_code", ""))
 		if not route_codes.has(country_code):
 			route_codes.append(country_code)
-		if (
+		var unlocked := (
 			player_level >= int(destination.get("unlock_level", 1))
-			and not unlocked_codes.has(country_code)
-		):
+		)
+		if unlocked and not unlocked_codes.has(country_code):
 			unlocked_codes.append(country_code)
 
+		var map_destination: Dictionary = destination.duplicate(true)
+		map_destination["map_unlocked"] = unlocked
+		map_destinations.append(map_destination)
+
 	map_canvas.set_countries(CountryCatalog.get_countries())
+	map_canvas.set_destinations(map_destinations)
 	map_canvas.set_home_country(home_country_code)
 	map_canvas.set_route_countries(route_codes, unlocked_codes)
 	map_canvas.set_selected_country(selected_country_code)
+	map_canvas.set_selected_destination(selected_destination_id)
 
 	if home_hub_label != null:
 		var home_country := CountryCatalog.get_country(home_country_code)

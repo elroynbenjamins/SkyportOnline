@@ -590,7 +590,10 @@ func _request_passenger_boarding(job_id: int) -> void:
 	job["service_status"] = {}
 	turnaround_jobs[job_id] = job
 	aircraft.mark_waiting_passengers()
-	if _is_manual_job(job):
+	if (
+		_is_manual_job(job)
+		and not aircraft.uses_handling_automation()
+	):
 		aircraft.set_turnaround_status(
 			"Ready to load\nTap LOAD",
 			"warning"

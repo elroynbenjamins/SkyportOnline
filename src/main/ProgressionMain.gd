@@ -242,9 +242,10 @@ func _process(delta: float) -> void:
 			var dispatch_data := _dispatch_snapshot()
 			if String(dispatch_data.get("status", "")) == "READY":
 				hud.set_operation_status(
-					"Dispatch shift complete • %d points • %s" % [
+					"Dispatch complete • %d pts • %s • max combo x%d" % [
 						int(dispatch_data.get("score", 0)),
-						String(dispatch_data.get("tier_name", "No medal"))
+						String(dispatch_data.get("tier_name", "No medal")),
+						int(dispatch_data.get("max_combo", 0))
 					],
 					"success"
 				)
@@ -1642,19 +1643,24 @@ func _activities_snapshot() -> Dictionary:
 	var dispatch_action := "OPEN DISPATCH"
 	if dispatch_unlocked:
 		match dispatch_status_code:
-			"RUNNING":
-				dispatch_status = "LIVE • %d PTS • %s LEFT" % [
+				"RUNNING":
+				dispatch_status = "LIVE • %d PTS • COMBO x%d • %s LEFT" % [
 					int(dispatch.get("score", 0)),
+					int(dispatch.get("combo_count", 0)),
 					_format_activity_time(int(dispatch.get("remaining_seconds", 0)))
 				]
-				dispatch_detail = "Keep turnarounds, departures and returns moving; taxi holds cost points."
+				dispatch_detail = "Clean operations build bonus points; taxi holds cost 4 points and break the combo."
 			"READY":
-				dispatch_status = "%s • %d PTS" % [
+				dispatch_status = "%s • %d PTS • MAX COMBO x%d" % [
 					String(dispatch.get("tier_name", "RESULT")).to_upper(),
-					int(dispatch.get("score", 0))
+					int(dispatch.get("score", 0)),
+					int(dispatch.get("max_combo", 0))
 				]
 				dispatch_detail = (
-					"Daily reward ready to claim."
+					"Daily reward ready • +%d combo pts • −%d congestion pts." % [
+						int(dispatch.get("combo_bonus", 0)),
+						int(dispatch.get("penalty_points", 0))
+					]
 					if dispatch_attention
 					else "Shift complete • finish the result to start another run."
 				)
@@ -1664,7 +1670,7 @@ func _activities_snapshot() -> Dictionary:
 				dispatch_detail = (
 					"Daily reward already claimed • practice runs still improve your best."
 					if bool(dispatch.get("reward_claimed", false))
-					else "Start a 3-minute live shift for today's Bronze / Silver / Gold reward."
+					else "3-minute shift • Bronze 30 • Silver 65 • Gold 105 • clean combos accelerate scoring."
 				)
 
 	var event_active := bool(current_event_snapshot.get("active", false))
@@ -1929,9 +1935,10 @@ func _on_dispatch_claim_requested() -> void:
 	hud.set_player_data(player_level, coins, gems)
 	if bool(reward.get("rewarded", false)):
 		hud.set_operation_status(
-			"%s • %d pts • +%d coins • +%d XP" % [
+			"%s • %d pts • max combo x%d • +%d coins • +%d XP" % [
 				String(reward.get("tier_name", "Dispatch result")),
 				int(reward.get("score", 0)),
+				int(reward.get("max_combo", 0)),
 				int(reward.get("coins", 0)),
 				int(reward.get("xp", 0))
 			],

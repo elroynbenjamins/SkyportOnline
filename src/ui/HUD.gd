@@ -1107,7 +1107,8 @@ func _apply_button_icon(
 	button.icon = texture
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
-	button.icon_max_width = max_width
+	button.add_theme_constant_override("icon_max_width", max_width)
+	button.add_theme_constant_override("h_separation", 5)
 	button.expand_icon = true
 
 

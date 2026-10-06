@@ -39,6 +39,9 @@ jobs:
       - name: Test building placement V2
         run: timeout 25s godot --headless --path . --script res://tests/building_placement_v2_test.gd
 
+      - name: Test starter airport network V2
+        run: timeout 25s godot --headless --path . --script res://tests/starter_airport_network_v2_test.gd
+
       - name: Start main scene smoke test
         run: godot --headless --path . --quit-after 3 --verbose
 

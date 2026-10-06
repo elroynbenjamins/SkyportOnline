@@ -23,10 +23,11 @@ func open_screen(data: Dictionary) -> void:
 	_refresh()
 	root.visible = true
 
-func close_screen() -> void:
+func close_screen(silent: bool = false) -> void:
 	if root != null:
 		root.visible = false
-	close_requested.emit()
+	if not silent:
+		close_requested.emit()
 
 func is_open() -> bool:
 	return root != null and root.visible

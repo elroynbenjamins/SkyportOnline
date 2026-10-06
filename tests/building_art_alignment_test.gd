@@ -150,12 +150,12 @@ func _run() -> void:
 	var checked := checked_atlas + checked_paths
 	if checked_atlas < 34:
 		_fail(
-			"Expected at least 34 canonical/retained atlas building views after the regional-v2 migration; checked %d."
+			"Expected at least 34 canonical/retained atlas building views after the runway-v2 migration; checked %d."
 			% checked_atlas
 		)
-	if checked_paths < 4:
+	if checked_paths != 0:
 		_fail(
-			"Expected at least 4 standalone runway views after the regional-v2 migration; checked %d."
+			"Expected no standalone legacy world-art views after the runway-v2 migration; checked %d."
 			% checked_paths
 		)
 
@@ -180,6 +180,8 @@ func _validate_art_coverage(
 	if bool(definition.get("event_decoration", false)):
 		return
 	if id in ["taxiway", "service_road"]:
+		return
+	if String(definition.get("surface_art", "")) == "runway_v2":
 		return
 
 	var atlas_path := String(

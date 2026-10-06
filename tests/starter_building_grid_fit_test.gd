@@ -135,6 +135,17 @@ func _run() -> void:
 		_fail("Integrated-base helper should recognize the terminal.")
 		return
 
+	var travel_origin := Vector2i(-1, -1)
+	for building in grid.placed_buildings:
+		if String(building.get("definition_id", "")) == "travel_office":
+			travel_origin = building.get("origin", Vector2i(-1, -1))
+			break
+	if travel_origin != Vector2i(9, 10):
+		_fail(
+			"Starter Travel Office should sit beside the Terminal, not visually stack over its roof."
+		)
+		return
+
 	print(
 		"STARTER_BUILDING_GRID_FIT_OK integrated_bases=true "
 		+ "procedural_underlays=false grounded=true raised_site_slab=false width_cap=1.35"

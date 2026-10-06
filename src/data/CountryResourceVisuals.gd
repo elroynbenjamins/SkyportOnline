@@ -89,7 +89,7 @@ static func atlas_region(resource_id: String) -> Rect2:
 	if index < 0:
 		return Rect2()
 	var column := index % COLUMNS
-	var row := index / COLUMNS
+	var row := floori(float(index) / float(COLUMNS))
 	return Rect2(
 		Vector2(column * CELL_SIZE.x, row * CELL_SIZE.y),
 		Vector2(CELL_SIZE)

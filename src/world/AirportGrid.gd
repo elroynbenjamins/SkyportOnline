@@ -279,7 +279,7 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("taxiway", Vector2i(13, 10), 0)
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
-	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
+	_place_building_internal("small_terminal", Vector2i(8, 14), 0)
 	_place_building_internal("travel_office", Vector2i(9, 10), 0)
 	_place_building_internal("ground_ops_depot", Vector2i(11, 14), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)

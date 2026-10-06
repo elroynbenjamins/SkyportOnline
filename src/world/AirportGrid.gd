@@ -25,12 +25,12 @@ const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
 # Four adjacent 8x8 parcels form one 16x16 starter construction area.
 # The player receives the land, but must place the runway and networks.
-const STARTER_OWNED_PARCELS := PackedStringArray([
+const STARTER_OWNED_PARCELS := [
 	"north_west",
 	"north",
 	"west",
 	"home"
-])
+]
 
 const TERRAIN_BACKGROUND := Color("557f4b")
 const OWNED_GRASS_VARIANTS := [

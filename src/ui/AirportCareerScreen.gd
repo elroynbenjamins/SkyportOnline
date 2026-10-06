@@ -106,7 +106,7 @@ func _refresh() -> void:
 	var stage := AirportProgressionPacing.stage_for_level(level)
 	header.text = "AIRPORT CAREER  •  LV %d  •  %s  •  XP %d / %d  •  COINS %d" % [
 		level,
-		String(stage.get("name", "Airport")),
+		String(stage.get("name", "Airport")).to_upper(),
 		int(state.get("xp", 0)),
 		AirportProgressionRules.xp_for_level(mini(level + 1, 30)),
 		int(state.get("coins", 0))

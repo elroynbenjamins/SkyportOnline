@@ -63,6 +63,50 @@ func _run() -> void:
 		_fail("Emergency fuel orders should refill available storage.")
 		return
 
+	var routes := grid.get_departure_routes("S")
+	if routes.is_empty():
+		_fail("Starter airport should expose a departure route for fuel service.")
+		return
+	var plane := AircraftPrototype.new()
+	root.add_child(plane)
+	plane.configure_aircraft_type("pico_p8")
+	var route_info: Dictionary = routes[0]
+	plane.set_departure_route(
+		route_info["route"],
+		"S",
+		int(route_info["stand_uid"]),
+		int(route_info["runway_uid"])
+	)
+	plane.assign_flight_plan(FlightRules.create_flight_plan(pico, brussels))
+
+	economy.set_fuel(0)
+	var dispatcher := GroundServiceDispatcher.new()
+	root.add_child(dispatcher)
+	dispatcher.configure(grid)
+	dispatcher.configure_fuel_economy(economy)
+	dispatcher.request_turnaround(plane, "Fuel Test", false)
+
+	var blocked := dispatcher.get_turnaround_snapshot(plane)
+	var blocked_status: Dictionary = blocked.get("service_status", {})
+	if String(
+		(blocked_status.get("fuel", {}) as Dictionary).get("state", "")
+	) != "queued":
+		_fail("Fuel truck should remain queued when airport fuel stock is empty.")
+		return
+
+	economy.add_fuel(pico_fuel)
+	dispatcher.refresh_after_layout_change()
+	var released := dispatcher.get_turnaround_snapshot(plane)
+	var released_status: Dictionary = released.get("service_status", {})
+	if String(
+		(released_status.get("fuel", {}) as Dictionary).get("state", "")
+	) != "en_route":
+		_fail("Fuel truck should dispatch as soon as enough stock is available.")
+		return
+	if economy.get_fuel() != 0:
+		_fail("Dispatching the fuel truck should reserve the route fuel immediately.")
+		return
+
 	var profile := ProfileStore.create_guest_airport(
 		"Fuel Test",
 		"FUL",

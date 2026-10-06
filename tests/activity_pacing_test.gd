@@ -192,6 +192,60 @@ func _run() -> void:
 		return
 	hub.close_screen(true)
 
+	var career_state := AirportProgressionRules.new_state(
+		"career-activity-integration",
+		22
+	)
+	var claimed_all: Dictionary = {}
+	for quest_variant in AirportCareerCatalog.all():
+		var career_quest: Dictionary = quest_variant
+		claimed_all[String(career_quest.get("id", ""))] = true
+	career_state["claimed"] = claimed_all
+	var career := AirportCareerScreen.new()
+	root.add_child(career)
+	await process_frame
+	var career_activity := {"mode": ""}
+	career.activity_requested.connect(
+		func(mode_id: String) -> void:
+			career_activity["mode"] = mode_id
+	)
+	career.open_screen({
+		"state": career_state,
+		"airport": {
+			"buildings": [],
+			"parcels": [],
+			"medium_ready": true
+		},
+		"level": 22,
+		"active_owned": [],
+		"npc_enabled": true,
+		"activities": {
+			"missions": {"new": false, "enabled": true},
+			"event": {"new": false, "enabled": false},
+			"dispatch": {"new": true, "enabled": true},
+			"challenge": {"new": false, "enabled": true},
+			"alliance": {"new": false, "enabled": false},
+			"charter": {"new": false, "enabled": true}
+		}
+	})
+	var introduce_dispatch := _find_button(
+		career,
+		"INTRODUCE • AIRPORT DISPATCH"
+	)
+	if introduce_dispatch == null:
+		_fail(
+			"Completed Career should still surface a direct shortcut to a newly unlocked Activity."
+		)
+		return
+	introduce_dispatch.pressed.emit()
+	await process_frame
+	if String(career_activity.get("mode", "")) != "dispatch":
+		_fail(
+			"Career Activity shortcut should emit the selected mode id."
+		)
+		return
+	career.close_screen()
+
 	var social := SocialAirportScreen.new()
 	root.add_child(social)
 	await process_frame
@@ -233,6 +287,16 @@ func _run() -> void:
 
 	print("Activities pacing passed: staged levels, NEW persistence, intro UI, hub state and Alliance shortcut gate.")
 	quit(0)
+
+
+func _find_button(node: Node, text_value: String) -> Button:
+	if node is Button and String((node as Button).text) == text_value:
+		return node as Button
+	for child in node.get_children():
+		var found := _find_button(child, text_value)
+		if found != null:
+			return found
+	return null
 
 func _fail(message: String) -> void:
 	push_error(message)

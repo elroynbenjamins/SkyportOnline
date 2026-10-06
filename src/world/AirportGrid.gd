@@ -2045,11 +2045,16 @@ func _draw_buildings() -> void:
 		var id := String(definition.get("id", ""))
 
 		if id == "taxiway" or id == "service_road":
-			_draw_pavement_tile(origin, id)
-			if id == "taxiway":
-				_draw_taxiway_detail(origin)
-			else:
-				_draw_service_road_detail(origin)
+			var production_surface := _draw_airside_surface_tile(
+				origin,
+				id
+			)
+			if not production_surface:
+				_draw_pavement_tile(origin, id)
+				if id == "taxiway":
+					_draw_taxiway_detail(origin)
+				else:
+					_draw_service_road_detail(origin)
 			continue
 
 		var dimmed := _placement_focus_active()
@@ -2085,6 +2090,14 @@ func _draw_buildings() -> void:
 			continue
 
 		if _definition_has_world_sprite(definition):
+			if id.contains("stand"):
+				_draw_generated_stand_pad(
+					definition,
+					origin,
+					footprint,
+					int(building["rotation"]),
+					sprite_modulate.a
+				)
 			var integrated_world_base := (
 				_definition_uses_integrated_world_base(definition)
 			)
@@ -5063,6 +5076,181 @@ func get_airfield_detail_snapshot() -> Dictionary:
 	}
 
 
+func _draw_airside_surface_tile(
+	origin: Vector2i,
+	kind: String
+) -> bool:
+	var texture: Texture2D
+	if kind == "taxiway":
+		var mask := _airside_connection_mask(
+			origin,
+			"taxiway"
+		)
+		texture = AirsideGroundArt.taxi_texture(
+			mask,
+			_adjacent_runway_direction(origin)
+		)
+	else:
+		texture = AirsideGroundArt.service_texture(
+			_airside_connection_mask(
+				origin,
+				"service_road"
+			)
+		)
+
+	if texture == null:
+		return false
+
+	var center := tile_to_world(
+		Vector2(origin.x, origin.y)
+	)
+	var tile_size := Vector2(
+		TILE_WIDTH,
+		TILE_HEIGHT
+	)
+	draw_texture_rect(
+		texture,
+		Rect2(center - tile_size * 0.5, tile_size),
+		false
+	)
+	return true
+
+
+func _airside_connection_mask(
+	origin: Vector2i,
+	kind: String
+) -> int:
+	var mask := 0
+	var entries := [
+		[Vector2i(0, -1), AirsideGroundArt.NORTH],
+		[Vector2i(1, 0), AirsideGroundArt.EAST],
+		[Vector2i(0, 1), AirsideGroundArt.SOUTH],
+		[Vector2i(-1, 0), AirsideGroundArt.WEST],
+	]
+	for entry_variant in entries:
+		var entry: Array = entry_variant
+		var direction: Vector2i = entry[0]
+		var connected := (
+			_taxiway_visually_connects_to(
+				origin + direction
+			)
+			if kind == "taxiway"
+			else _service_road_visually_connects_to(
+				origin + direction
+			)
+		)
+		if connected:
+			mask |= int(entry[1])
+	return mask
+
+
+func get_airside_tile_visual(
+	origin: Vector2i,
+	kind: String
+) -> Dictionary:
+	var mask := _airside_connection_mask(
+		origin,
+		kind
+	)
+	var runway_direction := (
+		_adjacent_runway_direction(origin)
+		if kind == "taxiway"
+		else Vector2i.ZERO
+	)
+	var texture := (
+		AirsideGroundArt.taxi_texture(
+			mask,
+			runway_direction
+		)
+		if kind == "taxiway"
+		else AirsideGroundArt.service_texture(mask)
+	)
+	return {
+		"mask": mask,
+		"runway_direction": runway_direction,
+		"texture": texture,
+	}
+
+
+func _adjacent_runway_direction(
+	origin: Vector2i
+) -> Vector2i:
+	for neighbor in _orthogonal_neighbors(origin):
+		if _runway_uid_for_cell(neighbor) >= 0:
+			return neighbor - origin
+	return Vector2i.ZERO
+
+
+func _draw_generated_stand_pad(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int,
+	strength: float = 1.0
+) -> void:
+	var size_class := (
+		"M"
+		if String(definition.get("id", "")) == "medium_stand"
+		else "S"
+	)
+	var texture := AirsideGroundArt.stand_texture(
+		size_class
+	)
+	if texture == null:
+		return
+
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var min_x := INF
+	var max_x := -INF
+	var min_y := INF
+	var max_y := -INF
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		min_x = minf(min_x, point.x)
+		max_x = maxf(max_x, point.x)
+		min_y = minf(min_y, point.y)
+		max_y = maxf(max_y, point.y)
+
+	var center := Vector2(
+		(min_x + max_x) * 0.5,
+		(min_y + max_y) * 0.5
+	)
+	var pad_size := Vector2(
+		max_x - min_x,
+		max_y - min_y
+	)
+	if rotation % 2 == 1:
+		draw_set_transform(
+			center,
+			PI,
+			Vector2.ONE
+		)
+		draw_texture_rect(
+			texture,
+			Rect2(-pad_size * 0.5, pad_size),
+			false,
+			Color(1, 1, 1, 0.88 * strength)
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+	else:
+		draw_texture_rect(
+			texture,
+			Rect2(center - pad_size * 0.5, pad_size),
+			false,
+			Color(1, 1, 1, 0.88 * strength)
+		)
+
+
 func _draw_pavement_tile(
 	origin: Vector2i,
 	kind: String
@@ -5476,6 +5664,22 @@ func _draw_runway_hold_short_markings() -> void:
 				taxi_cell,
 				runway_cell
 			)
+			var hold_texture := AirsideGroundArt.hold_short_texture(
+				runway_cell - taxi_cell
+			)
+			if hold_texture != null:
+				var hold_tile_size := Vector2(
+					TILE_WIDTH,
+					TILE_HEIGHT
+				)
+				draw_texture_rect(
+					hold_texture,
+					Rect2(
+						taxi_center - hold_tile_size * 0.5,
+						hold_tile_size
+					),
+					false
+				)
 			var runway_uid := _runway_uid_for_cell(
 				runway_cell
 			)
@@ -8446,6 +8650,16 @@ func get_departure_route_options_for_stand(
 		stand["origin"],
 		footprint
 	)
+	var first_taxi_position := tile_to_world(
+		Vector2(
+			start_taxiway.x,
+			start_taxiway.y
+		)
+	)
+	var stand_access_position := stand_position.lerp(
+		first_taxi_position,
+		0.52
+	)
 
 	for runway in placed_buildings:
 		var runway_definition := BuildingCatalog.get_definition(
@@ -8497,8 +8711,11 @@ func get_departure_route_options_for_stand(
 
 		var points := PackedVector2Array()
 		points.append(stand_position)
-		var taxi_distance := 0.0
-		var previous_point := stand_position
+		points.append(stand_access_position)
+		var taxi_distance := stand_position.distance_to(
+			stand_access_position
+		)
+		var previous_point := stand_access_position
 		for taxi_cell in taxi_path:
 			var taxi_point := tile_to_world(
 				Vector2(taxi_cell.x, taxi_cell.y)
@@ -8542,6 +8759,13 @@ func get_departure_route_options_for_stand(
 				runway.get("definition_id", "")
 			),
 			"hold_short_position": hold_short_position,
+			"stand_access_position": stand_access_position,
+			"runway_entry_cell": runway_entry,
+			"taxi_cells": taxi_path.duplicate(),
+			"taxi_turns": AirsideRoutingRules.turn_count(
+				taxi_path
+			),
+			"routing_version": 2,
 			"taxi_distance": taxi_distance,
 			"route": points
 		})
@@ -8684,6 +8908,23 @@ func _arrival_route_from_departure(
 			"hold_short_position",
 			Vector2.ZERO
 		),
+		"stand_access_position": departure.get(
+			"stand_access_position",
+			Vector2.ZERO
+		),
+		"runway_entry_cell": departure.get(
+			"runway_entry_cell",
+			Vector2i(-1, -1)
+		),
+		"taxi_cells": (
+			departure.get("taxi_cells", []) as Array
+		).duplicate(),
+		"taxi_turns": int(
+			departure.get("taxi_turns", 0)
+		),
+		"routing_version": int(
+			departure.get("routing_version", 1)
+		),
 		"taxi_distance": float(
 			departure.get("taxi_distance", 0.0)
 		),
@@ -8709,103 +8950,79 @@ func _taxiway_path_to_specific_runway(
 	runway_uid: int,
 	aircraft_size: String = ""
 ) -> Array[Vector2i]:
+	var reachable := _reachable_taxiway_dictionary()
+	if not reachable.has(_cell_key(start)):
+		return []
+
+	var goals := _taxiway_goals_for_runway_uid(
+		runway_uid,
+		aircraft_size,
+		reachable
+	)
+	return AirsideRoutingRules.find_smooth_path(
+		reachable,
+		start,
+		goals
+	)
+
+
+func _reachable_taxiway_dictionary() -> Dictionary:
+	var result: Dictionary = {}
 	var reachable_keys: Array = airside_status.get(
 		"reachable_taxiway_cells",
 		[]
 	)
-	var reachable: Dictionary = {}
-	for key in reachable_keys:
-		reachable[String(key)] = true
+	for key_variant in reachable_keys:
+		var key := String(key_variant)
+		var parts := key.split(",")
+		if parts.size() != 2:
+			continue
+		result[key] = Vector2i(
+			int(parts[0]),
+			int(parts[1])
+		)
+	return result
 
-	if not reachable.has(_cell_key(start)):
-		return []
 
-	var queue: Array[Vector2i] = [start]
-	var parent: Dictionary = {}
-	parent[_cell_key(start)] = Vector2i(-999, -999)
-	var cursor := 0
-	var goal := Vector2i(-1, -1)
-
-	while cursor < queue.size():
-		var current := queue[cursor]
-		cursor += 1
-
+func _taxiway_goals_for_runway_uid(
+	runway_uid: int,
+	aircraft_size: String,
+	reachable: Dictionary
+) -> Dictionary:
+	var result: Dictionary = {}
+	for cell_variant in reachable.values():
+		var cell: Vector2i = cell_variant
 		if _adjacent_runway_cell_for_uid(
-			current,
+			cell,
 			runway_uid,
 			aircraft_size
 		).x >= 0:
-			goal = current
-			break
-
-		for neighbor in _orthogonal_neighbors(current):
-			var key := _cell_key(neighbor)
-			if (
-				reachable.has(key)
-				and not parent.has(key)
-			):
-				parent[key] = current
-				queue.append(neighbor)
-
-	if goal.x < 0:
-		return []
-
-	var reversed: Array[Vector2i] = []
-	var cursor_cell := goal
-	while cursor_cell != Vector2i(-999, -999):
-		reversed.append(cursor_cell)
-		var key := _cell_key(cursor_cell)
-		if not parent.has(key):
-			break
-		cursor_cell = parent[key]
-
-	reversed.reverse()
-	return reversed
+			result[_cell_key(cell)] = true
+	return result
 
 
-func _taxiway_path_to_runway(start: Vector2i, aircraft_size: String = "") -> Array[Vector2i]:
-	var reachable_keys: Array = airside_status.get("reachable_taxiway_cells", [])
-	var reachable: Dictionary = {}
-	for key in reachable_keys:
-		reachable[String(key)] = true
-
+func _taxiway_path_to_runway(
+	start: Vector2i,
+	aircraft_size: String = ""
+) -> Array[Vector2i]:
+	var reachable := _reachable_taxiway_dictionary()
 	if not reachable.has(_cell_key(start)):
 		return []
 
-	var queue: Array[Vector2i] = [start]
-	var parent: Dictionary = {}
-	parent[_cell_key(start)] = Vector2i(-999, -999)
-	var cursor := 0
-	var goal := Vector2i(-1, -1)
+	var goals: Dictionary = {}
+	for cell_variant in reachable.values():
+		var cell: Vector2i = cell_variant
+		if _adjacent_runway_cell(
+			cell,
+			aircraft_size
+		).x >= 0:
+			goals[_cell_key(cell)] = true
 
-	while cursor < queue.size():
-		var current := queue[cursor]
-		cursor += 1
-
-		if _adjacent_runway_cell(current, aircraft_size).x >= 0:
-			goal = current
-			break
-
-		for neighbor in _orthogonal_neighbors(current):
-			var key := _cell_key(neighbor)
-			if reachable.has(key) and not parent.has(key):
-				parent[key] = current
-				queue.append(neighbor)
-
-	if goal.x < 0:
-		return []
-
-	var reversed: Array[Vector2i] = []
-	var cursor_cell := goal
-	while cursor_cell != Vector2i(-999, -999):
-		reversed.append(cursor_cell)
-		var key := _cell_key(cursor_cell)
-		if not parent.has(key):
-			break
-		cursor_cell = parent[key]
-
-	reversed.reverse()
-	return reversed
+	return AirsideRoutingRules.find_smooth_path(
+		reachable,
+		start,
+		goals
+	)
 
 
 func _adjacent_runway_cell_for_uid(

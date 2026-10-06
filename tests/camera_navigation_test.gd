@@ -29,17 +29,23 @@ func _run() -> void:
 		return
 
 	camera.set_zoom_level(99.0)
-	if absf(camera.zoom.x - camera.MAX_ZOOM) > 0.001:
+	var snapshot: Dictionary = camera.get_navigation_snapshot()
+	if absf(
+		camera.zoom.x - float(snapshot.get("max_zoom", 0.0))
+	) > 0.001:
 		_fail("Camera zoom-in should clamp at MAX_ZOOM.")
 		return
 
 	camera.set_zoom_level(0.01)
-	if absf(camera.zoom.x - camera.MIN_ZOOM) > 0.001:
+	snapshot = camera.get_navigation_snapshot()
+	if absf(
+		camera.zoom.x - float(snapshot.get("min_zoom", 0.0))
+	) > 0.001:
 		_fail("Camera zoom-out should clamp at MIN_ZOOM.")
 		return
 
 	camera.set_zoom_level(1.0)
-	var snapshot: Dictionary = camera.get_navigation_snapshot()
+	snapshot = camera.get_navigation_snapshot()
 	for key in [
 		"touch_pan",
 		"pinch_zoom",

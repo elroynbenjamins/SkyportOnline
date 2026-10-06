@@ -427,7 +427,8 @@ func _draw_terrain_stamps() -> void:
 	]
 
 	for stamp in stamps:
-		var position := _map_to_screen(stamp["position"])
+		var map_position: Vector2 = stamp["position"]
+		var position := _map_to_screen(map_position)
 		if not _is_screen_visible(position, 48.0):
 			continue
 		var texture := WorldMapVisualAssets.texture(

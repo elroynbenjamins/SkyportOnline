@@ -65,6 +65,9 @@ func _run() -> void:
 	):
 		_fail("AirportBackdrop should be declared before AirportGrid.")
 		return
+	if not scene_text.contains("zoom = Vector2(0.84, 0.84)"):
+		_fail("Opening camera should be wide enough to reveal the background.")
+		return
 
 	print(
 		"AIRPORT_BACKGROUND_OK environment_v2=true fields=4 trees=6 "

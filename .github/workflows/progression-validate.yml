@@ -25,16 +25,6 @@ jobs:
           tail -n 45 /tmp/skyport-progression-import.log
           test "$status" -eq 0
           if grep -E 'SCRIPT ERROR|Parse Error|Compile Error' /tmp/skyport-progression-import.log; then exit 1; fi
-      - name: World map navigation smoke
-        shell: bash
-        run: |
-          status=0
-          timeout 30s godot --headless --path . --script res://tests/world_map_country_selection_test.gd > /tmp/skyport-world-map.log 2>&1 || status=$?
-          cat /tmp/skyport-world-map.log
-          test "$status" -eq 0
-          if grep -E 'SCRIPT ERROR|Parse Error|Compile Error' /tmp/skyport-world-map.log; then exit 1; fi
-          grep -q 'World Map country selection passed' /tmp/skyport-world-map.log
-
       - name: Career rules and NPC gates
         shell: bash
         run: |

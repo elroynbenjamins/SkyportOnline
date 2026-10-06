@@ -1044,14 +1044,7 @@ func _on_rewarded_action_unavailable(action_id: String) -> void:
 func _available_resource_choice_country_codes() -> Array[String]:
 	# Resource-choice crates are global by design. Home country and personal
 	# route range determine travel progression, not permanent material access.
-	var result: Array[String] = []
-	for country_variant in CountryCatalog.get_countries():
-		var country: Dictionary = country_variant
-		var code := String(country.get("id", ""))
-		if CountryResourceCatalog.resources_for_country(code).size() == 3:
-			result.append(code)
-	result.sort()
-	return result
+	return CountryResourceCatalog.country_codes()
 
 func _on_pass_resource_choice_requested(resource_id: String) -> void:
 	var resource := CountryResourceCatalog.get_resource(resource_id)

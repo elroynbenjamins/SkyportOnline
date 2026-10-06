@@ -35,13 +35,15 @@ func _run() -> void:
 		_fail("Handling-attention chip should summarize additional waiting aircraft.")
 		return
 
-	var requested := false
+	var requested := {
+		"value": false
+	}
 	hud.handling_attention_requested.connect(
 		func() -> void:
-			requested = true
+			requested["value"] = true
 	)
 	hud._on_handling_attention_pressed()
-	if not requested:
+	if not bool(requested.get("value", false)):
 		_fail("Pressing the handling-attention chip should request aircraft focus.")
 		return
 

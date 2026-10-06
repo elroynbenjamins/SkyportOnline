@@ -908,7 +908,7 @@ func _refresh_resource_preview(
 		return
 
 	for child in resource_preview_row.get_children():
-		child.queue_free()
+		child.free()
 
 	resource_preview_row.visible = not resources.is_empty()
 	for resource in resources:

@@ -25,6 +25,8 @@ const AIRPORT_COLOR := Color("c8eff7")
 const COUNTRY_HIT_RADIUS := 32.0
 const SELECTED_HALO_RADIUS := 24.0
 const GEOGRAPHY_DETAIL_COUNT := 12
+const AIRPORT_LABEL_ZOOM := 1.35
+const NETWORK_ROUTE_WIDTH := 1.35
 
 var countries: Array[Dictionary] = []
 var destinations: Array[Dictionary] = []
@@ -176,6 +178,7 @@ func _draw() -> void:
 	_draw_region_labels()
 
 	var home_position := _home_position()
+	_draw_route_network(home_position)
 	var selected := _selected_map_position()
 	if selected.x >= 0.0:
 		_draw_route_arc(home_position, selected)
@@ -380,6 +383,54 @@ func _draw_region_labels() -> void:
 			10,
 			Color(0.78, 0.90, 0.86, 0.28)
 		)
+
+
+func network_connection_count() -> int:
+	var count := 0
+	for country_code in route_country_codes.keys():
+		if String(country_code) != home_country_code:
+			count += 1
+	return count
+
+
+func airport_labels_visible() -> bool:
+	return zoom_level >= AIRPORT_LABEL_ZOOM
+
+
+func _draw_route_network(home_position: Vector2) -> void:
+	for country_code_value in route_country_codes.keys():
+		var country_code := String(country_code_value)
+		if country_code == home_country_code:
+			continue
+		if country_code == selected_country_code:
+			continue
+
+		var country := CountryCatalog.get_country(country_code)
+		if country.is_empty():
+			continue
+		var target := _country_position(country)
+		if not _is_screen_visible(target, 80.0):
+			continue
+
+		var unlocked := unlocked_route_country_codes.has(country_code)
+		var points := _route_points(home_position, target, 25)
+		if unlocked:
+			draw_polyline(
+				points,
+				Color(0.38, 0.77, 0.88, 0.30),
+				NETWORK_ROUTE_WIDTH,
+				true
+			)
+		else:
+			for index in range(points.size() - 1):
+				if index % 3 != 2:
+					draw_line(
+						points[index],
+						points[index + 1],
+						Color(0.56, 0.64, 0.68, 0.22),
+						1.0,
+						true
+					)
 
 
 func _draw_route_arc(from_position: Vector2, to_position: Vector2) -> void:
@@ -771,19 +822,20 @@ func _draw_airport_marker(
 		1.5
 	)
 
-	var city := String(destination.get("city", "Route")).to_upper()
-	var label_color := Color("fff0b5") if selected else Color("d9eef3")
-	if not unlocked:
-		label_color = Color("aebcc2")
-	draw_string(
-		ThemeDB.fallback_font,
-		position + Vector2(10.0, 4.0),
-		city,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		10,
-		label_color
-	)
+	if selected or airport_labels_visible():
+		var city := String(destination.get("city", "Route")).to_upper()
+		var label_color := Color("fff0b5") if selected else Color("d9eef3")
+		if not unlocked:
+			label_color = Color("aebcc2")
+		draw_string(
+			ThemeDB.fallback_font,
+			position + Vector2(10.0, 4.0),
+			city,
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			10,
+			label_color
+		)
 
 
 func _draw_home_marker(position: Vector2) -> void:
@@ -817,7 +869,7 @@ func _draw_home_marker(position: Vector2) -> void:
 func _draw_legend() -> void:
 	var y := size.y - 16.0
 	draw_rect(
-		Rect2(Vector2(8, y - 12), Vector2(220, 24)),
+		Rect2(Vector2(8, y - 12), Vector2(300, 24)),
 		Color(0.02, 0.09, 0.12, 0.58),
 		true
 	)
@@ -850,6 +902,15 @@ func _draw_legend() -> void:
 		-1,
 		10,
 		Color("91aab4")
+	)
+	draw_string(
+		ThemeDB.fallback_font,
+		Vector2(218, y + 4),
+		"Network %d" % network_connection_count(),
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		10,
+		Color("9ed8e5")
 	)
 
 

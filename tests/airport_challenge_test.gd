@@ -4,11 +4,11 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	if AirportChallengeRules.is_unlocked(7):
-		_fail("Weekly Airport Challenge must remain locked before level 8.")
+	if AirportChallengeRules.is_unlocked(11):
+		_fail("Weekly Airport Challenge must remain locked before level 12.")
 		return
-	if not AirportChallengeRules.is_unlocked(8):
-		_fail("Weekly Airport Challenge should unlock at level 8.")
+	if not AirportChallengeRules.is_unlocked(12):
+		_fail("Weekly Airport Challenge should unlock at level 12.")
 		return
 
 	var now := 604800.0 * 30.0 + 3600.0
@@ -19,17 +19,17 @@ func _run() -> void:
 		"aero_tokens": 0,
 		"gems": 0
 	}
-	if not AirportChallengeRules.ensure_state(state, 8, now):
+	if not AirportChallengeRules.ensure_state(state, 12, now):
 		_fail("First challenge access should initialize weekly state.")
 		return
-	var initial_snapshot := AirportChallengeRules.snapshot(state, 8, now)
+	var initial_snapshot := AirportChallengeRules.snapshot(state, 12, now)
 	if String(initial_snapshot.get("theme_id", "")) != "balanced_ops":
 		_fail("Week 30 should resolve to the deterministic Balanced Operations theme.")
 		return
 
 	var points := AirportChallengeRules.record_flight(
 		state,
-		8,
+		12,
 		{
 			"passengers": 50,
 			"distance_km": 1200,
@@ -45,17 +45,17 @@ func _run() -> void:
 	# Two more distinct-country flights should pass the first 25 point milestone.
 	AirportChallengeRules.record_flight(
 		state,
-		8,
+		12,
 		{"passengers": 50, "distance_km": 1200, "resources": 1, "country": "BE"},
 		now
 	)
 	AirportChallengeRules.record_flight(
 		state,
-		8,
+		12,
 		{"passengers": 25, "distance_km": 500, "resources": 0, "country": "DE"},
 		now
 	)
-	var snapshot := AirportChallengeRules.snapshot(state, 8, now)
+	var snapshot := AirportChallengeRules.snapshot(state, 12, now)
 	if String(snapshot.get("theme_name", "")).is_empty() or String(snapshot.get("theme_scoring", "")).is_empty():
 		_fail("Challenge snapshot should expose the active theme and its scoring explanation.")
 		return
@@ -66,7 +66,7 @@ func _run() -> void:
 		_fail("Challenge should track distinct destination countries.")
 		return
 
-	var claimed := AirportChallengeRules.claim_milestone(state, 8, "bronze", now)
+	var claimed := AirportChallengeRules.claim_milestone(state, 12, "bronze", now)
 	if claimed.is_empty():
 		_fail("Reached Bronze Wing milestone should be claimable.")
 		return
@@ -77,7 +77,7 @@ func _run() -> void:
 	if int(next.get("xp", 0)) != 40:
 		_fail("Bronze Wing should add 40 XP.")
 		return
-	if not AirportChallengeRules.claim_milestone(next, 8, "bronze", now).is_empty():
+	if not AirportChallengeRules.claim_milestone(next, 12, "bronze", now).is_empty():
 		_fail("Weekly challenge milestones must not be claimable twice.")
 		return
 
@@ -87,7 +87,7 @@ func _run() -> void:
 	var score_before_migration := int(migrated_challenge.get("score", 0))
 	migrated_challenge.erase("theme_id")
 	migrated["airport_challenge"] = migrated_challenge
-	if not AirportChallengeRules.ensure_state(migrated, 8, now):
+	if not AirportChallengeRules.ensure_state(migrated, 12, now):
 		_fail("Same-week legacy challenge state should gain the deterministic theme id.")
 		return
 	if int((migrated.get("airport_challenge", {}) as Dictionary).get("score", -1)) != score_before_migration:
@@ -95,10 +95,10 @@ func _run() -> void:
 		return
 
 	var next_week := now + float(AirportChallengeRules.WEEK_SECONDS)
-	if not AirportChallengeRules.ensure_state(next, 8, next_week):
+	if not AirportChallengeRules.ensure_state(next, 12, next_week):
 		_fail("Challenge should reset when the weekly key changes.")
 		return
-	var rolled := AirportChallengeRules.snapshot(next, 8, next_week)
+	var rolled := AirportChallengeRules.snapshot(next, 12, next_week)
 	if int(rolled.get("score", -1)) != 0 or int(rolled.get("flights", -1)) != 0:
 		_fail("Weekly rollover should reset challenge score and flight count.")
 		return
@@ -108,7 +108,7 @@ func _run() -> void:
 
 	var rush_points := AirportChallengeRules.record_flight(
 		next,
-		8,
+		12,
 		{"passengers": 50, "distance_km": 1200, "resources": 1, "country": "FR"},
 		next_week
 	)
@@ -122,19 +122,19 @@ func _run() -> void:
 		"coins": 0,
 		"xp": 0
 	}
-	AirportChallengeRules.ensure_state(world_state, 8, world_tour_time)
-	if String(AirportChallengeRules.snapshot(world_state, 8, world_tour_time).get("theme_id", "")) != "world_tour":
+	AirportChallengeRules.ensure_state(world_state, 12, world_tour_time)
+	if String(AirportChallengeRules.snapshot(world_state, 12, world_tour_time).get("theme_id", "")) != "world_tour":
 		_fail("The fourth theme in the rotation should be World Tour.")
 		return
 	var first_country_points := AirportChallengeRules.record_flight(
 		world_state,
-		8,
+		12,
 		{"passengers": 50, "distance_km": 1200, "resources": 1, "country": "JP"},
 		world_tour_time
 	)
 	var repeat_country_points := AirportChallengeRules.record_flight(
 		world_state,
-		8,
+		12,
 		{"passengers": 50, "distance_km": 1200, "resources": 1, "country": "JP"},
 		world_tour_time
 	)

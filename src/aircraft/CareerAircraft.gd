@@ -114,6 +114,8 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _pico_engine_running() -> bool:
+	if aircraft_type_id != "pico_p8":
+		return false
 	return state in [
 		"HOLDING_FOR_ARRIVAL",
 		"APPROACH",

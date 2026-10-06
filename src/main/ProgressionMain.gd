@@ -10,6 +10,7 @@ var mission_pass_screen: MissionPassScreen
 var charter_screen: CharterScreen
 var alliance_operations_screen: AllianceOperationsScreen
 var airport_challenge_screen: AirportChallengeScreen
+var activities_hub_screen: ActivitiesHubScreen
 var mission_pin: Button
 var mission_billing_bridge: MissionProductBillingBridge
 var pending_mission_ad_id := ""
@@ -115,6 +116,15 @@ func _start_gameplay() -> void:
 	)
 	add_child(airport_challenge_screen)
 
+	activities_hub_screen = ActivitiesHubScreen.new()
+	activities_hub_screen.mode_requested.connect(
+		_on_activity_mode_requested
+	)
+	activities_hub_screen.close_requested.connect(
+		_on_activities_hub_closed
+	)
+	add_child(activities_hub_screen)
+
 	mission_billing_bridge = MissionProductBillingBridge.new()
 	mission_billing_bridge.purchase_verified.connect(_on_mission_purchase_verified)
 	mission_billing_bridge.unavailable.connect(_on_mission_billing_unavailable)
@@ -142,6 +152,7 @@ func _start_gameplay() -> void:
 	):
 		_save_checkpoint()
 	_refresh_airport_challenge_ui()
+	_refresh_activities_hub()
 	_drain_passenger_rewards()
 	_drain_resource_choice_grants()
 
@@ -200,6 +211,7 @@ func _process(delta: float) -> void:
 		if challenge_changed:
 			_save_checkpoint()
 		_refresh_airport_challenge_ui()
+		_refresh_activities_hub()
 
 func _notification(what: int) -> void:
 	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST]:
@@ -484,11 +496,13 @@ func _refresh_mission_ui() -> void:
 	if changed:
 		_save_checkpoint()
 	mission_pass_screen.set_snapshot(_mission_snapshot())
+	var claimable := MissionPassRules.claimable_count(progression)
+	var completed := MissionPassRules.completed_daily_count(progression)
 	if mission_pin != null:
-		var claimable := MissionPassRules.claimable_count(progression)
-		var completed := MissionPassRules.completed_daily_count(progression)
 		mission_pin.text = "MISSIONS\n%d REWARD%s READY" % [claimable, "" if claimable == 1 else "S"] if claimable > 0 else "MISSIONS\nDAILY %d / 4" % completed
 		GameUIStyle.apply_button(mission_pin, "gold" if claimable > 0 else "nav", true)
+	if hud != null:
+		hud.set_mission_activity_attention(claimable > 0)
 	hud.set_player_data(player_level, coins, gems)
 	hud.set_level_progress(
 		player_xp,
@@ -636,6 +650,14 @@ func _refresh_alliance_operations_ui() -> void:
 	alliance_operations_screen.set_snapshot(
 		_alliance_operations_snapshot()
 	)
+	if hud != null:
+		hud.set_alliance_activity_attention(
+			_has_alliance_contact()
+			and AllianceOperationsRules.claimable_count(
+				progression,
+				Time.get_unix_time_from_system()
+			) > 0
+		)
 
 
 func _on_alliance_operations_requested() -> void:
@@ -1343,12 +1365,26 @@ func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:
 
 func _on_social_snapshot_changed(snapshot: Dictionary) -> void:
 	super._on_social_snapshot_changed(_social_only_snapshot(snapshot))
+	if progression_ready:
+		_refresh_activities_hub()
 
 func _on_navigation_requested(tab: String) -> void:
 	if career_screen != null:
 		career_screen.close_screen()
 	if mission_pass_screen != null:
 		mission_pass_screen.close_screen()
+	if activities_hub_screen != null and activities_hub_screen.is_open() and tab != "activities":
+		activities_hub_screen.close_screen(true)
+	if tab == "activities":
+		if charter_screen != null and charter_screen.is_open():
+			charter_screen.close_screen()
+		if alliance_operations_screen != null and alliance_operations_screen.is_open():
+			alliance_operations_screen.close_screen(true)
+		if airport_challenge_screen != null and airport_challenge_screen.is_open():
+			airport_challenge_screen.close_screen(true)
+		_refresh_activities_hub()
+		activities_hub_screen.open_screen(_activities_snapshot())
+		return
 	if tab == "challenge":
 		if not AirportChallengeRules.is_unlocked(player_level):
 			hud.set_operation_status(
@@ -1378,6 +1414,239 @@ func _on_navigation_requested(tab: String) -> void:
 	super._on_navigation_requested(tab)
 	if tab in ["social", "alliance"] and social_airport_service != null:
 		social_airport_screen.set_snapshot(_social_only_snapshot(social_airport_service.get_snapshot()))
+
+func _has_alliance_contact() -> bool:
+	if social_airport_service == null:
+		return false
+	for contact_variant in social_airport_service.get_snapshot().get("contacts", []):
+		var contact: Dictionary = contact_variant
+		if String(contact.get("relationship", "")) == "alliance":
+			return true
+	return false
+
+
+func _event_has_claimable_reward() -> bool:
+	if not bool(current_event_snapshot.get("active", false)):
+		return false
+	for quest_variant in current_event_snapshot.get("quests", []):
+		var quest: Dictionary = quest_variant
+		if (
+			bool(quest.get("unlocked", false))
+			and bool(quest.get("complete", false))
+			and not bool(quest.get("claimed", false))
+		):
+			return true
+	for milestone_variant in current_event_snapshot.get("alliance_milestones", []):
+		var milestone: Dictionary = milestone_variant
+		if bool(milestone.get("reached", false)) and not bool(milestone.get("claimed", false)):
+			return true
+	return false
+
+
+func _activities_snapshot() -> Dictionary:
+	var mission_claimable := MissionPassRules.claimable_count(progression)
+	var mission_completed := MissionPassRules.completed_daily_count(progression)
+	var charter := _charter_snapshot()
+	var charter_active: Dictionary = charter.get("active", {})
+	var charter_phase := String(charter_active.get("phase", ""))
+	var charter_attention := charter_phase == "READY"
+	var charter_unlocked := bool(charter.get("unlocked", false))
+	var charter_status := "UNLOCKS AT LEVEL %d" % CharterRules.UNLOCK_LEVEL
+	var charter_detail := "Dedicated cargo contracts and guaranteed country resources."
+	var charter_action := "OPEN CHARTER"
+	if charter_unlocked:
+		if not bool(charter.get("parcel_owned", false)):
+			charter_status = "LOGISTICS DISTRICT REQUIRED"
+			charter_detail = "Purchase the Logistics District to activate cargo operations."
+		elif not bool(charter.get("parcel_ready", false)):
+			charter_status = "DISTRICT BLOCKED"
+			charter_detail = "Move conflicting buildings out of the Charter footprint."
+		elif charter_phase == "READY":
+			charter_status = "REWARD READY"
+			charter_detail = "Completed Cargo Charter is waiting to be claimed."
+			charter_action = "CLAIM / VIEW"
+		elif not charter_active.is_empty():
+			charter_status = charter_phase.replace("_", " ").to_upper()
+			charter_detail = "%s • %s remaining" % [
+				String(charter_active.get("city", "Cargo route")),
+				_format_activity_time(int(charter_active.get("remaining_seconds", 0)))
+			]
+		else:
+			charter_status = "%d CONTRACTS AVAILABLE" % (charter.get("offers", []) as Array).size()
+			charter_detail = "Choose a targeted cargo contract from the Logistics District."
+
+	var challenge := _airport_challenge_snapshot()
+	var challenge_attention := AirportChallengeRules.claimable_count(
+		progression,
+		player_level,
+		Time.get_unix_time_from_system()
+	) > 0
+	var challenge_unlocked := bool(challenge.get("unlocked", false))
+	var challenge_status := "UNLOCKS AT LEVEL %d" % AirportChallengeRules.UNLOCK_LEVEL
+	var challenge_detail := "Weekly score track based on your normal passenger flights."
+	if challenge_unlocked:
+		challenge_status = "%d PTS THIS WEEK" % int(challenge.get("score", 0))
+		var next_target := int(challenge.get("next_target", 0))
+		challenge_detail = (
+			"All weekly milestones complete."
+			if next_target <= 0
+			else "%d points to the next reward • resets in %s" % [
+				maxi(next_target - int(challenge.get("score", 0)), 0),
+				_format_activity_time(int(challenge.get("seconds_remaining", 0)))
+			]
+		)
+
+	var alliance := _alliance_operations_snapshot()
+	var has_alliance := _has_alliance_contact()
+	var alliance_attention := has_alliance and AllianceOperationsRules.claimable_count(
+		progression,
+		Time.get_unix_time_from_system()
+	) > 0
+	var alliance_status := (
+		"%d ALLIANCE PTS" % int(alliance.get("alliance_total", 0))
+		if has_alliance
+		else "ALLIANCE REQUIRED"
+	)
+	var alliance_detail := (
+		"%d personal points • weekly cooperative Airbridge project" % int(alliance.get("personal_points", 0))
+		if has_alliance
+		else "Join or connect an Alliance to take part in cooperative weekly goals."
+	)
+
+	var event_active := bool(current_event_snapshot.get("active", false))
+	var event_attention := _event_has_claimable_reward()
+	var event_name := String(current_event_snapshot.get("name", "Seasonal Event"))
+	var event_status := (
+		"WEEK %d / 3 • %d DAYS LEFT" % [
+			int(current_event_snapshot.get("week", 1)),
+			int(current_event_snapshot.get("days_remaining", 0))
+		]
+		if event_active
+		else "NO EVENT ACTIVE"
+	)
+	var event_detail := (
+		"%s • quests, event shop and Alliance milestones" % event_name
+		if event_active
+		else "Limited-time events appear here when activated."
+	)
+
+	var attention_count := 0
+	for ready in [
+		mission_claimable > 0,
+		charter_attention,
+		challenge_attention,
+		alliance_attention,
+		event_attention
+	]:
+		if ready:
+			attention_count += 1
+
+	return {
+		"attention_count": attention_count,
+		"missions": {
+			"title": "MISSIONS & PASS",
+			"badge": "DAILY / WEEKLY",
+			"status": (
+				"%d REWARD%s READY" % [mission_claimable, "" if mission_claimable == 1 else "S"]
+				if mission_claimable > 0
+				else "DAILY %d / 4" % mission_completed
+			),
+			"detail": "Daily and weekly missions feed the monthly reward pass.",
+			"attention": mission_claimable > 0,
+			"enabled": true,
+			"action": "OPEN MISSIONS"
+		},
+		"charter": {
+			"title": "CARGO CHARTER",
+			"badge": "LOGISTICS",
+			"status": charter_status,
+			"detail": charter_detail,
+			"attention": charter_attention,
+			"enabled": charter_unlocked,
+			"action": charter_action,
+			"locked_action": "LEVEL %d" % CharterRules.UNLOCK_LEVEL
+		},
+		"challenge": {
+			"title": "WEEKLY AIRPORT CHALLENGE",
+			"badge": "SOLO WEEKLY",
+			"status": challenge_status,
+			"detail": challenge_detail,
+			"attention": challenge_attention,
+			"enabled": challenge_unlocked,
+			"action": "OPEN CHALLENGE",
+			"locked_action": "LEVEL %d" % AirportChallengeRules.UNLOCK_LEVEL
+		},
+		"alliance": {
+			"title": "ALLIANCE OPERATIONS",
+			"badge": "CO-OP WEEKLY",
+			"status": alliance_status,
+			"detail": alliance_detail,
+			"attention": alliance_attention,
+			"enabled": has_alliance,
+			"action": "OPEN ALLIANCE OPS",
+			"locked_action": "ALLIANCE REQUIRED"
+		},
+		"event": {
+			"title": event_name if event_active else "SEASONAL EVENT",
+			"badge": "LIMITED TIME",
+			"status": event_status,
+			"detail": event_detail,
+			"attention": event_attention,
+			"enabled": event_active,
+			"action": "OPEN EVENT",
+			"locked_action": "INACTIVE"
+		}
+	}
+
+
+func _refresh_activities_hub() -> void:
+	if not progression_ready:
+		return
+	var data := _activities_snapshot()
+	if activities_hub_screen != null:
+		activities_hub_screen.set_snapshot(data)
+	if hud != null:
+		hud.set_activities_attention(int(data.get("attention_count", 0)) > 0)
+
+
+func _on_activity_mode_requested(mode_id: String) -> void:
+	if activities_hub_screen != null:
+		activities_hub_screen.close_screen(true)
+	match mode_id:
+		"missions":
+			_open_missions()
+		"charter":
+			_on_navigation_requested("charter")
+		"challenge":
+			_on_navigation_requested("challenge")
+		"alliance":
+			_on_alliance_operations_requested()
+		"event":
+			super._on_navigation_requested("event")
+
+
+func _on_activities_hub_closed() -> void:
+	hud.set_operation_status("Returned to airport operations.")
+
+
+func _format_activity_time(seconds: int) -> String:
+	var total := maxi(seconds, 0)
+	var days := int(total / 86400)
+	var hours := int((total % 86400) / 3600)
+	var minutes := int((total % 3600) / 60)
+	if days > 0:
+		return "%dd %02dh" % [days, hours]
+	if hours > 0:
+		return "%dh %02dm" % [hours, minutes]
+	return "%dm" % minutes
+
+
+func _on_event_changed(snapshot: Dictionary) -> void:
+	super._on_event_changed(snapshot)
+	if progression_ready:
+		_refresh_activities_hub()
+
+
 
 func _show_aircraft_context(aircraft: AircraftPrototype) -> void:
 	if _is_npc(aircraft):

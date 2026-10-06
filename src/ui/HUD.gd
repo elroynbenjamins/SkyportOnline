@@ -90,7 +90,13 @@ var active_expand_parcel_id := ""
 var event_nav_button: Button
 var charter_nav_button: Button
 var challenge_nav_button: Button
+var activities_nav_button: Button
 var social_nav_button: Button
+var charter_activity_attention := false
+var challenge_activity_attention := false
+var event_activity_attention := false
+var alliance_activity_attention := false
+var mission_activity_attention := false
 var nav_buttons: Dictionary = {}
 
 
@@ -875,7 +881,7 @@ func _build_bottom_navigation(root: Control) -> void:
 	nav_row.add_theme_constant_override("separation", 6)
 	bottom_nav_panel.add_child(nav_row)
 
-	for item in ["BUILD", "FLEET", "WORLD", "CHARTER", "CHALLENGE", "EVENT", "SOCIAL", "MORE"]:
+	for item in ["BUILD", "FLEET", "WORLD", "ACTIVITIES", "SOCIAL", "MORE"]:
 		var button := Button.new()
 		button.text = item
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -895,15 +901,9 @@ func _build_bottom_navigation(root: Control) -> void:
 		else:
 			button.pressed.connect(_on_navigation_pressed.bind(tab))
 
-		if tab == "charter":
-			charter_nav_button = button
-			button.visible = false
-		elif tab == "challenge":
-			challenge_nav_button = button
-			button.visible = false
-		elif tab == "event":
-			event_nav_button = button
-			button.visible = false
+		if tab == "activities":
+			activities_nav_button = button
+			button.tooltip_text = "Missions, Charter, weekly challenges, Alliance Operations and events"
 		elif tab == "social":
 			social_nav_button = button
 
@@ -911,62 +911,60 @@ func _build_bottom_navigation(root: Control) -> void:
 
 
 func set_charter_available(value: bool, attention: bool = false) -> void:
-	if charter_nav_button == null:
-		return
-	charter_nav_button.visible = value
-	if not value:
-		charter_nav_button.text = "CHARTER"
-		return
-	charter_nav_button.text = "CHARTER •" if attention else "CHARTER"
-	GameUIStyle.apply_button(
-		charter_nav_button,
-		"gold" if attention else "dock",
-		true
-	)
+	charter_activity_attention = value and attention
+	_refresh_activities_nav()
 
 
 func set_challenge_available(value: bool, attention: bool = false) -> void:
-	if challenge_nav_button == null:
-		return
-	challenge_nav_button.visible = value
-	if not value:
-		challenge_nav_button.text = "CHALLENGE"
-		return
-	challenge_nav_button.text = "CHALLENGE •" if attention else "CHALLENGE"
-	challenge_nav_button.tooltip_text = (
-		"Weekly rewards ready to claim"
-		if attention
-		else "Weekly Airport Challenge"
-	)
-	GameUIStyle.apply_button(
-		challenge_nav_button,
-		"gold" if attention else "dock",
-		true
-	)
+	challenge_activity_attention = value and attention
+	_refresh_activities_nav()
 
 
 func set_event_available(
 	value: bool,
 	event_name: String = ""
 ) -> void:
-	if event_nav_button == null:
-		return
-	event_nav_button.visible = value
-	if value:
-		event_nav_button.tooltip_text = event_name
-	else:
-		event_nav_button.tooltip_text = ""
+	# Events now live inside Activities. Keep this setter for existing event code.
+	if not value:
+		event_activity_attention = false
+	_refresh_activities_nav()
 
 
 func set_event_attention(claimable: bool) -> void:
-	if event_nav_button == null:
+	event_activity_attention = claimable
+	_refresh_activities_nav()
+
+
+func set_alliance_activity_attention(attention: bool) -> void:
+	alliance_activity_attention = attention
+	_refresh_activities_nav()
+
+
+func set_mission_activity_attention(attention: bool) -> void:
+	mission_activity_attention = attention
+	_refresh_activities_nav()
+
+
+func set_activities_attention(attention: bool) -> void:
+	# Aggregate fallback for callers that already computed all activity states.
+	if activities_nav_button == null:
 		return
-	if claimable:
-		event_nav_button.text = "EVENT •"
-		GameUIStyle.apply_button(event_nav_button, "event", true)
-	else:
-		event_nav_button.text = "EVENT"
-		GameUIStyle.apply_button(event_nav_button, "dock", true)
+	activities_nav_button.text = "ACTIVITIES •" if attention else "ACTIVITIES"
+	GameUIStyle.apply_button(
+		activities_nav_button,
+		"gold" if attention else "dock",
+		true
+	)
+
+
+func _refresh_activities_nav() -> void:
+	set_activities_attention(
+		charter_activity_attention
+		or challenge_activity_attention
+		or event_activity_attention
+		or alliance_activity_attention
+		or mission_activity_attention
+	)
 
 
 func set_social_attention(active: bool) -> void:

@@ -395,8 +395,15 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 		Time.get_unix_time_from_system()
 	)
 	if challenge_points > 0:
+		var challenge_theme := AirportChallengeRules.theme_for_week(
+			AirportChallengeRules.week_key(Time.get_unix_time_from_system())
+		)
 		hud.set_operation_status(
-			"%s returned • +%d weekly challenge points" % [label, challenge_points],
+			"%s returned • +%d %s points" % [
+				label,
+				challenge_points,
+				String(challenge_theme.get("short_name", "challenge"))
+			],
 			"success"
 		)
 	AllianceOperationsRules.record_action(

@@ -2128,7 +2128,9 @@ func _uses_live_aircraft_fx() -> bool:
 	if (
 		aircraft_type_id not in [
 			"pico_p8",
-			"swift_s14"
+			"swift_s14",
+			"comet_c22",
+			"voyager_v32"
 		]
 		or not visible
 	):

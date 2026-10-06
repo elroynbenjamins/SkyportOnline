@@ -9,6 +9,7 @@ var coin_tile_label: Label
 var xp_tile_label: Label
 var mastery_tile_label: Label
 var body_label: Label
+var resource_reward_row: HBoxContainer
 var collect_button: Button
 var reveal_tween: Tween
 var queue: Array[Dictionary] = []
@@ -49,9 +50,9 @@ func _build_ui() -> void:
 	reward_panel = PanelContainer.new()
 	reward_panel.set_anchors_preset(Control.PRESET_CENTER)
 	reward_panel.offset_left = -270
-	reward_panel.offset_top = -225
+	reward_panel.offset_top = -255
 	reward_panel.offset_right = 290
-	reward_panel.offset_bottom = 225
+	reward_panel.offset_bottom = 255
 	reward_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(reward_panel)
 	GameUIStyle.apply_panel(reward_panel, "gold")
@@ -95,6 +96,21 @@ func _build_ui() -> void:
 		"MASTERY",
 		Color("d8b9ff")
 	)
+
+	var cargo_heading := Label.new()
+	cargo_heading.text = "COUNTRY CARGO"
+	cargo_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cargo_heading.add_theme_font_size_override("font_size", 12)
+	cargo_heading.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	wrapper.add_child(cargo_heading)
+
+	resource_reward_row = HBoxContainer.new()
+	resource_reward_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	resource_reward_row.add_theme_constant_override("separation", 8)
+	wrapper.add_child(resource_reward_row)
 
 	body_label = Label.new()
 	body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -200,6 +216,7 @@ func _show_next() -> void:
 		text += "\n"
 
 	var rolls: Array = reward.get("resource_rolls", [])
+	_refresh_resource_reward_icons(rolls, inventory)
 	for result in rolls:
 		var resource_id := String(result.get("id", ""))
 		var resource_name := String(result.get("name", "Resource"))
@@ -226,6 +243,51 @@ func _show_next() -> void:
 	root.visible = true
 	_animate_reward_panel()
 
+
+
+func _refresh_resource_reward_icons(
+	rolls: Array,
+	inventory: Dictionary
+) -> void:
+	if resource_reward_row == null:
+		return
+	for child in resource_reward_row.get_children():
+		child.queue_free()
+
+	for result in rolls:
+		var resource_id := String(result.get("id", ""))
+		if resource_id.is_empty():
+			continue
+
+		var card := PanelContainer.new()
+		card.custom_minimum_size = Vector2(150, 86)
+		GameUIStyle.apply_panel(card, "reward_tile")
+		card.modulate.a = 1.0 if bool(result.get("success", false)) else 0.48
+		resource_reward_row.add_child(card)
+
+		var row := HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 6)
+		card.add_child(row)
+
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(58, 58)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = CountryResourceVisuals.texture_for(resource_id)
+		row.add_child(icon)
+
+		var label := Label.new()
+		label.custom_minimum_size = Vector2(78, 0)
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.text = "%s\n%s" % [
+			String(result.get("name", "Resource")),
+			"+1 • %d owned" % int(inventory.get(resource_id, 0))
+			if bool(result.get("success", false))
+			else "Not found"
+		]
+		label.add_theme_font_size_override("font_size", 11)
+		row.add_child(label)
 
 
 func _animate_reward_panel() -> void:

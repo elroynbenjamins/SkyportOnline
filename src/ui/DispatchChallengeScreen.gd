@@ -10,7 +10,9 @@ var state_label: Label
 var timer_label: Label
 var score_label: Label
 var best_label: Label
+var combo_label: Label
 var stats_label: Label
+var readiness_label: Label
 var scoring_label: Label
 var reward_list: VBoxContainer
 var action_button: Button
@@ -119,11 +121,27 @@ func _build_ui() -> void:
 	GameUIStyle.muted(best_label)
 	score_box.add_child(best_label)
 
+	combo_label = Label.new()
+	combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	combo_label.add_theme_font_size_override("font_size", 13)
+	combo_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
+	score_box.add_child(combo_label)
+
 	stats_label = Label.new()
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats_label.add_theme_font_size_override("font_size", 13)
 	column.add_child(stats_label)
+
+	readiness_label = Label.new()
+	readiness_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	readiness_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	readiness_label.add_theme_font_size_override("font_size", 12)
+	GameUIStyle.muted(readiness_label)
+	column.add_child(readiness_label)
 
 	scoring_label = Label.new()
 	scoring_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -159,16 +177,59 @@ func _refresh() -> void:
 	var unlocked := bool(snapshot.get("unlocked", false))
 	var status := String(snapshot.get("status", "IDLE"))
 	var score := int(snapshot.get("score", 0))
+	var combo := int(snapshot.get("combo_count", 0))
+	var max_combo := int(snapshot.get("max_combo", 0))
+	var combo_bonus := int(snapshot.get("combo_bonus", 0))
+	var penalty_points := int(snapshot.get("penalty_points", 0))
+	var points_to_next := int(snapshot.get("points_to_next_tier", 0))
+	var next_tier_name := String(snapshot.get("next_tier_name", ""))
+
 	score_label.text = "%d PTS" % score
 	best_label.text = "BEST TODAY: %d" % int(snapshot.get("best_score", 0))
+	readiness_label.visible = true
 
 	if not unlocked:
 		state_label.text = "LOCKED"
 		timer_label.text = ""
-		stats_label.text = "Airport Dispatch unlocks at Level %d." % int(snapshot.get("unlock_level", DispatchChallengeRules.UNLOCK_LEVEL))
+		combo_label.text = ""
+		stats_label.text = "Airport Dispatch unlocks at Level %d." % int(
+			snapshot.get(
+				"unlock_level",
+				DispatchChallengeRules.UNLOCK_LEVEL
+			)
+		)
+		readiness_label.text = (
+			"Build your airport and learn the normal operations loop first."
+		)
 	elif status == "RUNNING":
-		state_label.text = "SHIFT IN PROGRESS"
-		timer_label.text = "%s LEFT" % _format_time(int(snapshot.get("remaining_seconds", 0)))
+		state_label.text = "LIVE SHIFT • KEEP TRAFFIC MOVING"
+		timer_label.text = "%s LEFT" % _format_time(
+			int(snapshot.get("remaining_seconds", 0))
+		)
+		combo_label.text = (
+			"COMBO x%d • +%d COMBO PTS%s" % [
+				combo,
+				combo_bonus,
+				(
+					" • %d TO %s" % [
+						points_to_next,
+						next_tier_name.to_upper()
+					]
+					if points_to_next > 0
+					else " • GOLD SECURED"
+				)
+			]
+			if combo >= 2
+			else (
+				"%d TO %s • complete another clean operation within %ds to build a combo" % [
+					points_to_next,
+					next_tier_name.to_upper(),
+					int(snapshot.get("combo_window_seconds", 30))
+				]
+				if points_to_next > 0
+				else "GOLD SECURED • keep improving your best"
+			)
+		)
 		stats_label.text = "%d turnarounds • %d departures • %d returns • %d visitors • %d taxi holds" % [
 			int(snapshot.get("turnarounds", 0)),
 			int(snapshot.get("departures", 0)),
@@ -176,9 +237,22 @@ func _refresh() -> void:
 			int(snapshot.get("visitor_services", 0)),
 			int(snapshot.get("taxi_holds", 0))
 		]
+		readiness_label.text = (
+			"Clean operations keep the combo alive. Any taxi hold breaks the streak."
+		)
 	elif status == "READY":
-		state_label.text = "%s RESULT" % String(snapshot.get("tier_name", "SHIFT")).to_upper()
+		var tier_name := String(snapshot.get("tier_name", ""))
+		state_label.text = (
+			"%s RESULT" % tier_name.to_upper()
+			if not tier_name.is_empty()
+			else "SHIFT COMPLETE • NO MEDAL"
+		)
 		timer_label.text = "SHIFT COMPLETE"
+		combo_label.text = "MAX COMBO x%d • +%d COMBO PTS • −%d PENALTY PTS" % [
+			max_combo,
+			combo_bonus,
+			penalty_points
+		]
 		stats_label.text = "%d turnarounds • %d departures • %d returns • %d visitors • %d taxi holds" % [
 			int(snapshot.get("turnarounds", 0)),
 			int(snapshot.get("departures", 0)),
@@ -186,20 +260,32 @@ func _refresh() -> void:
 			int(snapshot.get("visitor_services", 0)),
 			int(snapshot.get("taxi_holds", 0))
 		]
+		readiness_label.text = (
+			"Smooth shift" if penalty_points == 0
+			else "%d points lost to congestion. Cleaner taxi flow will improve the next run." % penalty_points
+		)
 	else:
 		state_label.text = "3-MINUTE LIVE OPERATIONS SHIFT"
 		timer_label.text = ""
-		stats_label.text = (
-			"Operate your real airport for three minutes. Turn aircraft around, dispatch departures, handle returns and service visiting aircraft."
+		combo_label.text = "CHAIN CLEAN OPERATIONS • COMBO BONUS UP TO +%d EACH" % int(
+			snapshot.get("max_combo_bonus", 4)
 		)
+		stats_label.text = (
+			"Operate your real airport for three minutes. Turn around owned aircraft, dispatch departures, handle returns and service visiting aircraft."
+		)
+		readiness_label.text = _readiness_text()
 
 	var scoring: Dictionary = snapshot.get("scoring", {})
-	scoring_label.text = "SCORING  •  Turnaround +%d  •  Departure +%d  •  Return +%d  •  Visitor +%d  •  Taxi hold %d" % [
+	scoring_label.text = (
+		"SCORING  •  Turnaround +%d  •  Departure +%d  •  Return +%d  •  Visitor +%d  •  Taxi hold %d & breaks combo\n"
+		+ "COMBO  •  each clean operation within %ds adds +1 / +2 / +3 / +4 bonus points"
+	) % [
 		int(scoring.get("turnaround", 5)),
 		int(scoring.get("departure", 8)),
 		int(scoring.get("return", 12)),
 		int(scoring.get("visitor_service", 10)),
-		int(scoring.get("taxi_hold", -2))
+		int(scoring.get("taxi_hold", -4)),
+		int(snapshot.get("combo_window_seconds", 30))
 	]
 
 	for child in reward_list.get_children():
@@ -216,14 +302,22 @@ func _refresh() -> void:
 		row.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		row.add_theme_font_size_override("font_size", 13)
 		if score >= int(tier.get("target", 0)):
-			row.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+			row.add_theme_color_override(
+				"font_color",
+				GameUIStyle.COLOR_GOLD
+			)
 		else:
 			GameUIStyle.muted(row)
 		reward_list.add_child(row)
 
 	action_button.disabled = false
 	if not unlocked:
-		action_button.text = "UNLOCKS AT LEVEL %d" % int(snapshot.get("unlock_level", DispatchChallengeRules.UNLOCK_LEVEL))
+		action_button.text = "UNLOCKS AT LEVEL %d" % int(
+			snapshot.get(
+				"unlock_level",
+				DispatchChallengeRules.UNLOCK_LEVEL
+			)
+		)
 		action_button.disabled = true
 		GameUIStyle.apply_button(action_button, "secondary", true)
 	elif status == "RUNNING":
@@ -237,15 +331,46 @@ func _refresh() -> void:
 		)
 		GameUIStyle.apply_button(
 			action_button,
-			"gold" if bool(snapshot.get("reward_available", false)) else "primary"
+			"gold"
+			if bool(snapshot.get("reward_available", false))
+			else "primary"
 		)
 	else:
 		action_button.text = (
 			"START PRACTICE SHIFT"
 			if bool(snapshot.get("reward_claimed", false))
-			else "START 3-MINUTE SHIFT"
+			else "START DAILY DISPATCH SHIFT"
 		)
 		GameUIStyle.apply_button(action_button, "gold")
+
+
+func _readiness_text() -> String:
+	var aircraft := int(snapshot.get("airport_aircraft", 0))
+	var at_stand := int(snapshot.get("airport_at_stand", 0))
+	var passengers := int(snapshot.get("passenger_stock", 0))
+	var capacity := int(snapshot.get("passenger_capacity", 0))
+	var runway_queue := int(snapshot.get("runway_queue", 0))
+	var ground_queue := int(snapshot.get("ground_queue", 0))
+	var inbound := int(snapshot.get("inbound_holding", 0))
+
+	var warning := ""
+	if aircraft <= 0:
+		warning = " • WARNING: no operational aircraft deployed"
+	elif passengers < 20:
+		warning = " • LOW PASSENGER STOCK"
+	elif runway_queue + ground_queue + inbound >= 3:
+		warning = " • AIRPORT ALREADY CONGESTED"
+
+	return "CURRENT AIRPORT • %d aircraft • %d at stands • passengers %d/%d • runway queue %d • service queue %d • inbound %d%s" % [
+		aircraft,
+		at_stand,
+		passengers,
+		capacity,
+		runway_queue,
+		ground_queue,
+		inbound,
+		warning
+	]
 
 func _on_action_pressed() -> void:
 	var status := String(snapshot.get("status", "IDLE"))

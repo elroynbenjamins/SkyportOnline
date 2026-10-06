@@ -87,6 +87,13 @@ const APRON_JOINT := Color("747b7c", 0.18)
 const APRON_YELLOW := Color("f1c84c")
 const APRON_RED := Color("d85f58")
 const APRON_LIGHT := Color("fff2bd")
+const CHARTER_DISTRICT_CONCRETE := Color("c4c1b8")
+const CHARTER_DISTRICT_CONCRETE_LIGHT := Color("d8d5cc")
+const CHARTER_DISTRICT_CONCRETE_DARK := Color("9b9a94")
+const CHARTER_DISTRICT_ASPHALT := Color("566166")
+const CHARTER_DISTRICT_ASPHALT_DARK := Color("3f4a4f")
+const CHARTER_DISTRICT_SAFETY := Color("f1c84c")
+const CHARTER_DISTRICT_RED := Color("d85f58")
 const FENCE_COLOR := Color("53656b")
 const FENCE_MESH := Color("91a4aa", 0.52)
 const PERIMETER_LIGHT := Color("fff0bd")
@@ -3459,30 +3466,194 @@ func _draw_charter_logistics_district() -> void:
 	if ground.size() >= 4:
 		var shadow := PackedVector2Array()
 		for point_variant in ground:
-			shadow.append((point_variant as Vector2) + Vector2(7, 9))
-		draw_colored_polygon(shadow, Color(0.03, 0.05, 0.05, 0.24))
-		draw_colored_polygon(ground, Color("b6b3aa"))
+			shadow.append((point_variant as Vector2) + Vector2(8, 10))
+		draw_colored_polygon(
+			shadow,
+			Color(0.03, 0.05, 0.05, 0.26)
+		)
+		draw_colored_polygon(
+			ground,
+			CHARTER_DISTRICT_CONCRETE
+		)
+		draw_polyline(
+			PackedVector2Array([
+				ground[0],
+				ground[1],
+				ground[2],
+				ground[3],
+				ground[0]
+			]),
+			Color("ede8da", 0.42),
+			1.5
+		)
+		_draw_charter_ground_detail(base_tile)
+
 	for item in CharterDistrictLayout.all_visual_items():
-		var definition := CharterVisualCatalog.visual_for(String(item.get("id", "")))
+		var definition := CharterVisualCatalog.visual_for(
+			String(item.get("id", ""))
+		)
 		if definition.is_empty():
 			continue
-		var origin := base_tile + (item.get("origin", Vector2i.ZERO) as Vector2i)
-		var footprint := CharterDistrictLayout.footprint_for_item(item)
+		var origin := (
+			base_tile
+			+ (item.get("origin", Vector2i.ZERO) as Vector2i)
+		)
+		var footprint := (
+			CharterDistrictLayout.footprint_for_item(item)
+		)
 		_draw_charter_visual_item(
 			definition,
 			origin,
 			footprint,
 			int(item.get("rotation", 0)) % 2
 		)
+
 	for pad in CharterDistrictLayout.future_pad_items():
-		var pad_origin := base_tile + (pad.get("origin", Vector2i.ZERO) as Vector2i)
-		var pad_footprint: Vector2i = pad.get("footprint", Vector2i(2, 2))
-		var polygon := _footprint_polygon(pad_origin, pad_footprint)
+		var pad_origin := (
+			base_tile
+			+ (pad.get("origin", Vector2i.ZERO) as Vector2i)
+		)
+		var pad_footprint: Vector2i = pad.get(
+			"footprint",
+			Vector2i(2, 2)
+		)
+		var polygon := _footprint_polygon(
+			pad_origin,
+			pad_footprint
+		)
 		if polygon.size() >= 4:
-			draw_colored_polygon(polygon, Color("9c9b92", 0.20))
-			draw_polyline(PackedVector2Array([
-				polygon[0], polygon[1], polygon[2], polygon[3], polygon[0]
-			]), Color("f2d36f", 0.34), 1.2)
+			draw_colored_polygon(
+				polygon,
+				Color("8f908a", 0.18)
+			)
+			draw_polyline(
+				PackedVector2Array([
+					polygon[0],
+					polygon[1],
+					polygon[2],
+					polygon[3],
+					polygon[0]
+				]),
+				Color("f2d36f", 0.34),
+				1.2
+			)
+
+
+func _draw_charter_ground_detail(
+	base_tile: Vector2i
+) -> void:
+	# Build a darker road spine through the authored Logistics District so the
+	# Charter assets read as part of the same airport rather than a flat insert.
+	var road_cells := [
+		Vector2i(3, 1),
+		Vector2i(4, 1),
+		Vector2i(5, 1),
+		Vector2i(6, 1),
+		Vector2i(3, 2),
+		Vector2i(3, 3),
+		Vector2i(3, 4),
+		Vector2i(3, 5)
+	]
+	for relative_cell in road_cells:
+		var center := tile_to_world(
+			Vector2(base_tile + relative_cell)
+		)
+		var points := _tile_points(center)
+		draw_colored_polygon(
+			points,
+			CHARTER_DISTRICT_ASPHALT
+		)
+		draw_polyline(
+			PackedVector2Array([
+				points[0],
+				points[1],
+				points[2],
+				points[3],
+				points[0]
+			]),
+			CHARTER_DISTRICT_ASPHALT_DARK,
+			1.0
+		)
+
+	# The cargo stand and handling side use lighter slab groups with visible
+	# joints, matching the authored apron treatment used in the main airport.
+	var slab_areas := [
+		[Vector2i(0, 0), Vector2i(3, 3)],
+		[Vector2i(0, 4), Vector2i(3, 2)],
+		[Vector2i(4, 2), Vector2i(2, 4)],
+		[Vector2i(6, 4), Vector2i(2, 2)]
+	]
+	for slab_variant in slab_areas:
+		var slab: Array = slab_variant
+		var polygon := _footprint_polygon(
+			base_tile + (slab[0] as Vector2i),
+			slab[1] as Vector2i
+		)
+		if polygon.size() < 4:
+			continue
+		draw_colored_polygon(
+			polygon,
+			CHARTER_DISTRICT_CONCRETE_LIGHT
+		)
+		draw_polyline(
+			PackedVector2Array([
+				polygon[0],
+				polygon[1],
+				polygon[2],
+				polygon[3],
+				polygon[0]
+			]),
+			CHARTER_DISTRICT_CONCRETE_DARK,
+			1.0
+		)
+
+	# Stand lead-in and dock safety bars give the district a clearer operating
+	# direction while keeping all placement and routing rules unchanged.
+	var stand_center := _footprint_center_world(
+		base_tile,
+		Vector2i(3, 3)
+	)
+	draw_line(
+		stand_center + Vector2(-5, -54),
+		stand_center + Vector2(4, 49),
+		CHARTER_DISTRICT_SAFETY,
+		4.0
+	)
+	draw_line(
+		stand_center + Vector2(-31, 20),
+		stand_center + Vector2(35, 20),
+		Color("f5efe4", 0.88),
+		3.0
+	)
+
+	var warehouse_edge := _footprint_center_world(
+		base_tile + Vector2i(0, 4),
+		Vector2i(3, 2)
+	)
+	for offset_x in [-42.0, -14.0, 14.0, 42.0]:
+		draw_line(
+			warehouse_edge + Vector2(offset_x - 8.0, 22.0),
+			warehouse_edge + Vector2(offset_x + 8.0, 14.0),
+			CHARTER_DISTRICT_SAFETY,
+			3.0
+		)
+
+	var gate_center := _footprint_center_world(
+		base_tile + Vector2i(6, 0),
+		Vector2i(2, 1)
+	)
+	draw_line(
+		gate_center + Vector2(-27, 13),
+		gate_center + Vector2(27, 13),
+		CHARTER_DISTRICT_RED,
+		3.0
+	)
+	draw_line(
+		gate_center + Vector2(-25, 8),
+		gate_center + Vector2(25, 8),
+		CHARTER_DISTRICT_SAFETY,
+		2.0
+	)
 
 
 func _draw_charter_visual_item(

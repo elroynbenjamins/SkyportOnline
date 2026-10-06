@@ -15,14 +15,12 @@ const STARTER_VISUAL_IDS: Array[String] = [
 	"passenger_service_hub"
 ]
 const STARTER_LAYOUT_COUNTS := {
-	"short_runway": 1,
-	"taxiway": 3,
+	"small_hangar": 1,
 	"small_stand": 2,
 	"small_terminal": 1,
 	"travel_office": 1,
 	"ground_ops_depot": 1,
-	"basic_fuel": 1,
-	"service_road": 10
+	"basic_fuel": 1
 }
 const SERVICE_TYPES: Array[String] = [
 	"fuel",
@@ -551,16 +549,23 @@ func _check_starter_layout_reload(grid: AirportGrid) -> void:
 		)
 
 	var airside := grid.get_airside_status()
-	if int(airside.get("runways", 0)) != 1:
-		_fail("Starter airport should keep one runway.")
+	if int(airside.get("runways", 0)) != 0:
+		_fail("Player should place the first runway.")
 	if int(airside.get("stands_total", 0)) != 2:
-		_fail("Starter airport should keep two stands.")
-	if int(airside.get("stands_connected", 0)) != 2:
-		_fail("Both starter stands should remain runway-connected.")
+		_fail("Starter airport should keep two stand destinations.")
+	if int(airside.get("stands_connected", 0)) != 0:
+		_fail("Starter stands should wait for player-built taxiways.")
+	if int(airside.get("hangars_total", 0)) != 1:
+		_fail("Starter airport should include one small hangar destination.")
 
 	var routes := grid.get_departure_routes("S")
-	if routes.size() != 2:
-		_fail("Starter airport should keep two S-class departure routes.")
+	if not routes.is_empty():
+		_fail("No departure route should exist before the player builds a runway.")
+
+	var owned := grid.export_owned_parcels()
+	for starter_parcel in ["north_west", "north", "west", "home"]:
+		if not owned.has(starter_parcel):
+			_fail("16x16 starter area should own %s." % starter_parcel)
 
 	var fuel := grid.get_best_service_building("fuel", "S")
 	if String(fuel.get("definition_id", "")) != "basic_fuel":
@@ -582,8 +587,10 @@ func _check_starter_layout_reload(grid: AirportGrid) -> void:
 		):
 			_fail("Starter save reload changed placed-building count.")
 		var restored_airside := restored.get_airside_status()
-		if int(restored_airside.get("stands_connected", 0)) != 2:
-			_fail("Starter save reload should keep both stands connected.")
+		if int(restored_airside.get("stands_connected", 0)) != 0:
+			_fail("Starter save reload should preserve player-built-network state.")
+		if int(restored_airside.get("hangars_total", 0)) != 1:
+			_fail("Starter save reload should keep the starter hangar.")
 	restored.queue_free()
 
 

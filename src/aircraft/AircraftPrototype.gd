@@ -146,6 +146,7 @@ func get_handling_action_snapshot() -> Dictionary:
 	return {
 		"manual": manual_handling_enabled,
 		"automation": handling_automation_enabled,
+		"automation_scope": aircraft_size,
 		"action": pending_handling_action,
 		"visible": (
 			handling_action_button != null

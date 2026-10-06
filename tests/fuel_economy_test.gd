@@ -63,6 +63,8 @@ func _run() -> void:
 		_fail("Emergency fuel orders should refill available storage.")
 		return
 
+	_build_player_starter_network(grid)
+
 	var routes := grid.get_departure_routes("S")
 	if routes.is_empty():
 		_fail("Starter airport should expose a departure route for fuel service.")
@@ -141,6 +143,60 @@ func _cleanup_profile() -> void:
 	var path := ProjectSettings.globalize_path(ProfileStore.SAVE_PATH)
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(path)
+
+
+func _build_player_starter_network(grid: AirportGrid) -> void:
+	grid._place_building_internal(
+		"short_runway",
+		Vector2i(4, 1),
+		0
+	)
+
+	var taxi_cells: Array[Vector2i] = [
+		Vector2i(4, 3),
+		Vector2i(5, 3),
+		Vector2i(6, 3),
+		Vector2i(7, 3),
+		Vector2i(8, 3),
+		Vector2i(9, 3),
+		Vector2i(10, 3),
+		Vector2i(4, 4),
+		Vector2i(4, 5),
+		Vector2i(4, 6),
+		Vector2i(6, 4),
+		Vector2i(6, 5),
+		Vector2i(10, 4),
+		Vector2i(10, 5)
+	]
+	for cell in taxi_cells:
+		grid._place_building_internal(
+			"taxiway",
+			cell,
+			0
+		)
+
+	var service_cells: Array[Vector2i] = [
+		Vector2i(12, 11),
+		Vector2i(12, 10),
+		Vector2i(12, 9),
+		Vector2i(12, 8),
+		Vector2i(12, 7),
+		Vector2i(11, 8),
+		Vector2i(10, 8),
+		Vector2i(9, 8),
+		Vector2i(8, 8),
+		Vector2i(7, 8)
+	]
+	for cell in service_cells:
+		grid._place_building_internal(
+			"service_road",
+			cell,
+			0
+		)
+
+	grid._rebuild_occupied_cells()
+	grid._recalculate_airside_network()
+	grid._refresh_building_labels()
 
 
 func _fail(message: String) -> void:

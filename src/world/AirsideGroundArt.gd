@@ -83,7 +83,7 @@ static func texture_for_frame(frame_name: String) -> Texture2D:
 	texture.atlas = _atlas
 	texture.region = Rect2(
 		float(index % COLUMNS) * CELL_SIZE.x,
-		float(index / COLUMNS) * CELL_SIZE.y,
+		float(int(index / COLUMNS)) * CELL_SIZE.y,
 		CELL_SIZE.x,
 		CELL_SIZE.y
 	)
@@ -121,15 +121,15 @@ static func _shape_frame(prefix: String, mask: int) -> String:
 		var missing := 15 ^ mask
 		return "%s_t_%d" % [prefix, _missing_rotation(missing)]
 	if count == 2:
-		if mask == NORTH | SOUTH:
+		if mask == (NORTH | SOUTH):
 			return "%s_straight_90" % prefix
-		if mask == EAST | WEST:
+		if mask == (EAST | WEST):
 			return "%s_straight_0" % prefix
-		if mask == EAST | SOUTH:
+		if mask == (EAST | SOUTH):
 			return "%s_corner_0" % prefix
-		if mask == SOUTH | WEST:
+		if mask == (SOUTH | WEST):
 			return "%s_corner_90" % prefix
-		if mask == WEST | NORTH:
+		if mask == (WEST | NORTH):
 			return "%s_corner_180" % prefix
 		return "%s_corner_270" % prefix
 	var direction := _first_direction(mask)
@@ -137,13 +137,13 @@ static func _shape_frame(prefix: String, mask: int) -> String:
 
 
 static func _first_direction(mask: int) -> Vector2i:
-	if mask & EAST:
+	if (mask & EAST) != 0:
 		return Vector2i(1, 0)
-	if mask & SOUTH:
+	if (mask & SOUTH) != 0:
 		return Vector2i(0, 1)
-	if mask & WEST:
+	if (mask & WEST) != 0:
 		return Vector2i(-1, 0)
-	if mask & NORTH:
+	if (mask & NORTH) != 0:
 		return Vector2i(0, -1)
 	return Vector2i(1, 0)
 
@@ -171,7 +171,7 @@ static func _missing_rotation(missing_bit: int) -> int:
 static func _bit_count(mask: int) -> int:
 	var count := 0
 	for bit in [NORTH, EAST, SOUTH, WEST]:
-		if mask & bit:
+		if (mask & bit) != 0:
 			count += 1
 	return count
 

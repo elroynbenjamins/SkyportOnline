@@ -326,6 +326,61 @@ func _initialize_starter_airport() -> void:
 	_rebuild_occupied_cells()
 
 
+func prepare_new_player_airfield() -> Dictionary:
+	# The authored reference layout is useful for visual QA and tests, but a
+	# real new player should construct the transport network themselves.
+	# Keep the airport buildings and remove only buildable infrastructure.
+	var removed: Dictionary = {
+		"runway": 0,
+		"taxiway": 0,
+		"stand": 0,
+		"service_road": 0
+	}
+	for index in range(placed_buildings.size() - 1, -1, -1):
+		var id := String(
+			placed_buildings[index].get(
+				"definition_id",
+				""
+			)
+		)
+		var remove := false
+		if id.contains("runway"):
+			removed["runway"] = int(removed["runway"]) + 1
+			remove = true
+		elif id == "taxiway":
+			removed["taxiway"] = int(removed["taxiway"]) + 1
+			remove = true
+		elif id.contains("stand"):
+			removed["stand"] = int(removed["stand"]) + 1
+			remove = true
+		elif id == "service_road":
+			removed["service_road"] = (
+				int(removed["service_road"]) + 1
+			)
+			remove = true
+
+		if remove:
+			placed_buildings.remove_at(index)
+
+	_rebuild_occupied_cells()
+	_recalculate_airside_network()
+	_refresh_building_labels()
+	_refresh_charter_turnaround_visual()
+	queue_redraw()
+
+	return {
+		"removed": removed,
+		"starter_area": get_starter_build_area_snapshot(),
+		"next_steps": [
+			"PLACE_RUNWAY",
+			"PLACE_STAND",
+			"CONNECT_TAXIWAY",
+			"CONNECT_HANGAR",
+			"CONNECT_SERVICE_ROAD"
+		]
+	}
+
+
 func get_starter_build_area_snapshot() -> Dictionary:
 	return {
 		"width_tiles": STARTER_BUILD_WIDTH_TILES,

@@ -1489,6 +1489,15 @@ func _record_alliance_activity(
 
 func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:
 	var filtered := snapshot.duplicate(true)
+	filtered["alliance_operations_level"] = (
+		ActivityProgressionRules.ALLIANCE_UNLOCK_LEVEL
+	)
+	filtered["alliance_operations_level_unlocked"] = (
+		ActivityProgressionRules.is_level_unlocked(
+			"alliance",
+			player_level
+		)
+	)
 	for key in ["active_visits", "recent_completed"]:
 		var rows: Array = []
 		for row in snapshot.get(key, []):

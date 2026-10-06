@@ -151,7 +151,13 @@ func _refresh() -> void:
 	elif not parcel_ready:
 		status_label.text = "Logistics District is owned, but the Charter footprint is occupied. Move conflicting buildings first."
 	else:
-		status_label.text = "Dedicated cargo aircraft • no passenger stock required • one Charter contract can run at a time."
+		var rotation_seconds := int(snapshot.get("board_rotation_seconds", 0))
+		status_label.text = (
+			"Dedicated cargo aircraft • one Charter at a time • board refreshes in %s"
+			% _format_time(rotation_seconds)
+			if rotation_seconds > 0
+			else "Dedicated cargo aircraft • no passenger stock required • one Charter contract can run at a time."
+		)
 
 	var active: Dictionary = snapshot.get("active", {})
 	if active.is_empty():
@@ -176,9 +182,21 @@ func _add_active(active: Dictionary) -> void:
 	card.add_child(box)
 
 	var title := Label.new()
-	title.text = "%s • %s" % [String(active.get("resource_name", "Cargo")), String(active.get("city", "Destination"))]
+	title.text = "%s • %s" % [
+		String(active.get("contract_type_name", "Standard Freight")).to_upper(),
+		String(active.get("city", "Destination")).to_upper()
+	]
 	GameUIStyle.heading(title, 17)
 	box.add_child(title)
+
+	var cargo := Label.new()
+	cargo.text = "%s • %s" % [
+		String(active.get("contract_type_badge", "BALANCED")),
+		String(active.get("resource_name", "Cargo"))
+	]
+	cargo.add_theme_font_size_override("font_size", 12)
+	cargo.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+	box.add_child(cargo)
 
 	var phase := String(active.get("phase", "LOADING"))
 	var remaining := int(active.get("remaining_seconds", 0))
@@ -232,18 +250,34 @@ func _add_offer(offer: Dictionary, enabled: bool) -> void:
 	card.add_child(box)
 
 	var title := Label.new()
-	title.text = "%s • %s" % [String(offer.get("city", "Route")).to_upper(), String(offer.get("resource_name", "Cargo")).to_upper()]
+	title.text = "%s • %s" % [
+		String(offer.get("contract_type_name", "Standard Freight")).to_upper(),
+		String(offer.get("city", "Route")).to_upper()
+	]
 	GameUIStyle.heading(title, 15)
 	box.add_child(title)
 
+	var type_line := Label.new()
+	type_line.text = "%s • %s" % [
+		String(offer.get("contract_type_badge", "BALANCED")),
+		String(offer.get("contract_type_description", "Balanced loading and rewards."))
+	]
+	type_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	type_line.add_theme_font_size_override("font_size", 11)
+	type_line.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+	box.add_child(type_line)
+
 	var detail := Label.new()
-	detail.text = "%d pallets • loading %s • flight %s
-🪙 %d • %d XP • guaranteed +1 country resource" % [
+	detail.text = "%s • %d pallets • loading %s • flight %s
+🪙 %d • %d XP • guaranteed +%d %s" % [
+		String(offer.get("resource_name", "Cargo")),
 		int(offer.get("pallets", 1)),
 		_format_time(int(offer.get("load_seconds", 0))),
 		_format_time(int(offer.get("route_seconds", 0))),
 		int(offer.get("coin_reward", 0)),
-		int(offer.get("xp_reward", 0))
+		int(offer.get("xp_reward", 0)),
+		int(offer.get("resource_amount", 1)),
+		String(offer.get("resource_name", "country resource"))
 	]
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail.add_theme_font_size_override("font_size", 12)

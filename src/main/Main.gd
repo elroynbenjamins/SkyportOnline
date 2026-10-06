@@ -453,9 +453,6 @@ func _setup_runway_strategy_panel() -> void:
 
 
 func _spawn_aircraft_demos() -> void:
-	if not aircraft_demos.is_empty():
-		return
-
 	var routes: Array[Dictionary] = airport_grid.get_departure_routes("S")
 	if routes.is_empty():
 		hud.set_operation_status(
@@ -464,13 +461,16 @@ func _spawn_aircraft_demos() -> void:
 		)
 		return
 
+	var target_count := mini(routes.size(), 2)
+	if aircraft_demos.size() >= target_count:
+		return
+
 	var connected_hangars := airport_grid.get_connected_hangars("S")
 	var require_hangar_start := not connected_hangars.is_empty()
-	var used_hangars: Dictionary = {}
-	var spawned := 0
+	var spawned := aircraft_demos.size()
 
 	for route_info in routes:
-		if spawned >= 2:
+		if spawned >= target_count:
 			break
 		var route: PackedVector2Array = route_info.get(
 			"route",
@@ -480,6 +480,9 @@ func _spawn_aircraft_demos() -> void:
 			continue
 
 		var stand_uid := int(route_info.get("stand_uid", -1))
+		if stand_occupancy.has(stand_uid):
+			continue
+
 		var fuel_station := airport_grid.get_best_service_building(
 			"fuel",
 			"S"
@@ -495,15 +498,12 @@ func _spawn_aircraft_demos() -> void:
 
 		var hangar_transfer := {}
 		if require_hangar_start:
-			for option in airport_grid.get_hangar_to_stand_routes(
+			var transfer_options := airport_grid.get_hangar_to_stand_routes(
 				stand_uid,
 				"S"
-			):
-				var hangar_uid := int(option.get("hangar_uid", -1))
-				if hangar_uid >= 0 and not used_hangars.has(hangar_uid):
-					hangar_transfer = option
-					used_hangars[hangar_uid] = true
-					break
+			)
+			if not transfer_options.is_empty():
+				hangar_transfer = transfer_options[0].duplicate(true)
 			if hangar_transfer.is_empty():
 				continue
 
@@ -4795,7 +4795,7 @@ func _refresh_layout_dependent_systems() -> void:
 		ground_services.refresh_after_layout_change()
 	if (
 		gameplay_started
-		and aircraft_demos.is_empty()
+		and aircraft_demos.size() < 2
 		and not airport_grid.get_departure_routes("S").is_empty()
 	):
 		_spawn_aircraft_demos()

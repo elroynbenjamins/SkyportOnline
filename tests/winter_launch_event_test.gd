@@ -289,10 +289,19 @@ func _run() -> void:
 	root.add_child(screen)
 	await process_frame
 	screen.open_event(manager.get_snapshot())
+	if not screen.phase_label.text.contains("CHRISTMAS RUSH"):
+		_fail("Winter Phase 1 should be presented as Christmas Rush.")
+		return
 	if not screen.featured_routes_label.text.contains(
-		"FEATURED WINTER QUEST ROUTES"
+		"PHASE FEATURED ROUTE"
 	):
-		_fail("Winter featured destinations should be presented as quest routes.")
+		_fail("Winter event should present the current phase featured route.")
+		return
+	if not screen.featured_routes_label.text.contains("Brussels"):
+		_fail("Christmas Rush should focus Brussels as its featured route.")
+		return
+	if screen.featured_routes_label.text.contains("London") or screen.featured_routes_label.text.contains("Berlin"):
+		_fail("Future Winter phase routes should not compete with the active phase route.")
 		return
 	if screen.featured_routes_label.text.contains("+0"):
 		_fail("Winter UI should never advertise a +0 voucher route reward.")

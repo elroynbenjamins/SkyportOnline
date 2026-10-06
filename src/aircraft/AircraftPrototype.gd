@@ -1680,6 +1680,39 @@ func _draw_motion_feedback() -> void:
 			2.0
 		)
 
+	if state in ["APPROACH", "CLIMBING"]:
+		var airborne := _airborne_shadow_factor()
+		var lift := get_airborne_visual_lift()
+		var wake_strength := (
+			0.08
+			+ airborne * 0.12
+		)
+		var wake_length := (
+			18.0
+			+ airborne * 24.0
+		) * visual_scale
+		var wake_origin := Vector2(
+			-get_visual_half_length() * 0.78,
+			-lift
+		)
+		for side in [-1.0, 1.0]:
+			var side_offset := (
+				5.5
+				* visual_scale
+				* float(side)
+			)
+			draw_line(
+				wake_origin + Vector2(0, side_offset),
+				wake_origin + Vector2(-wake_length, side_offset),
+				Color(
+					0.80,
+					0.92,
+					0.98,
+					wake_strength
+				),
+				1.2
+			)
+
 
 func _draw_shadow() -> void:
 	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:

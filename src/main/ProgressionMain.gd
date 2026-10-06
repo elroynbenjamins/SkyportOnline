@@ -588,8 +588,14 @@ func _on_charter_accept_requested(offer_id: String) -> void:
 		return
 	progression = next
 	_refresh_charter_ui()
+	var accepted_active: Dictionary = (
+		(progression.get("charter", {}) as Dictionary).get("active", {})
+	)
 	hud.set_operation_status(
-		"Cargo Charter accepted • loading has started in the Logistics District.",
+		"%s accepted • %s • loading started" % [
+			String(accepted_active.get("contract_type_name", "Cargo Charter")),
+			String(accepted_active.get("city", "route"))
+		],
 		"success"
 	)
 
@@ -627,10 +633,13 @@ func _on_charter_claim_requested() -> void:
 		"resources_earned": maxi(int(reward.get("resource_amount", 1)), 0)
 	})
 	hud.set_operation_status(
-		"Cargo Charter complete • %s • +%d coins • +%d XP" % [
+		"%s complete • %s • +%d coins • +%d XP • +%d %s" % [
+			String(reward.get("contract_type_name", "Cargo Charter")),
 			String(reward.get("city", "route")),
 			int(reward.get("coins", 0)),
-			int(reward.get("xp", 0))
+			int(reward.get("xp", 0)),
+			int(reward.get("resource_amount", 1)),
+			String(reward.get("resource_name", "resource"))
 		],
 		"success"
 	)
@@ -1473,14 +1482,28 @@ func _activities_snapshot() -> Dictionary:
 			charter_detail = "Completed Cargo Charter is waiting to be claimed."
 			charter_action = "CLAIM / VIEW"
 		elif not charter_active.is_empty():
-			charter_status = charter_phase.replace("_", " ").to_upper()
-			charter_detail = "%s • %s remaining" % [
+			charter_status = "%s • %s" % [
+				String(charter_active.get("contract_type_badge", "CHARTER")),
+				charter_phase.replace("_", " ").to_upper()
+			]
+			charter_detail = "%s to %s • %s remaining" % [
+				String(charter_active.get("contract_type_name", "Cargo Charter")),
 				String(charter_active.get("city", "Cargo route")),
 				_format_activity_time(int(charter_active.get("remaining_seconds", 0)))
 			]
 		else:
-			charter_status = "%d CONTRACTS AVAILABLE" % (charter.get("offers", []) as Array).size()
-			charter_detail = "Choose a targeted cargo contract from the Logistics District."
+			var charter_offers: Array = charter.get("offers", [])
+			charter_status = "%d CONTRACTS AVAILABLE" % charter_offers.size()
+			var offer_badges: Array[String] = []
+			for offer_variant in charter_offers:
+				var charter_offer: Dictionary = offer_variant
+				offer_badges.append(
+					String(charter_offer.get("contract_type_badge", "CHARTER"))
+				)
+			charter_detail = "%s • board refreshes in %s" % [
+				" / ".join(offer_badges),
+				_format_activity_time(int(charter.get("board_rotation_seconds", 0)))
+			]
 
 	var challenge := _airport_challenge_snapshot()
 	var challenge_attention := AirportChallengeRules.claimable_count(

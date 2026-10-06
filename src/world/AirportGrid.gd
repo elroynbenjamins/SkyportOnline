@@ -1781,11 +1781,12 @@ func _draw_buildings() -> void:
 			continue
 
 		if _definition_has_world_sprite(definition):
-			_draw_world_art_ground_pad(
-				definition,
-				origin,
-				footprint
-			)
+			if bool(definition.get("world_ground_pad", true)):
+				_draw_world_art_ground_pad(
+					definition,
+					origin,
+					footprint
+				)
 			_draw_apron_surface_micro_detail(
 				definition,
 				origin,

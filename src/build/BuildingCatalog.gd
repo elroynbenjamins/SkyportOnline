@@ -6,6 +6,7 @@ static var _definitions_by_id: Dictionary = {}
 const PRODUCTION_BUILDING_ATLAS := "res://assets/production/airport_buildings_v2/skyport_buildings_atlas.webp"
 const PRODUCTION_SERVICE_BUILDING_ATLAS_A := "res://assets/production/service_buildings_v2/service_buildings_v2a.webp"
 const PRODUCTION_SERVICE_BUILDING_ATLAS_B := "res://assets/production/service_buildings_v2/service_buildings_v2b.webp"
+const PRODUCTION_SEASONAL_DECOR_ATLAS := "res://assets/production/seasonal_decor_v2/seasonal_decor_atlas_v2.svg"
 
 
 static func all() -> Array[Dictionary]:
@@ -558,7 +559,18 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray([]),
 			"description": "Placeable Autumn Airbridge flag cosmetic.",
 			"event_decoration": true,
-			"required_cosmetic_id": "event_autumn_alliance_flag"
+			"required_cosmetic_id": "event_autumn_alliance_flag",
+			"art_tier": "seasonal_v2",
+			"world_ground_pad": false,
+			"world_sprite_atlas_path": PRODUCTION_SEASONAL_DECOR_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 0, 256, 256)
+			],
+			"world_sprite_size": Vector2(112, 112),
+			"world_sprite_offsets": [
+				Vector2(0, -29)
+			],
+			"world_sprite_offset": Vector2(0, -29)
 		},
 		{
 			"id": "autumn_leaf_garden",
@@ -573,7 +585,20 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray([]),
 			"description": "Placeable autumn garden unlocked from the seasonal shop.",
 			"event_decoration": true,
-			"required_cosmetic_id": "event_autumn_leaf_garden"
+			"required_cosmetic_id": "event_autumn_leaf_garden",
+			"art_tier": "seasonal_v2",
+			"world_ground_pad": false,
+			"world_sprite_atlas_path": PRODUCTION_SEASONAL_DECOR_ATLAS,
+			"world_sprite_regions": [
+				Rect2(256, 0, 256, 256),
+				Rect2(512, 0, 256, 256)
+			],
+			"world_sprite_size": Vector2(150, 150),
+			"world_sprite_offsets": [
+				Vector2(0, -35),
+				Vector2(0, -35)
+			],
+			"world_sprite_offset": Vector2(0, -35)
 		},
 		{
 			"id": "winter_event_flag",
@@ -588,7 +613,18 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray([]),
 			"description": "Placeable Winter Airbridge flag cosmetic.",
 			"event_decoration": true,
-			"required_cosmetic_id": "event_winter_alliance_flag"
+			"required_cosmetic_id": "event_winter_alliance_flag",
+			"art_tier": "seasonal_v2",
+			"world_ground_pad": false,
+			"world_sprite_atlas_path": PRODUCTION_SEASONAL_DECOR_ATLAS,
+			"world_sprite_regions": [
+				Rect2(768, 0, 256, 256)
+			],
+			"world_sprite_size": Vector2(112, 112),
+			"world_sprite_offsets": [
+				Vector2(0, -29)
+			],
+			"world_sprite_offset": Vector2(0, -29)
 		},
 		{
 			"id": "winter_snow_globe_garden",
@@ -603,7 +639,20 @@ static func all() -> Array[Dictionary]:
 			"sizes": PackedStringArray([]),
 			"description": "Placeable Winter event garden unlocked from the seasonal shop.",
 			"event_decoration": true,
-			"required_cosmetic_id": "event_winter_snow_globe_garden"
+			"required_cosmetic_id": "event_winter_snow_globe_garden",
+			"art_tier": "seasonal_v2",
+			"world_ground_pad": false,
+			"world_sprite_atlas_path": PRODUCTION_SEASONAL_DECOR_ATLAS,
+			"world_sprite_regions": [
+				Rect2(0, 256, 256, 256),
+				Rect2(256, 256, 256, 256)
+			],
+			"world_sprite_size": Vector2(154, 154),
+			"world_sprite_offsets": [
+				Vector2(0, -37),
+				Vector2(0, -37)
+			],
+			"world_sprite_offset": Vector2(0, -37)
 		},
 		{
 			"id": "rapid_regional_fuel",

@@ -187,8 +187,9 @@ func _process(delta: float) -> void:
 		_drain_passenger_rewards()
 		_drain_resource_choice_grants()
 		_apply_live_boosters()
-		var charter_changed := CharterRules.advance(
+		var charter_changed := CharterRules.ensure_state(
 			progression,
+			player_level,
 			Time.get_unix_time_from_system()
 		)
 		if charter_changed:

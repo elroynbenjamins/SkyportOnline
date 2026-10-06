@@ -152,6 +152,7 @@ func _draw() -> void:
 	_draw_ocean_bands()
 	_draw_grid()
 	_draw_continents()
+	_draw_region_labels()
 
 	var home_position := _home_position()
 	var selected := _selected_map_position()
@@ -230,11 +231,39 @@ func _draw_continent(points: Array, fill: Color) -> void:
 		polygon.append(
 			_map_to_screen(Vector2(float(point[0]), float(point[1])))
 		)
+	var shadow := PackedVector2Array()
+	for point in polygon:
+		shadow.append(point + Vector2(2.0, 3.0))
+	draw_colored_polygon(shadow, Color(0.01, 0.06, 0.08, 0.24))
 	draw_colored_polygon(polygon, fill)
 	var outline := polygon.duplicate()
 	if not outline.is_empty():
 		outline.append(outline[0])
 		draw_polyline(outline, LAND_EDGE, 1.5, true)
+
+
+func _draw_region_labels() -> void:
+	var labels := [
+		{"text": "NORTH AMERICA", "position": Vector2(0.14, 0.16)},
+		{"text": "SOUTH AMERICA", "position": Vector2(0.30, 0.58)},
+		{"text": "EUROPE", "position": Vector2(0.50, 0.13)},
+		{"text": "AFRICA", "position": Vector2(0.51, 0.48)},
+		{"text": "ASIA", "position": Vector2(0.73, 0.18)},
+		{"text": "OCEANIA", "position": Vector2(0.82, 0.72)}
+	]
+	for entry in labels:
+		var position := _map_to_screen(entry["position"])
+		if not _is_screen_visible(position, 80.0):
+			continue
+		draw_string(
+			ThemeDB.fallback_font,
+			position,
+			String(entry["text"]),
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			10,
+			Color(0.78, 0.90, 0.86, 0.28)
+		)
 
 
 func _draw_route_arc(from_position: Vector2, to_position: Vector2) -> void:

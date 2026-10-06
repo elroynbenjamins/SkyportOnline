@@ -325,7 +325,9 @@ func _draw() -> void:
 	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
-	_draw_starter_apron_surface()
+	# Canonical starter building/stand art owns its own footprint-level base.
+	# The old combined starter-apron slab made those sprites look stacked on
+	# top of previous art, so normal play no longer draws that underlay.
 	_draw_charter_logistics_district()
 	_draw_buildings()
 	_draw_new_build_construction_fx()
@@ -1591,6 +1593,10 @@ func _apron_row_is_owned(
 		):
 			return false
 	return true
+
+
+func is_starter_apron_underlay_enabled() -> bool:
+	return false
 
 
 func _draw_starter_apron_surface() -> void:

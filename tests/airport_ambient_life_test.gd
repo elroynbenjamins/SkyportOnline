@@ -39,6 +39,12 @@ func _run() -> void:
 	if not bool(snapshot.get("art_atlas_ready", false)):
 		_fail("Ambient life should load the production ambient art atlas.")
 		return
+	if not bool(snapshot.get("apron_detail_ready", false)):
+		_fail("Ambient life should load the production apron-detail v2 atlas.")
+		return
+	if int(snapshot.get("apron_prop_cap", 99)) > AirportAmbientLife.MAX_APRON_PROPS:
+		_fail("Apron detail rendering should remain bounded for mobile.")
+		return
 	if int(snapshot.get("baggage_train_cap", 99)) > 3:
 		_fail("Baggage ambience should stay tightly capped for mobile.")
 		return
@@ -256,6 +262,9 @@ func _run() -> void:
 
 	npc.state = "LOADING"
 	var loading_snapshot := ambient.get_ambient_snapshot()
+	if int(loading_snapshot.get("apron_prop_count", 0)) < 5:
+		_fail("Loading aircraft should stage v2 stairs, cargo equipment and safety props.")
+		return
 	if int(loading_snapshot.get("baggage_trains", 0)) < 1:
 		_fail("Loading aircraft should create production-art baggage movement.")
 		return
@@ -332,7 +341,7 @@ func _run() -> void:
 		(
 			"AIRPORT_AMBIENT_LIFE_OK "
 			+ "stands=%d route=%d windsocks=%d draw_hz=%.0f "
-			+ "crew=%d baggage=%d flow=true atlas=true passengers=8 npc_tier=%s"
+			+ "crew=%d baggage=%d apron_v2=true flow=true atlas=true passengers=8 npc_tier=%s"
 		) % [
 			int(snapshot.get("stands", 0)),
 			int(snapshot.get("service_route_points", 0)),

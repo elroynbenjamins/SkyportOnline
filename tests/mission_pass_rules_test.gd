@@ -87,8 +87,121 @@ func _run() -> void:
 	}, OCT_05, 2)
 	check(MissionPassRules.completed_daily_count(variety_state) == 4, "Flight telemetry should advance airtime, distance, mastery and resource missions.")
 	check(bool((variety_state.get("mission_pass", {}) as Dictionary).get("daily_bonus_awarded", false)), "Variety missions should still trigger the daily completion bonus.")
-	check(MissionPassCatalog.daily_templates().size() >= 10, "Daily mission catalog should include the expanded variety set.")
-	check(MissionPassCatalog.weekly_templates().size() >= 11, "Weekly mission catalog should include the expanded variety set.")
+	check(MissionPassCatalog.daily_templates().size() >= 13, "Daily mission catalog should include optional Activity objectives.")
+	check(MissionPassCatalog.weekly_templates().size() >= 15, "Weekly mission catalog should include optional Activity objectives.")
+
+	var activity_state := AirportProgressionRules.new_state(
+		"activity-mission-pool",
+		22
+	)
+	MissionPassRules.ensure_state(activity_state, OCT_05, 22)
+	var activity_pass: Dictionary = activity_state.get("mission_pass", {})
+	var daily_activity_count := 0
+	for mission_variant in activity_pass.get("daily", []):
+		var mission: Dictionary = mission_variant
+		if not String(mission.get("activity", "")).is_empty():
+			daily_activity_count += 1
+		check(
+			String(mission.get("activity", "")) not in ["alliance", "charter"],
+			"Alliance and Charter missions must stay out of the pool until those systems are activated."
+		)
+	check(
+		daily_activity_count <= 1,
+		"Daily mission set must contain at most one Activity-specific objective."
+	)
+	var weekly_activity_count := 0
+	for mission_variant in activity_pass.get("weekly", []):
+		var mission: Dictionary = mission_variant
+		if not String(mission.get("activity", "")).is_empty():
+			weekly_activity_count += 1
+		check(
+			String(mission.get("activity", "")) not in ["alliance", "charter"],
+			"Inactive Alliance and Charter missions must not appear in weekly sets."
+		)
+	check(
+		weekly_activity_count <= 1,
+		"Each weekly mission set must contain at most one Activity-specific objective."
+	)
+	check(
+		MissionPassRules.enable_activity_missions(activity_state, "alliance"),
+		"First Alliance participation should enable future Alliance mission templates."
+	)
+	check(
+		MissionPassRules.enable_activity_missions(activity_state, "charter"),
+		"First Charter participation should enable future Charter mission templates."
+	)
+	check(
+		MissionPassRules._template_available(
+			{"min_level": 15, "activity": "alliance", "requires_enabled": true},
+			activity_state,
+			22
+		),
+		"Enabled Alliance templates should become eligible."
+	)
+	check(
+		MissionPassRules._template_available(
+			{"min_level": 22, "activity": "charter", "requires_enabled": true},
+			activity_state,
+			22
+		),
+		"Enabled Charter templates should become eligible."
+	)
+
+	var cross_mode_state := AirportProgressionRules.new_state(
+		"cross-mode-metrics",
+		22
+	)
+	MissionPassRules.ensure_state(cross_mode_state, OCT_05, 22)
+	var cross_pass: Dictionary = cross_mode_state.get("mission_pass", {})
+	cross_pass["daily"] = [
+		{"id": "cross-dispatch", "metric": "dispatch_shifts", "target": 1, "progress": 0, "completed": false, "awarded": false},
+		{"id": "cross-challenge", "metric": "challenge_points", "target": 15, "progress": 0, "completed": false, "awarded": false},
+		{"id": "cross-alliance", "metric": "alliance_points", "target": 8, "progress": 0, "completed": false, "awarded": false},
+		{"id": "cross-charter", "metric": "charter_contracts", "target": 1, "progress": 0, "completed": false, "awarded": false}
+	]
+	cross_pass["daily_bonus_awarded"] = false
+	cross_mode_state["mission_pass"] = cross_pass
+	MissionPassRules.record_event(
+		cross_mode_state,
+		"dispatch_complete",
+		{"score": 70},
+		OCT_05,
+		22
+	)
+	MissionPassRules.record_event(
+		cross_mode_state,
+		"challenge_points",
+		{"points": 15},
+		OCT_05,
+		22
+	)
+	MissionPassRules.record_event(
+		cross_mode_state,
+		"alliance_points",
+		{"points": 8},
+		OCT_05,
+		22
+	)
+	MissionPassRules.record_event(
+		cross_mode_state,
+		"charter_complete",
+		{},
+		OCT_05,
+		22
+	)
+	check(
+		MissionPassRules.completed_daily_count(cross_mode_state) == 4,
+		"Dispatch, Weekly Challenge, Alliance and Charter gameplay should all advance their matching mission metrics."
+	)
+	check(
+		bool(
+			(cross_mode_state.get("mission_pass", {}) as Dictionary).get(
+				"daily_bonus_awarded",
+				false
+			)
+		),
+		"Cross-mode objectives should feed the same Airport Pass daily completion bonus."
+	)
 
 	var claimed_free := MissionPassRules.claim_pass_reward(state, 1, "free")
 	check(not claimed_free.is_empty(), "Unlocked free tier should be claimable.")

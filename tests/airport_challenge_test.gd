@@ -149,7 +149,7 @@ func _run() -> void:
 	if not screen.is_open():
 		_fail("Weekly challenge screen should open with the gameplay snapshot.")
 		return
-	if "PASSENGER RUSH" not in screen.theme_label.text:
+	if not screen.theme_label.text.contains("PASSENGER RUSH"):
 		_fail("Challenge screen should prominently show the active weekly theme.")
 		return
 	screen.close_screen(true)

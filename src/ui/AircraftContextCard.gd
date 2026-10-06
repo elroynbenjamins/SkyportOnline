@@ -4,6 +4,10 @@ extends CanvasLayer
 signal choose_route_requested(aircraft: AircraftPrototype)
 signal fleet_requested(aircraft: AircraftPrototype)
 signal social_requested(aircraft: AircraftPrototype)
+signal handling_action_requested(
+	aircraft: AircraftPrototype,
+	action: String
+)
 
 var root: Control
 var panel: PanelContainer
@@ -200,6 +204,19 @@ func refresh_card() -> void:
 		fleet_button.visible = false
 		return
 
+	var handling_action := aircraft.get_handling_action()
+	if not handling_action.is_empty():
+		primary_button.text = aircraft._handling_action_label(
+			handling_action
+		)
+		primary_button.disabled = false
+		GameUIStyle.apply_button(
+			primary_button,
+			"gold"
+		)
+		fleet_button.visible = true
+		return
+
 	var can_choose_route := aircraft.can_change_flight_plan()
 	if can_choose_route:
 		primary_button.text = "🌍  CHOOSE ROUTE"
@@ -379,6 +396,12 @@ func _service_text(aircraft: AircraftPrototype) -> String:
 	match aircraft.state:
 		"READY_FOR_DESTINATION":
 			return "Ready for a destination assignment"
+		"WAITING_TAXI_IN":
+			return "Runway clear • tap TAXI"
+		"WAITING_UNLOAD":
+			return "At stand • tap UNLOAD"
+		"WAITING_SERVICE":
+			return "Unload complete • tap SERVICE"
 		"WAITING_PASSENGERS":
 			return "Waiting for enough passengers to board"
 		"READY_FOR_DEPARTURE":
@@ -405,6 +428,9 @@ func _apply_state_color(state: String) -> void:
 		color = GameUIStyle.COLOR_SUCCESS
 	elif state in [
 		"WAITING_PASSENGERS",
+		"WAITING_TAXI_IN",
+		"WAITING_UNLOAD",
+		"WAITING_SERVICE",
 		"HOLD_SHORT",
 		"HOLDING_FOR_ARRIVAL"
 	]:
@@ -450,7 +476,13 @@ func _on_primary_pressed() -> void:
 	):
 		return
 
-	if selected_aircraft.is_social_visitor():
+	var handling_action := selected_aircraft.get_handling_action()
+	if not handling_action.is_empty():
+		handling_action_requested.emit(
+			selected_aircraft,
+			handling_action
+		)
+	elif selected_aircraft.is_social_visitor():
 		social_requested.emit(
 			selected_aircraft
 		)

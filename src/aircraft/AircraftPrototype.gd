@@ -7,6 +7,10 @@ signal departed
 signal arrival_requested
 signal arrival_completed
 signal state_changed(state: String)
+signal handling_action_requested(
+	aircraft: AircraftPrototype,
+	action: String
+)
 
 @export var taxi_speed: float = 105.0
 @export var takeoff_speed: float = 235.0
@@ -54,6 +58,10 @@ var departure_hold_short_index := -1
 var arrival_runway_cleared := false
 var turnaround_panel: PanelContainer
 var turnaround_label: Label
+var handling_action_button: Button
+var manual_handling_enabled := false
+var handling_automation_enabled := false
+var pending_handling_action := ""
 var taxi_traffic_controller: TaxiTrafficController
 var taxi_holding := false
 var taxi_hold_reason := ""
@@ -67,8 +75,256 @@ var external_motion_speed := 0.0
 
 func _ready() -> void:
 	_build_turnaround_status()
+	_build_handling_action_button()
 	motion_sample_position = global_position
 	motion_sample_initialized = true
+
+
+func configure_handling_mode(
+	manual_enabled: bool,
+	automation_enabled: bool = false
+) -> void:
+	manual_handling_enabled = manual_enabled
+	handling_automation_enabled = (
+		manual_enabled
+		and automation_enabled
+	)
+	if not manual_handling_enabled:
+		clear_handling_action()
+	_sync_handling_action_transform()
+
+
+func uses_manual_handling() -> bool:
+	return manual_handling_enabled
+
+
+func uses_handling_automation() -> bool:
+	return (
+		manual_handling_enabled
+		and handling_automation_enabled
+	)
+
+
+func set_handling_automation_enabled(
+	enabled: bool
+) -> void:
+	handling_automation_enabled = (
+		manual_handling_enabled
+		and enabled
+	)
+
+
+func set_handling_action(
+	action: String
+) -> void:
+	pending_handling_action = action.to_upper()
+	if handling_action_button == null:
+		return
+
+	if pending_handling_action.is_empty():
+		handling_action_button.visible = false
+		return
+
+	handling_action_button.text = _handling_action_label(
+		pending_handling_action
+	)
+	handling_action_button.visible = visible
+	_sync_handling_action_transform()
+
+
+func clear_handling_action() -> void:
+	pending_handling_action = ""
+	if handling_action_button != null:
+		handling_action_button.visible = false
+
+
+func get_handling_action() -> String:
+	return pending_handling_action
+
+
+func get_handling_action_snapshot() -> Dictionary:
+	return {
+		"manual": manual_handling_enabled,
+		"automation": handling_automation_enabled,
+		"automation_scope": aircraft_size,
+		"action": pending_handling_action,
+		"visible": (
+			handling_action_button != null
+			and handling_action_button.visible
+		)
+	}
+
+
+func stage_for_manual_arrival() -> bool:
+	if not manual_handling_enabled:
+		return false
+	if arrival_route.size() < 4:
+		return false
+
+	var runway_start := arrival_route[0]
+	var runway_next := arrival_route[1]
+	var outward := (
+		runway_start - runway_next
+	).normalized()
+	if outward == Vector2.ZERO:
+		outward = Vector2(-1, 0)
+
+	position = (
+		runway_start
+		+ outward * approach_spawn_distance
+	)
+	var final_direction := (
+		runway_start - position
+	).normalized()
+	if final_direction != Vector2.ZERO:
+		rotation = final_direction.angle()
+
+	visible = true
+	route_index = -1
+	arrival_runway_cleared = false
+	motion_sample_position = global_position
+	motion_sample_initialized = true
+	_set_state("HOLDING_FOR_ARRIVAL")
+	set_turnaround_status(
+		"Arrival ready\nTap LAND",
+		"warning"
+	)
+	set_handling_action("LAND")
+	return true
+
+
+func continue_manual_taxi_in() -> bool:
+	if (
+		not manual_handling_enabled
+		or state != "WAITING_TAXI_IN"
+	):
+		return false
+	clear_handling_action()
+	taxi_current_speed = 0.0
+	_set_state("TAXIING_IN")
+	return true
+
+
+func _handling_action_label(
+	action: String
+) -> String:
+	match action:
+		"LAND":
+			return "✈  LAND"
+		"TAXI":
+			return "↗  TAXI"
+		"UNLOAD":
+			return "↓  UNLOAD"
+		"SERVICE":
+			return "⚙  SERVICE"
+		"LOAD":
+			return "↑  LOAD"
+		"SEND":
+			return "✈  SEND"
+		_:
+			return action
+
+
+func _build_handling_action_button() -> void:
+	handling_action_button = Button.new()
+	handling_action_button.custom_minimum_size = Vector2(
+		92,
+		34
+	)
+	handling_action_button.mouse_filter = (
+		Control.MOUSE_FILTER_STOP
+	)
+	handling_action_button.focus_mode = (
+		Control.FOCUS_NONE
+	)
+	handling_action_button.z_index = 170
+
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color("0b3e5a", 0.96)
+	normal.border_color = Color("67d7ff")
+	normal.border_width_left = 1
+	normal.border_width_top = 1
+	normal.border_width_right = 1
+	normal.border_width_bottom = 1
+	normal.corner_radius_top_left = 10
+	normal.corner_radius_top_right = 10
+	normal.corner_radius_bottom_left = 10
+	normal.corner_radius_bottom_right = 10
+	normal.content_margin_left = 9.0
+	normal.content_margin_right = 9.0
+	normal.content_margin_top = 5.0
+	normal.content_margin_bottom = 5.0
+	normal.shadow_color = Color(0, 0, 0, 0.32)
+	normal.shadow_size = 5
+	normal.shadow_offset = Vector2(0, 2)
+
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color("14618a", 0.98)
+	hover.border_color = Color("a6ecff")
+
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = Color("082b40", 0.98)
+
+	handling_action_button.add_theme_stylebox_override(
+		"normal",
+		normal
+	)
+	handling_action_button.add_theme_stylebox_override(
+		"hover",
+		hover
+	)
+	handling_action_button.add_theme_stylebox_override(
+		"pressed",
+		pressed
+	)
+	handling_action_button.add_theme_color_override(
+		"font_color",
+		Color("f7fcff")
+	)
+	handling_action_button.add_theme_font_size_override(
+		"font_size",
+		11
+	)
+	handling_action_button.pressed.connect(
+		_on_handling_action_pressed
+	)
+	add_child(handling_action_button)
+	handling_action_button.visible = false
+	_sync_handling_action_transform()
+
+
+func _on_handling_action_pressed() -> void:
+	if pending_handling_action.is_empty():
+		return
+	handling_action_requested.emit(
+		self,
+		pending_handling_action
+	)
+
+
+func _sync_handling_action_transform() -> void:
+	if handling_action_button == null:
+		return
+	var visual_scale := get_visual_scale()
+	var vertical_clearance := maxf(
+		visual_scale - 1.0,
+		0.0
+	) * 34.0
+	var airborne_extra := get_airborne_visual_lift()
+	var anchor := Vector2(
+		-46,
+		-100
+		- vertical_clearance
+		- airborne_extra
+	).rotated(
+		-rotation
+	)
+	handling_action_button.position = anchor
+	handling_action_button.rotation = -rotation
+	handling_action_button.visible = (
+		visible
+		and not pending_handling_action.is_empty()
+	)
 
 
 func configure_taxi_traffic(
@@ -216,6 +472,7 @@ func configure_aircraft_type(type_id: String) -> void:
 		profile
 	)
 	_sync_turnaround_status_transform()
+	_sync_handling_action_transform()
 	queue_redraw()
 
 
@@ -567,6 +824,7 @@ func _sync_turnaround_status_transform() -> void:
 	).rotated(-rotation)
 	turnaround_panel.position = anchor
 	turnaround_panel.rotation = -rotation
+	_sync_handling_action_transform()
 
 
 func can_change_flight_plan() -> bool:
@@ -579,7 +837,9 @@ func can_change_flight_plan() -> bool:
 		"PUSHBACK_PREP",
 		"READY_FOR_DESTINATION",
 		"READY_FOR_DEPARTURE",
-		"WAITING_PASSENGERS"
+		"WAITING_PASSENGERS",
+		"WAITING_UNLOAD",
+		"WAITING_SERVICE"
 	]
 
 
@@ -669,6 +929,7 @@ func begin_arrival_after_clearance() -> void:
 	if arrival_route.size() < 4:
 		return
 
+	clear_handling_action()
 	var runway_start := arrival_route[0]
 	var runway_next := arrival_route[1]
 	var outward := (runway_start - runway_next).normalized()
@@ -701,6 +962,7 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 	_sync_turnaround_status_transform()
+	_sync_handling_action_transform()
 	match state:
 		"CLEARED":
 			delay_remaining -= delta
@@ -939,7 +1201,23 @@ func _process_landing_roll(delta: float) -> void:
 		190.0
 	):
 		route_index = runway_exit_index
-		_set_state("TAXIING_IN")
+		if not arrival_runway_cleared:
+			arrival_runway_cleared = true
+			runway_cleared.emit()
+
+		if (
+			manual_handling_enabled
+			and not handling_automation_enabled
+		):
+			taxi_current_speed = 0.0
+			_set_state("WAITING_TAXI_IN")
+			set_turnaround_status(
+				"Runway clear\nTap TAXI",
+				"warning"
+			)
+			set_handling_action("TAXI")
+		else:
+			_set_state("TAXIING_IN")
 
 
 func _process_taxi_in(delta: float) -> void:
@@ -1213,7 +1491,10 @@ func _set_state(new_state: String) -> void:
 		"LANDING_ROLL":
 			_start_motion_fx("touchdown")
 		"TAXIING_IN":
-			if previous_state == "LANDING_ROLL":
+			if previous_state in [
+				"LANDING_ROLL",
+				"WAITING_TAXI_IN"
+			]:
 				_start_motion_fx("runway_exit")
 		"PARKED":
 			if previous_state == "TAXIING_IN":
@@ -1278,6 +1559,12 @@ func _update_external_motion_feedback(delta: float) -> void:
 
 
 func _airborne_shadow_factor() -> float:
+	if (
+		state == "HOLDING_FOR_ARRIVAL"
+		and visible
+		and not arrival_route.is_empty()
+	):
+		return 1.0
 	if state == "APPROACH" and not arrival_route.is_empty():
 		return clampf(
 			position.distance_to(arrival_route[0])
@@ -1306,7 +1593,10 @@ func _airborne_shadow_factor() -> float:
 
 func get_airborne_visual_lift() -> float:
 	var airborne := _airborne_shadow_factor()
-	if state == "APPROACH":
+	if state in [
+		"HOLDING_FOR_ARRIVAL",
+		"APPROACH"
+	]:
 		return approach_visual_lift * airborne
 	if state == "CLIMBING":
 		return climb_visual_lift * airborne
@@ -1349,6 +1639,9 @@ func get_motion_feedback_snapshot() -> Dictionary:
 		"visual_lift": get_airborne_visual_lift(),
 		"approach_spawn_distance": approach_spawn_distance,
 		"climb_out_distance": climb_out_distance,
+		"handling_action": pending_handling_action,
+		"manual_handling": manual_handling_enabled,
+		"handling_automation": handling_automation_enabled,
 		"takeoff_speed_ratio": clampf(
 			takeoff_velocity / maxf(takeoff_speed, 1.0),
 			0.0,
@@ -1484,6 +1777,8 @@ func _draw() -> void:
 			draw_circle(Vector2(-2, -26), 6.0, Color("78b7e8"))
 		"HOLDING_FOR_ARRIVAL":
 			draw_circle(Vector2(-2, -26), 6.0, Color("d6a3ff"))
+		"WAITING_TAXI_IN", "WAITING_UNLOAD", "WAITING_SERVICE":
+			draw_circle(Vector2(-2, -26), 6.0, Color("ffc66a"))
 
 	draw_set_transform(
 		Vector2.ZERO,
@@ -1723,7 +2018,7 @@ func _draw_motion_feedback() -> void:
 
 
 func _draw_shadow() -> void:
-	if state in ["EN_ROUTE", "HOLDING_FOR_ARRIVAL"]:
+	if state == "EN_ROUTE":
 		return
 
 	var visual_scale := get_visual_scale()

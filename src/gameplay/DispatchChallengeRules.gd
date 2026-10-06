@@ -153,7 +153,6 @@ static func record_action(
 			active["taxi_holds"] = int(active.get("taxi_holds", 0)) + amount
 
 	dispatch["active"] = active
-	next_best(dispatch, int(active.get("score", 0)))
 	state["dispatch_challenge"] = dispatch
 	return delta
 

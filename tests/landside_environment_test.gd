@@ -38,6 +38,12 @@ func _run() -> void:
 			_fail("Duplicate landside scenery id: %s" % id)
 		ids[id] = true
 
+		if path.contains("airport_v1"):
+			_fail("%s should no longer use airport_v1 scenery art." % id)
+			continue
+		if not path.begins_with("res://assets/production/environment_v2/"):
+			_fail("%s should use the production environment_v2 asset set." % id)
+			continue
 		if path.is_empty() or not ResourceLoader.exists(path):
 			_fail("%s scenery asset is missing: %s" % [id, path])
 			continue
@@ -131,7 +137,7 @@ func _run() -> void:
 		return
 
 	print(
-		"LANDSIDE_ENVIRONMENT_OK scenery=%d road_points=%d terminal_movable=true"
+		"LANDSIDE_ENVIRONMENT_OK scenery=%d road_points=%d terminal_movable=true art=environment_v2"
 		% [scenery.size(), road.size()]
 	)
 	quit(0)

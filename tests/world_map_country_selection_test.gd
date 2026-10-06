@@ -34,6 +34,36 @@ func _run() -> void:
 	if screen.selected_destination_id != "brussels":
 		_fail("World Map should default to Brussels at level 1.")
 		return
+	if screen.map_canvas.destinations.size() != DestinationCatalog.all().size():
+		_fail("World Map should receive all configured route destinations.")
+		return
+	if screen.map_canvas.selected_destination_id != "brussels":
+		_fail("Map airport marker selection should sync with route selection.")
+		return
+
+	var route_phase_before := screen.map_canvas.route_phase
+	screen.map_canvas._process(0.5)
+	if screen.map_canvas.route_phase <= route_phase_before:
+		_fail("Selected international route should animate on the map.")
+		return
+
+	screen.map_canvas.zoom_in()
+	if screen.map_canvas.zoom_level <= 1.0:
+		_fail("World Map zoom controls should increase map zoom.")
+		return
+	screen.map_canvas.focus_country("DE", 2.05)
+	if absf(screen.map_canvas.zoom_level - 2.05) > 0.01:
+		_fail("Country focus should apply the requested close zoom.")
+		return
+	var focused_center := screen.map_canvas.view_center
+	screen.map_canvas._pan_by_screen_delta(Vector2(20, 0))
+	if screen.map_canvas.view_center.is_equal_approx(focused_center):
+		_fail("Zoomed World Map should support drag-style panning.")
+		return
+	screen.map_canvas.reset_view()
+	if absf(screen.map_canvas.zoom_level - 1.0) > 0.001:
+		_fail("World view reset should return to 100% zoom.")
+		return
 	if screen.country_badge_rect.texture == null:
 		_fail("Selected country should render its country badge.")
 		return
@@ -54,6 +84,12 @@ func _run() -> void:
 	if screen.selected_destination_id != "frankfurt":
 		_fail("Germany should preview its first route.")
 		return
+	if screen.map_canvas.selected_destination_id != "frankfurt":
+		_fail("Selected airport marker should sync to Frankfurt.")
+		return
+	if screen.map_canvas._routes_for_selected_country().size() != 2:
+		_fail("Germany should expose both Frankfurt and Berlin map airports.")
+		return
 	if not screen.destination_buttons["frankfurt"].visible:
 		_fail("Frankfurt should appear after selecting Germany.")
 		return
@@ -70,6 +106,9 @@ func _run() -> void:
 		return
 	if not screen.selected_destination_id.is_empty():
 		_fail("Future countries should not keep a route from another country.")
+		return
+	if not screen.map_canvas.selected_destination_id.is_empty():
+		_fail("Future country should clear the selected airport marker.")
 		return
 	if not screen.details_title.text.contains("NO ACTIVE ROUTE"):
 		_fail("Future country selection should show a no-route state.")
@@ -98,7 +137,7 @@ func _run() -> void:
 
 	print(
 		"World Map country selection passed: country-first filtering, "
-		+ "locked-route preview, future-country resources, and picker sync."
+		+ "route markers, zoom/pan, motion, locked routes, resources, and picker sync."
 	)
 	quit(0)
 

@@ -11,6 +11,8 @@ var root: Control
 var title_label: Label
 var timing_label: Label
 var currency_label: Label
+var phase_label: Label
+var phase_progress_label: Label
 var featured_routes_label: Label
 var quest_list: VBoxContainer
 var shop_list: VBoxContainer
@@ -65,9 +67,22 @@ func refresh(snapshot: Dictionary) -> void:
 	title_label.text = String(
 		snapshot.get("name", "Event")
 	).to_upper()
-	timing_label.text = "WEEK %d / 3  •  %d DAYS REMAINING" % [
+	timing_label.text = "PHASE %d / 3  •  %d DAYS REMAINING" % [
 		int(snapshot.get("week", 1)),
 		int(snapshot.get("days_remaining", 0))
+	]
+	phase_label.text = "%s\n%s" % [
+		String(snapshot.get("phase_name", "Event Phase")).to_upper(),
+		String(snapshot.get("phase_description", ""))
+	]
+	phase_progress_label.text = "%d / %d PHASE QUESTS COMPLETE%s" % [
+		int(snapshot.get("phase_quest_complete", 0)),
+		maxi(int(snapshot.get("phase_quest_total", 0)), 1),
+		(
+			"  •  NEXT: %s" % String(snapshot.get("next_phase_name", "")).to_upper()
+			if not String(snapshot.get("next_phase_name", "")).is_empty()
+			else "  •  FINAL PHASE"
+		)
 	]
 	currency_label.text = "🎟 %d  %s" % [
 		int(snapshot.get("currency", 0)),
@@ -75,7 +90,7 @@ func refresh(snapshot: Dictionary) -> void:
 	]
 
 	var featured_ids: Array = snapshot.get(
-		"featured_destinations",
+		"phase_featured_destinations",
 		[]
 	)
 	var featured_names: Array[String] = []
@@ -182,6 +197,28 @@ func _build_ui() -> void:
 	header.add_child(currency_label)
 
 
+	var phase_panel := PanelContainer.new()
+	GameUIStyle.apply_panel(phase_panel, "dark")
+	column.add_child(phase_panel)
+
+	var phase_box := VBoxContainer.new()
+	phase_box.add_theme_constant_override("separation", 3)
+	phase_panel.add_child(phase_box)
+
+	phase_label = Label.new()
+	phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	phase_label.add_theme_font_size_override("font_size", 15)
+	phase_label.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_GOLD
+	)
+	phase_box.add_child(phase_label)
+
+	phase_progress_label = Label.new()
+	phase_progress_label.add_theme_font_size_override("font_size", 11)
+	GameUIStyle.muted(phase_progress_label)
+	phase_box.add_child(phase_progress_label)
+
 	featured_routes_label = Label.new()
 	featured_routes_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	featured_routes_label.add_theme_font_size_override("font_size", 13)
@@ -258,8 +295,39 @@ func _build_column(
 func _refresh_quests(snapshot: Dictionary) -> void:
 	_clear(quest_list)
 
+	var current: Array[Dictionary] = []
+	var archive: Array[Dictionary] = []
 	for quest_variant in snapshot.get("quests", []):
 		var quest: Dictionary = quest_variant
+		match String(quest.get("phase_state", "current")):
+			"current":
+				current.append(quest)
+			"archive":
+				archive.append(quest)
+
+	_add_quest_section("CURRENT PHASE", current)
+	if not archive.is_empty():
+		_add_quest_section("EARLIER PHASES", archive)
+
+
+func _add_quest_section(
+	heading_text: String,
+	quests: Array[Dictionary]
+) -> void:
+	if quests.is_empty():
+		return
+
+	var section := Label.new()
+	section.text = heading_text
+	section.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	section.add_theme_font_size_override("font_size", 11)
+	section.add_theme_color_override(
+		"font_color",
+		GameUIStyle.COLOR_ACCENT
+	)
+	quest_list.add_child(section)
+
+	for quest in quests:
 		var quest_id := String(quest.get("id", ""))
 		var unlocked := bool(quest.get("unlocked", false))
 		var complete := bool(quest.get("complete", false))
@@ -365,7 +433,9 @@ func _refresh_quests(snapshot: Dictionary) -> void:
 		claim_button.text = (
 			"CLAIM"
 			if complete and not claimed and unlocked
-			else "✓" if claimed else "LOCKED" if not unlocked else "IN PROGRESS"
+			else "✓" if claimed
+			else "LOCKED" if not unlocked
+			else "IN PROGRESS"
 		)
 		claim_button.disabled = (
 			claimed
@@ -374,7 +444,9 @@ func _refresh_quests(snapshot: Dictionary) -> void:
 		)
 		GameUIStyle.apply_button(
 			claim_button,
-			"gold" if complete and not claimed and unlocked else "secondary",
+			"gold"
+			if complete and not claimed and unlocked
+			else "secondary",
 			true
 		)
 		claim_button.pressed.connect(

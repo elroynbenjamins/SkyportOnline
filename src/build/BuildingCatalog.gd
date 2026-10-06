@@ -44,6 +44,7 @@ static func all() -> Array[Dictionary]:
 			"art_tier": "canonical_v2",
 			"world_art_has_integrated_base": true,
 			"world_sprite_grid_fit": true,
+			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
@@ -108,6 +109,7 @@ static func all() -> Array[Dictionary]:
 			"art_tier": "canonical_v2",
 			"world_art_has_integrated_base": true,
 			"world_sprite_grid_fit": true,
+			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
@@ -167,6 +169,7 @@ static func all() -> Array[Dictionary]:
 			"icon_path": "res://assets/pixel/airport_v1/travel_office.svg",
 			"world_art_has_integrated_base": true,
 			"world_sprite_grid_fit": true,
+			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
@@ -198,6 +201,7 @@ static func all() -> Array[Dictionary]:
 			"art_tier": "canonical_v2",
 			"world_art_has_integrated_base": true,
 			"world_sprite_grid_fit": true,
+			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
@@ -447,6 +451,7 @@ static func all() -> Array[Dictionary]:
 			"art_tier": "canonical_v2",
 			"world_art_has_integrated_base": true,
 			"world_sprite_grid_fit": true,
+			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [

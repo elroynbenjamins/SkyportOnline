@@ -7,8 +7,11 @@ signal claim_requested(milestone_id: String)
 var root: Control
 var timer_label: Label
 var score_label: Label
+var theme_label: Label
 var summary_label: Label
 var progress_label: Label
+var help_label: Label
+var next_theme_label: Label
 var milestone_list: VBoxContainer
 var snapshot: Dictionary = {}
 
@@ -103,6 +106,12 @@ func _build_ui() -> void:
 	GameUIStyle.heading(score_label, 28)
 	score_box.add_child(score_label)
 
+	theme_label = Label.new()
+	theme_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	theme_label.add_theme_font_size_override("font_size", 16)
+	theme_label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+	score_box.add_child(theme_label)
+
 	progress_label = Label.new()
 	progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	progress_label.add_theme_font_size_override("font_size", 13)
@@ -115,12 +124,17 @@ func _build_ui() -> void:
 	summary_label.add_theme_font_size_override("font_size", 13)
 	score_box.add_child(summary_label)
 
-	var help := Label.new()
-	help.text = "Score points by completing normal passenger flights. Longer routes, fuller aircraft, country resources and first visits to new countries score more."
-	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	help.add_theme_font_size_override("font_size", 13)
-	GameUIStyle.muted(help)
-	column.add_child(help)
+	help_label = Label.new()
+	help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help_label.add_theme_font_size_override("font_size", 13)
+	GameUIStyle.muted(help_label)
+	column.add_child(help_label)
+
+	next_theme_label = Label.new()
+	next_theme_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	next_theme_label.add_theme_font_size_override("font_size", 11)
+	GameUIStyle.muted(next_theme_label)
+	column.add_child(next_theme_label)
 
 	var list_panel := PanelContainer.new()
 	list_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -152,11 +166,15 @@ func _refresh() -> void:
 	timer_label.text = "RESET IN %s" % _format_time(int(snapshot.get("seconds_remaining", 0)))
 	if not unlocked:
 		score_label.text = "LOCKED"
+		theme_label.text = "WEEKLY CHALLENGE"
 		progress_label.text = "Unlocks at Airport Level %d" % int(snapshot.get("unlock_level", AirportChallengeRules.UNLOCK_LEVEL))
 		summary_label.text = "Keep growing your airport to enter the weekly challenge."
+		help_label.text = "A different scoring theme rotates in each week once the mode is unlocked."
+		next_theme_label.text = ""
 	else:
 		var score := int(snapshot.get("score", 0))
 		score_label.text = "%d PTS" % score
+		theme_label.text = String(snapshot.get("theme_name", "Weekly Airport Challenge")).to_upper()
 		var next_target := int(snapshot.get("next_target", 0))
 		progress_label.text = "All weekly milestones complete" if next_target <= 0 else "%d points to next reward" % maxi(next_target - score, 0)
 		summary_label.text = "%d flights • %d passengers • %d km • %d countries • %d resources" % [
@@ -166,6 +184,11 @@ func _refresh() -> void:
 			int(snapshot.get("countries", 0)),
 			int(snapshot.get("resources", 0))
 		]
+		help_label.text = "%s\n%s" % [
+			String(snapshot.get("theme_description", "")),
+			String(snapshot.get("theme_scoring", ""))
+		]
+		next_theme_label.text = "NEXT WEEK: %s" % String(snapshot.get("next_theme_name", ""))
 
 	for child in milestone_list.get_children():
 		child.queue_free()

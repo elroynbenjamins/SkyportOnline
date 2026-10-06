@@ -739,6 +739,7 @@ static func _mission_from_template(
 		"period_type": period_type,
 		"period_key": period_key,
 		"metric": String(template.get("metric", "")),
+		"activity": String(template.get("activity", "")),
 		"title": String(template.get("title", "Mission")),
 		"description": MissionPassCatalog.mission_text(String(template.get("metric", "")), target),
 		"target": target,

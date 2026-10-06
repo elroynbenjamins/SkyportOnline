@@ -26,6 +26,9 @@ func _run() -> void:
 	if float(presentation.get("takeoff_acceleration", 999.0)) > 125.0:
 		_fail("Nimbus should accelerate more heavily than the starter S aircraft.")
 		return
+	if float(presentation.get("landing_speed", 0.0)) >= 150.0:
+		_fail("Nimbus should use a calmer medium-aircraft touchdown speed.")
+		return
 
 	var handling := plane.get_handling_action_snapshot()
 	if String(handling.get("automation_scope", "")) != "M":

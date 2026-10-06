@@ -225,49 +225,49 @@ func _draw_environment_scenery() -> void:
 	# the previous procedural-only background.
 	_draw_texture_centered(
 		FIELD_TEXTURE,
-		Vector2(-1170, 20),
+		Vector2(-650, -35),
 		Vector2(760, 390),
 		0.92
 	)
 	_draw_texture_centered(
 		FIELD_TEXTURE,
-		Vector2(1190, 70),
+		Vector2(675, -15),
 		Vector2(730, 375),
 		0.88
 	)
 	_draw_texture_centered(
 		FIELD_TEXTURE,
-		Vector2(-1240, 1030),
+		Vector2(-720, 825),
 		Vector2(700, 360),
 		0.76
 	)
 	_draw_texture_centered(
 		FIELD_TEXTURE,
-		Vector2(1270, 1050),
+		Vector2(735, 845),
 		Vector2(710, 365),
 		0.78
 	)
 
 	_draw_texture_centered(
 		PARKING_TEXTURE,
-		Vector2(-1000, 690),
+		Vector2(-760, 610),
 		Vector2(430, 252),
 		0.84
 	)
 	_draw_texture_centered(
 		PARKING_TEXTURE,
-		Vector2(1030, 735),
+		Vector2(790, 625),
 		Vector2(390, 228),
 		0.72
 	)
 
 	for item in [
-		[TREE_TEXTURE, Vector2(-865, 235), Vector2(250, 205), 0.96],
-		[CONIFER_TEXTURE, Vector2(890, 240), Vector2(255, 215), 0.94],
-		[TREE_TEXTURE, Vector2(-920, 865), Vector2(235, 190), 0.90],
-		[CONIFER_TEXTURE, Vector2(925, 900), Vector2(245, 205), 0.91],
-		[TREE_TEXTURE, Vector2(-560, -95), Vector2(205, 165), 0.86],
-		[TREE_TEXTURE, Vector2(590, -75), Vector2(210, 170), 0.86]
+		[TREE_TEXTURE, Vector2(-610, 205), Vector2(250, 205), 0.96],
+		[CONIFER_TEXTURE, Vector2(625, 220), Vector2(255, 215), 0.94],
+		[TREE_TEXTURE, Vector2(-620, 710), Vector2(235, 190), 0.90],
+		[CONIFER_TEXTURE, Vector2(650, 735), Vector2(245, 205), 0.91],
+		[TREE_TEXTURE, Vector2(-420, -90), Vector2(205, 165), 0.86],
+		[TREE_TEXTURE, Vector2(445, -70), Vector2(210, 170), 0.86]
 	]:
 		_draw_texture_centered(
 			item[0] as Texture2D,
@@ -278,19 +278,19 @@ func _draw_environment_scenery() -> void:
 
 	_draw_texture_centered(
 		HEDGE_TEXTURE,
-		Vector2(-620, 790),
+		Vector2(-520, 720),
 		Vector2(300, 120),
 		0.74
 	)
 	_draw_texture_centered(
 		HEDGE_TEXTURE,
-		Vector2(650, 810),
+		Vector2(545, 740),
 		Vector2(300, 120),
 		0.74
 	)
 	_draw_texture_centered(
 		ENTRANCE_TEXTURE,
-		Vector2(-720, 920),
+		Vector2(-610, 805),
 		Vector2(175, 140),
 		0.92
 	)

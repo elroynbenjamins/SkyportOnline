@@ -19,6 +19,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Upload source building atlas for grounding QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-building-atlas
+          path: assets/production/airport_buildings_v2/skyport_buildings_atlas.webp
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Import project and parse scripts
         run: godot --headless --editor --path . --quit --verbose
 

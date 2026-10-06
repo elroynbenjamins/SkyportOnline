@@ -1250,7 +1250,7 @@ func _on_navigation_requested(tab: String) -> void:
 	if charter_screen != null and charter_screen.is_open():
 		charter_screen.close_screen()
 	if alliance_operations_screen != null and alliance_operations_screen.is_open():
-		alliance_operations_screen.close_screen()
+		alliance_operations_screen.close_screen(true)
 	super._on_navigation_requested(tab)
 	if tab in ["social", "alliance"] and social_airport_service != null:
 		social_airport_screen.set_snapshot(_social_only_snapshot(social_airport_service.get_snapshot()))

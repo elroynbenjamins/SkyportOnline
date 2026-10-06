@@ -38,6 +38,15 @@ func _run() -> void:
 				% building_id
 			)
 			return
+		var max_width_scale := float(
+			definition.get("world_sprite_max_width_scale", 9.0)
+		)
+		if max_width_scale > 1.25:
+			_fail(
+				"%s should keep visible production art close to its grid footprint."
+				% building_id
+			)
+			return
 		if bool(definition.get("world_ground_pad", true)):
 			_fail(
 				"%s should not draw the old procedural ground pad."

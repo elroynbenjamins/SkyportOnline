@@ -40,11 +40,52 @@ func _run() -> void:
 	if screen.country_resource_row.get_child_count() != 3:
 		_fail("Selected country should show three visual resource cards.")
 		return
+	if screen.country_profile_panel == null:
+		_fail("World Map should render the selected country in a dedicated profile panel.")
+		return
+	if not screen.country_status_label.text.contains("CONNECTED"):
+		_fail("Unlocked route country should show CONNECTED country status.")
+		return
+	if not screen.country_network_label.text.contains("1 / 1"):
+		_fail("Country profile should summarize unlocked routes versus total routes.")
+		return
+	if not screen.country_goods_label.text.contains("3 types"):
+		_fail("Country profile should summarize its three regional goods.")
+		return
 	if not screen.destination_buttons["brussels"].visible:
 		_fail("Selected-country route button should be visible.")
 		return
 	if screen.destination_buttons["london"].visible:
 		_fail("Routes from other countries should be hidden.")
+		return
+
+	if WorldMapCanvas.COUNTRY_HIT_RADIUS < 30.0:
+		_fail("Country map touch target should remain mobile-friendly.")
+		return
+	if WorldMapCanvas.SELECTED_HALO_RADIUS < 22.0:
+		_fail("Selected country highlight should remain visibly stronger than a normal marker.")
+		return
+	var belgium := CountryCatalog.get_country("BE")
+	var netherlands := CountryCatalog.get_country("NL")
+	var raw_be := Vector2(
+		float(belgium.get("map_x", 0.0)) * screen.map_canvas.size.x,
+		float(belgium.get("map_y", 0.0)) * screen.map_canvas.size.y
+	)
+	var raw_nl := Vector2(
+		float(netherlands.get("map_x", 0.0)) * screen.map_canvas.size.x,
+		float(netherlands.get("map_y", 0.0)) * screen.map_canvas.size.y
+	)
+	var display_be := screen.map_canvas.country_display_position("BE")
+	var display_nl := screen.map_canvas.country_display_position("NL")
+	if display_be.distance_to(display_nl) <= raw_be.distance_to(raw_nl):
+		_fail("Dense Europe markers should be spaced farther apart than raw coordinates.")
+		return
+	if (
+		screen.map_canvas.country_at_position(
+			display_be + Vector2(-28, 0)
+		) != "BE"
+	):
+		_fail("Expanded touch target should still select Belgium near its marker.")
 		return
 
 	screen._select_country("DE")
@@ -83,6 +124,12 @@ func _run() -> void:
 	if screen.country_resource_row.get_child_count() != 3:
 		_fail("Future countries should keep the three-card country resource strip.")
 		return
+	if not screen.country_status_label.text.contains("FUTURE NETWORK"):
+		_fail("Countries without routes should show a clear FUTURE NETWORK status.")
+		return
+	if not screen.country_network_label.text.contains("Future"):
+		_fail("Country profile network card should identify future-route countries.")
+		return
 	if not screen.assign_button.disabled:
 		_fail("Dispatch should be disabled when the country has no route.")
 		return
@@ -96,9 +143,14 @@ func _run() -> void:
 		_fail("Country picker should stay synchronized with map selection.")
 		return
 
+	screen._select_country("NL")
+	if not screen.country_status_label.text.contains("HOME HUB"):
+		_fail("Home country should receive a distinct HOME HUB profile state.")
+		return
+
 	print(
-		"World Map country selection passed: country-first filtering, "
-		+ "locked-route preview, future-country resources, and picker sync."
+		"World Map country selection passed: country-first filtering, larger touch "
+		+ "targets, Europe spacing, profile states, resources, and picker sync."
 	)
 	quit(0)
 

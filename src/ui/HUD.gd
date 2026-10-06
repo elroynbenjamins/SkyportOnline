@@ -1011,9 +1011,9 @@ func _build_catalog_panel(root: Control) -> void:
 func _build_bottom_navigation(root: Control) -> void:
 	bottom_nav_panel = PanelContainer.new()
 	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_nav_panel.offset_left = 10
+	bottom_nav_panel.offset_left = 16
 	bottom_nav_panel.offset_top = -56
-	bottom_nav_panel.offset_right = -10
+	bottom_nav_panel.offset_right = -16
 	bottom_nav_panel.offset_bottom = -6
 	root.add_child(bottom_nav_panel)
 	GameUIStyle.apply_panel(bottom_nav_panel, "dock")

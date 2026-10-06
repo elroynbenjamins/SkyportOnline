@@ -73,6 +73,28 @@ func _run() -> void:
 	if WorldMapCanvas.GEOGRAPHY_DETAIL_COUNT < 10:
 		_fail("World Map should keep detailed islands/coastline geography.")
 		return
+	var art_check := WorldMapVisualAssets.validate_assets()
+	if not bool(art_check.get("valid", false)):
+		_fail(
+			"World Map production art validation failed: %s"
+			% str(art_check.get("errors", []))
+		)
+		return
+	if WorldMapCanvas.PRODUCTION_ART_ASSET_COUNT != 9:
+		_fail("World Map should keep the complete production art asset set.")
+		return
+	if WorldMapCanvas.TERRAIN_STAMP_COUNT < 8:
+		_fail("World Map should retain stylized terrain detail stamps.")
+		return
+	if WorldMapVisualAssets.texture(WorldMapVisualAssets.OCEAN_TILE) == null:
+		_fail("World Map should load its textured production ocean tile.")
+		return
+	if WorldMapVisualAssets.texture(WorldMapVisualAssets.HUB_MARKER) == null:
+		_fail("World Map should load the production home-hub marker.")
+		return
+	if WorldMapVisualAssets.texture(WorldMapVisualAssets.AIRPORT_SELECTED) == null:
+		_fail("World Map should load the selected-airport production marker.")
+		return
 	if screen.map_canvas.network_connection_count() < 8:
 		_fail("World Map should expose the wider route network behind the selected route.")
 		return
@@ -235,7 +257,7 @@ func _run() -> void:
 	print(
 		"World Map country selection passed: country-first filtering, larger touch "
 		+ "targets, Europe spacing, profile states, zoom/pan, airport markers, "
-		+ "animated routes, wider route network, zoom-aware airport labels, map route briefing, richer geography, resources, and picker sync."
+		+ "animated routes, production map art, wider route network, zoom-aware airport labels, map route briefing, richer geography, resources, and picker sync."
 	)
 	quit(0)
 

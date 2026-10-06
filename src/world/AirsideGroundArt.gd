@@ -2,7 +2,7 @@ class_name AirsideGroundArt
 extends RefCounted
 
 const ATLAS_PATH := "res://assets/production/airside_ground_v2/airside_ground_atlas_v2.webp"
-const CELL_SIZE := Vector2i(128, 64)
+const CELL_SIZE := Vector2i(64, 32)
 const COLUMNS := 5
 
 const NORTH := 1

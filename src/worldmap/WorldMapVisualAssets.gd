@@ -13,6 +13,10 @@ const ROUTE_PLANE := ROOT + "route_plane_v2.svg"
 const ROUTE_BADGE_PANEL := ROOT + "route_badge_panel_v2.svg"
 const TERRAIN_FOREST := ROOT + "terrain_forest_v2.svg"
 const TERRAIN_MOUNTAIN := ROOT + "terrain_mountain_v2.svg"
+const CLOUD_CLUSTER := ROOT + "cloud_cluster_v3.svg"
+const SEA_GLINT := ROOT + "sea_glint_v3.svg"
+const COUNTRY_FOCUS := ROOT + "country_focus_v3.svg"
+const TERRAIN_CITY := ROOT + "terrain_city_v3.svg"
 
 const REQUIRED := [
 	OCEAN_TILE,
@@ -24,6 +28,10 @@ const REQUIRED := [
 	ROUTE_BADGE_PANEL,
 	TERRAIN_FOREST,
 	TERRAIN_MOUNTAIN,
+	CLOUD_CLUSTER,
+	SEA_GLINT,
+	COUNTRY_FOCUS,
+	TERRAIN_CITY,
 ]
 
 static var _texture_cache: Dictionary = {}

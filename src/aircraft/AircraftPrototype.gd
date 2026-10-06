@@ -2130,7 +2130,8 @@ func _uses_live_aircraft_fx() -> bool:
 			"pico_p8",
 			"swift_s14",
 			"comet_c22",
-			"voyager_v32"
+			"voyager_v32",
+			"nimbus_n40"
 		]
 		or not visible
 	):

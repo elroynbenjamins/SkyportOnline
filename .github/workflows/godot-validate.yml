@@ -162,6 +162,9 @@ jobs:
       - name: Test manual service choreography
         run: timeout 30s godot --headless --path . --script res://tests/manual_service_choreography_test.gd
 
+      - name: Test M-class turnaround choreography
+        run: timeout 25s godot --headless --path . --script res://tests/m_class_turnaround_choreography_test.gd
+
 
       - name: Test physical pushback tug
         run: timeout 20s godot --headless --path . --script res://tests/pushback_service_test.gd

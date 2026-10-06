@@ -171,10 +171,12 @@ func _draw_ocean_bands() -> void:
 	for index in range(band_count):
 		var top := size.y * float(index) / float(band_count)
 		var height := size.y / float(band_count)
-		var alpha := 0.045 + float(index % 2) * 0.018
+		var alpha := 0.965 + float(index % 2) * 0.018
+		var band_color := OCEAN_COLOR
+		band_color.a = alpha
 		draw_rect(
 			Rect2(Vector2(0, top), Vector2(size.x, height + 1.0)),
-			Color(OCEAN_COLOR, 0.92 + alpha)
+			band_color
 		)
 
 

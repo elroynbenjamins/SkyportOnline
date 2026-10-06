@@ -23,6 +23,14 @@ const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.35
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
+# Four adjacent 8x8 parcels form one 16x16 starter construction area.
+# The player receives the land, but must place the runway and networks.
+const STARTER_OWNED_PARCELS := PackedStringArray([
+	"north_west",
+	"north",
+	"west",
+	"home"
+])
 
 const TERRAIN_BACKGROUND := Color("557f4b")
 const OWNED_GRASS_VARIANTS := [
@@ -276,31 +284,21 @@ func _initialize_parcels() -> void:
 			int(zone.get("py", 0)),
 			int(zone.get("level", 1)),
 			int(zone.get("cost", 0)),
-			zone_id == "home"
+			STARTER_OWNED_PARCELS.has(zone_id)
 		)
 
 
 func _initialize_starter_airport() -> void:
-	_place_building_internal("short_runway", Vector2i(8, 8), 0)
-	_place_building_internal("taxiway", Vector2i(11, 10), 0)
-	_place_building_internal("taxiway", Vector2i(12, 10), 0)
-	_place_building_internal("taxiway", Vector2i(13, 10), 0)
-	_place_building_internal("small_stand", Vector2i(11, 11), 0)
-	_place_building_internal("small_stand", Vector2i(13, 11), 0)
-	_place_building_internal("small_terminal", Vector2i(8, 14), 0)
-	_place_building_internal("travel_office", Vector2i(9, 10), 0)
-	_place_building_internal("ground_ops_depot", Vector2i(11, 14), 0)
-	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
-	_place_building_internal("service_road", Vector2i(11, 13), 0)
-	_place_building_internal("service_road", Vector2i(12, 13), 0)
-	_place_building_internal("service_road", Vector2i(15, 12), 0)
-	_place_building_internal("service_road", Vector2i(15, 13), 0)
-	_place_building_internal("service_road", Vector2i(12, 14), 0)
-	_place_building_internal("service_road", Vector2i(12, 15), 0)
-	_place_building_internal("service_road", Vector2i(13, 15), 0)
-	_place_building_internal("service_road", Vector2i(14, 15), 0)
-	_place_building_internal("service_road", Vector2i(15, 15), 0)
-	_place_building_internal("service_road", Vector2i(15, 14), 0)
+	# Starter destinations are placed with breathing room inside the new
+	# 16x16 owned area. Runway, taxiways and service roads are deliberately
+	# NOT prebuilt: constructing a working airport network is now gameplay.
+	_place_building_internal("small_hangar", Vector2i(1, 5), 0)
+	_place_building_internal("small_stand", Vector2i(6, 6), 0)
+	_place_building_internal("small_stand", Vector2i(10, 6), 0)
+	_place_building_internal("small_terminal", Vector2i(4, 10), 0)
+	_place_building_internal("travel_office", Vector2i(8, 10), 0)
+	_place_building_internal("ground_ops_depot", Vector2i(11, 10), 0)
+	_place_building_internal("basic_fuel", Vector2i(12, 12), 0)
 	_rebuild_occupied_cells()
 
 
@@ -8313,6 +8311,188 @@ func _definition_supports_size(definition: Dictionary, aircraft_size: String) ->
 	return sizes.has(aircraft_size)
 
 
+func get_taxi_route_between_airside_buildings(
+	from_uid: int,
+	to_uid: int
+) -> PackedVector2Array:
+	var from_building := _building_by_uid(from_uid)
+	var to_building := _building_by_uid(to_uid)
+	if from_building.is_empty() or to_building.is_empty():
+		return PackedVector2Array()
+
+	var from_definition := BuildingCatalog.get_definition(
+		String(from_building.get("definition_id", ""))
+	)
+	var to_definition := BuildingCatalog.get_definition(
+		String(to_building.get("definition_id", ""))
+	)
+	if from_definition.is_empty() or to_definition.is_empty():
+		return PackedVector2Array()
+
+	var taxiway_cells: Dictionary = {}
+	for building in placed_buildings:
+		if String(building.get("definition_id", "")) != "taxiway":
+			continue
+		var taxi_definition := BuildingCatalog.get_definition("taxiway")
+		var taxi_footprint := _footprint_for(
+			taxi_definition,
+			int(building.get("rotation", 0))
+		)
+		for cell in _cells_for(
+			building.get("origin", Vector2i.ZERO),
+			taxi_footprint
+		):
+			taxiway_cells[_cell_key(cell)] = cell
+
+	if taxiway_cells.is_empty():
+		return PackedVector2Array()
+
+	var from_footprint := _footprint_for(
+		from_definition,
+		int(from_building.get("rotation", 0))
+	)
+	var to_footprint := _footprint_for(
+		to_definition,
+		int(to_building.get("rotation", 0))
+	)
+	var starts := _adjacent_cells_in_set(
+		_cells_for(
+			from_building.get("origin", Vector2i.ZERO),
+			from_footprint
+		),
+		taxiway_cells
+	)
+	var goals := _adjacent_cells_in_set(
+		_cells_for(
+			to_building.get("origin", Vector2i.ZERO),
+			to_footprint
+		),
+		taxiway_cells
+	)
+	if starts.is_empty() or goals.is_empty():
+		return PackedVector2Array()
+
+	var taxi_path := _road_path_between(
+		starts,
+		goals,
+		taxiway_cells
+	)
+	if taxi_path.is_empty():
+		return PackedVector2Array()
+
+	var points := PackedVector2Array()
+	points.append(
+		_footprint_center_world(
+			from_building.get("origin", Vector2i.ZERO),
+			from_footprint
+		)
+	)
+	for cell in taxi_path:
+		points.append(
+			tile_to_world(Vector2(cell.x, cell.y))
+		)
+	points.append(
+		_footprint_center_world(
+			to_building.get("origin", Vector2i.ZERO),
+			to_footprint
+		)
+	)
+	return points
+
+
+func get_starter_construction_snapshot() -> Dictionary:
+	var hangar_uid := -1
+	var stand_uid := -1
+	var fuel_uid := -1
+	var runway_count := 0
+	var taxiway_count := 0
+	var service_road_count := 0
+
+	for building in placed_buildings:
+		var id := String(building.get("definition_id", ""))
+		match id:
+			"small_hangar":
+				if hangar_uid < 0:
+					hangar_uid = int(building.get("uid", -1))
+			"small_stand":
+				if stand_uid < 0:
+					stand_uid = int(building.get("uid", -1))
+			"basic_fuel":
+				if fuel_uid < 0:
+					fuel_uid = int(building.get("uid", -1))
+			"taxiway":
+				taxiway_count += 1
+			"service_road":
+				service_road_count += 1
+			_:
+				if id.contains("runway"):
+					runway_count += 1
+
+	var hangar_to_stand := PackedVector2Array()
+	if hangar_uid >= 0 and stand_uid >= 0:
+		hangar_to_stand = get_taxi_route_between_airside_buildings(
+			hangar_uid,
+			stand_uid
+		)
+
+	var stand_to_runway: Dictionary = {}
+	if stand_uid >= 0:
+		stand_to_runway = get_departure_route_for_stand(
+			stand_uid,
+			"S"
+		)
+
+	var fuel_to_stand := PackedVector2Array()
+	if fuel_uid >= 0 and stand_uid >= 0:
+		fuel_to_stand = get_service_route(
+			fuel_uid,
+			stand_uid
+		)
+
+	var missing: Array[String] = []
+	if runway_count <= 0:
+		missing.append("Place a Short Runway")
+	if hangar_to_stand.size() < 3:
+		missing.append("Connect Hangar → Stand with Taxiways")
+	if stand_to_runway.is_empty():
+		missing.append("Connect Stand → Runway with Taxiways")
+	if fuel_to_stand.size() < 3:
+		missing.append("Connect Fuel → Stand with Service Roads")
+
+	return {
+		"starter_owned_parcels": STARTER_OWNED_PARCELS.duplicate(),
+		"starter_width_tiles": 16,
+		"starter_height_tiles": 16,
+		"starter_setup_required": hangar_uid >= 0,
+		"hangar_uid": hangar_uid,
+		"stand_uid": stand_uid,
+		"fuel_uid": fuel_uid,
+		"runway_count": runway_count,
+		"taxiway_count": taxiway_count,
+		"service_road_count": service_road_count,
+		"hangar_to_stand_route": hangar_to_stand,
+		"stand_to_runway_route": stand_to_runway,
+		"fuel_to_stand_route": fuel_to_stand,
+		"missing_steps": missing,
+		"ready_for_first_departure": missing.is_empty(),
+		"departure_sequence": PackedStringArray([
+			"HANGAR",
+			"TAXI TO LOAD STAND",
+			"LOAD",
+			"FUEL / SERVICE AT STAND",
+			"TAXI TO RUNWAY",
+			"TAKE OFF"
+		]),
+		"arrival_sequence": PackedStringArray([
+			"LAND",
+			"TAXI TO UNLOAD STAND",
+			"UNLOAD",
+			"SERVICE AT STAND",
+			"HANGAR OR NEXT FLIGHT"
+		])
+	}
+
+
 func get_departure_routes(
 	aircraft_size: String = "S"
 ) -> Array[Dictionary]:
@@ -9217,7 +9397,9 @@ func apply_saved_airport_layout(
 	saved_owned_parcels: Array,
 	saved_storage: Array = []
 ) -> bool:
-	var owned: Dictionary = {"home": true}
+	var owned: Dictionary = {}
+	for starter_parcel_id in STARTER_OWNED_PARCELS:
+		owned[String(starter_parcel_id)] = true
 	for parcel_id_variant in saved_owned_parcels:
 		var parcel_id := String(parcel_id_variant)
 		if parcels.has(parcel_id):
@@ -9325,9 +9507,8 @@ func apply_saved_airport_layout(
 			})
 
 	for parcel_id in parcels.keys():
-		parcels[parcel_id]["owned"] = (
-			String(parcel_id) == "home"
-			or owned.has(String(parcel_id))
+		parcels[parcel_id]["owned"] = owned.has(
+			String(parcel_id)
 		)
 	_refresh_parcel_labels()
 

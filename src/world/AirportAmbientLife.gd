@@ -8,6 +8,7 @@ const LAYOUT_REFRESH_INTERVAL := 0.75
 const MAX_CREW := 12
 const MAX_AMBIENT_CARTS := 2
 const MAX_BAGGAGE_TRAINS := 3
+const MAX_APRON_PROPS := 18
 const MAX_TERMINAL_PASSENGERS := 4
 const MAX_PASSENGER_FLOW_SPRITES := 10
 const DIRECT_PASSENGER_WALK_MAX_DISTANCE := 190.0
@@ -30,6 +31,7 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	AirportAmbientLifeArt.texture()
 	AirportAmbientLifeArt.passenger_texture()
+	ApronDetailArt.texture()
 	set_process(true)
 
 
@@ -71,6 +73,7 @@ func _draw() -> void:
 	_draw_terminal_activity()
 	_draw_passenger_flow()
 	_draw_operations_activity()
+	_draw_apron_staging_props()
 	_draw_ambient_service_traffic()
 	_draw_baggage_activity()
 	_draw_ground_crew()
@@ -589,6 +592,7 @@ func get_ambient_snapshot() -> Dictionary:
 	var passenger_flow := get_passenger_flow_snapshot()
 	var crew_count := 0
 	var baggage_trains := 0
+	var apron_props := 0
 	var npc_aircraft := 0
 	var npc_tiers: Dictionary = {}
 
@@ -596,6 +600,7 @@ func get_ambient_snapshot() -> Dictionary:
 		crew_count += _crew_count_for_aircraft(aircraft)
 		if aircraft.state in ["UNLOADING", "LOADING"]:
 			baggage_trains += 1
+		apron_props += _apron_prop_count_for_aircraft(aircraft)
 		if aircraft.has_meta("npc_behavior"):
 			npc_aircraft += 1
 			var npc_profile: Dictionary = aircraft.get_meta(
@@ -617,6 +622,8 @@ func get_ambient_snapshot() -> Dictionary:
 		"service_route_points": service_route.size(),
 		"ambient_cart_cap": MAX_AMBIENT_CARTS,
 		"baggage_train_cap": MAX_BAGGAGE_TRAINS,
+		"apron_prop_cap": MAX_APRON_PROPS,
+		"apron_prop_count": mini(apron_props, MAX_APRON_PROPS),
 		"draw_hz": 1.0 / DRAW_INTERVAL,
 		"live_aircraft": live_aircraft.size(),
 		"crew_count": mini(crew_count, MAX_CREW),
@@ -625,6 +632,8 @@ func get_ambient_snapshot() -> Dictionary:
 			MAX_BAGGAGE_TRAINS
 		),
 		"art_atlas_ready": AirportAmbientLifeArt.texture() != null,
+		"apron_detail_ready": ApronDetailArt.texture() != null,
+		"apron_detail_profile": ApronDetailArt.visual_profile(),
 		"passenger_art_ready": AirportAmbientLifeArt.passenger_texture() != null,
 		"passenger_variant_count": AirportAmbientLifeArt.PASSENGER_ARCHETYPES.size(),
 		"passenger_flow": passenger_flow,
@@ -1064,21 +1073,254 @@ func _draw_passenger_flow() -> void:
 			drawn += 1
 
 
+func _draw_apron_detail_sprite(
+	position: Vector2,
+	key: String,
+	size: Vector2,
+	ground_anchor: float = 0.76,
+	mirror_x: bool = false,
+	modulate: Color = Color.WHITE
+) -> void:
+	var atlas := ApronDetailArt.texture()
+	if atlas == null:
+		return
+
+	draw_set_transform(
+		position,
+		0.0,
+		Vector2(
+			-1.0 if mirror_x else 1.0,
+			1.0
+		)
+	)
+	draw_texture_rect_region(
+		atlas,
+		Rect2(
+			Vector2(
+				-size.x * 0.5,
+				-size.y * ground_anchor
+			),
+			size
+		),
+		ApronDetailArt.source_rect(key),
+		modulate
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
+
+
+func _apron_prop_count_for_aircraft(
+	aircraft: AircraftPrototype
+) -> int:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return 0
+	match String(aircraft.state):
+		"UNLOADING", "LOADING":
+			return 5
+		"SERVICING", "WAITING_FUEL":
+			return 3
+		"WAITING_PASSENGERS":
+			return 3
+		"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
+			return 2
+		_:
+			return 0
+
+
+func _aircraft_service_point(
+	aircraft: AircraftPrototype,
+	service_type: String
+) -> Vector2:
+	var local_offset := aircraft.get_service_docking_local_offset(
+		service_type
+	)
+	var global_target := (
+		aircraft.global_position
+		+ local_offset.rotated(
+			aircraft.global_rotation
+		)
+	)
+	return to_local(global_target)
+
+
+func _draw_apron_staging_props() -> void:
+	var drawn := 0
+	for aircraft in _collect_live_aircraft():
+		if drawn >= MAX_APRON_PROPS:
+			break
+		var state := String(aircraft.state)
+		if _apron_prop_count_for_aircraft(aircraft) <= 0:
+			continue
+
+		var profile := _activity_profile_for_aircraft(
+			aircraft
+		)
+		var radius := float(
+			profile.get(
+				"service_radius",
+				31.0
+			)
+		)
+		var center := to_local(
+			aircraft.global_position
+		)
+		var heading := aircraft.global_rotation
+		var forward := Vector2.RIGHT.rotated(
+			heading
+		)
+		var side := Vector2(
+			-forward.y,
+			forward.x
+		)
+
+		# Safety kit sits just outside the aircraft envelope so it reads
+		# clearly without obscuring wings or the live service vehicles.
+		if drawn < MAX_APRON_PROPS:
+			_draw_apron_detail_sprite(
+				center
+				- forward * radius * 0.50
+				+ side * radius * 0.82,
+				"cones",
+				ApronDetailArt.world_size(
+					"cones"
+				),
+				0.78
+			)
+			drawn += 1
+
+		if drawn < MAX_APRON_PROPS:
+			_draw_apron_detail_sprite(
+				center
+				- forward * radius * 0.12
+				- side * radius * 0.36,
+				"chocks",
+				ApronDetailArt.world_size(
+					"chocks"
+				),
+				0.78,
+				cos(heading) < 0.0
+			)
+			drawn += 1
+
+		if state in [
+			"LOADING",
+			"UNLOADING",
+			"WAITING_PASSENGERS"
+		] and drawn < MAX_APRON_PROPS:
+			var passenger_point := _aircraft_service_point(
+				aircraft,
+				"passenger"
+			)
+			_draw_apron_detail_sprite(
+				passenger_point
+				+ side * 6.0,
+				ApronDetailArt.directional_key(
+					"stairs",
+					heading
+				),
+				ApronDetailArt.world_size(
+					"stairs"
+				),
+				0.76
+			)
+			drawn += 1
+
+		if state in ["LOADING", "UNLOADING"]:
+			var cargo_point := _aircraft_service_point(
+				aircraft,
+				"cargo"
+			)
+			var equipment_kind := (
+				"cargo_loader"
+				if aircraft.aircraft_size in [
+					"M",
+					"L",
+					"XL"
+				]
+				else "belt"
+			)
+			if drawn < MAX_APRON_PROPS:
+				_draw_apron_detail_sprite(
+					cargo_point
+						- side * 5.0,
+					ApronDetailArt.directional_key(
+						equipment_kind,
+						heading
+					),
+					ApronDetailArt.world_size(
+						equipment_kind
+					),
+					0.76
+				)
+				drawn += 1
+			if drawn < MAX_APRON_PROPS:
+				_draw_apron_detail_sprite(
+					cargo_point
+						- forward * 20.0
+						+ side * 14.0,
+					(
+						"uld"
+						if aircraft.aircraft_size in [
+							"M",
+							"L",
+							"XL"
+						]
+						else "cargo_pallet"
+					),
+					ApronDetailArt.world_size(
+						"uld"
+						if aircraft.aircraft_size in [
+							"M",
+							"L",
+							"XL"
+						]
+						else "cargo_pallet"
+					),
+					0.78
+				)
+				drawn += 1
+
+		if state in [
+			"SERVICING",
+			"WAITING_FUEL"
+		] and drawn < MAX_APRON_PROPS:
+			var fuel_point := _aircraft_service_point(
+				aircraft,
+				"fuel"
+			)
+			_draw_apron_detail_sprite(
+				fuel_point
+					- forward * 18.0,
+				ApronDetailArt.directional_key(
+					"gpu",
+					heading
+				),
+				ApronDetailArt.world_size(
+					"gpu"
+				),
+				0.76
+			)
+			drawn += 1
+
+
 func _draw_ground_crew_member(
 	position: Vector2,
 	marshaller: bool,
 	phase: float
 ) -> void:
-	var frame := AirportAmbientLifeArt.animation_frame(
+	var frame := ApronDetailArt.animation_frame(
 		motion_clock,
 		2.35 if marshaller else 3.15,
 		phase * 0.12
 	)
-	var key := AirportAmbientLifeArt.crew_key(
+	var key := ApronDetailArt.crew_key(
 		marshaller,
 		frame
 	)
-	var size := AirportAmbientLifeArt.world_size(
+	var size := ApronDetailArt.world_size(
 		"marshaller" if marshaller else "crew"
 	)
 	var mirror_x := (
@@ -1086,11 +1328,11 @@ func _draw_ground_crew_member(
 		and not marshaller
 	)
 	var bob := sin(phase * 2.2) * 0.35
-	_draw_atlas_sprite(
+	_draw_apron_detail_sprite(
 		position + Vector2(0, bob),
 		key,
 		size,
-		0.76,
+		0.78,
 		mirror_x
 	)
 
@@ -1360,15 +1602,16 @@ func _draw_baggage_activity() -> void:
 			+ side * radius * 0.92
 			+ forward * sin(phase) * 7.0
 		)
-		_draw_atlas_sprite(
+		_draw_apron_detail_sprite(
 			position,
-			AirportAmbientLifeArt.baggage_key(
+			ApronDetailArt.directional_key(
+				"baggage",
 				heading
 			),
-			AirportAmbientLifeArt.world_size(
+			ApronDetailArt.world_size(
 				"baggage"
 			),
-			0.75
+			0.76
 		)
 		drawn += 1
 
@@ -1381,15 +1624,16 @@ func _draw_ambient_cart(
 	var bob := sin(
 		motion_clock * 4.6 + float(index)
 	) * 0.45
-	_draw_atlas_sprite(
+	_draw_apron_detail_sprite(
 		position + Vector2(0, bob),
-		AirportAmbientLifeArt.utility_key(
+		ApronDetailArt.directional_key(
+			"utility",
 			heading
 		),
-		AirportAmbientLifeArt.world_size(
+		ApronDetailArt.world_size(
 			"utility"
 		),
-		0.73
+		0.76
 	)
 
 	# The amber beacon remains procedural so it can genuinely pulse rather

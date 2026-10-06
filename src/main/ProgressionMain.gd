@@ -1573,11 +1573,24 @@ func _event_has_claimable_reward() -> bool:
 func _activities_snapshot() -> Dictionary:
 	var mission_claimable := MissionPassRules.claimable_count(progression)
 	var mission_completed := MissionPassRules.completed_daily_count(progression)
+	var mission_new := ActivityProgressionRules.is_newly_unlocked(
+		progression,
+		"missions",
+		player_level
+	)
 	var charter := _charter_snapshot()
 	var charter_active: Dictionary = charter.get("active", {})
 	var charter_phase := String(charter_active.get("phase", ""))
 	var charter_attention := charter_phase == "READY"
 	var charter_unlocked := bool(charter.get("unlocked", false))
+	var charter_new := (
+		charter_unlocked
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"charter",
+			player_level
+		)
+	)
 	var charter_status := "UNLOCKS AT LEVEL %d" % CharterRules.UNLOCK_LEVEL
 	var charter_detail := "Dedicated cargo contracts and guaranteed country resources."
 	var charter_action := "OPEN CHARTER"
@@ -1623,6 +1636,15 @@ func _activities_snapshot() -> Dictionary:
 		Time.get_unix_time_from_system()
 	) > 0
 	var challenge_unlocked := bool(challenge.get("unlocked", false))
+	var challenge_new := (
+		challenge_unlocked
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"challenge",
+			player_level
+		)
+	)
+	challenge_attention = challenge_unlocked and challenge_attention
 	var challenge_status := "UNLOCKS AT LEVEL %d" % AirportChallengeRules.UNLOCK_LEVEL
 	var challenge_detail := "Weekly score track based on your normal passenger flights."
 	if challenge_unlocked:
@@ -1643,17 +1665,38 @@ func _activities_snapshot() -> Dictionary:
 
 	var alliance := _alliance_operations_snapshot()
 	var has_alliance := _has_alliance_contact()
-	var alliance_attention := has_alliance and AllianceOperationsRules.claimable_count(
-		progression,
-		Time.get_unix_time_from_system()
-	) > 0
+	var alliance_level_unlocked := ActivityProgressionRules.is_level_unlocked(
+		"alliance",
+		player_level
+	)
+	var alliance_enabled := alliance_level_unlocked and has_alliance
+	var alliance_new := (
+		alliance_enabled
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"alliance",
+			player_level
+		)
+	)
+	var alliance_attention := (
+		alliance_enabled
+		and AllianceOperationsRules.claimable_count(
+			progression,
+			Time.get_unix_time_from_system()
+		) > 0
+	)
 	var alliance_status := (
 		"%s • %d PTS" % [
 			String(alliance.get("project_short_name", "Alliance")).to_upper(),
 			int(alliance.get("alliance_total", 0))
 		]
-		if has_alliance
-		else "ALLIANCE REQUIRED"
+		if alliance_enabled
+		else (
+			"UNLOCKS AT LEVEL %d"
+			% ActivityProgressionRules.ALLIANCE_UNLOCK_LEVEL
+			if not alliance_level_unlocked
+			else "ALLIANCE REQUIRED"
+		)
 	)
 	var alliance_detail := (
 		"%s • %d personal pts • %s left" % [
@@ -1663,14 +1706,29 @@ func _activities_snapshot() -> Dictionary:
 				int(alliance.get("seconds_remaining", 0))
 			)
 		]
-		if has_alliance
-		else "Join or connect an Alliance to take part in cooperative weekly goals."
+		if alliance_enabled
+		else (
+			"Alliance Operations opens after you have mastered solo airport challenges."
+			if not alliance_level_unlocked
+			else "Join or connect an Alliance to take part in cooperative weekly goals."
+		)
 	)
 
 	var dispatch := _dispatch_snapshot()
 	var dispatch_unlocked := bool(dispatch.get("unlocked", false))
+	var dispatch_new := (
+		dispatch_unlocked
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"dispatch",
+			player_level
+		)
+	)
 	var dispatch_status_code := String(dispatch.get("status", "IDLE"))
-	var dispatch_attention := bool(dispatch.get("reward_available", false))
+	var dispatch_attention := (
+		dispatch_unlocked
+		and bool(dispatch.get("reward_available", false))
+	)
 	var dispatch_status := "UNLOCKS AT LEVEL %d" % DispatchChallengeRules.UNLOCK_LEVEL
 	var dispatch_detail := "Three-minute live operations shift using your real airport."
 	var dispatch_action := "OPEN DISPATCH"
@@ -1707,30 +1765,54 @@ func _activities_snapshot() -> Dictionary:
 				)
 
 	var event_active := bool(current_event_snapshot.get("active", false))
-	var event_attention := _event_has_claimable_reward()
+	var event_level_unlocked := ActivityProgressionRules.is_level_unlocked(
+		"event",
+		player_level
+	)
+	var event_enabled := event_active and event_level_unlocked
+	var event_new := (
+		event_enabled
+		and ActivityProgressionRules.is_newly_unlocked(
+			progression,
+			"event",
+			player_level
+		)
+	)
+	var event_attention := (
+		event_enabled
+		and _event_has_claimable_reward()
+	)
 	var event_name := String(current_event_snapshot.get("name", "Seasonal Event"))
 	var event_status := (
-		"PHASE %d / 3 • %s" % [
-			int(current_event_snapshot.get("week", 1)),
-			String(
-				current_event_snapshot.get(
-					"phase_name",
-					"Event Phase"
-				)
-			).to_upper()
-		]
-		if event_active
-		else "NO EVENT ACTIVE"
+		"UNLOCKS AT LEVEL %d" % ActivityProgressionRules.EVENT_UNLOCK_LEVEL
+		if not event_level_unlocked
+		else (
+			"PHASE %d / 3 • %s" % [
+				int(current_event_snapshot.get("week", 1)),
+				String(
+					current_event_snapshot.get(
+						"phase_name",
+						"Event Phase"
+					)
+				).to_upper()
+			]
+			if event_active
+			else "NO EVENT ACTIVE"
+		)
 	)
 	var event_detail := (
-		"%s • %d/%d phase quests complete • %d days left" % [
-			String(current_event_snapshot.get("phase_description", event_name)),
-			int(current_event_snapshot.get("phase_quest_complete", 0)),
-			maxi(int(current_event_snapshot.get("phase_quest_total", 0)), 1),
-			int(current_event_snapshot.get("days_remaining", 0))
-		]
-		if event_active
-		else "Limited-time events appear here when activated."
+		"Seasonal events unlock after the first few airport basics."
+		if not event_level_unlocked
+		else (
+			"%s • %d/%d phase quests complete • %d days left" % [
+				String(current_event_snapshot.get("phase_description", event_name)),
+				int(current_event_snapshot.get("phase_quest_complete", 0)),
+				maxi(int(current_event_snapshot.get("phase_quest_total", 0)), 1),
+				int(current_event_snapshot.get("days_remaining", 0))
+			]
+			if event_active
+			else "Limited-time events appear here when activated."
+		)
 	)
 
 	var attention_count := 0
@@ -1745,11 +1827,25 @@ func _activities_snapshot() -> Dictionary:
 		if ready:
 			attention_count += 1
 
+	var new_count := 0
+	for is_new in [
+		mission_new,
+		event_new,
+		dispatch_new,
+		challenge_new,
+		alliance_new,
+		charter_new
+	]:
+		if is_new:
+			new_count += 1
+
 	return {
 		"attention_count": attention_count,
+		"new_count": new_count,
 		"missions": {
 			"title": "MISSIONS & PASS",
 			"badge": "DAILY / WEEKLY",
+			"new": mission_new,
 			"status": (
 				"%d REWARD%s READY" % [mission_claimable, "" if mission_claimable == 1 else "S"]
 				if mission_claimable > 0
@@ -1763,6 +1859,7 @@ func _activities_snapshot() -> Dictionary:
 		"dispatch": {
 			"title": "AIRPORT DISPATCH",
 			"badge": "3-MINUTE LIVE SHIFT",
+			"new": dispatch_new,
 			"status": dispatch_status,
 			"detail": dispatch_detail,
 			"attention": dispatch_attention,
@@ -1773,6 +1870,7 @@ func _activities_snapshot() -> Dictionary:
 		"charter": {
 			"title": "CARGO CHARTER",
 			"badge": "LOGISTICS",
+			"new": charter_new,
 			"status": charter_status,
 			"detail": charter_detail,
 			"attention": charter_attention,
@@ -1782,6 +1880,7 @@ func _activities_snapshot() -> Dictionary:
 		},
 		"challenge": {
 			"title": "WEEKLY AIRPORT CHALLENGE",
+			"new": challenge_new,
 			"badge": (
 				String(challenge.get("theme_short_name", "SOLO WEEKLY")).to_upper()
 				if challenge_unlocked
@@ -1796,6 +1895,7 @@ func _activities_snapshot() -> Dictionary:
 		},
 		"alliance": {
 			"title": "ALLIANCE OPERATIONS",
+			"new": alliance_new,
 			"badge": (
 				String(alliance.get("project_short_name", "CO-OP WEEKLY")).to_upper()
 				if has_alliance
@@ -1804,19 +1904,28 @@ func _activities_snapshot() -> Dictionary:
 			"status": alliance_status,
 			"detail": alliance_detail,
 			"attention": alliance_attention,
-			"enabled": has_alliance,
+			"enabled": alliance_enabled,
 			"action": "OPEN ALLIANCE OPS",
-			"locked_action": "ALLIANCE REQUIRED"
+			"locked_action": (
+				"LEVEL %d" % ActivityProgressionRules.ALLIANCE_UNLOCK_LEVEL
+				if not alliance_level_unlocked
+				else "ALLIANCE REQUIRED"
+			)
 		},
 		"event": {
 			"title": event_name if event_active else "SEASONAL EVENT",
 			"badge": "LIMITED TIME",
+			"new": event_new,
 			"status": event_status,
 			"detail": event_detail,
 			"attention": event_attention,
-			"enabled": event_active,
+			"enabled": event_enabled,
 			"action": "OPEN EVENT",
-			"locked_action": "INACTIVE"
+			"locked_action": (
+				"LEVEL %d" % ActivityProgressionRules.EVENT_UNLOCK_LEVEL
+				if not event_level_unlocked
+				else "INACTIVE"
+			)
 		}
 	}
 

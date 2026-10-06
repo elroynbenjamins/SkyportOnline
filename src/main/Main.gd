@@ -1088,10 +1088,16 @@ func _on_demo_aircraft_state_changed(
 				"warning"
 			)
 		"READY_FOR_DEPARTURE":
-			hud.set_operation_status(
-				"%s ready • waiting for runway" % label,
-				"warning"
-			)
+			if aircraft.get_handling_action() == "SEND":
+				hud.set_operation_status(
+					"%s turnaround complete • tap SEND" % label,
+					"warning"
+				)
+			else:
+				hud.set_operation_status(
+					"%s ready • waiting for runway" % label,
+					"warning"
+				)
 		"WAITING_FUEL":
 			hud.set_operation_status("%s parked • fuel required" % label)
 
@@ -2529,15 +2535,29 @@ func _attempt_boarding_and_departure(
 			)
 		})
 
+	var manual_wait := (
+		aircraft.uses_manual_handling()
+		and not aircraft.uses_handling_automation()
+	)
+	if manual_wait:
+		aircraft.set_handling_action("LOAD")
 	aircraft.set_turnaround_status(
-		"Passengers %d / %d\nWAITING" % [
+		(
+			"Passengers %d / %d\nTap LOAD"
+			if manual_wait
+			else "Passengers %d / %d\nWAITING"
+		) % [
 			passenger_economy.get_passengers(),
 			required
 		],
 		"warning"
 	)
 	hud.set_operation_status(
-		"%s waiting for passengers • %d / %d available" % [
+		(
+			"%s needs passengers before LOAD • %d / %d available"
+			if manual_wait
+			else "%s waiting for passengers • %d / %d available"
+		) % [
 			label,
 			passenger_economy.get_passengers(),
 			required
@@ -2622,6 +2642,14 @@ func _refresh_waiting_passenger_cards() -> void:
 				else "warning"
 			)
 		)
+		else:
+			aircraft.set_turnaround_status(
+				"Passengers %d / %d\nWAITING" % [
+					passenger_economy.get_passengers(),
+					required
+				],
+				"warning"
+			)
 
 
 func _record_boarded_passengers(amount: int) -> void:

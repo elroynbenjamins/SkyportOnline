@@ -134,7 +134,7 @@ static func texture_for_resource(resource_id: String) -> Texture2D:
 	atlas_texture.atlas = _atlas
 	atlas_texture.region = Rect2(
 		float(index % COLUMNS) * float(CELL_SIZE),
-		float(index / COLUMNS) * float(CELL_SIZE),
+		float(floori(float(index) / float(COLUMNS))) * float(CELL_SIZE),
 		float(CELL_SIZE),
 		float(CELL_SIZE)
 	)

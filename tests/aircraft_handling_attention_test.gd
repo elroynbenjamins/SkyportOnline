@@ -78,7 +78,7 @@ func _run() -> void:
 		_fail("Handling pulse should remain subtle and readable.")
 		return
 
-	var camera := CameraController.new()
+	var camera = preload("res://src/world/CameraController.gd").new()
 	root.add_child(camera)
 	await process_frame
 	if not camera.has_method("focus_world_position"):

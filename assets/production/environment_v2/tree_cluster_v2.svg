@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="260" viewBox="0 0 320 260">
+  <defs><linearGradient id="leafA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#86c861"/><stop offset="1" stop-color="#3e7d43"/></linearGradient><linearGradient id="leafB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fb452"/><stop offset="1" stop-color="#2f6c3b"/></linearGradient></defs>
+  <ellipse cx="162" cy="216" rx="116" ry="25" fill="#233129" opacity=".22"/>
+  <g stroke="#76563b" stroke-width="10" stroke-linecap="round"><line x1="112" y1="192" x2="112" y2="134"/><line x1="171" y1="204" x2="171" y2="119"/><line x1="225" y1="191" x2="225" y2="141"/><line x1="71" y1="198" x2="71" y2="154"/></g>
+  <g><circle cx="110" cy="121" r="43" fill="url(#leafA)"/><circle cx="82" cy="132" r="29" fill="#4f9349"/><circle cx="137" cy="135" r="30" fill="#5aa34b"/><circle cx="170" cy="103" r="49" fill="url(#leafB)"/><circle cx="141" cy="114" r="32" fill="#4b9247"/><circle cx="205" cy="116" r="34" fill="#61a94c"/><circle cx="227" cy="134" r="39" fill="url(#leafA)"/><circle cx="252" cy="145" r="24" fill="#4a8f45"/><circle cx="68" cy="146" r="34" fill="url(#leafB)"/></g>
+  <g fill="#d7b64f"><circle cx="53" cy="208" r="4"/><circle cx="66" cy="212" r="3"/><circle cx="249" cy="208" r="4"/><circle cx="264" cy="204" r="3"/></g>
+  <g fill="#5c9146"><ellipse cx="101" cy="204" rx="31" ry="12"/><ellipse cx="198" cy="213" rx="37" ry="13"/></g>
+</svg>

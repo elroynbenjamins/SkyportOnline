@@ -287,6 +287,10 @@ func _setup_passenger_system() -> void:
 		airport_grid,
 		float(current_profile.get("passenger_balance", 20))
 	)
+	if ambient_life != null:
+		ambient_life.configure_passenger_economy(
+			passenger_economy
+		)
 
 
 func _setup_social_system() -> void:

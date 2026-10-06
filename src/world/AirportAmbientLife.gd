@@ -8,9 +8,13 @@ const LAYOUT_REFRESH_INTERVAL := 0.75
 const MAX_CREW := 12
 const MAX_AMBIENT_CARTS := 2
 const MAX_BAGGAGE_TRAINS := 3
+const MAX_TERMINAL_PASSENGERS := 4
+const MAX_PASSENGER_FLOW_SPRITES := 10
+const DIRECT_PASSENGER_WALK_MAX_DISTANCE := 190.0
 const AMBIENT_CART_ACTIVE_FRACTION := 0.68
 
 var airport_grid: AirportGrid
+var passenger_economy: PassengerEconomy
 var motion_clock := 0.0
 var redraw_elapsed := 0.0
 var layout_refresh_elapsed := 0.0
@@ -32,6 +36,13 @@ func _ready() -> void:
 func configure(grid: AirportGrid) -> void:
 	airport_grid = grid
 	_refresh_layout_anchors()
+	queue_redraw()
+
+
+func configure_passenger_economy(
+	economy: PassengerEconomy
+) -> void:
+	passenger_economy = economy
 	queue_redraw()
 
 
@@ -58,6 +69,7 @@ func _draw() -> void:
 
 	_draw_windsocks()
 	_draw_terminal_activity()
+	_draw_passenger_flow()
 	_draw_operations_activity()
 	_draw_ambient_service_traffic()
 	_draw_baggage_activity()
@@ -261,8 +273,320 @@ static func behavior_profile_for_size(
 			}
 
 
+func _passenger_stock_snapshot() -> Dictionary:
+	if (
+		passenger_economy == null
+		or not is_instance_valid(passenger_economy)
+	):
+		return {
+			"stock": 0,
+			"capacity": 0,
+			"ratio": 0.0,
+			"connected": false
+		}
+
+	var stock := maxi(
+		passenger_economy.get_passengers(),
+		0
+	)
+	var capacity := maxi(
+		passenger_economy.get_capacity(),
+		0
+	)
+	return {
+		"stock": stock,
+		"capacity": capacity,
+		"ratio": (
+			clampf(
+				float(stock) / float(capacity),
+				0.0,
+				1.0
+			)
+			if capacity > 0
+			else 0.0
+		),
+		"connected": true
+	}
+
+
+func _terminal_passenger_count() -> int:
+	var stock := _passenger_stock_snapshot()
+	if not bool(stock.get("connected", false)):
+		# Preserve a little life in isolated visual tests / editor scenes.
+		return 2
+
+	var passengers := int(stock.get("stock", 0))
+	var capacity := int(stock.get("capacity", 0))
+	if passengers <= 0 or capacity <= 0:
+		return 0
+
+	var ratio := float(stock.get("ratio", 0.0))
+	if ratio < 0.20:
+		return 1
+	if ratio < 0.50:
+		return 2
+	if ratio < 0.80:
+		return 3
+	return MAX_TERMINAL_PASSENGERS
+
+
+func _visible_passenger_count(
+	manifest: int,
+	size_class: String
+) -> int:
+	if manifest <= 0:
+		return 0
+	var count := clampi(
+		1 + ceili(float(manifest) / 14.0),
+		1,
+		5
+	)
+	if size_class in ["M", "L", "XL"]:
+		count = mini(count + 1, 6)
+	return count
+
+
+func _nearest_terminal_anchor(
+	position: Vector2
+) -> Dictionary:
+	var best: Dictionary = {}
+	var best_distance := INF
+	for anchor_variant in terminal_anchors:
+		var anchor: Dictionary = anchor_variant
+		var candidate: Vector2 = anchor.get(
+			"position",
+			Vector2.ZERO
+		)
+		var distance := candidate.distance_squared_to(
+			position
+		)
+		if distance < best_distance:
+			best_distance = distance
+			best = anchor
+	return best
+
+
+func _terminal_front_point(
+	anchor: Dictionary
+) -> Vector2:
+	var center: Vector2 = anchor.get(
+		"position",
+		Vector2.ZERO
+	)
+	var orientation := (
+		-1.0
+		if int(anchor.get("rotation", 0)) == 1
+		else 1.0
+	)
+	return center + Vector2(
+		30.0 * orientation,
+		26.0
+	)
+
+
+func _aircraft_passenger_point(
+	aircraft: AircraftPrototype
+) -> Vector2:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return Vector2.ZERO
+	var local_offset := aircraft.get_service_docking_local_offset(
+		"passenger"
+	)
+	var global_target := (
+		aircraft.global_position
+		+ local_offset.rotated(
+			aircraft.global_rotation
+		)
+	)
+	return to_local(global_target)
+
+
+func _passenger_manifest_for(
+	aircraft: AircraftPrototype,
+	state: String
+) -> int:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return 0
+
+	var boarded := aircraft.get_boarded_passengers()
+	var seats := maxi(
+		int(
+			aircraft.get_aircraft_profile().get(
+				"passengers",
+				0
+			)
+		),
+		0
+	)
+	if state == "LOADING":
+		if boarded > 0:
+			return boarded
+		if aircraft.is_social_visitor():
+			return seats
+		return 0
+	if state == "UNLOADING":
+		return maxi(boarded, seats if aircraft.is_social_visitor() else 0)
+	return 0
+
+
+func _passenger_flow_rows() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	var stock := _passenger_stock_snapshot()
+	var stock_count := int(stock.get("stock", 0))
+
+	for aircraft in _collect_live_aircraft():
+		var state := String(aircraft.state)
+		if state not in [
+			"LOADING",
+			"UNLOADING",
+			"WAITING_PASSENGERS"
+		]:
+			continue
+
+		var aircraft_point := _aircraft_passenger_point(
+			aircraft
+		)
+		var terminal := _nearest_terminal_anchor(
+			aircraft_point
+		)
+		if terminal.is_empty():
+			continue
+		var terminal_point := _terminal_front_point(
+			terminal
+		)
+
+		var direction := "waiting"
+		var source := terminal_point
+		var target := aircraft_point
+		var count := 0
+		if state == "LOADING":
+			direction = "boarding"
+			count = _visible_passenger_count(
+				_passenger_manifest_for(
+					aircraft,
+					state
+				),
+				aircraft.aircraft_size
+			)
+		elif state == "UNLOADING":
+			direction = "deplaning"
+			source = aircraft_point
+			target = terminal_point
+			count = _visible_passenger_count(
+				_passenger_manifest_for(
+					aircraft,
+					state
+				),
+				aircraft.aircraft_size
+			)
+		else:
+			count = (
+				1
+				if stock_count > 0
+				else 0
+			)
+			target = terminal_point
+
+		var distance := source.distance_to(target)
+		var mode := "waiting"
+		if direction != "waiting":
+			mode = (
+				"walk"
+				if distance <= DIRECT_PASSENGER_WALK_MAX_DISTANCE
+				else "shuttle"
+			)
+
+		rows.append({
+			"aircraft": aircraft,
+			"aircraft_name": String(aircraft.name),
+			"stand_uid": int(aircraft.stand_uid),
+			"state": state,
+			"direction": direction,
+			"mode": mode,
+			"count": count,
+			"source": source,
+			"target": target,
+			"terminal_uid": int(
+				terminal.get("uid", -1)
+			),
+			"distance": distance
+		})
+
+	return rows
+
+
+func get_passenger_flow_snapshot() -> Dictionary:
+	var stock := _passenger_stock_snapshot()
+	var flows: Array[Dictionary] = []
+	var total_sprites := 0
+	var waiting_aircraft := 0
+	var boarding_aircraft := 0
+	var deplaning_aircraft := 0
+
+	for row in _passenger_flow_rows():
+		var direction := String(
+			row.get("direction", "")
+		)
+		if direction == "waiting":
+			waiting_aircraft += 1
+		elif direction == "boarding":
+			boarding_aircraft += 1
+		elif direction == "deplaning":
+			deplaning_aircraft += 1
+
+		var count := maxi(
+			int(row.get("count", 0)),
+			0
+		)
+		total_sprites += count
+		flows.append({
+			"aircraft_name": String(
+				row.get("aircraft_name", "")
+			),
+			"stand_uid": int(
+				row.get("stand_uid", -1)
+			),
+			"state": String(
+				row.get("state", "")
+			),
+			"direction": direction,
+			"mode": String(
+				row.get("mode", "")
+			),
+			"count": count,
+			"distance": float(
+				row.get("distance", 0.0)
+			)
+		})
+
+	return {
+		"stock": int(stock.get("stock", 0)),
+		"capacity": int(stock.get("capacity", 0)),
+		"stock_ratio": float(
+			stock.get("ratio", 0.0)
+		),
+		"economy_connected": bool(
+			stock.get("connected", false)
+		),
+		"terminal_bustle_count": (
+			_terminal_passenger_count()
+		),
+		"active_flow_count": flows.size(),
+		"flow_sprite_count": mini(
+			total_sprites,
+			MAX_PASSENGER_FLOW_SPRITES
+		),
+		"waiting_aircraft": waiting_aircraft,
+		"boarding_aircraft": boarding_aircraft,
+		"deplaning_aircraft": deplaning_aircraft,
+		"bottleneck_visible": waiting_aircraft > 0,
+		"flows": flows
+	}
+
+
 func get_ambient_snapshot() -> Dictionary:
 	var live_aircraft := _collect_live_aircraft()
+	var passenger_flow := get_passenger_flow_snapshot()
 	var crew_count := 0
 	var baggage_trains := 0
 	var npc_aircraft := 0
@@ -303,6 +627,19 @@ func get_ambient_snapshot() -> Dictionary:
 		"art_atlas_ready": AirportAmbientLifeArt.texture() != null,
 		"passenger_art_ready": AirportAmbientLifeArt.passenger_texture() != null,
 		"passenger_variant_count": AirportAmbientLifeArt.PASSENGER_ARCHETYPES.size(),
+		"passenger_flow": passenger_flow,
+		"terminal_passenger_count": int(
+			passenger_flow.get(
+				"terminal_bustle_count",
+				0
+			)
+		),
+		"passenger_flow_sprites": int(
+			passenger_flow.get(
+				"flow_sprite_count",
+				0
+			)
+		),
 		"art_profile": AirportAmbientLifeArt.visual_profile(),
 		"npc_aircraft": npc_aircraft,
 		"npc_tiers": npc_tiers.duplicate(true)
@@ -563,6 +900,170 @@ func _draw_passenger_sprite(
 	)
 
 
+func _quadratic_point(
+	a: Vector2,
+	control: Vector2,
+	b: Vector2,
+	t: float
+) -> Vector2:
+	var clamped := clampf(t, 0.0, 1.0)
+	var inv := 1.0 - clamped
+	return (
+		a * inv * inv
+		+ control * 2.0 * inv * clamped
+		+ b * clamped * clamped
+	)
+
+
+func _draw_passenger_flow() -> void:
+	var drawn := 0
+	for row in _passenger_flow_rows():
+		if drawn >= MAX_PASSENGER_FLOW_SPRITES:
+			break
+
+		var count := mini(
+			maxi(int(row.get("count", 0)), 0),
+			MAX_PASSENGER_FLOW_SPRITES - drawn
+		)
+		if count <= 0:
+			continue
+
+		var source: Vector2 = row.get(
+			"source",
+			Vector2.ZERO
+		)
+		var target: Vector2 = row.get(
+			"target",
+			Vector2.ZERO
+		)
+		var mode := String(
+			row.get("mode", "")
+		)
+		var direction := String(
+			row.get("direction", "")
+		)
+		var aircraft := row.get(
+			"aircraft"
+		) as AircraftPrototype
+		var seed := (
+			int(row.get("stand_uid", 0))
+			+ int(row.get("terminal_uid", 0)) * 7
+		)
+
+		if mode == "waiting":
+			for index in range(count):
+				var position := source + Vector2(
+					float(index) * 10.0 - 5.0,
+					float(index % 2) * 5.0
+				)
+				var archetype := AirportAmbientLifeArt.passenger_archetype(
+					seed + index
+				)
+				var frame := AirportAmbientLifeArt.animation_frame(
+					motion_clock,
+					1.4,
+					float(index) * 0.5
+				)
+				_draw_passenger_sprite(
+					position,
+					archetype,
+					frame,
+					index % 2 == 1
+				)
+				drawn += 1
+			continue
+
+		if mode == "shuttle":
+			var travel_direction := (
+				target - source
+			).normalized()
+			var side := Vector2(
+				-travel_direction.y,
+				travel_direction.x
+			)
+			for index in range(count):
+				var at_destination := (
+					index >= ceili(float(count) * 0.5)
+				)
+				var base := (
+					target
+					if at_destination
+					else source
+				)
+				var position := (
+					base
+					+ side * (
+						float(index % 3) - 1.0
+					) * 9.0
+					+ travel_direction * (
+						5.0
+						+ float(index % 2) * 6.0
+					) * (
+						-1.0
+						if at_destination
+						else 1.0
+					)
+				)
+				var archetype := AirportAmbientLifeArt.passenger_archetype(
+					seed + index * 2
+				)
+				var frame := AirportAmbientLifeArt.animation_frame(
+					motion_clock,
+					2.1,
+					float(index) * 0.31
+				)
+				_draw_passenger_sprite(
+					position,
+					archetype,
+					frame,
+					travel_direction.x < 0.0
+				)
+				drawn += 1
+			continue
+
+		var midpoint := source.lerp(
+			target,
+			0.5
+		)
+		var control := midpoint + Vector2(
+			0,
+			18.0
+		)
+		var speed := (
+			0.19
+			if direction == "boarding"
+			else 0.17
+		)
+		for index in range(count):
+			var progress := fmod(
+				motion_clock * speed
+				+ float(index) / float(maxi(count, 1))
+				+ float(seed % 9) * 0.07,
+				1.0
+			)
+			var position := _quadratic_point(
+				source,
+				control,
+				target,
+				progress
+			)
+			var archetype := AirportAmbientLifeArt.passenger_archetype(
+				seed + index
+			)
+			var frame := AirportAmbientLifeArt.animation_frame(
+				motion_clock,
+				3.2 + float(index % 2) * 0.35,
+				float(index) * 0.23
+			)
+			_draw_passenger_sprite(
+				position,
+				archetype,
+				frame,
+				target.x < source.x
+			)
+			drawn += 1
+
+
 func _draw_ground_crew_member(
 	position: Vector2,
 	marshaller: bool,
@@ -653,9 +1154,10 @@ func _draw_terminal_activity() -> void:
 				)
 			)
 
-		for index in range(2):
+		var terminal_passenger_count := _terminal_passenger_count()
+		for index in range(terminal_passenger_count):
 			var walk_speed := (
-				0.055 + float(index) * 0.012
+				0.050 + float(index % 3) * 0.010
 			)
 			var raw_walk_phase := (
 				motion_clock * walk_speed
@@ -672,12 +1174,12 @@ func _draw_terminal_activity() -> void:
 					30.0,
 					walk_phase
 				) * orientation,
-				18.0 + float(index) * 7.0
+				18.0 + float(index % 2) * 8.0
 			)
 			# Keep one traveler identity for an entire crossing. A new
 			# archetype is selected only after that traveler loops back.
 			var archetype := AirportAmbientLifeArt.passenger_archetype(
-				uid + index * 3 + walk_cycle
+				uid + index * 3 + walk_cycle * 2
 			)
 			var frame := AirportAmbientLifeArt.animation_frame(
 				motion_clock,

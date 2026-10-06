@@ -52,7 +52,8 @@ func get_global_service_speed_multiplier() -> float:
 func request_turnaround(
 	aircraft: AircraftPrototype,
 	label: String,
-	is_returning: bool = true
+	is_returning: bool = true,
+	manual_steps: bool = false
 ) -> void:
 	if airport_grid == null or aircraft == null:
 		return
@@ -70,15 +71,108 @@ func request_turnaround(
 		"label": label,
 		"profile": profile,
 		"is_returning": is_returning,
+		"manual_steps": manual_steps,
 		"stage": "",
 		"stage_pending": {},
 		"service_status": {}
 	}
 
-	if is_returning:
+	if (
+		manual_steps
+		and not aircraft.uses_handling_automation()
+	):
+		_wait_for_manual_stage(
+			job_id,
+			"READY_UNLOAD" if is_returning else "READY_SERVICE"
+		)
+	elif is_returning:
 		_begin_unloading(job_id)
 	else:
 		_begin_servicing(job_id)
+
+
+func advance_manual_handling(
+	aircraft: AircraftPrototype,
+	action: String
+) -> bool:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return false
+
+	var job_id := aircraft.get_instance_id()
+	if not turnaround_jobs.has(job_id):
+		return false
+
+	var job: Dictionary = turnaround_jobs[job_id]
+	var stage := String(job.get("stage", ""))
+	var normalized := action.to_upper()
+
+	match stage:
+		"READY_UNLOAD":
+			if normalized != "UNLOAD":
+				return false
+			aircraft.clear_handling_action()
+			_begin_unloading(job_id)
+			return true
+		"READY_SERVICE":
+			if normalized != "SERVICE":
+				return false
+			aircraft.clear_handling_action()
+			_begin_servicing(job_id)
+			return true
+		"READY_SEND":
+			if normalized != "SEND":
+				return false
+			aircraft.clear_handling_action()
+			_begin_pushback(job_id)
+			return true
+		_:
+			return false
+
+
+func _is_manual_job(job: Dictionary) -> bool:
+	return bool(job.get("manual_steps", false))
+
+
+func _wait_for_manual_stage(
+	job_id: int,
+	stage: String
+) -> void:
+	if not turnaround_jobs.has(job_id):
+		return
+
+	var job: Dictionary = turnaround_jobs[job_id]
+	var aircraft := job.get("aircraft") as AircraftPrototype
+	if aircraft == null or not is_instance_valid(aircraft):
+		_remove_job(job_id)
+		return
+
+	job["stage"] = stage
+	job["stage_pending"] = {}
+	job["service_status"] = {}
+	turnaround_jobs[job_id] = job
+
+	match stage:
+		"READY_UNLOAD":
+			aircraft._set_state("WAITING_UNLOAD")
+			aircraft.set_turnaround_status(
+				"At stand\nTap UNLOAD",
+				"warning"
+			)
+			aircraft.set_handling_action("UNLOAD")
+		"READY_SERVICE":
+			aircraft._set_state("WAITING_SERVICE")
+			aircraft.set_turnaround_status(
+				"Unload complete\nTap SERVICE",
+				"warning"
+			)
+			aircraft.set_handling_action("SERVICE")
+		"READY_SEND":
+			aircraft.mark_service_complete()
+			aircraft.set_turnaround_status(
+				"Turnaround ready\nTap SEND",
+				"success"
+			)
+			aircraft.set_handling_action("SEND")
 
 
 # Legacy compatibility for tests / simple callers that only need a fuel job.
@@ -496,10 +590,20 @@ func _request_passenger_boarding(job_id: int) -> void:
 	job["service_status"] = {}
 	turnaround_jobs[job_id] = job
 	aircraft.mark_waiting_passengers()
-	aircraft.set_turnaround_status(
-		"Waiting for passengers",
-		"warning"
-	)
+	if (
+		_is_manual_job(job)
+		and not aircraft.uses_handling_automation()
+	):
+		aircraft.set_turnaround_status(
+			"Ready to load\nTap LOAD",
+			"warning"
+		)
+		aircraft.set_handling_action("LOAD")
+	else:
+		aircraft.set_turnaround_status(
+			"Waiting for passengers",
+			"warning"
+		)
 	passenger_boarding_requested.emit(
 		aircraft,
 		String(job.get("label", "Aircraft"))
@@ -570,6 +674,7 @@ func _complete_turnaround(job_id: int) -> void:
 		return
 
 	aircraft.mark_service_complete()
+	aircraft.clear_handling_action()
 	aircraft.set_turnaround_status(
 		"Ready • runway queue",
 		"success"
@@ -592,9 +697,18 @@ func _advance_stage(job_id: int) -> void:
 		_remove_job(job_id)
 		return
 
+	var manual_job := _is_manual_job(job)
+	var auto_handling := aircraft.uses_handling_automation()
+
 	match stage:
 		"UNLOADING":
-			_begin_servicing(job_id)
+			if manual_job and not auto_handling:
+				_wait_for_manual_stage(
+					job_id,
+					"READY_SERVICE"
+				)
+			else:
+				_begin_servicing(job_id)
 		"SERVICING":
 			if aircraft.is_social_visitor():
 				_begin_loading(job_id)
@@ -603,7 +717,13 @@ func _advance_stage(job_id: int) -> void:
 			else:
 				_wait_for_destination(job_id)
 		"LOADING":
-			_begin_pushback(job_id)
+			if manual_job:
+				_wait_for_manual_stage(
+					job_id,
+					"READY_SEND"
+				)
+			else:
+				_begin_pushback(job_id)
 		"PUSHBACK_PREP":
 			_complete_turnaround(job_id)
 
@@ -1198,12 +1318,20 @@ func _refresh_aircraft_status(job_id: int) -> void:
 
 func _stage_short_name(stage: String) -> String:
 	match stage:
+		"READY_UNLOAD":
+			return "Ready • unload"
 		"UNLOADING":
 			return "Turnaround • unload"
+		"READY_SERVICE":
+			return "Ready • service"
 		"SERVICING":
 			return "Turnaround • service"
+		"WAITING_PASSENGERS":
+			return "Ready • load"
 		"LOADING":
 			return "Turnaround • load"
+		"READY_SEND":
+			return "Ready • send"
 		"PUSHBACK_PREP":
 			return "Turnaround • pushback"
 		_:

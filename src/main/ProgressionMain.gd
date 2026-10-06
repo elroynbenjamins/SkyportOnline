@@ -79,7 +79,9 @@ func _start_gameplay() -> void:
 	career_screen.guidance_requested.connect(_guide_career)
 	career_screen.aircraft_purchase_requested.connect(_purchase_career_aircraft)
 	career_screen.npc_toggle_requested.connect(_toggle_npc_traffic)
-	career_screen.activity_requested.connect(_request_activity_entry)
+	career_screen.activity_requested.connect(
+		_on_career_activity_requested
+	)
 	add_child(career_screen)
 	mission_pass_screen = MissionPassScreen.new()
 	mission_pass_screen.reroll_requested.connect(_on_mission_reroll_requested)
@@ -1356,6 +1358,12 @@ func _update_level() -> void:
 		world_map.player_level = player_level
 	if fleet_screen != null:
 		fleet_screen.player_level = player_level
+
+func _on_career_activity_requested(mode_id: String) -> void:
+	if career_screen != null:
+		career_screen.close_screen()
+	_request_activity_entry(mode_id)
+
 
 func _guide_career(quest: Dictionary) -> void:
 	var objective: Dictionary = quest.get("objective", {})

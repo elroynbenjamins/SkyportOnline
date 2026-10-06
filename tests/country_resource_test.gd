@@ -38,6 +38,9 @@ func _run() -> void:
 	if not FileAccess.file_exists(ResourceVisualCatalog.ATLAS_PATH):
 		_fail("Country resource icon atlas is missing.")
 		return
+	if ResourceVisualCatalog.frame_count() != 69:
+		_fail("Expected one distinct visual frame for each of the 69 country resources.")
+		return
 
 	var none := ResourceDropRules.evaluate_resources("NL", [0.40, 0.75, 0.99])
 	if _success_count(none) != 0:

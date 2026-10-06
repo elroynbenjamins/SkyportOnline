@@ -287,7 +287,7 @@ static func _destination_from_secondary_hub(
 				float(country.get("map_y", 0.5))
 			)
 		),
-		home_id == country_id
+		false
 	)
 
 

@@ -27,6 +27,8 @@ const SELECTED_HALO_RADIUS := 24.0
 const GEOGRAPHY_DETAIL_COUNT := 12
 const AIRPORT_LABEL_ZOOM := 1.35
 const NETWORK_ROUTE_WIDTH := 1.35
+const PRODUCTION_ART_ASSET_COUNT := 9
+const TERRAIN_STAMP_COUNT := 8
 
 var countries: Array[Dictionary] = []
 var destinations: Array[Dictionary] = []
@@ -175,6 +177,7 @@ func _draw() -> void:
 	_draw_grid()
 	_draw_continents()
 	_draw_geography_details()
+	_draw_terrain_stamps()
 	_draw_region_labels()
 
 	var home_position := _home_position()
@@ -192,6 +195,23 @@ func _draw() -> void:
 
 
 func _draw_ocean_bands() -> void:
+	var ocean_texture := WorldMapVisualAssets.texture(
+		WorldMapVisualAssets.OCEAN_TILE
+	)
+	if ocean_texture != null:
+		draw_texture_rect(
+			ocean_texture,
+			Rect2(Vector2.ZERO, size),
+			true,
+			Color(1, 1, 1, 0.98)
+		)
+		draw_rect(
+			Rect2(Vector2.ZERO, size),
+			Color(0.02, 0.12, 0.17, 0.08),
+			true
+		)
+		return
+
 	var band_count := 7
 	for index in range(band_count):
 		var top := size.y * float(index) / float(band_count)
@@ -361,6 +381,72 @@ func _draw_continent(points: Array, fill: Color) -> void:
 		draw_polyline(outline, LAND_EDGE, 1.4, true)
 
 
+
+func _draw_terrain_stamps() -> void:
+	var stamps := [
+		{
+			"path": WorldMapVisualAssets.TERRAIN_FOREST,
+			"position": Vector2(0.15, 0.22),
+			"size": Vector2(40, 30)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_MOUNTAIN,
+			"position": Vector2(0.245, 0.20),
+			"size": Vector2(44, 30)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_FOREST,
+			"position": Vector2(0.33, 0.59),
+			"size": Vector2(36, 27)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_FOREST,
+			"position": Vector2(0.53, 0.23),
+			"size": Vector2(34, 25)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_MOUNTAIN,
+			"position": Vector2(0.57, 0.48),
+			"size": Vector2(42, 28)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_MOUNTAIN,
+			"position": Vector2(0.73, 0.34),
+			"size": Vector2(46, 31)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_FOREST,
+			"position": Vector2(0.82, 0.29),
+			"size": Vector2(36, 27)
+		},
+		{
+			"path": WorldMapVisualAssets.TERRAIN_FOREST,
+			"position": Vector2(0.86, 0.70),
+			"size": Vector2(38, 28)
+		},
+	]
+
+	for stamp in stamps:
+		var map_position: Vector2 = stamp["position"]
+		var position := _map_to_screen(map_position)
+		if not _is_screen_visible(position, 48.0):
+			continue
+		var texture := WorldMapVisualAssets.texture(
+			String(stamp["path"])
+		)
+		if texture == null:
+			continue
+		var stamp_size: Vector2 = stamp["size"]
+		var zoom_scale := clampf(zoom_level, 0.95, 1.35)
+		stamp_size *= zoom_scale
+		draw_texture_rect(
+			texture,
+			Rect2(position - stamp_size * 0.5, stamp_size),
+			false,
+			Color(1, 1, 1, 0.58)
+		)
+
+
 func _draw_region_labels() -> void:
 	var labels := [
 		{"text": "NORTH AMERICA", "position": Vector2(0.14, 0.16)},
@@ -438,7 +524,9 @@ func _draw_route_arc(from_position: Vector2, to_position: Vector2) -> void:
 		return
 
 	var points := _route_points(from_position, to_position, 41)
-	draw_polyline(points, Color(0.25, 0.62, 0.73, 0.28), 4.0, true)
+	draw_polyline(points, Color(0.01, 0.08, 0.12, 0.68), 7.0, true)
+	draw_polyline(points, Color(0.24, 0.70, 0.84, 0.56), 4.0, true)
+	draw_polyline(points, Color(0.64, 0.91, 0.97, 0.25), 2.0, true)
 
 	var phase_offset := int(floor(route_phase * 8.0))
 	for index in range(points.size() - 1):
@@ -514,8 +602,19 @@ func _draw_route_badge(
 		border = Color("72d38d")
 		accent = Color("bcebc8")
 
-	draw_rect(rect.grow(2.0), Color(0.01, 0.07, 0.10, 0.76), true)
-	draw_rect(rect, Color(0.035, 0.15, 0.20, 0.95), true)
+	var panel_texture := WorldMapVisualAssets.texture(
+		WorldMapVisualAssets.ROUTE_BADGE_PANEL
+	)
+	if panel_texture != null:
+		draw_texture_rect(
+			panel_texture,
+			rect.grow(5.0),
+			false,
+			Color(1, 1, 1, 0.97)
+		)
+	else:
+		draw_rect(rect.grow(2.0), Color(0.01, 0.07, 0.10, 0.76), true)
+		draw_rect(rect, Color(0.035, 0.15, 0.20, 0.95), true)
 	draw_rect(rect, border, false, 1.5)
 
 	var city := String(route_preview.get("city", "Route")).to_upper()
@@ -573,6 +672,24 @@ func _quadratic_route_point(
 
 
 func _draw_plane_marker(position: Vector2, direction: Vector2) -> void:
+	var texture := WorldMapVisualAssets.texture(
+		WorldMapVisualAssets.ROUTE_PLANE
+	)
+	if texture != null:
+		var marker_size := Vector2(22, 22)
+		draw_set_transform(
+			position,
+			direction.angle() + PI * 0.5,
+			Vector2.ONE
+		)
+		draw_texture_rect(
+			texture,
+			Rect2(-marker_size * 0.5, marker_size),
+			false
+		)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
+
 	var normal := Vector2(-direction.y, direction.x)
 	var nose := position + direction * 7.0
 	var tail := position - direction * 6.0
@@ -797,30 +914,33 @@ func _draw_airport_marker(
 	unlocked: bool,
 	selected: bool
 ) -> void:
-	var fill := AIRPORT_COLOR if unlocked else ROUTE_LOCKED_COLOR
-	var border := Color("e6fbff") if unlocked else Color("c1cbd0")
-	var radius := 6.0
+	var texture_path := WorldMapVisualAssets.AIRPORT_MARKER
+	var marker_size := Vector2(28, 28)
+	if not unlocked:
+		texture_path = WorldMapVisualAssets.AIRPORT_LOCKED
 	if selected:
-		fill = SELECTED_COLOR
-		border = Color("fff4c2")
-		radius = 8.0
-		draw_circle(position, 14.0, Color(0.95, 0.78, 0.32, 0.14))
+		texture_path = WorldMapVisualAssets.AIRPORT_SELECTED
+		marker_size = Vector2(34, 34)
+		draw_circle(position, 20.0, Color(0.95, 0.78, 0.32, 0.10))
 
-	draw_circle(position, radius + 2.0, Color(0, 0, 0, 0.34))
-	draw_circle(position, radius, fill)
-	draw_circle(position, radius + 1.0, border, false, 1.4)
-	draw_line(
-		position + Vector2(-3.5, 0),
-		position + Vector2(3.5, 0),
-		Color("17313d"),
-		1.5
-	)
-	draw_line(
-		position + Vector2(0, -3.5),
-		position + Vector2(0, 3.5),
-		Color("17313d"),
-		1.5
-	)
+	var texture := WorldMapVisualAssets.texture(texture_path)
+	if texture != null:
+		draw_texture_rect(
+			texture,
+			Rect2(position - marker_size * 0.5, marker_size),
+			false
+		)
+	else:
+		var fill := AIRPORT_COLOR if unlocked else ROUTE_LOCKED_COLOR
+		var border := Color("e6fbff") if unlocked else Color("c1cbd0")
+		var radius := 6.0
+		if selected:
+			fill = SELECTED_COLOR
+			border = Color("fff4c2")
+			radius = 8.0
+		draw_circle(position, radius + 2.0, Color(0, 0, 0, 0.34))
+		draw_circle(position, radius, fill)
+		draw_circle(position, radius + 1.0, border, false, 1.4)
 
 	if selected or airport_labels_visible():
 		var city := String(destination.get("city", "Route")).to_upper()
@@ -839,25 +959,38 @@ func _draw_airport_marker(
 
 
 func _draw_home_marker(position: Vector2) -> void:
-	if not _is_screen_visible(position, 28.0):
+	if not _is_screen_visible(position, 34.0):
 		return
-	var diamond := PackedVector2Array([
-		position + Vector2(0, -9),
-		position + Vector2(9, 0),
-		position + Vector2(0, 9),
-		position + Vector2(-9, 0)
-	])
-	draw_colored_polygon(diamond, HOME_COLOR)
-	draw_polyline(
-		PackedVector2Array([
-			diamond[0], diamond[1], diamond[2], diamond[3], diamond[0]
-		]),
-		Color("fff4c4"),
-		2.0
+
+	var texture := WorldMapVisualAssets.texture(
+		WorldMapVisualAssets.HUB_MARKER
 	)
+	if texture != null:
+		var marker_size := Vector2(42, 42)
+		draw_texture_rect(
+			texture,
+			Rect2(position - marker_size * 0.5, marker_size),
+			false
+		)
+	else:
+		var diamond := PackedVector2Array([
+			position + Vector2(0, -9),
+			position + Vector2(9, 0),
+			position + Vector2(0, 9),
+			position + Vector2(-9, 0)
+		])
+		draw_colored_polygon(diamond, HOME_COLOR)
+		draw_polyline(
+			PackedVector2Array([
+				diamond[0], diamond[1], diamond[2], diamond[3], diamond[0]
+			]),
+			Color("fff4c4"),
+			2.0
+		)
+
 	draw_string(
 		ThemeDB.fallback_font,
-		position + Vector2(13, 4),
+		position + Vector2(24, 4),
 		"HOME",
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1,

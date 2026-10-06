@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "src/worldmap/**"
+      - "assets/production/worldmap_v2/**"
       - "src/world/CountryCatalog.gd"
       - "src/data/CountryVisualCatalog.gd"
       - "src/data/CountryResourceCatalog.gd"

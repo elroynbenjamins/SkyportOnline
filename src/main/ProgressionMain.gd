@@ -557,8 +557,14 @@ func _airport_career_snapshot() -> Dictionary:
 		"parcels": airport_grid.export_owned_parcels(), "medium_ready": medium_ready}
 
 func _career_snapshot() -> Dictionary:
-	return {"state": _capture_state(), "airport": _airport_career_snapshot(), "level": player_level,
-		"active_owned": deployed_owned.keys(), "npc_enabled": npc_director.enabled}
+	return {
+		"state": _capture_state(),
+		"airport": _airport_career_snapshot(),
+		"level": player_level,
+		"active_owned": deployed_owned.keys(),
+		"npc_enabled": npc_director.enabled,
+		"activities": _activities_snapshot()
+	}
 
 func _mission_snapshot() -> Dictionary:
 	var state := _capture_state()
@@ -920,9 +926,20 @@ func _on_mission_guidance_requested(mission: Dictionary) -> void:
 	mission_pass_screen.close_screen()
 	match metric:
 		"npc_services":
-			career_screen.open_screen(_career_snapshot(), "NPC Visitors")
+			career_screen.open_screen(
+				_career_snapshot(),
+				"NPC Visitors"
+			)
 		"passive_passengers":
 			super._on_navigation_requested("more")
+		"dispatch_shifts":
+			_request_activity_entry("dispatch")
+		"challenge_points":
+			_request_activity_entry("challenge")
+		"alliance_points":
+			_request_activity_entry("alliance")
+		"charter_contracts":
+			_request_activity_entry("charter")
 		_:
 			super._on_navigation_requested("world")
 

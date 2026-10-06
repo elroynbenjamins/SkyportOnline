@@ -146,7 +146,7 @@ func _build_interface() -> void:
 	top_panel.offset_left = 10
 	top_panel.offset_top = 6
 	top_panel.offset_right = -10
-	top_panel.offset_bottom = 60
+	top_panel.offset_bottom = 78
 	root.add_child(top_panel)
 	GameUIStyle.apply_panel(top_panel, "hud_top")
 
@@ -162,7 +162,7 @@ func _build_interface() -> void:
 	top_margin.add_child(top_row)
 
 	var level_card := PanelContainer.new()
-	level_card.custom_minimum_size = Vector2(82, 0)
+	level_card.custom_minimum_size = Vector2(96, 66)
 	GameUIStyle.apply_panel(level_card, "hud_level")
 	top_row.add_child(level_card)
 
@@ -172,45 +172,56 @@ func _build_interface() -> void:
 	level_card.add_child(level_box)
 
 	level_label = Label.new()
-	level_label.text = "LV 1"
+	level_label.text = "1"
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level_label.add_theme_font_size_override("font_size", 15)
-	level_label.add_theme_color_override("font_color", GameUIStyle.COLOR_GOLD)
+	level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	level_label.add_theme_font_size_override("font_size", 26)
+	level_label.add_theme_color_override("font_color", Color.WHITE)
+	level_label.add_theme_color_override(
+		"font_shadow_color",
+		Color(0.02, 0.08, 0.12, 0.70)
+	)
+	level_label.add_theme_constant_override("shadow_offset_x", 1)
+	level_label.add_theme_constant_override("shadow_offset_y", 2)
 	level_box.add_child(level_label)
 
+	var identity_card := PanelContainer.new()
+	identity_card.custom_minimum_size = Vector2(250, 62)
+	identity_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	GameUIStyle.apply_panel(identity_card, "hud_identity")
+	top_row.add_child(identity_card)
+
+	var identity_box := VBoxContainer.new()
+	identity_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	identity_box.add_theme_constant_override("separation", 1)
+	identity_card.add_child(identity_box)
+
+	title_label = Label.new()
+	title_label.text = "SkyportOnline"
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.add_theme_font_size_override("font_size", 16)
+	title_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
+	identity_box.add_child(title_label)
+
 	xp_progress = ProgressBar.new()
-	xp_progress.custom_minimum_size = Vector2(72, 5)
+	xp_progress.custom_minimum_size = Vector2(188, 12)
 	xp_progress.show_percentage = false
 	xp_progress.min_value = 0.0
 	xp_progress.max_value = 1.0
 	xp_progress.value = 0.0
-	GameUIStyle.apply_progress(xp_progress, true)
-	level_box.add_child(xp_progress)
+	GameUIStyle.apply_progress(xp_progress, false)
+	identity_box.add_child(xp_progress)
 
 	xp_label = Label.new()
-	xp_label.text = "0/100"
+	xp_label.text = "0 / 100"
 	xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	xp_label.add_theme_font_size_override("font_size", 8)
-	GameUIStyle.muted(xp_label)
-	level_box.add_child(xp_label)
-
-	var identity_box := VBoxContainer.new()
-	identity_box.custom_minimum_size = Vector2(176, 0)
-	identity_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	identity_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	identity_box.add_theme_constant_override("separation", 0)
-	top_row.add_child(identity_box)
-
-	title_label = Label.new()
-	title_label.text = "SKYPORT"
-	title_label.add_theme_font_size_override("font_size", 14)
-	title_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
-	identity_box.add_child(title_label)
+	xp_label.add_theme_font_size_override("font_size", 9)
+	xp_label.add_theme_color_override("font_color", Color.WHITE)
+	identity_box.add_child(xp_label)
 
 	airport_meta_label = Label.new()
 	airport_meta_label.text = "APT • AIRPORT"
-	airport_meta_label.add_theme_font_size_override("font_size", 9)
-	GameUIStyle.muted(airport_meta_label)
+	airport_meta_label.visible = false
 	identity_box.add_child(airport_meta_label)
 
 	var passenger_chip := _build_hud_resource_chip(
@@ -243,8 +254,9 @@ func _build_interface() -> void:
 	fuel_order_button = Button.new()
 	fuel_order_button.text = "+"
 	fuel_order_button.tooltip_text = "Order fuel • 750 coins"
-	fuel_order_button.custom_minimum_size = Vector2(32, 38)
-	GameUIStyle.apply_button(fuel_order_button, "secondary", true)
+	fuel_order_button.custom_minimum_size = Vector2(40, 44)
+	fuel_order_button.add_theme_font_size_override("font_size", 24)
+	GameUIStyle.apply_button(fuel_order_button, "primary", true)
 	fuel_order_button.pressed.connect(_on_fuel_order_pressed)
 	top_row.add_child(fuel_order_button)
 
@@ -272,14 +284,32 @@ func _build_interface() -> void:
 	gems_label = aero_chip["value"] as Label
 	gems_icon = aero_chip["icon"] as TextureRect
 
+	var settings_button := Button.new()
+	settings_button.text = ""
+	settings_button.custom_minimum_size = Vector2(48, 48)
+	_apply_button_icon(
+		settings_button,
+		ProductionUIAssets.texture(
+			ProductionUIAssets.SETTINGS_ICON
+		),
+		29
+	)
+	settings_button.tooltip_text = "Settings and more"
+	GameUIStyle.apply_button(settings_button, "dock", true)
+	settings_button.pressed.connect(
+		_on_navigation_pressed.bind("more")
+	)
+	top_row.add_child(settings_button)
+
 	var objective_panel := PanelContainer.new()
 	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	objective_panel.offset_left = -300
-	objective_panel.offset_top = 66
+	objective_panel.offset_top = 82
 	objective_panel.offset_right = -10
-	objective_panel.offset_bottom = 101
+	objective_panel.offset_bottom = 117
 	root.add_child(objective_panel)
 	GameUIStyle.apply_panel(objective_panel, "hud_task")
+	objective_panel.visible = false
 
 	var objective := Label.new()
 	objective.text = "BUILD YOUR AIRPORT • EXPAND"
@@ -292,9 +322,9 @@ func _build_interface() -> void:
 	var status_strip := HBoxContainer.new()
 	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	status_strip.offset_left = 10
-	status_strip.offset_top = 66
+	status_strip.offset_top = 82
 	status_strip.offset_right = 610
-	status_strip.offset_bottom = 101
+	status_strip.offset_bottom = 117
 	status_strip.add_theme_constant_override("separation", 4)
 	root.add_child(status_strip)
 
@@ -447,11 +477,11 @@ func _build_hud_resource_chip(
 
 	var content_row := HBoxContainer.new()
 	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	content_row.add_theme_constant_override("separation", 5)
+	content_row.add_theme_constant_override("separation", 6)
 	panel.add_child(content_row)
 
 	var icon_rect := TextureRect.new()
-	icon_rect.custom_minimum_size = Vector2(20, 20)
+	icon_rect.custom_minimum_size = Vector2(26, 26)
 	icon_rect.texture = icon_texture
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -465,31 +495,23 @@ func _build_hud_resource_chip(
 	box.add_theme_constant_override("separation", 0)
 	content_row.add_child(box)
 
-	var meta_row := HBoxContainer.new()
-	meta_row.add_theme_constant_override("separation", 4)
-	box.add_child(meta_row)
-
 	var caption_label := Label.new()
 	caption_label.text = caption
-	caption_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	caption_label.add_theme_font_size_override("font_size", 8)
-	GameUIStyle.muted(caption_label)
-	meta_row.add_child(caption_label)
-
-	var detail_label := Label.new()
-	detail_label.text = detail_text
-	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	detail_label.add_theme_font_size_override("font_size", 8)
-	GameUIStyle.muted(detail_label)
-	detail_label.visible = not detail_text.is_empty()
-	meta_row.add_child(detail_label)
+	caption_label.visible = false
+	box.add_child(caption_label)
 
 	var value_label := Label.new()
 	value_label.text = value_text
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	value_label.add_theme_font_size_override("font_size", 14)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", 16)
 	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	box.add_child(value_label)
+
+	var detail_label := Label.new()
+	detail_label.text = detail_text
+	detail_label.visible = false
+	box.add_child(detail_label)
 
 	return {
 		"panel": panel,
@@ -967,6 +989,7 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_panel.offset_bottom = -62
 	root.add_child(catalog_panel)
 	GameUIStyle.apply_panel(catalog_panel, "hud_drawer")
+	catalog_panel.visible = false
 
 	var catalog_wrapper := VBoxContainer.new()
 	catalog_wrapper.add_theme_constant_override("separation", 5)
@@ -1060,25 +1083,26 @@ func _build_bottom_navigation(root: Control) -> void:
 	bottom_nav_panel = PanelContainer.new()
 	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_nav_panel.offset_left = 16
-	bottom_nav_panel.offset_top = -56
+	bottom_nav_panel.offset_top = -82
 	bottom_nav_panel.offset_right = -16
-	bottom_nav_panel.offset_bottom = -6
+	bottom_nav_panel.offset_bottom = -8
 	root.add_child(bottom_nav_panel)
 	GameUIStyle.apply_panel(bottom_nav_panel, "dock")
 
 	var nav_row := HBoxContainer.new()
-	nav_row.add_theme_constant_override("separation", 4)
+	nav_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	nav_row.add_theme_constant_override("separation", 8)
 	bottom_nav_panel.add_child(nav_row)
 
 	for item in ["BUILD", "FLEET", "WORLD", "ACTIVITIES", "SOCIAL", "MORE"]:
 		var button := Button.new()
 		button.text = item
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0, 40)
-		button.add_theme_font_size_override("font_size", 12)
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		button.custom_minimum_size = Vector2(88, 66)
+		button.add_theme_font_size_override("font_size", 10)
 
 		var tab: String = item.to_lower()
-		_apply_button_icon(button, _nav_icon_for(tab), 20)
+		_apply_button_icon(button, _nav_icon_for(tab), 27)
 		GameUIStyle.apply_button(
 			button,
 			"dock_selected" if tab == "build" else "dock",
@@ -1225,7 +1249,7 @@ func set_airport_identity(
 	if title_label == null:
 		return
 
-	title_label.text = airport_name.to_upper()
+	title_label.text = airport_name
 	if airport_meta_label != null:
 		var account_label := "GUEST" if account_type == "guest" else "LINKED"
 		airport_meta_label.text = "%s • %s • %s" % [
@@ -1367,7 +1391,7 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 	current_level = level
 	current_coins = coins
 	current_gems = gems
-	level_label.text = "LV %d" % level
+	level_label.text = "%d" % level
 	coins_label.text = _format_number(coins)
 	gems_label.text = _format_number(gems)
 	_update_catalog_buttons()

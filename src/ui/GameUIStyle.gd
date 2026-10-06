@@ -136,22 +136,43 @@ static func apply_panel(
 		"hud_top":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("06314a", 0.965), Color("28bfe9"), 13, 1, true)
+				compact_panel(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 1, 0, false)
 			)
 		"hud_level":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("073551"), Color("31c6ee"), 11, 1, false)
+				ProductionUIAssets.style_box(
+					ProductionUIAssets.LEVEL_BADGE,
+					28.0,
+					8.0
+				)
+			)
+		"hud_identity":
+			control.add_theme_stylebox_override(
+				"panel",
+				ProductionUIAssets.style_box(
+					ProductionUIAssets.IDENTITY_PANEL,
+					22.0,
+					10.0
+				)
 			)
 		"hud_passenger":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("073550"), Color("24bce8"), 11, 1, false)
+				ProductionUIAssets.style_box(
+					ProductionUIAssets.RESOURCE_CHIP,
+					20.0,
+					7.0
+				)
 			)
 		"hud_fuel":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("403418"), Color("e7b84a"), 11, 1, false)
+				ProductionUIAssets.style_box(
+					ProductionUIAssets.RESOURCE_CHIP,
+					20.0,
+					7.0
+				)
 			)
 		"hud_fuel_low":
 			control.add_theme_stylebox_override(
@@ -166,12 +187,20 @@ static func apply_panel(
 		"hud_coin":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("18364a"), Color("e99c28"), 11, 1, false)
+				ProductionUIAssets.style_box(
+					ProductionUIAssets.RESOURCE_CHIP,
+					20.0,
+					7.0
+				)
 			)
 		"hud_premium":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("15344d"), Color("a776e0"), 11, 1, false)
+				ProductionUIAssets.style_box(
+					ProductionUIAssets.RESOURCE_CHIP,
+					20.0,
+					7.0
+				)
 			)
 		"hud_task":
 			control.add_theme_stylebox_override(
@@ -196,7 +225,16 @@ static func apply_panel(
 		"dock":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("05283d", 0.985), Color("1ba8da"), 14, 1, true)
+				compact_panel(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 1, 0, false)
+			)
+		"world_bubble":
+			control.add_theme_stylebox_override(
+				"panel",
+				ProductionUIAssets.style_box(
+					ProductionUIAssets.WORLD_BUBBLE,
+					26.0,
+					10.0
+				)
 			)
 		"context":
 			control.add_theme_stylebox_override(
@@ -403,6 +441,43 @@ static func apply_button(
 		panel(Color(0, 0, 0, 0), COLOR_ACCENT, radius, 2, false)
 	)
 
+	var glossy_path := ""
+	if kind in ["primary", "mission_complete"]:
+		glossy_path = ProductionUIAssets.BUTTON_GREEN
+	elif kind == "dock":
+		glossy_path = ProductionUIAssets.NAV_TILE
+	elif kind == "dock_selected":
+		glossy_path = ProductionUIAssets.NAV_TILE_SELECTED
+	elif kind in [
+		"nav",
+		"build_card",
+		"screen_tab",
+		"secondary"
+	]:
+		glossy_path = ProductionUIAssets.BUTTON_BLUE
+	elif kind in [
+		"selected",
+		"build_card_selected",
+		"screen_tab_selected"
+	]:
+		glossy_path = ProductionUIAssets.BUTTON_BLUE
+
+	if not glossy_path.is_empty():
+		button.add_theme_stylebox_override(
+			"normal",
+			ProductionUIAssets.button_style(glossy_path)
+		)
+		button.add_theme_stylebox_override(
+			"hover",
+			ProductionUIAssets.button_style(glossy_path)
+		)
+		button.add_theme_stylebox_override(
+			"disabled",
+			ProductionUIAssets.button_style(
+				ProductionUIAssets.BUTTON_GRAY
+			)
+		)
+
 	button.add_theme_color_override("font_color", text_color)
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color.WHITE)
@@ -422,24 +497,17 @@ static func apply_progress(progress: ProgressBar, gold: bool = false) -> void:
 
 	progress.add_theme_stylebox_override(
 		"background",
-		panel(
-			Color("091a22"),
-			Color("294551"),
-			8,
-			1,
-			false
+		ProductionUIAssets.progress_style(
+			ProductionUIAssets.PROGRESS_TRACK
 		)
 	)
 
-	var fill_color := COLOR_GOLD if gold else COLOR_ACCENT
 	progress.add_theme_stylebox_override(
 		"fill",
-		panel(
-			fill_color,
-			fill_color.lightened(0.18),
-			8,
-			0,
-			false
+		ProductionUIAssets.progress_style(
+			ProductionUIAssets.PROGRESS_GOLD
+			if gold
+			else ProductionUIAssets.PROGRESS_BLUE
 		)
 	)
 

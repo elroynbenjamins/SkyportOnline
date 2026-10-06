@@ -320,7 +320,8 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
-	_draw_airport_site_foundation()
+	# Buildings and authored apron pieces sit directly on the terrain plane.
+	# Do not render the old raised 8x8 site slab underneath the airport.
 	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
@@ -4683,6 +4684,22 @@ func _building_sprite_rect(
 		var fit_scale := draw_size.x / configured_size.x
 		offset *= fit_scale
 		extra_offset *= fit_scale
+		if bool(
+			definition.get(
+				"world_sprite_ground_align",
+				false
+			)
+		):
+			# The source art was authored with its visible base already aligned
+			# to the logical footprint. Scaling around the sprite center would
+			# otherwise lift that base off the ground, so restore the lost
+			# footprint depth after scaling.
+			var footprint_bottom := (
+				float(footprint.x + footprint.y)
+				* TILE_HEIGHT
+				* 0.25
+			)
+			offset.y += footprint_bottom * (1.0 - fit_scale)
 	var center := _footprint_center_world(
 		origin,
 		footprint

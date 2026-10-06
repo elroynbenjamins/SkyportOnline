@@ -2131,7 +2131,9 @@ func _uses_live_aircraft_fx() -> bool:
 			"swift_s14",
 			"comet_c22",
 			"voyager_v32",
-			"nimbus_n40"
+			"nimbus_n40",
+			"arrow_a52",
+			"atlas_a64"
 		]
 		or not visible
 	):

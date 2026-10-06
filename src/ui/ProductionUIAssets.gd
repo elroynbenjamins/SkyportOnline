@@ -17,6 +17,7 @@ const PROGRESS_GREEN := ROOT + "progress_fill_green.svg"
 const PROGRESS_BLUE := ROOT + "progress_fill_blue.svg"
 const PROGRESS_GOLD := ROOT + "progress_fill_gold.svg"
 const NOTIFICATION_BADGE := ROOT + "notification_badge.svg"
+const SETTINGS_ICON := ROOT + "settings_icon.svg"
 
 static var _texture_cache: Dictionary = {}
 

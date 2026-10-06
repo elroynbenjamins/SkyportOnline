@@ -728,7 +728,8 @@ func _on_alliance_milestone_claim_requested(
 	_refresh_alliance_operations_ui()
 	hud.set_player_data(player_level, coins, gems)
 	hud.set_operation_status(
-		"%s claimed • +%d coins • +%d XP" % [
+		"%s • %s claimed • +%d coins • +%d XP" % [
+			String(reward.get("project_name", "Alliance Operations")),
 			String(reward.get("name", "Alliance milestone")),
 			int(reward.get("coins", 0)),
 			int(reward.get("xp", 0))
@@ -1538,12 +1539,21 @@ func _activities_snapshot() -> Dictionary:
 		Time.get_unix_time_from_system()
 	) > 0
 	var alliance_status := (
-		"%d ALLIANCE PTS" % int(alliance.get("alliance_total", 0))
+		"%s • %d PTS" % [
+			String(alliance.get("project_short_name", "Alliance")).to_upper(),
+			int(alliance.get("alliance_total", 0))
+		]
 		if has_alliance
 		else "ALLIANCE REQUIRED"
 	)
 	var alliance_detail := (
-		"%d personal points • weekly cooperative Airbridge project" % int(alliance.get("personal_points", 0))
+		"%s • %d personal pts • %s left" % [
+			String(alliance.get("project_description", "")),
+			int(alliance.get("personal_points", 0)),
+			_format_activity_time(
+				int(alliance.get("seconds_remaining", 0))
+			)
+		]
 		if has_alliance
 		else "Join or connect an Alliance to take part in cooperative weekly goals."
 	)
@@ -1617,7 +1627,11 @@ func _activities_snapshot() -> Dictionary:
 		},
 		"alliance": {
 			"title": "ALLIANCE OPERATIONS",
-			"badge": "CO-OP WEEKLY",
+			"badge": (
+				String(alliance.get("project_short_name", "CO-OP WEEKLY")).to_upper()
+				if has_alliance
+				else "CO-OP WEEKLY"
+			),
 			"status": alliance_status,
 			"detail": alliance_detail,
 			"attention": alliance_attention,

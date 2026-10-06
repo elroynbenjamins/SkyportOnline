@@ -71,6 +71,64 @@ func _run() -> void:
 			)
 			return
 
+		if not bool(
+			definition.get("world_sprite_ground_align", false)
+		):
+			_fail(
+				"%s should keep its visible base grounded after runtime scaling."
+				% building_id
+			)
+			return
+
+		var atlas_path := String(
+			definition.get("world_sprite_atlas_path", "")
+		)
+		var atlas_texture = load(atlas_path)
+		if not (atlas_texture is Texture2D):
+			_fail("%s atlas failed to load." % building_id)
+			return
+		var regions: Array = definition.get("world_sprite_regions", [])
+		if regions.is_empty():
+			_fail("%s has no atlas region." % building_id)
+			return
+		var source: Rect2 = regions[0]
+		var source_i := Rect2i(
+			int(source.position.x),
+			int(source.position.y),
+			int(source.size.x),
+			int(source.size.y)
+		)
+		var region_image: Image = (
+			atlas_texture as Texture2D
+		).get_image().get_region(source_i)
+		var used := _alpha_used_rect(region_image)
+		if used.size.y <= 0:
+			_fail("%s atlas region has no visible pixels." % building_id)
+			return
+		var visible_bottom := (
+			rect.position.y
+			+ (
+				float(used.end.y)
+				/ maxf(float(source_i.size.y), 1.0)
+			) * rect.size.y
+		)
+		var footprint_polygon := grid._footprint_polygon(
+			Vector2i.ZERO,
+			footprint
+		)
+		var footprint_bottom := -INF
+		for point_variant in footprint_polygon:
+			footprint_bottom = maxf(
+				footprint_bottom,
+				(point_variant as Vector2).y
+			)
+		if absf(visible_bottom - footprint_bottom) > 1.5:
+			_fail(
+				"%s visible base %.2f should sit on footprint %.2f."
+				% [building_id, visible_bottom, footprint_bottom]
+			)
+			return
+
 	if not grid._definition_uses_integrated_world_base(
 		BuildingCatalog.get_definition("small_terminal")
 	):
@@ -79,9 +137,32 @@ func _run() -> void:
 
 	print(
 		"STARTER_BUILDING_GRID_FIT_OK integrated_bases=true "
-		+ "procedural_underlays=false width_cap=1.35"
+		+ "procedural_underlays=false grounded=true raised_site_slab=false width_cap=1.35"
 	)
 	quit(0)
+
+
+func _alpha_used_rect(image: Image) -> Rect2i:
+	var min_x := image.get_width()
+	var min_y := image.get_height()
+	var max_x := -1
+	var max_y := -1
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			if image.get_pixel(x, y).a <= 0.03:
+				continue
+			min_x = mini(min_x, x)
+			min_y = mini(min_y, y)
+			max_x = maxi(max_x, x)
+			max_y = maxi(max_y, y)
+	if max_x < min_x or max_y < min_y:
+		return Rect2i()
+	return Rect2i(
+		min_x,
+		min_y,
+		max_x - min_x + 1,
+		max_y - min_y + 1
+	)
 
 
 func _fail(message: String) -> void:

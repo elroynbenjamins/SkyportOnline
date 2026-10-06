@@ -26,6 +26,7 @@ var passenger_rate_label: Label
 var fuel_label: Label
 var fuel_rate_label: Label
 var fuel_order_button: Button
+var fuel_panel: PanelContainer
 var coins_label: Label
 var gems_label: Label
 var airside_status_label: Label
@@ -210,6 +211,7 @@ func _build_interface() -> void:
 	)
 	fuel_label = fuel_chip["value"] as Label
 	fuel_rate_label = fuel_chip["detail"] as Label
+	fuel_panel = fuel_chip["panel"] as PanelContainer
 	fuel_order_button = Button.new()
 	fuel_order_button.text = "ORDER FUEL • 750"
 	fuel_order_button.custom_minimum_size = Vector2(0, 22)
@@ -1334,11 +1336,60 @@ func set_fuel_data(
 ) -> void:
 	if fuel_label == null:
 		return
+
 	fuel_label.text = "%d / %d" % [fuel, capacity]
+	var ratio := 1.0
+	if capacity > 0:
+		ratio = clampf(
+			float(maxi(fuel, 0)) / float(capacity),
+			0.0,
+			1.0
+		)
+
+	var status := "normal"
+	if capacity > 0 and ratio <= 0.10:
+		status = "critical"
+	elif capacity > 0 and ratio <= 0.25:
+		status = "low"
+
 	if fuel_rate_label != null:
-		fuel_rate_label.text = "+%.1f / MIN" % per_minute
+		match status:
+			"critical":
+				fuel_rate_label.text = "CRITICAL • +%.1f / MIN" % per_minute
+				fuel_rate_label.add_theme_color_override(
+					"font_color",
+					GameUIStyle.COLOR_DANGER
+				)
+			"low":
+				fuel_rate_label.text = "LOW • +%.1f / MIN" % per_minute
+				fuel_rate_label.add_theme_color_override(
+					"font_color",
+					GameUIStyle.COLOR_WARNING
+				)
+			_:
+				fuel_rate_label.text = "+%.1f / MIN" % per_minute
+				GameUIStyle.muted(fuel_rate_label)
+
+	if fuel_panel != null:
+		GameUIStyle.apply_panel(
+			fuel_panel,
+			"hud_fuel_critical"
+			if status == "critical"
+			else (
+				"hud_fuel_low"
+				if status == "low"
+				else "hud_fuel"
+			)
+		)
+
 	if fuel_order_button != null:
 		fuel_order_button.disabled = capacity <= 0 or fuel >= capacity
+		GameUIStyle.apply_button(
+			fuel_order_button,
+			"danger"
+			if status == "critical"
+			else ("gold" if status == "low" else "secondary")
+		)
 
 
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:

@@ -1,7 +1,7 @@
 class_name GroundServiceVehicleArt
 extends RefCounted
 
-const ATLAS_PATH := "res://assets/production/ground_service_v1/skyport_ground_service_atlas.webp"
+const ATLAS_PATH := "res://assets/production/ground_service_v2/skyport_ground_service_atlas_v2.svg"
 const CELL_SIZE := 256.0
 const ISO_HEADING_ANGLE := 0.463647609
 const MAX_TURN_LEAN := 0.10

@@ -113,15 +113,31 @@ func _refresh() -> void:
 		child.queue_free()
 
 	var ready := int(snapshot.get("attention_count", 0))
-	summary_label.text = (
-		"%d reward%s ready • choose an activity"
-		% [ready, "" if ready == 1 else "s"]
-		if ready > 0
-		else "Choose a mode. Progress updates automatically from normal airport play."
-	)
+	var new_count := int(snapshot.get("new_count", 0))
+	if ready > 0 and new_count > 0:
+		summary_label.text = "%d new activit%s • %d reward%s ready" % [
+			new_count,
+			"y" if new_count == 1 else "ies",
+			ready,
+			"" if ready == 1 else "s"
+		]
+	elif new_count > 0:
+		summary_label.text = "%d new activit%s unlocked • open it for a quick introduction" % [
+			new_count,
+			"y" if new_count == 1 else "ies"
+		]
+	elif ready > 0:
+		summary_label.text = "%d reward%s ready • choose an activity" % [
+			ready,
+			"" if ready == 1 else "s"
+		]
+	else:
+		summary_label.text = "Choose a mode. Progress updates automatically from normal airport play."
 	summary_label.add_theme_color_override(
 		"font_color",
-		GameUIStyle.COLOR_GOLD if ready > 0 else GameUIStyle.COLOR_MUTED
+		GameUIStyle.COLOR_GOLD
+		if ready > 0 or new_count > 0
+		else GameUIStyle.COLOR_MUTED
 	)
 
 	for id in ["missions", "dispatch", "charter", "challenge", "alliance", "event"]:
@@ -132,9 +148,11 @@ func _add_card(mode_id: String, data: Dictionary) -> void:
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.custom_minimum_size = Vector2(0, 150)
+	var is_new := bool(data.get("new", false))
+	var attention := bool(data.get("attention", false))
 	GameUIStyle.apply_panel(
 		card,
-		"raised" if bool(data.get("attention", false)) else "dark"
+		"raised" if attention or is_new else "dark"
 	)
 	cards_grid.add_child(card)
 
@@ -160,12 +178,16 @@ func _add_card(mode_id: String, data: Dictionary) -> void:
 	heading_row.add_child(title)
 
 	var badge := Label.new()
-	badge.text = String(data.get("badge", "AVAILABLE"))
+	badge.text = (
+		"NEW • %s" % String(data.get("badge", "AVAILABLE"))
+		if is_new
+		else String(data.get("badge", "AVAILABLE"))
+	)
 	badge.add_theme_font_size_override("font_size", 11)
 	badge.add_theme_color_override(
 		"font_color",
 		GameUIStyle.COLOR_GOLD
-		if bool(data.get("attention", false))
+		if attention or is_new
 		else GameUIStyle.COLOR_ACCENT
 	)
 	heading_row.add_child(badge)
@@ -175,9 +197,13 @@ func _add_card(mode_id: String, data: Dictionary) -> void:
 	status.add_theme_font_size_override("font_size", 14)
 	status.add_theme_color_override(
 		"font_color",
-		GameUIStyle.COLOR_SUCCESS
-		if bool(data.get("attention", false))
-		else GameUIStyle.COLOR_TEXT
+		GameUIStyle.COLOR_GOLD
+		if is_new
+		else (
+			GameUIStyle.COLOR_SUCCESS
+			if attention
+			else GameUIStyle.COLOR_TEXT
+		)
 	)
 	box.add_child(status)
 
@@ -195,13 +221,17 @@ func _add_card(mode_id: String, data: Dictionary) -> void:
 	var enabled := bool(data.get("enabled", true))
 	open.disabled = not enabled
 	open.text = (
-		String(data.get("action", "OPEN"))
-		if enabled
-		else String(data.get("locked_action", "LOCKED"))
+		"INTRODUCE MODE"
+		if enabled and is_new
+		else (
+			String(data.get("action", "OPEN"))
+			if enabled
+			else String(data.get("locked_action", "LOCKED"))
+		)
 	)
 	GameUIStyle.apply_button(
 		open,
-		"gold" if bool(data.get("attention", false)) and enabled
+		"gold" if (attention or is_new) and enabled
 		else ("primary" if enabled else "secondary"),
 		true
 	)

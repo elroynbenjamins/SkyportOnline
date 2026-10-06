@@ -15,6 +15,8 @@ const ROUTE_LOCKED_COLOR := Color("7f94a0")
 const FUTURE_COLOR := Color("496876")
 const SELECTED_COLOR := Color("f2c85e")
 const HOME_COLOR := Color("ffd66e")
+const COUNTRY_HIT_RADIUS := 32.0
+const SELECTED_HALO_RADIUS := 24.0
 
 var countries: Array[Dictionary] = []
 var selected_country_code := ""
@@ -198,8 +200,26 @@ func _draw_country_marker(country: Dictionary) -> void:
 		border = Color("fff3c2")
 
 	if selected:
-		draw_circle(position, 18.0, Color(0.95, 0.78, 0.32, 0.16))
-		draw_circle(position, 15.0, Color(0.95, 0.78, 0.32, 0.34), false, 2.0)
+		draw_circle(
+			position,
+			SELECTED_HALO_RADIUS,
+			Color(0.95, 0.78, 0.32, 0.10)
+		)
+		draw_circle(
+			position,
+			SELECTED_HALO_RADIUS - 4.0,
+			Color(0.95, 0.78, 0.32, 0.26),
+			false,
+			2.0
+		)
+		draw_circle(
+			position,
+			SELECTED_HALO_RADIUS - 9.0,
+			Color("fff0b3"),
+			false,
+			2.0
+		)
+		_draw_selection_brackets(position)
 
 	draw_circle(position, radius + 2.0, Color(0, 0, 0, 0.30))
 	draw_circle(position, radius, fill)
@@ -220,6 +240,35 @@ func _draw_country_marker(country: Dictionary) -> void:
 			hovered,
 			has_route,
 			unlocked
+		)
+
+
+func _draw_selection_brackets(position: Vector2) -> void:
+	var offset := SELECTED_HALO_RADIUS + 3.0
+	var arm := 6.0
+	var color := Color(1.0, 0.91, 0.60, 0.86)
+	var width := 2.0
+	for direction in [
+		Vector2(-1, -1),
+		Vector2(1, -1),
+		Vector2(1, 1),
+		Vector2(-1, 1)
+	]:
+		var corner := position + Vector2(
+			direction.x * offset,
+			direction.y * offset
+		)
+		draw_line(
+			corner,
+			corner + Vector2(-direction.x * arm, 0),
+			color,
+			width
+		)
+		draw_line(
+			corner,
+			corner + Vector2(0, -direction.y * arm),
+			color,
+			width
 		)
 
 
@@ -372,11 +421,45 @@ func _selected_map_position() -> Vector2:
 	return Vector2(-1, -1)
 
 
+func country_display_position(country_code: String) -> Vector2:
+	var country := CountryCatalog.get_country(country_code)
+	if country.is_empty():
+		return Vector2(-1, -1)
+	return _country_position(country)
+
+
 func _country_position(country: Dictionary) -> Vector2:
+	var country_code := String(country.get("id", ""))
 	return Vector2(
 		float(country.get("map_x", 0.5)) * size.x,
 		float(country.get("map_y", 0.5)) * size.y
-	)
+	) + _marker_offset(country_code)
+
+
+func _marker_offset(country_code: String) -> Vector2:
+	# Dense European markers need small presentation-only offsets so adjacent
+	# countries remain individually tappable. Route/country data is unchanged.
+	match country_code:
+		"NL":
+			return Vector2(-4, -15)
+		"BE":
+			return Vector2(-14, 8)
+		"DE":
+			return Vector2(14, -8)
+		"DK":
+			return Vector2(10, -17)
+		"GB":
+			return Vector2(-12, -8)
+		"FR":
+			return Vector2(-10, 15)
+		"ES":
+			return Vector2(-14, 13)
+		"IT":
+			return Vector2(15, 16)
+		"TR":
+			return Vector2(14, 9)
+		_:
+			return Vector2.ZERO
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -406,9 +489,13 @@ func _select_at(local_position: Vector2) -> void:
 	accept_event()
 
 
+func country_at_position(local_position: Vector2) -> String:
+	return _country_at(local_position)
+
+
 func _country_at(local_position: Vector2) -> String:
 	var closest_code := ""
-	var closest_distance := 24.0
+	var closest_distance := COUNTRY_HIT_RADIUS
 	for country in countries:
 		var marker_position := _country_position(country)
 		var distance := local_position.distance_to(marker_position)

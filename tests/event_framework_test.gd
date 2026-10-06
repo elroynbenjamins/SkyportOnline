@@ -64,6 +64,32 @@ func _run() -> void:
 		_fail("Days 15-21 should be event week 3.")
 		return
 
+	var winter := EventCatalog.get_event(
+		"christmas_new_year_airbridge_2026"
+	)
+	var winter_phase_1 := EventCatalog.phase_for_week(winter, 1)
+	var winter_phase_2 := EventCatalog.phase_for_week(winter, 2)
+	var winter_phase_3 := EventCatalog.phase_for_week(winter, 3)
+	if String(winter_phase_1.get("name", "")) != "Christmas Rush":
+		_fail("Winter event week 1 should use the Christmas Rush phase.")
+		return
+	if String(winter_phase_2.get("name", "")) != "Holiday Network":
+		_fail("Winter event week 2 should use the Holiday Network phase.")
+		return
+	if String(winter_phase_3.get("name", "")) != "New Year Finale":
+		_fail("Winter event week 3 should use the New Year Finale phase.")
+		return
+	if (
+		(winter_phase_1.get("featured_destinations", []) as Array)
+		!= ["brussels"]
+		or (winter_phase_2.get("featured_destinations", []) as Array)
+		!= ["london"]
+		or (winter_phase_3.get("featured_destinations", []) as Array)
+		!= ["berlin"]
+	):
+		_fail("Each Winter phase should focus its own featured route.")
+		return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame
@@ -89,6 +115,22 @@ func _run() -> void:
 	if int(snapshot.get("week", 0)) != 1:
 		_fail("Event manager should expose current event week.")
 		return
+	if String(snapshot.get("phase_name", "")) != "Lantern Opening":
+		_fail("Week 1 should expose the themed opening phase.")
+		return
+	if int(snapshot.get("phase_quest_total", 0)) != 4:
+		_fail("Opening phase should expose four current quests.")
+		return
+	for quest_variant in snapshot.get("quests", []):
+		var quest: Dictionary = quest_variant
+		var quest_week := int(quest.get("week", 0))
+		var phase_state := String(quest.get("phase_state", ""))
+		if quest_week == 1 and phase_state != "current":
+			_fail("Week 1 quests should be marked as current phase.")
+			return
+		if quest_week > 1 and phase_state != "upcoming":
+			_fail("Future event quests should be marked upcoming.")
+			return
 
 	_complete_current_week(manager, 1)
 	if manager.get_currency() != 160:
@@ -103,6 +145,23 @@ func _run() -> void:
 	manager.set_now_override(
 		start + 8 * EventCatalog.SECONDS_PER_DAY
 	)
+	snapshot = manager.get_snapshot()
+	if String(snapshot.get("phase_name", "")) != "Festival Network":
+		_fail("Week 2 should change the active phase to Festival Network.")
+		return
+	if String(snapshot.get("next_phase_name", "")) != "Lantern Finale":
+		_fail("Week 2 should preview the Finale phase.")
+		return
+	for quest_variant in snapshot.get("quests", []):
+		var quest: Dictionary = quest_variant
+		var quest_week := int(quest.get("week", 0))
+		var phase_state := String(quest.get("phase_state", ""))
+		if quest_week == 1 and phase_state != "archive":
+			_fail("Earlier event quests should move into the phase archive.")
+			return
+		if quest_week == 2 and phase_state != "current":
+			_fail("Week 2 quests should become the current phase.")
+			return
 	_complete_current_week(manager, 2)
 	if manager.get_currency() != 360:
 		_fail("Weeks 1-2 should award 360 event currency.")
@@ -111,6 +170,13 @@ func _run() -> void:
 	manager.set_now_override(
 		start + 15 * EventCatalog.SECONDS_PER_DAY
 	)
+	snapshot = manager.get_snapshot()
+	if String(snapshot.get("phase_name", "")) != "Lantern Finale":
+		_fail("Week 3 should expose the Lantern Finale phase.")
+		return
+	if not String(snapshot.get("next_phase_name", "")).is_empty():
+		_fail("Final event phase should not advertise a fourth phase.")
+		return
 	_complete_current_week(manager, 3)
 	if manager.get_currency() != 600:
 		_fail("All 12 personal quests should award 600 event currency.")
@@ -119,6 +185,57 @@ func _run() -> void:
 	snapshot = manager.get_snapshot()
 	if int(snapshot.get("alliance_personal", 0)) != 180:
 		_fail("Full personal event should contribute 180 alliance points.")
+		return
+	if int(snapshot.get("phase_quest_complete", 0)) != 4:
+		_fail("Final phase should report all four finale quests complete.")
+		return
+
+	var screen := EventScreen.new()
+	root.add_child(screen)
+	await process_frame
+	screen.open_event(snapshot)
+	if not screen.is_open():
+		_fail("Event screen should open with the phased snapshot.")
+		return
+	if not screen.phase_label.text.contains("LANTERN FINALE"):
+		_fail("Event screen should prominently show the current phase.")
+		return
+	if not screen.phase_progress_label.text.contains("4 / 4"):
+		_fail("Event screen should show current phase quest completion.")
+		return
+	screen.close_event()
+
+	# Featured route bonuses follow the active phase instead of all three
+	# event destinations paying the bonus for the full 21-day event.
+	var route_event := winter.duplicate(true)
+	route_event["id"] = "phase-route-bonus-test"
+	route_event["enabled"] = true
+	route_event["start_unix"] = start
+	route_event["featured_route_currency"] = 5
+	var route_manager := EventManager.new()
+	root.add_child(route_manager)
+	route_manager.set_now_override(
+		start + EventCatalog.SECONDS_PER_DAY
+	)
+	route_manager.configure(economy, route_event)
+	route_manager.record_destination_flight("london")
+	if route_manager.get_currency() != 0:
+		_fail("Week 1 should not award the featured-route bonus for the Week 2 route.")
+		return
+	route_manager.record_destination_flight("brussels")
+	if route_manager.get_currency() != 5:
+		_fail("Week 1 should award the featured-route bonus for Brussels.")
+		return
+	route_manager.set_now_override(
+		start + 8 * EventCatalog.SECONDS_PER_DAY
+	)
+	route_manager.record_destination_flight("brussels")
+	if route_manager.get_currency() != 5:
+		_fail("Brussels should stop paying the featured-route bonus after Phase 1.")
+		return
+	route_manager.record_destination_flight("london")
+	if route_manager.get_currency() != 10:
+		_fail("London should become the featured bonus route in Phase 2.")
 		return
 
 	economy.set_passengers(0)
@@ -179,7 +296,7 @@ func _run() -> void:
 
 	_cleanup_profile()
 	print(
-		"Event framework passed: 21-day weeks, quests, currency, "
+		"Event framework passed: three phases, quest archive, currency, "
 		+ "limited passengers, cosmetics, alliance milestones and persistence."
 	)
 	quit(0)

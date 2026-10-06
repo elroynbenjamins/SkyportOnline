@@ -789,6 +789,96 @@ static func days_remaining(event: Dictionary, now_unix: int = -1) -> int:
 	return int(ceil(float(remaining) / float(SECONDS_PER_DAY)))
 
 
+static func phase_for_week(
+	event: Dictionary,
+	week: int
+) -> Dictionary:
+	var normalized_week := clampi(week, 1, 3)
+	var event_id := String(event.get("id", ""))
+	var theme := String(event.get("theme", ""))
+	var names := [
+		"Opening Rush",
+		"Network Push",
+		"Grand Finale"
+	]
+	var descriptions := [
+		"Launch the event with flights, passengers and the first featured route.",
+		"Expand the event network with busier routes, revenue and regional supplies.",
+		"Push the final week with the largest traffic goals and closing featured route."
+	]
+
+	match theme:
+		"winter":
+			names = [
+				"Christmas Rush",
+				"Holiday Network",
+				"New Year Finale"
+			]
+			descriptions = [
+				"Start the Christmas rush with early flights, travelers and festive supplies.",
+				"Keep the holiday network moving through peak passenger and cargo demand.",
+				"Finish with New Year traffic, the final featured route and the largest goals."
+			]
+		"autumn":
+			names = [
+				"Harvest Opening",
+				"Autumn Network",
+				"Grand Harvest"
+			]
+			descriptions = [
+				"Open the harvest airbridge with first routes, travelers and regional cargo.",
+				"Expand autumn traffic across busier destinations and supply runs.",
+				"Close the season with the grand harvest routes and largest traffic targets."
+			]
+		"lantern":
+			names = [
+				"Lantern Opening",
+				"Festival Network",
+				"Lantern Finale"
+			]
+			descriptions = [
+				"Open the festival with the first wave of routes, visitors and decorations.",
+				"Grow the festival network with sustained passenger, cargo and revenue goals.",
+				"Finish the celebration with the busiest routes and final event objectives."
+			]
+
+	var featured: Array = event.get("featured_destinations", [])
+	var phase_featured: Array[String] = []
+	if not featured.is_empty():
+		var index := mini(normalized_week - 1, featured.size() - 1)
+		phase_featured.append(String(featured[index]))
+
+	var quest_metrics: Array[String] = []
+	for quest_variant in event.get("quests", []):
+		var quest: Dictionary = quest_variant
+		if int(quest.get("week", 1)) != normalized_week:
+			continue
+		var metric := String(quest.get("metric", ""))
+		if not metric.is_empty() and not quest_metrics.has(metric):
+			quest_metrics.append(metric)
+
+	return {
+		"id": "%s:w%d" % [
+			event_id if not event_id.is_empty() else "event",
+			normalized_week
+		],
+		"week": normalized_week,
+		"name": String(names[normalized_week - 1]),
+		"description": String(descriptions[normalized_week - 1]),
+		"featured_destinations": phase_featured,
+		"metrics": quest_metrics
+	}
+
+
+static func next_phase(
+	event: Dictionary,
+	week: int
+) -> Dictionary:
+	if week >= 3:
+		return {}
+	return phase_for_week(event, week + 1)
+
+
 static func quest_by_id(event: Dictionary, quest_id: String) -> Dictionary:
 	for quest in event.get("quests", []):
 		if String(quest.get("id", "")) == quest_id:

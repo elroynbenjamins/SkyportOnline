@@ -87,6 +87,11 @@ const APRON_JOINT := Color("747b7c", 0.18)
 const APRON_YELLOW := Color("f1c84c")
 const APRON_RED := Color("d85f58")
 const APRON_LIGHT := Color("fff2bd")
+const AIRPORT_SITE_CONCRETE := Color("c7c5bd")
+const AIRPORT_SITE_CONCRETE_LIGHT := Color("d9d7cf")
+const AIRPORT_SITE_CONCRETE_DARK := Color("9b9b96")
+const AIRPORT_SITE_EDGE := Color("777e7e", 0.34)
+const AIRPORT_SITE_SHADOW := Color(0.03, 0.06, 0.07, 0.22)
 const CHARTER_DISTRICT_CONCRETE := Color("c4c1b8")
 const CHARTER_DISTRICT_CONCRETE_LIGHT := Color("d8d5cc")
 const CHARTER_DISTRICT_CONCRETE_DARK := Color("9b9a94")
@@ -311,6 +316,7 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
+	_draw_airport_site_foundation()
 	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
@@ -1182,6 +1188,222 @@ func get_parcel_tile_count(parcel_id: String) -> int:
 	return PARCEL_SIZE * PARCEL_SIZE
 
 
+func get_airport_site_foundation_snapshot() -> Dictionary:
+	var min_x := 999999
+	var min_y := 999999
+	var max_x := -999999
+	var max_y := -999999
+	var included := 0
+
+	for building in placed_buildings:
+		var building_id := String(
+			building.get("definition_id", "")
+		)
+		var definition := BuildingCatalog.get_definition(
+			building_id
+		)
+		if definition.is_empty():
+			continue
+		if String(definition.get("category", "")) == "Decor":
+			continue
+
+		var footprint := _footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		min_x = mini(min_x, origin.x)
+		min_y = mini(min_y, origin.y)
+		max_x = maxi(max_x, origin.x + footprint.x - 1)
+		max_y = maxi(max_y, origin.y + footprint.y - 1)
+		included += 1
+
+	if included <= 0:
+		return {
+			"active": false,
+			"building_count": 0
+		}
+
+	# A coherent airport floor is only drawn when the whole envelope is owned.
+	# This prevents visual hardscape from leaking into locked expansion land.
+	if not _airport_foundation_area_is_owned(
+		min_x,
+		min_y,
+		max_x,
+		max_y
+	):
+		return {
+			"active": false,
+			"building_count": included
+		}
+
+	return {
+		"active": true,
+		"building_count": included,
+		"origin": Vector2i(min_x, min_y),
+		"footprint": Vector2i(
+			max_x - min_x + 1,
+			max_y - min_y + 1
+		)
+	}
+
+
+func _airport_foundation_area_is_owned(
+	min_x: int,
+	min_y: int,
+	max_x: int,
+	max_y: int
+) -> bool:
+	for y in range(min_y, max_y + 1):
+		for x in range(min_x, max_x + 1):
+			var parcel := _parcel_for_tile(
+				Vector2i(x, y)
+			)
+			if (
+				parcel.is_empty()
+				or not bool(parcel.get("owned", false))
+			):
+				return false
+	return true
+
+
+func _building_is_on_airport_foundation(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> bool:
+	var snapshot := get_airport_site_foundation_snapshot()
+	if not bool(snapshot.get("active", false)):
+		return false
+
+	var site_origin: Vector2i = snapshot.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var site_footprint: Vector2i = snapshot.get(
+		"footprint",
+		Vector2i.ZERO
+	)
+	var site_max := (
+		site_origin
+		+ site_footprint
+		- Vector2i.ONE
+	)
+	var building_max := origin + footprint - Vector2i.ONE
+	return (
+		origin.x >= site_origin.x
+		and origin.y >= site_origin.y
+		and building_max.x <= site_max.x
+		and building_max.y <= site_max.y
+	)
+
+
+func _draw_airport_site_foundation() -> void:
+	var snapshot := get_airport_site_foundation_snapshot()
+	if not bool(snapshot.get("active", false)):
+		return
+
+	var origin: Vector2i = snapshot.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var footprint: Vector2i = snapshot.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var center := Vector2.ZERO
+	for point_variant in polygon:
+		center += point_variant
+	center /= float(polygon.size())
+
+	var shadow := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shadow.append(point + Vector2(6, 8))
+	draw_colored_polygon(
+		shadow,
+		AIRPORT_SITE_SHADOW
+	)
+
+	var shoulder := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shoulder.append(
+			center + (point - center) * 1.022
+		)
+	draw_colored_polygon(
+		shoulder,
+		AIRPORT_SITE_CONCRETE_DARK
+	)
+	draw_colored_polygon(
+		polygon,
+		AIRPORT_SITE_CONCRETE
+	)
+
+	# Large, sparse panel joints make the floor feel authored without exposing
+	# the placement grid underneath.
+	for fraction in [0.20, 0.40, 0.60, 0.80]:
+		draw_line(
+			polygon[0].lerp(
+				polygon[1],
+				float(fraction)
+			),
+			polygon[3].lerp(
+				polygon[2],
+				float(fraction)
+			),
+			Color("6d7475", 0.10),
+			1.0
+		)
+	for fraction in [0.25, 0.50, 0.75]:
+		draw_line(
+			polygon[0].lerp(
+				polygon[3],
+				float(fraction)
+			),
+			polygon[1].lerp(
+				polygon[2],
+				float(fraction)
+			),
+			Color("f5f1e8", 0.08),
+			1.0
+		)
+
+	draw_line(
+		polygon[0],
+		polygon[1],
+		Color("ffffff", 0.28),
+		2.0
+	)
+	draw_line(
+		polygon[0],
+		polygon[3],
+		Color("fffdf7", 0.14),
+		1.4
+	)
+	draw_line(
+		polygon[2],
+		polygon[3],
+		AIRPORT_SITE_EDGE,
+		2.5
+	)
+	draw_line(
+		polygon[1],
+		polygon[2],
+		Color("555f60", 0.24),
+		1.8
+	)
+
+
 func get_starter_apron_visual_snapshot() -> Dictionary:
 	var terminal: Dictionary = {}
 	var stands: Array[Dictionary] = []
@@ -1366,34 +1588,50 @@ func _draw_starter_apron_surface() -> void:
 	if polygon.size() < 4:
 		return
 
-	var shadow := PackedVector2Array()
-	for point_variant in polygon:
-		var point: Vector2 = point_variant
-		shadow.append(point + Vector2(6, 8))
-	draw_colored_polygon(
-		shadow,
-		Color(0.03, 0.07, 0.08, 0.24)
+	var integrated_site := _building_is_on_airport_foundation(
+		origin,
+		footprint
 	)
-
-	var shoulder := PackedVector2Array()
 	var center := Vector2.ZERO
 	for point_variant in polygon:
 		var center_point: Vector2 = point_variant
 		center += center_point
 	center /= float(polygon.size())
-	for point_variant in polygon:
-		var point: Vector2 = point_variant
-		shoulder.append(
-			center + (point - center) * 1.018
+
+	if integrated_site:
+		draw_colored_polygon(
+			polygon,
+			Color(
+				APRON_CONCRETE_LIGHT.r,
+				APRON_CONCRETE_LIGHT.g,
+				APRON_CONCRETE_LIGHT.b,
+				0.08
+			)
 		)
-	draw_colored_polygon(
-		shoulder,
-		Color("b9b5ad")
-	)
-	draw_colored_polygon(
-		polygon,
-		APRON_CONCRETE
-	)
+	else:
+		var shadow := PackedVector2Array()
+		for point_variant in polygon:
+			var point: Vector2 = point_variant
+			shadow.append(point + Vector2(6, 8))
+		draw_colored_polygon(
+			shadow,
+			Color(0.03, 0.07, 0.08, 0.24)
+		)
+
+		var shoulder := PackedVector2Array()
+		for point_variant in polygon:
+			var point: Vector2 = point_variant
+			shoulder.append(
+				center + (point - center) * 1.018
+			)
+		draw_colored_polygon(
+			shoulder,
+			Color("b9b5ad")
+		)
+		draw_colored_polygon(
+			polygon,
+			APRON_CONCRETE
+		)
 
 	# The apron is one visual slab; sparse expansion joints suggest large
 	# concrete panels without bringing back a visible placement grid.
@@ -1412,30 +1650,31 @@ func _draw_starter_apron_surface() -> void:
 			1.0
 		)
 
-	draw_line(
-		polygon[0],
-		polygon[1],
-		Color("ffffff", 0.32),
-		2.0
-	)
-	draw_line(
-		polygon[0],
-		polygon[3],
-		Color("fffdf7", 0.18),
-		1.4
-	)
-	draw_line(
-		polygon[2],
-		polygon[3],
-		Color("5d6261", 0.28),
-		2.4
-	)
-	draw_line(
-		polygon[1],
-		polygon[2],
-		Color("535b5c", 0.20),
-		1.8
-	)
+	if not integrated_site:
+		draw_line(
+			polygon[0],
+			polygon[1],
+			Color("ffffff", 0.32),
+			2.0
+		)
+		draw_line(
+			polygon[0],
+			polygon[3],
+			Color("fffdf7", 0.18),
+			1.4
+		)
+		draw_line(
+			polygon[2],
+			polygon[3],
+			Color("5d6261", 0.28),
+			2.4
+		)
+		draw_line(
+			polygon[1],
+			polygon[2],
+			Color("535b5c", 0.20),
+			1.8
+		)
 
 	_draw_starter_terminal_forecourt(
 		int(snapshot.get("terminal_uid", -1))
@@ -1815,6 +2054,12 @@ func _draw_buildings() -> void:
 				origin,
 				footprint,
 				int(building["rotation"]),
+				sprite_modulate.a
+			)
+			_draw_building_contact_shadow(
+				definition,
+				origin,
+				footprint,
 				sprite_modulate.a
 			)
 			_draw_building_sprite(
@@ -2534,6 +2779,21 @@ func _world_art_ground_fill(
 ) -> Color:
 	var fill := _building_ground_color(definition)
 	var id := String(definition.get("id", ""))
+
+	if _building_is_on_airport_foundation(
+		origin,
+		footprint
+	):
+		var integrated_alpha := 0.07
+		if id.contains("stand"):
+			integrated_alpha = 0.11
+		return Color(
+			AIRPORT_SITE_CONCRETE.r,
+			AIRPORT_SITE_CONCRETE.g,
+			AIRPORT_SITE_CONCRETE.b,
+			integrated_alpha
+		)
+
 	if id not in [
 		"small_terminal",
 		"small_stand",
@@ -2591,19 +2851,36 @@ func _draw_world_art_ground_pad(
 		origin,
 		footprint
 	)
-	var shadow := PackedVector2Array()
-	for point_variant in polygon:
-		var point: Vector2 = point_variant
-		shadow.append(point + Vector2(2, 3))
-
-	draw_colored_polygon(
-		shadow,
-		Color("202b2f", 0.16)
+	var integrated := _building_is_on_airport_foundation(
+		origin,
+		footprint
 	)
+	if not integrated:
+		var shadow := PackedVector2Array()
+		for point_variant in polygon:
+			var point: Vector2 = point_variant
+			shadow.append(point + Vector2(2, 3))
+		draw_colored_polygon(
+			shadow,
+			Color("202b2f", 0.16)
+		)
+
 	draw_colored_polygon(
 		polygon,
 		fill
 	)
+
+	if integrated:
+		# Buildings inside the airport share one continuous site surface.
+		# Keep only a faint footprint cue so the sprite feels planted rather
+		# than sitting on its own raised diamond.
+		draw_line(
+			polygon[2],
+			polygon[3],
+			Color("5d6464", 0.08),
+			1.0
+		)
+		return
 
 	# One continuous pad avoids the old checker/tile seams and follows
 	# the same fixed upper-left light direction as the production art.
@@ -4447,6 +4724,51 @@ func _building_at_visual_position(
 			return building.duplicate(true)
 
 	return {}
+
+
+func _draw_building_contact_shadow(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	strength: float = 1.0
+) -> void:
+	if String(definition.get("surface_art", "")).begins_with("runway"):
+		return
+	if String(definition.get("id", "")) in [
+		"taxiway",
+		"service_road"
+	]:
+		return
+
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	) + Vector2(4, 7)
+	var radius := clampf(
+		float(footprint.x + footprint.y) * 9.5,
+		15.0,
+		58.0
+	)
+	draw_set_transform(
+		center,
+		0.0,
+		Vector2(1.0, 0.34)
+	)
+	draw_circle(
+		Vector2.ZERO,
+		radius,
+		Color(
+			0.02,
+			0.04,
+			0.05,
+			0.13 * clampf(strength, 0.0, 1.0)
+		)
+	)
+	draw_set_transform(
+		Vector2.ZERO,
+		0.0,
+		Vector2.ONE
+	)
 
 
 func _draw_building_sprite(

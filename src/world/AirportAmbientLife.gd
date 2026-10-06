@@ -5,10 +5,10 @@ extends Node2D
 # no service timing, runway authority, economy, or aircraft ownership is changed.
 const DRAW_INTERVAL := 1.0 / 12.0
 const LAYOUT_REFRESH_INTERVAL := 0.75
-const MAX_CREW := 12
+const MAX_CREW := 14
 const MAX_AMBIENT_CARTS := 2
 const MAX_BAGGAGE_TRAINS := 3
-const MAX_APRON_PROPS := 18
+const MAX_APRON_PROPS := 22
 const MAX_TERMINAL_PASSENGERS := 4
 const MAX_PASSENGER_FLOW_SPRITES := 10
 const DIRECT_PASSENGER_WALK_MAX_DISTANCE := 190.0
@@ -262,10 +262,10 @@ static func behavior_profile_for_size(
 			}
 		"M":
 			return {
-				"crew_count": 3,
-				"bustle_speed": 0.92,
-				"service_radius": 37.0,
-				"marshaller_distance": 36.0
+				"crew_count": 4,
+				"bustle_speed": 0.88,
+				"service_radius": 40.0,
+				"marshaller_distance": 39.0
 			}
 		_:
 			return {
@@ -1119,23 +1119,35 @@ func _apron_prop_count_for_aircraft(
 ) -> int:
 	if aircraft == null or not is_instance_valid(aircraft):
 		return 0
+
+	var base := 0
 	match String(aircraft.state):
 		"WAITING_UNLOAD":
-			return 3
+			base = 3
 		"UNLOADING", "LOADING":
-			return 5
+			base = 5
 		"WAITING_SERVICE":
-			return 3
+			base = 3
 		"SERVICING":
-			return 4
+			base = 4
 		"WAITING_FUEL":
-			return 3
+			base = 3
 		"WAITING_PASSENGERS":
-			return 3
+			base = 3
 		"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
-			return 2
+			base = 2
 		_:
 			return 0
+
+	if aircraft.aircraft_size == "M":
+		match String(aircraft.state):
+			"WAITING_UNLOAD", "WAITING_SERVICE", "WAITING_PASSENGERS":
+				base += 1
+			"UNLOADING", "LOADING", "SERVICING":
+				base += 2
+			"PUSHBACK_PREP", "READY_FOR_DEPARTURE":
+				base += 1
+	return base
 
 
 func _aircraft_service_point(

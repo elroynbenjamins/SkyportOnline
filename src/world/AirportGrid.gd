@@ -279,8 +279,8 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("taxiway", Vector2i(13, 10), 0)
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
-	_place_building_internal("small_terminal", Vector2i(8, 13), 0)
-	_place_building_internal("travel_office", Vector2i(8, 10), 0)
+	_place_building_internal("small_terminal", Vector2i(8, 14), 0)
+	_place_building_internal("travel_office", Vector2i(9, 10), 0)
 	_place_building_internal("ground_ops_depot", Vector2i(11, 14), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
 	_place_building_internal("service_road", Vector2i(11, 13), 0)
@@ -320,11 +320,14 @@ func _draw() -> void:
 				continue
 			_draw_parcel_tiles(parcel)
 
-	_draw_airport_site_foundation()
+	# Buildings and authored apron pieces sit directly on the terrain plane.
+	# Do not render the old raised 8x8 site slab underneath the airport.
 	_draw_owned_airport_environment()
 	_draw_expansion_boundary_visuals()
 	_draw_parcel_unlock_fx()
-	_draw_starter_apron_surface()
+	# Canonical starter building/stand art owns its own footprint-level base.
+	# The old combined starter-apron slab made those sprites look stacked on
+	# top of previous art, so normal play no longer draws that underlay.
 	_draw_charter_logistics_district()
 	_draw_buildings()
 	_draw_new_build_construction_fx()
@@ -1590,6 +1593,10 @@ func _apron_row_is_owned(
 		):
 			return false
 	return true
+
+
+func is_starter_apron_underlay_enabled() -> bool:
+	return false
 
 
 func _draw_starter_apron_surface() -> void:
@@ -4683,6 +4690,22 @@ func _building_sprite_rect(
 		var fit_scale := draw_size.x / configured_size.x
 		offset *= fit_scale
 		extra_offset *= fit_scale
+		if bool(
+			definition.get(
+				"world_sprite_ground_align",
+				false
+			)
+		):
+			# The source art was authored with its visible base already aligned
+			# to the logical footprint. Scaling around the sprite center would
+			# otherwise lift that base off the ground, so restore the lost
+			# footprint depth after scaling.
+			var footprint_bottom := (
+				float(footprint.x + footprint.y)
+				* TILE_HEIGHT
+				* 0.25
+			)
+			offset.y += footprint_bottom * (1.0 - fit_scale)
 	var center := _footprint_center_world(
 		origin,
 		footprint

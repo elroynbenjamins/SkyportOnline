@@ -19,11 +19,22 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Upload source building atlas for grounding QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-building-atlas
+          path: assets/production/airport_buildings_v2/skyport_buildings_atlas.webp
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Import project and parse scripts
         run: godot --headless --editor --path . --quit --verbose
 
       - name: Start main scene smoke test
         run: godot --headless --path . --quit-after 3 --verbose
+
+      - name: Test starter building grid fit
+        run: timeout 20s godot --headless --path . --script res://tests/starter_building_grid_fit_test.gd
 
       - name: Test airside connectivity
         run: timeout 20s godot --headless --path . --script res://tests/airside_connectivity_test.gd
@@ -289,9 +300,6 @@ jobs:
 
       - name: Test shared airport building grounding
         run: timeout 20s godot --headless --path . --script res://tests/airport_grounding_foundation_test.gd
-
-      - name: Test starter building grid fit
-        run: timeout 20s godot --headless --path . --script res://tests/starter_building_grid_fit_test.gd
 
 
       - name: Test aircraft taxi traffic

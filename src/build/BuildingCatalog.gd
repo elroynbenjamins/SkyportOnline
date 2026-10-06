@@ -568,9 +568,9 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(112, 112),
 			"world_sprite_offsets": [
-				Vector2(0, -37)
+				Vector2(0, -29)
 			],
-			"world_sprite_offset": Vector2(0, -37)
+			"world_sprite_offset": Vector2(0, -29)
 		},
 		{
 			"id": "autumn_leaf_garden",
@@ -622,9 +622,9 @@ static func all() -> Array[Dictionary]:
 			],
 			"world_sprite_size": Vector2(112, 112),
 			"world_sprite_offsets": [
-				Vector2(0, -37)
+				Vector2(0, -29)
 			],
-			"world_sprite_offset": Vector2(0, -37)
+			"world_sprite_offset": Vector2(0, -29)
 		},
 		{
 			"id": "winter_snow_globe_garden",

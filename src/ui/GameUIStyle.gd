@@ -51,6 +51,29 @@ static func panel(
 	return style
 
 
+static func compact_panel(
+	background: Color = COLOR_PANEL,
+	border: Color = COLOR_BORDER,
+	radius: int = 10,
+	border_width: int = 1,
+	shadow: bool = false
+) -> StyleBoxFlat:
+	var style := panel(
+		background,
+		border,
+		radius,
+		border_width,
+		shadow
+	)
+	style.content_margin_left = 7.0
+	style.content_margin_right = 7.0
+	style.content_margin_top = 5.0
+	style.content_margin_bottom = 5.0
+	if shadow:
+		style.shadow_size = 5
+		style.shadow_offset = Vector2(0, 2)
+	return style
+
 static func top_bar() -> StyleBoxFlat:
 	return panel(
 		Color("102e3b", 0.96),
@@ -99,6 +122,7 @@ static func event_card() -> StyleBoxFlat:
 	)
 
 
+
 static func apply_panel(
 	control: PanelContainer,
 	variant: String = "panel"
@@ -112,47 +136,67 @@ static func apply_panel(
 		"hud_top":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("06314a", 0.985), Color("28bfe9"), 18, 2, true)
+				compact_panel(Color("06314a", 0.965), Color("28bfe9"), 13, 1, true)
 			)
 		"hud_level":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("073551"), Color("31c6ee"), 16, 2, false)
+				compact_panel(Color("073551"), Color("31c6ee"), 11, 1, false)
 			)
 		"hud_passenger":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("073550"), Color("24bce8"), 16, 1, false)
+				compact_panel(Color("073550"), Color("24bce8"), 11, 1, false)
 			)
 		"hud_fuel":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("403418"), Color("e7b84a"), 16, 1, false)
+				compact_panel(Color("403418"), Color("e7b84a"), 11, 1, false)
 			)
 		"hud_fuel_low":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("4a3517"), COLOR_WARNING, 16, 2, true)
+				compact_panel(Color("4a3517"), COLOR_WARNING, 11, 2, true)
 			)
 		"hud_fuel_critical":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("4b2526"), COLOR_DANGER, 16, 2, true)
+				compact_panel(Color("4b2526"), COLOR_DANGER, 11, 2, true)
 			)
 		"hud_coin":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("18364a"), Color("e99c28"), 16, 1, false)
+				compact_panel(Color("18364a"), Color("e99c28"), 11, 1, false)
 			)
 		"hud_premium":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("15344d"), Color("a776e0"), 16, 1, false)
+				compact_panel(Color("15344d"), Color("a776e0"), 11, 1, false)
+			)
+		"hud_task":
+			control.add_theme_stylebox_override(
+				"panel",
+				compact_panel(Color("102a35", 0.95), Color("315766"), 11, 1, true)
+			)
+		"hud_status_detail":
+			control.add_theme_stylebox_override(
+				"panel",
+				compact_panel(Color("062b42", 0.985), Color("25b5e2"), 12, 1, true)
+			)
+		"hud_context":
+			control.add_theme_stylebox_override(
+				"panel",
+				compact_panel(Color("08283a", 0.985), Color("258fb6"), 12, 1, true)
+			)
+		"hud_drawer":
+			control.add_theme_stylebox_override(
+				"panel",
+				compact_panel(Color("06283b", 0.992), Color("1d8db4"), 12, 1, true)
 			)
 		"dock":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("05283d", 0.99), Color("1ba8da"), 20, 2, true)
+				compact_panel(Color("05283d", 0.985), Color("1ba8da"), 14, 1, true)
 			)
 		"context":
 			control.add_theme_stylebox_override(
@@ -220,7 +264,6 @@ static func apply_panel(
 			control.add_theme_stylebox_override("panel", event_card())
 		_:
 			control.add_theme_stylebox_override("panel", panel())
-
 
 static func apply_button(
 	button: Button,

@@ -41,6 +41,10 @@ static func has_visual(country_code: String) -> bool:
 	return FRAME_INDEX.has(country_code)
 
 
+static func frame_count() -> int:
+	return FRAME_INDEX.size()
+
+
 static func texture_for_country(country_code: String) -> Texture2D:
 	if _texture_cache.has(country_code):
 		return _texture_cache[country_code] as Texture2D

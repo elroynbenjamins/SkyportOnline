@@ -254,7 +254,7 @@ func _build_interface() -> void:
 	GameUIStyle.apply_panel(objective_panel, "hud_task")
 
 	var objective := Label.new()
-	objective.text = "TASK • BUILD & EXPAND YOUR AIRPORT"
+	objective.text = "BUILD YOUR AIRPORT • EXPAND"
 	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	objective.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	objective.add_theme_font_size_override("font_size", 11)

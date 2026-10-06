@@ -7352,6 +7352,14 @@ func get_compatible_service_buildings(
 			"service_type": service_type,
 			"service_speed": maxf(service_speed, 0.1),
 			"vehicle_capacity": maxi(vehicle_capacity, 1),
+			"fuel_storage": maxi(
+				int(definition.get("fuel_storage", 0)),
+				0
+			),
+			"fuel_delivery_per_minute": maxf(
+				float(definition.get("fuel_delivery_per_minute", 0.0)),
+				0.0
+			),
 			"sizes": definition.get("sizes", PackedStringArray())
 		})
 

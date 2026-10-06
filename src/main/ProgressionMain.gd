@@ -8,6 +8,7 @@ var career_screen: AirportCareerScreen
 var career_pin: Button
 var mission_pass_screen: MissionPassScreen
 var charter_screen: CharterScreen
+var alliance_operations_screen: AllianceOperationsScreen
 var mission_pin: Button
 var mission_billing_bridge: MissionProductBillingBridge
 var pending_mission_ad_id := ""
@@ -91,6 +92,19 @@ func _start_gameplay() -> void:
 	charter_screen.close_requested.connect(_on_charter_closed)
 	add_child(charter_screen)
 
+	alliance_operations_screen = AllianceOperationsScreen.new()
+	alliance_operations_screen.claim_requested.connect(
+		_on_alliance_milestone_claim_requested
+	)
+	alliance_operations_screen.close_requested.connect(
+		_on_alliance_operations_closed
+	)
+	add_child(alliance_operations_screen)
+	if social_airport_screen != null:
+		social_airport_screen.alliance_operations_requested.connect(
+			_on_alliance_operations_requested
+		)
+
 	mission_billing_bridge = MissionProductBillingBridge.new()
 	mission_billing_bridge.purchase_verified.connect(_on_mission_purchase_verified)
 	mission_billing_bridge.unavailable.connect(_on_mission_billing_unavailable)
@@ -105,6 +119,12 @@ func _start_gameplay() -> void:
 	if CharterRules.ensure_state(progression, player_level, Time.get_unix_time_from_system()):
 		_save_checkpoint()
 	_refresh_charter_ui()
+	if AllianceOperationsRules.ensure_state(
+		progression,
+		Time.get_unix_time_from_system()
+	):
+		_save_checkpoint()
+	_refresh_alliance_operations_ui()
 	_drain_passenger_rewards()
 	_drain_resource_choice_grants()
 
@@ -148,6 +168,13 @@ func _process(delta: float) -> void:
 		_refresh_career_ui()
 		_refresh_mission_ui()
 		_refresh_charter_ui()
+		var alliance_changed := AllianceOperationsRules.ensure_state(
+			progression,
+			Time.get_unix_time_from_system()
+		)
+		if alliance_changed:
+			_save_checkpoint()
+		_refresh_alliance_operations_ui()
 
 func _notification(what: int) -> void:
 	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_CLOSE_REQUEST]:
@@ -323,6 +350,12 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 		"mastery_minutes": maxi(int(round(maxf(mastery_after - mastery_before, 0.0) * 60.0)), 0),
 		"resources": maxi(resources_after - resources_before, 0)
 	})
+	AllianceOperationsRules.record_action(
+		progression,
+		"flight",
+		1,
+		Time.get_unix_time_from_system()
+	)
 	# A completed route is not an implicit order to charge passengers and fly it again.
 	aircraft.assign_flight_plan({})
 	aircraft.set_meta("passengers_paid", false)
@@ -331,6 +364,7 @@ func _apply_completed_flight_reward(aircraft: AircraftPrototype, label: String) 
 	_save_checkpoint()
 	_refresh_career_ui()
 	_refresh_mission_ui()
+	_refresh_alliance_operations_ui()
 
 func _on_world_map_flight_assignment_requested(aircraft: AircraftPrototype, destination_id: String) -> void:
 	if not is_instance_valid(aircraft) or not aircraft.can_change_flight_plan():
@@ -545,6 +579,85 @@ func _on_charter_claim_requested() -> void:
 
 func _on_charter_closed() -> void:
 	hud.set_operation_status("Returned to airport operations.")
+
+
+func _alliance_operations_snapshot() -> Dictionary:
+	return AllianceOperationsRules.snapshot(
+		_capture_state(),
+		Time.get_unix_time_from_system(),
+		social_airport_service != null
+			and social_airport_service.provider_connected,
+		social_airport_service != null
+			and social_airport_service.local_simulation_enabled
+	)
+
+
+func _refresh_alliance_operations_ui() -> void:
+	if alliance_operations_screen == null or not progression_ready:
+		return
+	alliance_operations_screen.set_snapshot(
+		_alliance_operations_snapshot()
+	)
+
+
+func _on_alliance_operations_requested() -> void:
+	if social_airport_screen != null:
+		social_airport_screen.close_screen()
+	if alliance_operations_screen != null:
+		alliance_operations_screen.open_screen(
+			_alliance_operations_snapshot()
+		)
+
+
+func _on_alliance_operations_closed() -> void:
+	if social_airport_screen != null and social_airport_service != null:
+		social_airport_screen.open_screen(
+			_social_only_snapshot(
+				social_airport_service.get_snapshot()
+			)
+		)
+
+
+func _on_alliance_milestone_claim_requested(
+	milestone_id: String
+) -> void:
+	var result := AllianceOperationsRules.claim_milestone(
+		_capture_state(),
+		milestone_id,
+		Time.get_unix_time_from_system()
+	)
+	if result.is_empty():
+		hud.set_operation_status(
+			"Alliance milestone is not ready to claim.",
+			"warning"
+		)
+		return
+	var next: Dictionary = result.get("state", {})
+	var reward: Dictionary = result.get("reward", {})
+	if next.is_empty() or not AirportProgressionStore.save_state(next):
+		hud.set_operation_status(
+			"Alliance reward remains available because progress could not be saved.",
+			"warning"
+		)
+		return
+	progression = next
+	coins = int(next.get("coins", coins))
+	player_xp = int(next.get("xp", player_xp))
+	_update_level()
+	_save_checkpoint()
+	_refresh_career_ui()
+	_refresh_mission_ui()
+	_refresh_charter_ui()
+	_refresh_alliance_operations_ui()
+	hud.set_player_data(player_level, coins, gems)
+	hud.set_operation_status(
+		"%s claimed • +%d coins • +%d XP" % [
+			String(reward.get("name", "Alliance milestone")),
+			int(reward.get("coins", 0)),
+			int(reward.get("xp", 0))
+		],
+		"success"
+	)
 
 
 func _open_missions() -> void:
@@ -1069,10 +1182,42 @@ func _on_social_aircraft_departed(aircraft: AircraftPrototype, label: String, vi
 			var reward: Dictionary = completed.get("host_reward", {})
 			coins += int(floor(float(reward.get("coins", 0)) * float(rank.get("coin_bonus", 0.0))))
 		progression["friendships"] = FriendshipRules.record_completion(ledger, request, Time.get_date_string_from_system(true))
+		if String(request.get("relationship", "")) == "alliance":
+			AllianceOperationsRules.record_action(
+				progression,
+				"alliance_visit",
+				1,
+				Time.get_unix_time_from_system()
+			)
 	_update_level()
 	_save_checkpoint()
 	_refresh_career_ui()
 	_refresh_mission_ui()
+	_refresh_alliance_operations_ui()
+
+func _on_social_passenger_gift_requested(
+	contact_id: String
+) -> void:
+	if social_airport_service == null:
+		return
+	var contact := social_airport_service.get_contact(contact_id)
+	var before := ProfileStore.get_outgoing_friend_gift_status(contact_id)
+	super._on_social_passenger_gift_requested(contact_id)
+	var after := ProfileStore.get_outgoing_friend_gift_status(contact_id)
+	if (
+		String(contact.get("relationship", "")) == "alliance"
+		and not bool(before.get("sent_today", false))
+		and bool(after.get("sent_today", false))
+	):
+		AllianceOperationsRules.record_action(
+			progression,
+			"alliance_gift",
+			1,
+			Time.get_unix_time_from_system()
+		)
+		_save_checkpoint()
+		_refresh_alliance_operations_ui()
+
 
 func _social_only_snapshot(snapshot: Dictionary) -> Dictionary:
 	var filtered := snapshot.duplicate(true)
@@ -1104,6 +1249,8 @@ func _on_navigation_requested(tab: String) -> void:
 		return
 	if charter_screen != null and charter_screen.is_open():
 		charter_screen.close_screen()
+	if alliance_operations_screen != null and alliance_operations_screen.is_open():
+		alliance_operations_screen.close_screen(true)
 	super._on_navigation_requested(tab)
 	if tab in ["social", "alliance"] and social_airport_service != null:
 		social_airport_screen.set_snapshot(_social_only_snapshot(social_airport_service.get_snapshot()))

@@ -4,6 +4,7 @@ extends CanvasLayer
 signal close_requested
 signal visit_requested(contact_id: String)
 signal passenger_gift_requested(contact_id: String)
+signal alliance_operations_requested
 
 var root: Control
 var network_label: Label
@@ -12,6 +13,7 @@ var contacts_list: VBoxContainer
 var incoming_list: VBoxContainer
 var history_list: VBoxContainer
 var gift_status_label: Label
+var alliance_ops_button: Button
 var snapshot: Dictionary = {}
 
 
@@ -112,6 +114,13 @@ func _build_ui() -> void:
 	gift_status_label.add_theme_font_size_override("font_size", 13)
 	GameUIStyle.muted(gift_status_label)
 	summary_row.add_child(gift_status_label)
+
+	alliance_ops_button = Button.new()
+	alliance_ops_button.text = "◆ ALLIANCE OPS"
+	alliance_ops_button.custom_minimum_size = Vector2(158, 42)
+	GameUIStyle.apply_button(alliance_ops_button, "event", true)
+	alliance_ops_button.pressed.connect(_on_alliance_ops_pressed)
+	summary_row.add_child(alliance_ops_button)
 
 	var columns := HBoxContainer.new()
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -219,6 +228,21 @@ func _refresh() -> void:
 		int(gift_status.get("cap", 3)),
 		PassengerSupportRules.friend_gift_amount()
 	]
+
+
+	var has_alliance := false
+	for contact_variant in snapshot.get("contacts", []):
+		var contact: Dictionary = contact_variant
+		if String(contact.get("relationship", "")) == "alliance":
+			has_alliance = true
+			break
+	if alliance_ops_button != null:
+		alliance_ops_button.disabled = not has_alliance
+		alliance_ops_button.tooltip_text = (
+			"Weekly cooperative Alliance airport project"
+			if has_alliance
+			else "Join or connect an Alliance to unlock Alliance Operations"
+		)
 
 	_refresh_contacts()
 	_refresh_incoming()
@@ -486,3 +510,7 @@ func _on_gift_pressed(contact_id: String) -> void:
 func _on_close_pressed() -> void:
 	close_screen()
 	close_requested.emit()
+
+
+func _on_alliance_ops_pressed() -> void:
+	alliance_operations_requested.emit()

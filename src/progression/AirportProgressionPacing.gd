@@ -172,8 +172,10 @@ static func unlocks_at_level(level: int) -> Array[Dictionary]:
 	return result
 
 static func next_unlock(level: int) -> Dictionary:
+	if level >= MAX_LEVEL:
+		return {}
 	for next_level in range(
-		clampi(level + 1, 2, MAX_LEVEL),
+		maxi(level + 1, 2),
 		MAX_LEVEL + 1
 	):
 		var unlocks := unlocks_at_level(next_level)

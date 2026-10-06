@@ -136,6 +136,12 @@ func _run() -> void:
 		_fail("Integrated-base helper should recognize the terminal.")
 		return
 
+	if grid.is_starter_apron_underlay_enabled():
+		_fail(
+			"Normal starter airport should not draw the old combined apron underlay."
+		)
+		return
+
 	var travel_origin := Vector2i(-1, -1)
 	for building in grid.placed_buildings:
 		if String(building.get("definition_id", "")) == "travel_office":

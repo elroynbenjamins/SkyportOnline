@@ -84,23 +84,24 @@ func _run() -> void:
 	root.add_child(dispatcher)
 	dispatcher.configure(grid)
 	dispatcher.configure_fuel_economy(economy)
-	dispatcher.request_turnaround(plane, "Fuel Test", false)
+	# Outbound aircraft now load before the combined service stage. Use the
+	# fuel-only compatibility request here to isolate fuel-stock dispatch
+	# behavior from that intentional turnaround-order change.
+	dispatcher.request_fuel(plane, "Fuel Test")
 
-	var blocked := dispatcher.get_turnaround_snapshot(plane)
-	var blocked_status: Dictionary = blocked.get("service_status", {})
-	if String(
-		(blocked_status.get("fuel", {}) as Dictionary).get("state", "")
-	) != "queued":
+	if dispatcher.get_waiting_count() != 1:
 		_fail("Fuel truck should remain queued when airport fuel stock is empty.")
+		return
+	if dispatcher.get_active_count() != 0:
+		_fail("Empty fuel stock must not dispatch a fuel truck.")
 		return
 
 	economy.add_fuel(pico_fuel)
 	dispatcher.refresh_after_layout_change()
-	var released := dispatcher.get_turnaround_snapshot(plane)
-	var released_status: Dictionary = released.get("service_status", {})
-	if String(
-		(released_status.get("fuel", {}) as Dictionary).get("state", "")
-	) != "en_route":
+	if dispatcher.get_waiting_count() != 0:
+		_fail("Fuel request should leave the queue once enough stock is available.")
+		return
+	if dispatcher.get_active_count() != 1:
 		_fail("Fuel truck should dispatch as soon as enough stock is available.")
 		return
 	if economy.get_fuel() != 0:

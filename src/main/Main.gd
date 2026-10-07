@@ -198,7 +198,6 @@ func _start_gameplay() -> void:
 	_setup_ground_services()
 	_setup_runway_dispatcher()
 	_setup_taxi_traffic()
-	_setup_ambient_life()
 	_setup_world_map()
 	_setup_fleet_screen()
 	_setup_aircraft_context_card()

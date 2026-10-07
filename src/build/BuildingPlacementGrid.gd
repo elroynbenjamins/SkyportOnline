@@ -14,7 +14,7 @@ static func tile_to_world(tile: Vector2) -> Vector2:
 
 static func world_to_tile(world_position: Vector2) -> Vector2i:
 	var tile := world_to_tile_float(world_position)
-	return Vector2i(floori(tile.x), floori(tile.y))
+	return Vector2i(roundi(tile.x), roundi(tile.y))
 
 
 static func world_to_tile_float(world_position: Vector2) -> Vector2:
@@ -95,3 +95,68 @@ static func footprint_polygon(
 		c + Vector2(0, TILE_HEIGHT * 0.5),
 		d + Vector2(-TILE_WIDTH * 0.5, 0)
 	])
+
+
+static func tile_polygon(tile: Vector2i) -> PackedVector2Array:
+	var center := tile_to_world(Vector2(tile.x, tile.y))
+	return PackedVector2Array([
+		center + Vector2(0, -TILE_HEIGHT * 0.5),
+		center + Vector2(TILE_WIDTH * 0.5, 0),
+		center + Vector2(0, TILE_HEIGHT * 0.5),
+		center + Vector2(-TILE_WIDTH * 0.5, 0)
+	])
+
+
+static func footprint_bounds(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> Rect2:
+	var polygon := footprint_polygon(origin, footprint)
+	if polygon.is_empty():
+		return Rect2()
+
+	var min_x := INF
+	var min_y := INF
+	var max_x := -INF
+	var max_y := -INF
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		min_x = minf(min_x, point.x)
+		min_y = minf(min_y, point.y)
+		max_x = maxf(max_x, point.x)
+		max_y = maxf(max_y, point.y)
+
+	return Rect2(
+		Vector2(min_x, min_y),
+		Vector2(max_x - min_x, max_y - min_y)
+	)
+
+
+static func visual_contract(
+	footprint: Vector2i
+) -> Dictionary:
+	if footprint.x <= 0 or footprint.y <= 0:
+		return {"valid": false}
+
+	var bounds := footprint_bounds(
+		Vector2i.ZERO,
+		footprint
+	)
+	return {
+		"valid": true,
+		"projection": "isometric_2_to_1",
+		"tile_width": TILE_WIDTH,
+		"tile_height": TILE_HEIGHT,
+		"footprint": footprint,
+		"base_bounds": bounds,
+		"base_size": bounds.size,
+		"anchor_rule": "front_center",
+		"anchor_local": Vector2(
+			bounds.size.x * 0.5,
+			bounds.size.y
+		),
+		"max_horizontal_overhang_px": 0.0,
+		"grid_owns_footprint": true,
+		"grid_owns_anchor": true,
+		"grid_owns_scale": true
+	}

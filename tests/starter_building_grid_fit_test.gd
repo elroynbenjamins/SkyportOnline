@@ -6,170 +6,131 @@ func _init() -> void:
 
 
 func _run() -> void:
+	if not _check_round_trip():
+		return
+	if not _check_footprint_geometry():
+		return
+	if not _check_rotation_contract():
+		return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame
 
-	if AirportGrid.WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG != 1.0:
-		_fail("World sprites must never be allowed to exceed their grid footprint.")
+	if not grid.is_grid_first_visual_reset_enabled():
+		_fail("Airport must remain in grid-first visual reset mode.")
 		return
 
-	if not grid.has_method("_draw_canonical_building_foundation"):
-		_fail("All placeable buildings should use a canonical grid foundation.")
-		return
-	var terminal_profile := grid.get_foundation_profile_for_definition(
-		BuildingCatalog.get_definition("small_terminal")
-	)
-	if (
-		not bool(terminal_profile.get("enabled", false))
-		or String(terminal_profile.get("style", "")) != "passenger"
-	):
-		_fail("Terminal should resolve to the passenger foundation profile.")
-		return
-	var fuel_profile := grid.get_foundation_profile_for_definition(
-		BuildingCatalog.get_definition("basic_fuel")
-	)
-	if String(fuel_profile.get("style", "")) != "fuel":
-		_fail("Fuel stations should resolve to the fuel foundation profile.")
-		return
-	var decor_profile := grid.get_foundation_profile_for_definition(
-		BuildingCatalog.get_definition("autumn_event_flag")
-	)
-	if bool(decor_profile.get("enabled", true)):
-		_fail("Decorations should not receive a hard airport foundation.")
-		return
-
-	var normal_checked := 0
-	for definition in BuildingCatalog.all():
-		if not grid._definition_has_world_sprite(definition):
-			continue
-		if not _check_definition(grid, definition, "building"):
-			return
-		normal_checked += 1
-
-	var charter_checked := 0
-	for base_definition in (
-		CharterVisualCatalog.building_visuals()
-		+ CharterVisualCatalog.surface_visuals()
-	):
-		var visual_id := String(base_definition.get("id", ""))
-		var definition := CharterVisualCatalog.visual_for(visual_id)
-		if definition.is_empty():
-			_fail("%s charter definition should resolve." % visual_id)
-			return
-		if not _check_definition(grid, definition, "charter"):
-			return
-		charter_checked += 1
-
-	# Preview/construction motion may lift a sprite vertically, but it must never
-	# change the footprint-based scale or horizontal grounding.
-	var hangar := BuildingCatalog.get_definition("small_hangar")
-	var hangar_fp := grid._footprint_for(hangar, 0)
-	var final_rect := grid._building_sprite_rect(
-		hangar,
-		Vector2i(2, 2),
-		hangar_fp,
+	var terminal := BuildingCatalog.get_definition("small_terminal")
+	var terminal_contract := grid.get_grid_visual_contract_for_definition(
+		terminal,
 		0
 	)
-	var preview_rect := grid._building_sprite_rect(
-		hangar,
-		Vector2i(2, 2),
-		hangar_fp,
-		0,
-		Vector2(0, -10)
-	)
-	if absf(final_rect.position.x - preview_rect.position.x) > 0.01:
-		_fail("Preview must keep the exact final grid X position.")
+	if not bool(terminal_contract.get("valid", false)):
+		_fail("Terminal should expose a valid grid visual contract.")
 		return
-	if final_rect.size.distance_to(preview_rect.size) > 0.01:
-		_fail("Preview and final building must use the exact same grid-fit scale.")
-		return
-	if absf((preview_rect.position.y - final_rect.position.y) + 10.0) > 0.01:
-		_fail("Preview lift may only move the sprite vertically.")
-		return
-
-	# Starter layout remains intentionally spaced; strict visual fitting should
-	# not mutate logical building positions or occupied cells.
-	var travel_origin := Vector2i(-1, -1)
-	var terminal_origin := Vector2i(-1, -1)
-	for building in grid.placed_buildings:
-		match String(building.get("definition_id", "")):
-			"travel_office":
-				travel_origin = building.get("origin", Vector2i(-1, -1))
-			"small_terminal":
-				terminal_origin = building.get("origin", Vector2i(-1, -1))
-	if travel_origin != Vector2i(9, 10):
-		_fail("Strict sprite fitting must not move the Travel Office grid cells.")
-		return
-	if terminal_origin != Vector2i(8, 14):
-		_fail("Strict sprite fitting must not move the Terminal grid cells.")
+	if terminal_contract.get("footprint", Vector2i.ZERO) != Vector2i(3, 2):
+		_fail("Terminal visual contract must use its exact 3x2 logical footprint.")
 		return
 
 	print(
-		(
-			"STRICT_GRID_FOOTPRINTS_OK buildings=%d charter=%d "
-			+ "width_bounded=true centered=true grounded=true "
-			+ "preview_same_geometry=true"
-		) % [normal_checked, charter_checked]
+		"GRID_VISUAL_CONTRACT_OK projection=2:1 tile=64x32 "
+		+ "nearest_cell_snap=true grid_owns_footprint=true "
+		+ "grid_owns_anchor=true grid_owns_scale=true"
 	)
 	quit(0)
 
 
-func _check_definition(
-	grid: AirportGrid,
-	definition: Dictionary,
-	group_name: String
-) -> bool:
-	var id := String(definition.get("id", "unknown"))
-	var rotations := (
-		2
-		if bool(definition.get("rotatable", false))
-		else 1
-	)
-	for rotation in range(rotations):
-		var snapshot := grid.get_grid_fit_snapshot_for_definition(
-			definition,
-			Vector2i(3, 3),
-			rotation
+func _check_round_trip() -> bool:
+	for cell in [
+		Vector2i.ZERO,
+		Vector2i(1, 0),
+		Vector2i(0, 1),
+		Vector2i(3, 5),
+		Vector2i(-1, 0),
+		Vector2i(0, -1),
+		Vector2i(-4, 2)
+	]:
+		var world := BuildingPlacementGrid.tile_to_world(
+			Vector2(cell.x, cell.y)
 		)
-		if not bool(snapshot.get("valid", false)):
+		var recovered := BuildingPlacementGrid.world_to_tile(world)
+		if recovered != cell:
 			_fail(
-				"%s %s rotation %d should produce a measurable grid-fit sprite."
-				% [group_name, id, rotation]
+				"Grid round-trip failed for %s -> %s."
+				% [str(cell), str(recovered)]
 			)
 			return false
 
-		var footprint_width := float(snapshot.get("footprint_width", 0.0))
-		var visible_width := float(snapshot.get("visible_width", 999999.0))
-		if visible_width > footprint_width + 0.10:
-			_fail(
-				"%s %s rotation %d visible width %.2f exceeds footprint %.2f."
-				% [
-					group_name,
-					id,
-					rotation,
-					visible_width,
-					footprint_width
-				]
-			)
+	# Each half-diamond should still snap to its nearest cell center rather than
+	# being floored into a neighboring tile.
+	var near_center := (
+		BuildingPlacementGrid.tile_to_world(Vector2(2, 2))
+		+ Vector2(5, 2)
+	)
+	if BuildingPlacementGrid.world_to_tile(near_center) != Vector2i(2, 2):
+		_fail("Pointer snapping must use nearest-cell isometric rounding.")
+		return false
+	return true
+
+
+func _check_footprint_geometry() -> bool:
+	for footprint in [
+		Vector2i(1, 1),
+		Vector2i(2, 2),
+		Vector2i(3, 2),
+		Vector2i(7, 2)
+	]:
+		var contract := BuildingPlacementGrid.visual_contract(
+			footprint
+		)
+		if not bool(contract.get("valid", false)):
+			_fail("Footprint %s should produce a valid contract." % str(footprint))
 			return false
 
-		var bottom_delta := absf(float(snapshot.get("bottom_delta", 999.0)))
-		if bottom_delta > 0.10:
+		var expected_width := (
+			float(footprint.x + footprint.y)
+			* BuildingPlacementGrid.TILE_WIDTH
+			* 0.5
+		)
+		var expected_height := (
+			float(footprint.x + footprint.y)
+			* BuildingPlacementGrid.TILE_HEIGHT
+			* 0.5
+		)
+		var size: Vector2 = contract.get(
+			"base_size",
+			Vector2.ZERO
+		)
+		if absf(size.x - expected_width) > 0.01:
 			_fail(
-				"%s %s rotation %d base is %.2f px off the grid."
-				% [group_name, id, rotation, bottom_delta]
+				"Footprint %s width %.2f should be %.2f."
+				% [str(footprint), size.x, expected_width]
 			)
 			return false
-
-		var center_delta := absf(float(snapshot.get("center_delta", 999.0)))
-		if center_delta > 0.10:
+		if absf(size.y - expected_height) > 0.01:
 			_fail(
-				"%s %s rotation %d is %.2f px off footprint center."
-				% [group_name, id, rotation, center_delta]
+				"Footprint %s height %.2f should be %.2f."
+				% [str(footprint), size.y, expected_height]
 			)
 			return false
+		if float(contract.get("max_horizontal_overhang_px", -1.0)) != 0.0:
+			_fail("Grid-native visuals may not define horizontal footprint overhang.")
+			return false
+	return true
 
+
+func _check_rotation_contract() -> bool:
+	var definition := {
+		"footprint": Vector2i(3, 2),
+		"rotatable": true
+	}
+	if BuildingPlacementGrid.footprint_for(definition, 0) != Vector2i(3, 2):
+		_fail("Rotation 0 must preserve a 3x2 footprint.")
+		return false
+	if BuildingPlacementGrid.footprint_for(definition, 1) != Vector2i(2, 3):
+		_fail("Rotation 1 must swap a 3x2 footprint to 2x3.")
+		return false
 	return true
 
 

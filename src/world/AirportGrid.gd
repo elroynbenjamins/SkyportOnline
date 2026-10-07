@@ -17,10 +17,20 @@ signal building_restored(data: Dictionary)
 signal network_status_changed(data: Dictionary)
 signal building_selected_world(data: Dictionary)
 
-const TILE_WIDTH := 64.0
-const TILE_HEIGHT := 32.0
+const TILE_WIDTH := PlacementGridV2.TILE_WIDTH
+const TILE_HEIGHT := PlacementGridV2.TILE_HEIGHT
 const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.0
 const DEFAULT_WORLD_SPRITE_VISIBLE_WIDTH_SCALE := 0.92
+const GRID_FIRST_VISUAL_RESET := true
+const GRID_RESET_BACKGROUND := Color("182229")
+const GRID_RESET_OWNED := Color("3d604e")
+const GRID_RESET_AVAILABLE := Color("5a5b43")
+const GRID_RESET_LOCKED := Color("2b3935")
+const GRID_RESET_LINE := Color("b9d2c3", 0.34)
+const GRID_RESET_CELL_LINE := Color("e7f0eb", 0.18)
+const GRID_RESET_OUTLINE := Color("eaf4f0", 0.72)
+const GRID_RESET_PREVIEW_VALID := Color("65d68a", 0.44)
+const GRID_RESET_PREVIEW_INVALID := Color("ef6f6c", 0.52)
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
@@ -409,6 +419,10 @@ func _add_parcel(id: String, px: int, py: int, level: int, cost: int, owned: boo
 
 
 func _draw() -> void:
+	if GRID_FIRST_VISUAL_RESET:
+		_draw_grid_first_scene()
+		return
+
 	_draw_world_terrain_background()
 	# Landside art is a background layer. Drawing it before parcel terrain
 	# guarantees decorative scenery can never cover buildable placement tiles.
@@ -446,6 +460,294 @@ func _draw() -> void:
 	_draw_placement_confirm_fx()
 	_draw_preview_expansion_outline()
 	_draw_selected_outline()
+
+
+func _draw_grid_first_scene() -> void:
+	# Grid-first reset: no authored airport art is allowed to participate in
+	# world placement. Everything visible here is derived from the same grid
+	# geometry used by collision, routing and placement validation.
+	draw_rect(
+		Rect2(-1800, -700, 3600, 2600),
+		GRID_RESET_BACKGROUND
+	)
+	_draw_grid_first_parcels()
+	_draw_grid_first_buildings()
+	_draw_hovered_building_outline()
+	_draw_selected_building_outline()
+	_draw_grid_first_preview()
+	_draw_preview_expansion_outline()
+	_draw_selected_outline()
+
+
+func _draw_grid_first_parcels() -> void:
+	for py in range(PARCEL_ROWS):
+		for px in range(PARCEL_COLUMNS):
+			var parcel := _parcel_at(px, py)
+			if parcel.is_empty():
+				continue
+
+			var state := "owned"
+			if not bool(parcel.get("owned", false)):
+				var progression_state := String(
+					_parcel_progression_data(
+						String(parcel.get("id", ""))
+					).get("progression_state", "future")
+				)
+				state = (
+					"available"
+					if progression_state == "available"
+					else "locked"
+				)
+
+			var start_x := int(parcel.get("px", 0)) * PARCEL_SIZE
+			var start_y := int(parcel.get("py", 0)) * PARCEL_SIZE
+			for y in range(start_y, start_y + PARCEL_SIZE):
+				for x in range(start_x, start_x + PARCEL_SIZE):
+					var cell := Vector2i(x, y)
+					_draw_grid_first_cell(
+						cell,
+						_grid_first_parcel_fill(state),
+						GRID_RESET_LINE,
+						1.0
+					)
+
+
+func _grid_first_parcel_fill(state: String) -> Color:
+	match state:
+		"available":
+			return GRID_RESET_AVAILABLE
+		"locked":
+			return GRID_RESET_LOCKED
+		_:
+			return GRID_RESET_OWNED
+
+
+func _draw_grid_first_cell(
+	cell: Vector2i,
+	fill: Color,
+	line: Color,
+	line_width: float
+) -> void:
+	var points := PlacementGridV2.tile_polygon(cell)
+	draw_colored_polygon(points, fill)
+	draw_polyline(
+		PackedVector2Array([
+			points[0],
+			points[1],
+			points[2],
+			points[3],
+			points[0]
+		]),
+		line,
+		line_width
+	)
+
+
+func _draw_grid_first_buildings() -> void:
+	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
+	buildings_to_draw.sort_custom(
+		Callable(self, "_sort_buildings_by_depth")
+	)
+
+	for building in buildings_to_draw:
+		if (
+			preview_mode == "move"
+			and int(building.get("uid", -1)) == preview_ignore_uid
+		):
+			continue
+
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if definition.is_empty():
+			continue
+
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var footprint := _footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+		var fill := _grid_first_building_fill(definition)
+		for cell in PlacementGridV2.cells_for(origin, footprint):
+			_draw_grid_first_cell(
+				cell,
+				fill,
+				GRID_RESET_CELL_LINE,
+				1.0
+			)
+
+		var outline := _footprint_polygon(
+			origin,
+			footprint
+		)
+		if outline.size() >= 4:
+			draw_polyline(
+				PackedVector2Array([
+					outline[0],
+					outline[1],
+					outline[2],
+					outline[3],
+					outline[0]
+				]),
+				GRID_RESET_OUTLINE,
+				2.0
+			)
+
+		var id := String(definition.get("id", ""))
+		if id in ["taxiway", "service_road"]:
+			_draw_grid_first_network_links(origin, id)
+
+
+func _grid_first_building_fill(
+	definition: Dictionary
+) -> Color:
+	var id := String(definition.get("id", ""))
+	if id.contains("runway"):
+		return Color("3a4248")
+	if id == "taxiway":
+		return Color("53636b")
+	if id == "service_road":
+		return Color("766d63")
+	if id == "apron_tile":
+		return Color("9da19e")
+
+	match String(definition.get("category", "")):
+		"Passenger":
+			return Color("4f7182")
+		"Services":
+			return Color("60786f")
+		"Operations":
+			return Color("716a82")
+		"Cargo":
+			return Color("806b58")
+		_:
+			var fallback: Color = definition.get(
+				"color",
+				Color("68777b")
+			)
+			fallback.a = 0.92
+			return fallback
+
+
+func _draw_grid_first_network_links(
+	origin: Vector2i,
+	kind: String
+) -> void:
+	var center := tile_to_world(
+		Vector2(origin.x, origin.y)
+	)
+	var line_color := (
+		Color("e8c85d", 0.88)
+		if kind == "taxiway"
+		else Color("e8e4da", 0.76)
+	)
+	for direction in [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]:
+		var neighbor := origin + direction
+		var connected := (
+			_taxiway_visually_connects_to(neighbor)
+			if kind == "taxiway"
+			else _service_road_visually_connects_to(neighbor)
+		)
+		if not connected:
+			continue
+		var edge_tile := (
+			Vector2(origin.x, origin.y)
+			+ Vector2(direction.x, direction.y) * 0.48
+		)
+		draw_line(
+			center,
+			tile_to_world(edge_tile),
+			line_color,
+			2.0
+		)
+
+
+func _draw_grid_first_preview() -> void:
+	if (
+		preview_building_id.is_empty()
+		or preview_origin.x < 0
+		or preview_origin.y < 0
+	):
+		return
+
+	var definition := BuildingCatalog.get_definition(
+		preview_building_id
+	)
+	if definition.is_empty():
+		return
+
+	var footprint := _footprint_for(
+		definition,
+		preview_rotation
+	)
+	var valid := bool(
+		preview_status.get("valid", false)
+	)
+	var fill := (
+		GRID_RESET_PREVIEW_VALID
+		if valid
+		else GRID_RESET_PREVIEW_INVALID
+	)
+	for cell in PlacementGridV2.cells_for(
+		preview_origin,
+		footprint
+	):
+		_draw_grid_first_cell(
+			cell,
+			fill,
+			Color("ffffff", 0.72),
+			1.5
+		)
+
+	var outline := _footprint_polygon(
+		preview_origin,
+		footprint
+	)
+	if outline.size() >= 4:
+		draw_polyline(
+			PackedVector2Array([
+				outline[0],
+				outline[1],
+				outline[2],
+				outline[3],
+				outline[0]
+			]),
+			Color("ffffff", 0.92),
+			3.0
+		)
+
+
+func is_grid_first_visual_reset_enabled() -> bool:
+	return GRID_FIRST_VISUAL_RESET
+
+
+func get_grid_visual_contract_for_definition(
+	definition: Dictionary,
+	rotation: int = 0
+) -> Dictionary:
+	if definition.is_empty():
+		return {"valid": false}
+
+	var footprint := _footprint_for(
+		definition,
+		rotation
+	)
+	var contract := PlacementGridV2.visual_contract(
+		footprint
+	)
+	contract["definition_id"] = String(
+		definition.get("id", "")
+	)
+	contract["rotation"] = rotation % 2
+	return contract
 
 
 func _draw_world_terrain_background() -> void:
@@ -4945,6 +5247,8 @@ func _draw_winter_snow_globe_garden(
 
 
 func _definition_has_world_sprite(definition: Dictionary) -> bool:
+	if GRID_FIRST_VISUAL_RESET:
+		return false
 	var atlas_path := String(
 		definition.get("world_sprite_atlas_path", "")
 	)
@@ -6924,6 +7228,8 @@ func _placement_focus_active() -> bool:
 
 
 func _placement_grid_visible() -> bool:
+	if GRID_FIRST_VISUAL_RESET:
+		return true
 	# The construction grid is a tool, not part of the normal airport view.
 	# Show it only while the player is actively placing, moving or restoring
 	# a building. Normal play keeps the terrain seamless.

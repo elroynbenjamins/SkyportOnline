@@ -644,13 +644,14 @@ func _draw_grid_first_network_links(
 		if kind == "taxiway"
 		else Color("e8e4da", 0.76)
 	)
-	for direction in [
+	var directions: Array[Vector2i] = [
 		Vector2i(1, 0),
 		Vector2i(-1, 0),
 		Vector2i(0, 1),
 		Vector2i(0, -1)
-	]:
-		var neighbor := origin + direction
+	]
+	for direction: Vector2i in directions:
+		var neighbor: Vector2i = origin + direction
 		var connected := (
 			_taxiway_visually_connects_to(neighbor)
 			if kind == "taxiway"

@@ -754,7 +754,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 	]
 
 
-const GRID_RESET_VISUAL_KEYS := PackedStringArray([
+static var GRID_RESET_VISUAL_KEYS := PackedStringArray([
 	"icon_path",
 	"art_tier",
 	"surface_art",

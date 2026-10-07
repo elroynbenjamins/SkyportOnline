@@ -5,7 +5,6 @@ on:
     branches: [main]
   pull_request:
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -19,368 +18,113 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Upload source building atlas for grounding QA
-        uses: actions/upload-artifact@v4
-        with:
-          name: source-building-atlas
-          path: assets/production/airport_buildings_v2/skyport_buildings_atlas.webp
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Import project and build script class cache
         shell: bash
         run: |
           godot --headless --path . --import --verbose
           test -s .godot/global_script_class_cache.cfg
 
-      - name: Test airport camera navigation
-        run: timeout 20s godot --headless --path . --script res://tests/camera_navigation_test.gd
-
-      - name: Test building placement V2
-        run: timeout 25s godot --headless --path . --script res://tests/building_placement_v2_test.gd
-
-      - name: Test starter airport network V2
-        run: timeout 25s godot --headless --path . --script res://tests/starter_airport_network_v2_test.gd
-
-      - name: Test starter airport tutorial
-        run: timeout 25s godot --headless --path . --script res://tests/starter_airport_tutorial_test.gd
-
       - name: Start main scene smoke test
         run: godot --headless --path . --quit-after 3 --verbose
 
-      - name: Test starter building grid fit
-        run: timeout 20s godot --headless --path . --script res://tests/starter_building_grid_fit_test.gd
-
-      - name: Test airside connectivity
-        run: timeout 20s godot --headless --path . --script res://tests/airside_connectivity_test.gd
-
-      - name: Test Airside Routing V2 and ground art
-        run: timeout 25s godot --headless --path . --script res://tests/airside_routing_v2_test.gd
-
-      - name: Test flight timer rules
-        run: timeout 20s godot --headless --path . --script res://tests/flight_rules_test.gd
-
-      - name: Test resource drop rules
-        run: timeout 20s godot --headless --path . --script res://tests/resource_drop_rules_test.gd
-
-      - name: Test passenger economy
-        run: timeout 20s godot --headless --path . --script res://tests/passenger_economy_test.gd
-
-      - name: Test fuel economy
-        run: timeout 20s godot --headless --path . --script res://tests/fuel_economy_test.gd
-
-      - name: Test fuel upgrades and low-stock feedback
-        run: timeout 20s godot --headless --path . --script res://tests/fuel_upgrade_feedback_test.gd
-
-      - name: Test building synergy and optimization
-        run: timeout 20s godot --headless --path . --script res://tests/building_synergy_test.gd
-
-      - name: Test passenger demand
-        run: timeout 20s godot --headless --path . --script res://tests/passenger_demand_test.gd
-
-      - name: Test dynamic route demand
-        run: timeout 20s godot --headless --path . --script res://tests/dynamic_demand_test.gd
-
-      - name: Test Priority Contracts
-        run: timeout 20s godot --headless --path . --script res://tests/priority_contract_test.gd
-
-      - name: Test World Map passenger demand
-        run: timeout 20s godot --headless --path . --script res://tests/world_map_demand_test.gd
-
-      - name: Test World Map country selection
-        run: timeout 20s godot --headless --path . --script res://tests/world_map_country_selection_test.gd
-
-      - name: Test economy history
-        run: timeout 20s godot --headless --path . --script res://tests/economy_history_test.gd
-
-      - name: Test aircraft mastery
-        run: timeout 20s godot --headless --path . --script res://tests/aircraft_mastery_test.gd
-
-      - name: Test aircraft visual scale
-        run: timeout 20s godot --headless --path . --script res://tests/aircraft_visual_scale_test.gd
-
-      - name: Test stand and aircraft visual integration
-        run: timeout 25s godot --headless --path . --script res://tests/stand_aircraft_visual_integration_test.gd
-
-      - name: Test all aircraft directional coverage
-        run: timeout 25s godot --headless --path . --script res://tests/aircraft_directional_coverage_test.gd
-
-      - name: Test Fleet screen
-        run: timeout 20s godot --headless --path . --script res://tests/fleet_screen_test.gd
-
-      - name: Test passenger support
-        run: timeout 20s godot --headless --path . --script res://tests/passenger_support_test.gd
-
-      - name: Test social airport account and rewards
-        run: timeout 20s godot --headless --path . --script res://tests/social_airport_test.gd
-
-      - name: Test social visitor airport cycle
-        run: timeout 25s godot --headless --path . --script res://tests/social_aircraft_cycle_test.gd
-
-      - name: Test Alliance Operations
-        run: timeout 25s godot --headless --path . --script res://tests/alliance_operations_test.gd
-
-      - name: Test Weekly Airport Challenge
-        run: timeout 25s godot --headless --path . --script res://tests/airport_challenge_test.gd
-
-      - name: Test Activities hub
-        run: timeout 25s godot --headless --path . --script res://tests/activities_hub_test.gd
-
-      - name: Test Activities pacing
-        run: timeout 25s godot --headless --path . --script res://tests/activity_pacing_test.gd
-
-      - name: Test progression pacing
-        run: timeout 25s godot --headless --path . --script res://tests/progression_pacing_test.gd
-
-      - name: Test Airport Dispatch
-        run: timeout 25s godot --headless --path . --script res://tests/dispatch_challenge_test.gd
-
-
-      - name: Test country selection and resource catalog
-        run: timeout 20s godot --headless --path . --script res://tests/country_resource_test.gd
-
-
-      - name: Test aircraft turnaround rules
-        run: timeout 20s godot --headless --path . --script res://tests/turnaround_rules_test.gd
-
-
-      - name: Test ground service bottlenecks
-        run: timeout 20s godot --headless --path . --script res://tests/ground_service_bottleneck_test.gd
-
-
-      - name: Test service building upgrades
-        run: timeout 20s godot --headless --path . --script res://tests/service_upgrade_test.gd
-
-
-      - name: Test service docking positions
-        run: timeout 20s godot --headless --path . --script res://tests/service_docking_test.gd
-
-      - name: Test ground service visual motion
-        run: timeout 20s godot --headless --path . --script res://tests/ground_service_visual_motion_test.gd
-
-      - name: Test Cargo Charter visual pack
-        run: timeout 30s godot --headless --path . --script res://tests/charter_visual_pack_test.gd
-
-      - name: Test Cargo Charter gameplay
-        run: timeout 30s godot --headless --path . --script res://tests/charter_gameplay_test.gd
-
-      - name: Test apron detail v2 visuals
-        run: timeout 25s godot --headless --path . --script res://tests/apron_detail_v2_test.gd
-
-      - name: Test airport ambient life
-        run: timeout 20s godot --headless --path . --script res://tests/airport_ambient_life_test.gd
-
-      - name: Test aircraft and runway motion feedback
-        run: timeout 20s godot --headless --path . --script res://tests/aircraft_runway_motion_feedback_test.gd
-
-      - name: Test Pico P8 full flight cycle
-        run: timeout 35s godot --headless --path . --script res://tests/pico_full_flight_cycle_test.gd
-
-      - name: Test Pico P8 visual FX
-        run: timeout 25s godot --headless --path . --script res://tests/pico_visual_fx_test.gd
-
-      - name: Test Swift S14 flight polish
-        run: timeout 25s godot --headless --path . --script res://tests/swift_s14_flight_polish_test.gd
-
-      - name: Test remaining S-class prop fleet polish
-        run: timeout 25s godot --headless --path . --script res://tests/s_class_prop_fleet_polish_test.gd
-
-      - name: Test Nimbus N40 medium golden path
-        run: timeout 25s godot --headless --path . --script res://tests/nimbus_n40_golden_path_test.gd
-
-      - name: Test M-class jet fleet polish
-        run: timeout 30s godot --headless --path . --script res://tests/m_class_jet_fleet_polish_test.gd
-
-      - name: Test manual aircraft handling loop
-        run: timeout 35s godot --headless --path . --script res://tests/manual_aircraft_handling_test.gd
-
-      - name: Test aircraft handling attention
-        run: timeout 25s godot --headless --path . --script res://tests/aircraft_handling_attention_test.gd
-
-      - name: Test manual service choreography
-        run: timeout 30s godot --headless --path . --script res://tests/manual_service_choreography_test.gd
-
-      - name: Test M-class turnaround choreography
-        run: timeout 25s godot --headless --path . --script res://tests/m_class_turnaround_choreography_test.gd
-
-
-      - name: Test physical pushback tug
-        run: timeout 20s godot --headless --path . --script res://tests/pushback_service_test.gd
-
-
-      - name: Test taxi motion and stand geometry
-        run: timeout 20s godot --headless --path . --script res://tests/taxi_motion_test.gd
-
-      - name: Test aircraft ground motion V3
-        run: timeout 20s godot --headless --path . --script res://tests/aircraft_ground_motion_v3_test.gd
-
-
-      - name: Test apron traffic spacing
-        run: timeout 20s godot --headless --path . --script res://tests/apron_traffic_test.gd
-
-      - name: Test event framework
-        run: timeout 20s godot --headless --path . --script res://tests/event_framework_test.gd
-
-      - name: Test Winter launch event shop
-        run: timeout 20s godot --headless --path . --script res://tests/winter_launch_event_test.gd
-
-      - name: Test physical event visuals
-        run: timeout 20s godot --headless --path . --script res://tests/event_visual_presence_test.gd
-
-      - name: Test seasonal decoration v2 art
-        run: timeout 25s godot --headless --path . --script res://tests/seasonal_decor_v2_test.gd
-
-      - name: Test UI modernization
-        run: timeout 20s godot --headless --path . --script res://tests/ui_modernization_test.gd
-
-      - name: Test production HUD skin
-        run: timeout 20s godot --headless --path . --script res://tests/production_ui_skin_test.gd
-
-      - name: Test main airport UI takeover
-        run: timeout 20s godot --headless --path . --script res://tests/airport_ui_takeover_test.gd
-
-      - name: Prepare virtual display for airport screenshot
+      - name: Validate grid and gameplay systems
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/camera_navigation_test.gd
+            tests/building_placement_v2_test.gd
+            tests/starter_airport_network_v2_test.gd
+            tests/starter_airport_tutorial_test.gd
+            tests/starter_building_grid_fit_test.gd
+            tests/airside_connectivity_test.gd
+            tests/flight_rules_test.gd
+            tests/resource_drop_rules_test.gd
+            tests/passenger_economy_test.gd
+            tests/fuel_economy_test.gd
+            tests/fuel_upgrade_feedback_test.gd
+            tests/building_synergy_test.gd
+            tests/passenger_demand_test.gd
+            tests/dynamic_demand_test.gd
+            tests/priority_contract_test.gd
+            tests/world_map_demand_test.gd
+            tests/world_map_country_selection_test.gd
+            tests/economy_history_test.gd
+            tests/aircraft_mastery_test.gd
+            tests/aircraft_directional_coverage_test.gd
+            tests/fleet_screen_test.gd
+            tests/passenger_support_test.gd
+            tests/social_airport_test.gd
+            tests/social_aircraft_cycle_test.gd
+            tests/alliance_operations_test.gd
+            tests/airport_challenge_test.gd
+            tests/activities_hub_test.gd
+            tests/activity_pacing_test.gd
+            tests/progression_pacing_test.gd
+            tests/dispatch_challenge_test.gd
+            tests/country_resource_test.gd
+            tests/turnaround_rules_test.gd
+            tests/ground_service_bottleneck_test.gd
+            tests/service_upgrade_test.gd
+            tests/service_docking_test.gd
+            tests/mission_pass_rules_test.gd
+            tests/event_framework_test.gd
+            tests/winter_launch_event_test.gd
+            tests/ui_modernization_test.gd
+            tests/production_ui_skin_test.gd
+            tests/aircraft_context_card_test.gd
+            tests/building_context_card_test.gd
+            tests/land_expansion_progression_test.gd
+            tests/placement_expansion_test.gd
+            tests/airport_edit_hud_test.gd
+            tests/building_move_mode_test.gd
+            tests/layout_edit_feedback_test.gd
+            tests/new_build_construction_feedback_test.gd
+            tests/building_storage_test.gd
+            tests/taxi_traffic_test.gd
+            tests/airport_ground_movement_safety_test.gd
+            tests/airport_operations_cycle_test.gd
+            tests/runway_hold_short_test.gd
+            tests/runway_pacing_test.gd
+            tests/atc_tower_upgrade_test.gd
+            tests/multi_runway_assignment_test.gd
+            tests/runway_strategy_test.gd
+            tests/runway_analytics_test.gd
+            tests/operations_analytics_test.gd
+            tests/operations_payoff_test.gd
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::${test_file}"
+            timeout 40s godot --headless --path . --script "res://${test_file}"
+            echo "::endgroup::"
+          done
+
+      - name: Prepare virtual display for grid QA
+        shell: bash
         run: |
           if ! command -v xvfb-run >/dev/null 2>&1; then
             apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb
           fi
 
-      - name: Capture current airport visual QA screenshot
+      - name: Capture current grid-first airport
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_airport_screenshot.gd
 
-      - name: Upload current airport visual QA screenshot
+      - name: Upload current grid-first airport
         uses: actions/upload-artifact@v4
         with:
-          name: current-airport-screenshot
+          name: current-grid-first-airport
           path: artifacts/current_airport.png
           if-no-files-found: error
           retention-days: 7
 
-      - name: Capture all-building grid QA screenshot
+      - name: Capture footprint contract QA
         run: timeout 60s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_building_grid_qa.gd
 
-      - name: Upload all-building grid QA screenshot
+      - name: Upload footprint contract QA
         uses: actions/upload-artifact@v4
         with:
-          name: building-grid-qa
+          name: footprint-contract-qa
           path: artifacts/building_grid_qa.png
           if-no-files-found: error
           retention-days: 7
-
-
-      - name: Diagnose production building art alignment
-        run: timeout 30s godot --headless --path . --script res://tests/building_art_alignment_test.gd
-
-      - name: Test canonical v2 starter building art
-        run: timeout 25s godot --headless --path . --script res://tests/starter_building_art_v3_test.gd
-
-      - name: Test canonical v2 service building art
-        run: timeout 25s godot --headless --path . --script res://tests/service_building_art_v2_test.gd
-
-      - name: Test regional canonical v2 building art
-        run: timeout 25s godot --headless --path . --script res://tests/regional_building_art_v2_test.gd
-
-      - name: Test aircraft context card
-        run: timeout 20s godot --headless --path . --script res://tests/aircraft_context_card_test.gd
-
-      - name: Test building context card
-        run: timeout 20s godot --headless --path . --script res://tests/building_context_card_test.gd
-
-      - name: Test land expansion frontier progression
-        run: timeout 20s godot --headless --path . --script res://tests/land_expansion_progression_test.gd
-
-      - name: Test placement-time expansion
-        run: timeout 20s godot --headless --path . --script res://tests/placement_expansion_test.gd
-
-      - name: Test airport edit and expansion HUD
-        run: timeout 20s godot --headless --path . --script res://tests/airport_edit_hud_test.gd
-
-      - name: Test building move mode
-        run: timeout 20s godot --headless --path . --script res://tests/building_move_mode_test.gd
-
-      - name: Test airport layout edit feedback
-        run: timeout 20s godot --headless --path . --script res://tests/layout_edit_feedback_test.gd
-
-      - name: Test new-building construction feedback
-        run: timeout 20s godot --headless --path . --script res://tests/new_build_construction_feedback_test.gd
-
-      - name: Test building storage
-        run: timeout 20s godot --headless --path . --script res://tests/building_storage_test.gd
-
-
-      - name: Test airport expansion districts and visuals
-        run: timeout 20s godot --headless --path . --script res://tests/airport_expansion_district_test.gd
-
-      - name: Test airport terrain visuals
-        run: timeout 20s godot --headless --path . --script res://tests/terrain_visual_test.gd
-
-      - name: Test airport background layer
-        run: timeout 20s godot --headless --path . --script res://tests/airport_background_layer_test.gd
-
-      - name: Test runway v2 surface visuals
-        run: timeout 25s godot --headless --path . --script res://tests/runway_surface_v2_test.gd
-
-      - name: Test airfield pavement v2 visuals
-        run: timeout 25s godot --headless --path . --script res://tests/airfield_pavement_v2_test.gd
-
-      - name: Test landside environment visuals
-        run: timeout 20s godot --headless --path . --script res://tests/landside_environment_test.gd
-
-      - name: Test airfield perimeter details
-        run: timeout 20s godot --headless --path . --script res://tests/airfield_perimeter_detail_test.gd
-
-      - name: Test apron and terminal micro details
-        run: timeout 20s godot --headless --path . --script res://tests/apron_micro_detail_test.gd
-
-      - name: Test unified starter apron visuals
-        run: timeout 20s godot --headless --path . --script res://tests/starter_apron_visual_test.gd
-
-      - name: Test shared airport building grounding
-        run: timeout 20s godot --headless --path . --script res://tests/airport_grounding_foundation_test.gd
-
-
-      - name: Test aircraft taxi traffic
-        run: timeout 20s godot --headless --path . --script res://tests/taxi_traffic_test.gd
-
-      - name: Test ground movement safety
-        run: timeout 20s godot --headless --path . --script res://tests/airport_ground_movement_safety_test.gd
-
-      - name: Test complete airport operations cycle
-        run: timeout 25s godot --headless --path . --script res://tests/airport_operations_cycle_test.gd
-
-
-      - name: Test runway hold short and arrival priority
-        run: timeout 20s godot --headless --path . --script res://tests/runway_hold_short_test.gd
-
-
-      - name: Test runway visual controls
-        run: timeout 20s godot --headless --path . --script res://tests/runway_visual_control_test.gd
-
-
-      - name: Test runway throughput pacing
-        run: timeout 20s godot --headless --path . --script res://tests/runway_pacing_test.gd
-
-
-      - name: Test ATC Tower throughput upgrades
-        run: timeout 20s godot --headless --path . --script res://tests/atc_tower_upgrade_test.gd
-
-
-      - name: Test multi-runway assignment
-        run: timeout 20s godot --headless --path . --script res://tests/multi_runway_assignment_test.gd
-
-
-      - name: Test runway operating strategy
-        run: timeout 20s godot --headless --path . --script res://tests/runway_strategy_test.gd
-
-
-      - name: Test runway utilization analytics
-        run: timeout 20s godot --headless --path . --script res://tests/runway_analytics_test.gd
-
-
-      - name: Test airport operations analytics
-        run: timeout 20s godot --headless --path . --script res://tests/operations_analytics_test.gd
-
-
-      - name: Test operations upgrade payoff
-        run: timeout 20s godot --headless --path . --script res://tests/operations_payoff_test.gd

@@ -10,7 +10,7 @@ const PRODUCTION_SEASONAL_DECOR_ATLAS := "res://assets/production/seasonal_decor
 const PRODUCTION_REGIONAL_FACILITIES_ATLAS := "res://assets/production/regional_facilities_v2/regional_facilities_v2.svg"
 
 
-static func all() -> Array[Dictionary]:
+static func _raw_definitions() -> Array[Dictionary]:
 	return [
 		{
 			"id": "short_runway",
@@ -752,6 +752,38 @@ static func all() -> Array[Dictionary]:
 			"world_sprite_offset": Vector2(0, -98)
 		}
 	]
+
+
+const GRID_RESET_VISUAL_KEYS := PackedStringArray([
+	"icon_path",
+	"art_tier",
+	"surface_art",
+	"world_art_has_integrated_base",
+	"world_sprite_grid_fit",
+	"world_sprite_auto_ground",
+	"world_sprite_visible_width_scale",
+	"world_sprite_max_width_scale",
+	"world_sprite_ground_align",
+	"world_ground_pad",
+	"world_sprite_atlas_path",
+	"world_sprite_regions",
+	"world_sprite_size",
+	"world_sprite_offsets",
+	"world_sprite_offset",
+	"world_sprite_paths",
+	"world_sprite_path"
+])
+
+
+static func all() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for raw_definition in _raw_definitions():
+		var definition: Dictionary = raw_definition.duplicate(true)
+		for key in GRID_RESET_VISUAL_KEYS:
+			definition.erase(key)
+		definition["visual_contract"] = "grid_v1"
+		result.append(definition)
+	return result
 
 
 static func get_definition(building_id: String) -> Dictionary:

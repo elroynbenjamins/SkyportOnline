@@ -2,7 +2,7 @@ extends SceneTree
 
 const OUTPUT_PATH := "res://artifacts/building_grid_qa.png"
 const COLUMNS := 7
-const CELL_SPACING := Vector2i(5, 5)
+const CELL_SPACING := Vector2i(9, 9)
 
 
 func _init() -> void:
@@ -30,8 +30,6 @@ func _run() -> void:
 
 	var samples: Array[Dictionary] = []
 	for definition in BuildingCatalog.all():
-		if not grid._definition_has_world_sprite(definition):
-			continue
 		var rotations := 2 if bool(
 			definition.get("rotatable", false)
 		) else 1

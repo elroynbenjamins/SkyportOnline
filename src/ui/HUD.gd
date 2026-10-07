@@ -16,6 +16,8 @@ const HUD_ICON_SVG := {
 	"atc": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M8 18h8l-1.2-8H9.2L8 18z" fill="#f8fcff"/><rect x="7.3" y="7" width="9.4" height="3.4" rx="1" fill="#f8fcff"/><rect x="9" y="8" width="2" height="1.4" fill="#0b4f70"/><rect x="13" y="8" width="2" height="1.4" fill="#0b4f70"/><path d="M12 7V4.8M12 4.8l3-1" stroke="#f5b33b" stroke-width="1.4" stroke-linecap="round"/></svg>"""
 }
 signal purchase_expansion_requested
+signal expansion_mode_requested
+signal expansion_mode_cancel_requested
 signal building_selected(building_id: String)
 signal rotate_building_requested
 signal confirm_building_requested
@@ -84,6 +86,7 @@ var parcel_panel: PanelContainer
 var parcel_title: Label
 var parcel_requirements: Label
 var purchase_button: Button
+var expansion_cancel_button: Button
 
 var build_action_panel: PanelContainer
 var build_title: Label
@@ -99,6 +102,7 @@ var catalog_count_label: Label
 var catalog_help_label: Label
 var catalog_close_button: Button
 var edit_airport_button: Button
+var expand_land_button: Button
 var airport_edit_panel: PanelContainer
 var airport_edit_status: Label
 var storage_button: Button
@@ -120,6 +124,7 @@ var current_gems := 0
 var active_building_id := ""
 var active_build_mode := ""
 var active_expand_parcel_id := ""
+var active_expansion_mode := false
 var event_nav_button: Button
 var charter_nav_button: Button
 var challenge_nav_button: Button
@@ -763,6 +768,7 @@ func _build_context_panel(root: Control) -> void:
 	parcel_panel.offset_bottom = -62
 	root.add_child(parcel_panel)
 	GameUIStyle.apply_panel(parcel_panel, "hud_context")
+	parcel_panel.visible = false
 
 	var parcel_row := HBoxContainer.new()
 	parcel_row.add_theme_constant_override("separation", 8)
@@ -784,6 +790,21 @@ func _build_context_panel(root: Control) -> void:
 	parcel_requirements.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	parcel_requirements.max_lines_visible = 2
 	parcel_text.add_child(parcel_requirements)
+
+	expansion_cancel_button = Button.new()
+	expansion_cancel_button.custom_minimum_size = Vector2(76, 50)
+	expansion_cancel_button.text = "✕"
+	expansion_cancel_button.tooltip_text = "Cancel land expansion"
+	expansion_cancel_button.visible = false
+	expansion_cancel_button.pressed.connect(
+		_on_expansion_cancel_pressed
+	)
+	GameUIStyle.apply_button(
+		expansion_cancel_button,
+		"secondary",
+		true
+	)
+	parcel_row.add_child(expansion_cancel_button)
 
 	purchase_button = Button.new()
 	purchase_button.custom_minimum_size = Vector2(150, 50)
@@ -1061,6 +1082,22 @@ func _build_catalog_panel(root: Control) -> void:
 	GameUIStyle.muted(catalog_help_label)
 	catalog_wrapper.add_child(catalog_help_label)
 	catalog_help_label.visible = false
+
+	expand_land_button = Button.new()
+	expand_land_button.text = "EXPAND LAND  •  SELECT AN ADJACENT PLOT"
+	expand_land_button.custom_minimum_size = Vector2(0, 42)
+	expand_land_button.tooltip_text = (
+		"Buy more airport land, then choose the adjacent plot you want."
+	)
+	expand_land_button.pressed.connect(
+		_on_expand_land_pressed
+	)
+	GameUIStyle.apply_button(
+		expand_land_button,
+		"gold",
+		true
+	)
+	catalog_wrapper.add_child(expand_land_button)
 
 	var filters := GridContainer.new()
 	filters.columns = 6
@@ -1389,7 +1426,8 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 		var definition := BuildingCatalog.get_definition(active_building_id)
 		show_build_preview(definition, {}, current_level, current_coins)
 	elif (
-		active_build_mode.is_empty()
+		active_expansion_mode
+		and active_build_mode.is_empty()
 		and active_building_id.is_empty()
 		and not current_parcel.is_empty()
 	):
@@ -1503,10 +1541,15 @@ func set_fuel_data(
 			else ("gold" if status == "low" else "secondary")
 		)
 
+
 func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> void:
 	current_parcel = parcel.duplicate(true)
 	current_level = player_level
 	current_coins = player_coins
+
+	if not active_expansion_mode:
+		parcel_panel.visible = false
+		return
 
 	if (
 		not active_building_id.is_empty()
@@ -1516,10 +1559,14 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 
 	parcel_panel.visible = true
 	build_action_panel.visible = false
+	if expansion_cancel_button != null:
+		expansion_cancel_button.visible = true
 
 	if parcel.is_empty():
 		parcel_title.text = "EXPAND AIRPORT"
-		parcel_requirements.text = "Select a connected expansion district."
+		parcel_requirements.text = (
+			"Select one of the highlighted adjacent plots."
+		)
 		purchase_button.text = "SELECT LAND"
 		purchase_button.disabled = true
 		return
@@ -1560,13 +1607,11 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 	)
 
 	parcel_title.text = zone_name.to_upper()
-	if progression_state == "future":
-		parcel_requirements.text = "%s • %s\nConnect adjacent airport land • Lv %d" % [
-			zone_tag,
-			purpose,
-			required_level
-		]
-		purchase_button.text = "NOT CONNECTED"
+	if progression_state != "available":
+		parcel_requirements.text = (
+			"This plot is not connected to your airport yet."
+		)
+		purchase_button.text = "NOT AVAILABLE"
 		purchase_button.disabled = true
 		return
 
@@ -1589,6 +1634,54 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 	else:
 		purchase_button.text = "BUY  🪙 %s" % _format_number(cost)
 		purchase_button.disabled = false
+
+func enter_expansion_mode() -> void:
+	active_expansion_mode = true
+	active_building_id = ""
+	active_build_mode = ""
+	current_parcel = {}
+	_reset_expand_here_action()
+
+	if catalog_panel != null:
+		catalog_panel.visible = false
+	if storage_panel != null:
+		storage_panel.visible = false
+	if airport_edit_panel != null:
+		airport_edit_panel.visible = false
+	if build_action_panel != null:
+		build_action_panel.visible = false
+	if expansion_cancel_button != null:
+		expansion_cancel_button.visible = true
+
+	parcel_panel.visible = true
+	parcel_title.text = "EXPAND AIRPORT"
+	parcel_requirements.text = (
+		"Select one of the highlighted adjacent plots."
+	)
+	purchase_button.text = "SELECT LAND"
+	purchase_button.disabled = true
+	build_hint.text = (
+		"EXPAND LAND  •  Tap a highlighted adjacent plot • buy or cancel below"
+	)
+
+
+func exit_expansion_mode(
+	return_to_catalog: bool = false
+) -> void:
+	active_expansion_mode = false
+	current_parcel = {}
+	parcel_panel.visible = false
+	if expansion_cancel_button != null:
+		expansion_cancel_button.visible = false
+	build_hint.text = (
+		"AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
+	)
+	if catalog_panel != null:
+		catalog_panel.visible = return_to_catalog
+
+
+func is_expansion_mode_active() -> bool:
+	return active_expansion_mode
 
 
 func enter_building_mode(definition: Dictionary) -> void:
@@ -1952,70 +2045,15 @@ func _reset_expand_here_action() -> void:
 		place_button.visible = true
 
 
+
 func _update_placement_expand_action(
 	status: Dictionary
 ) -> void:
+	# Expansion purchases are intentionally shop-only. Placement can explain
+	# that more land is required, but it never exposes an inline buy action.
 	_reset_expand_here_action()
-	if status.is_empty() or expand_here_button == null:
-		return
-
-	var parcel_id := String(
-		status.get("locked_parcel_id", "")
-	)
-	if parcel_id.is_empty():
-		return
-
-	active_expand_parcel_id = parcel_id
-	expand_here_button.visible = true
 	if place_button != null:
-		place_button.visible = false
-
-	var progression_state := String(
-		status.get(
-			"locked_parcel_state",
-			"available"
-		)
-	)
-	if progression_state == "future":
-		expand_here_button.text = "CONNECT LAND\nFIRST"
-		expand_here_button.disabled = true
-		return
-
-	var required_level := int(
-		status.get("locked_parcel_level", 1)
-	)
-	var cost := int(
-		status.get("locked_parcel_cost", 0)
-	)
-	var reserved_build_cost := 0
-	if active_build_mode == "build":
-		var definition := BuildingCatalog.get_definition(
-			active_building_id
-		)
-		if not definition.is_empty():
-			reserved_build_cost = maxi(
-				int(definition.get("cost", 0)),
-				0
-			)
-	var total_required_coins := cost + reserved_build_cost
-
-	if current_level < required_level:
-		expand_here_button.text = "EXPAND HERE\nLV %d" % required_level
-		expand_here_button.disabled = true
-		return
-
-	if current_coins < total_required_coins:
-		expand_here_button.text = "NEED 🪙 %s" % _format_number(
-			total_required_coins - current_coins
-		)
-		expand_here_button.disabled = true
-		return
-
-	expand_here_button.text = "EXPAND HERE\n🪙 %s" % _format_number(
-		cost
-	)
-	expand_here_button.disabled = false
-
+		place_button.visible = true
 
 func show_airport_edit_mode(
 	active: bool,
@@ -2051,12 +2089,7 @@ func show_airport_edit_mode(
 			"Tap a movable building • changes save when confirmed"
 		)
 		undo_airport_edit_button.disabled = true
-		parcel_panel.visible = true
-		show_parcel(
-			current_parcel,
-			current_level,
-			current_coins
-		)
+		parcel_panel.visible = false
 
 
 func set_airport_edit_undo_available(
@@ -2853,6 +2886,7 @@ func _refresh_all_status_chip_styles() -> void:
 		)
 
 
+
 func exit_building_mode() -> void:
 	active_building_id = ""
 	active_build_mode = ""
@@ -2865,9 +2899,7 @@ func exit_building_mode() -> void:
 	if catalog_panel != null:
 		catalog_panel.visible = true
 	build_hint.text = "AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
-	parcel_panel.visible = true
-	show_parcel(current_parcel, current_level, current_coins)
-
+	parcel_panel.visible = false
 
 func _update_catalog_buttons() -> void:
 	for definition in catalog_definitions:
@@ -3014,6 +3046,16 @@ func _on_building_button_pressed(building_id: String) -> void:
 	build_hint.text = "PLACING BUILDING  •  Tap owned land • use Rotate / Place / Cancel below"
 	building_selected.emit(building_id)
 
+func _on_expand_land_pressed() -> void:
+	if catalog_panel != null:
+		catalog_panel.visible = false
+	expansion_mode_requested.emit()
+
+
+func _on_expansion_cancel_pressed() -> void:
+	expansion_mode_cancel_requested.emit()
+
+
 func _on_catalog_close_pressed() -> void:
 	if catalog_panel != null:
 		catalog_panel.visible = false
@@ -3068,15 +3110,20 @@ func _format_number(value: int) -> String:
 	return result
 
 
+
 func _on_build_navigation_pressed() -> void:
+	if active_expansion_mode:
+		expansion_mode_cancel_requested.emit()
 	if catalog_panel != null:
 		catalog_panel.visible = true
 	if storage_panel != null:
 		storage_panel.visible = false
 	if status_detail_panel != null:
 		_close_status_detail()
-	build_hint.text = "BUILD AIRPORT  •  Choose a building from the drawer"
-	set_operation_status("Construction drawer opened • choose a building to place.")
+	build_hint.text = "BUILD AIRPORT  •  Choose a building or expand your land"
+	set_operation_status(
+		"Construction shop opened • choose a building or Expand Land."
+	)
 
 func _on_navigation_pressed(tab: String) -> void:
 	navigation_requested.emit(tab)

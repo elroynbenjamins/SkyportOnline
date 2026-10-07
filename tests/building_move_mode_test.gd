@@ -36,6 +36,13 @@ func _run() -> void:
 		Vector2i(-1, -1)
 	)
 
+	if not grid.purchase_parcel("west"):
+		_fail("West parcel should unlock the starter fuel plot for move testing.")
+		return
+	if not grid.purchase_parcel("north"):
+		_fail("North parcel should unlock the clear move target.")
+		return
+
 	var start_status := grid.begin_move_preview(fuel_uid)
 	if not bool(start_status.get("valid", false)):
 		_fail(
@@ -44,7 +51,7 @@ func _run() -> void:
 		return
 
 	var blocked := grid.set_move_preview(
-		grid.tile_to_world(Vector2(8, 8)),
+		grid.tile_to_world(Vector2(8, 0)),
 		0
 	)
 	if bool(blocked.get("valid", false)):
@@ -59,9 +66,6 @@ func _run() -> void:
 	if int(after_cancel.get("upgrade_level", 1)) != 3:
 		_fail("Cancel should preserve building upgrade state.")
 		return
-
-	grid.select_parcel("north")
-	grid.purchase_selected()
 
 	start_status = grid.begin_move_preview(fuel_uid)
 	if not bool(start_status.get("valid", false)):

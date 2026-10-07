@@ -661,17 +661,26 @@ func get_pushback_target_position() -> Vector2:
 		"XL":
 			distance = maxf(distance, 62.0)
 
+	# Follow the authored departure polyline instead of clamping pushback to
+	# only its first segment. Routing V2 adds a short stand-access waypoint,
+	# so a multi-segment tow keeps the aircraft moving a useful distance
+	# toward the taxiway without skipping the route geometry.
 	if departure_route.size() >= 2:
-		var first_leg := (
-			departure_route[1] - departure_route[0]
-		)
-		var direction := first_leg.normalized()
-		if direction != Vector2.ZERO:
-			distance = minf(
-				distance,
-				first_leg.length() * 0.72
-			)
-			return departure_route[0] + direction * distance
+		var remaining := distance
+		for index in range(departure_route.size() - 1):
+			var from_point := departure_route[index]
+			var to_point := departure_route[index + 1]
+			var leg := to_point - from_point
+			var leg_length := leg.length()
+			if leg_length <= 0.001:
+				continue
+			if remaining <= leg_length:
+				return from_point + leg.normalized() * remaining
+			remaining -= leg_length
+
+		# Very compact layouts may not contain the full requested tow distance.
+		# In that case stop at the farthest safe point already on the route.
+		return departure_route[departure_route.size() - 1]
 
 	return global_position + Vector2(-distance, 0).rotated(
 		rotation
@@ -1132,6 +1141,10 @@ func _process_runway_entry(delta: float) -> void:
 
 
 func _process_takeoff_roll(delta: float) -> void:
+	if departure_route.size() < 2:
+		takeoff_velocity = 0.0
+		return
+
 	var runway_end_index := departure_route.size() - 1
 	takeoff_velocity = minf(
 		takeoff_velocity
@@ -1161,6 +1174,9 @@ func _process_takeoff_roll(delta: float) -> void:
 
 
 func _process_climb(delta: float) -> void:
+	if departure_route.is_empty():
+		return
+
 	var climb_target := departure_route[departure_route.size() - 1]
 	if _move_toward_point(
 		climb_target,

@@ -33,17 +33,17 @@ func _run() -> void:
 		_fail("Terminal visual contract must use its exact 3x2 logical footprint.")
 		return
 
-	var terminal_asset_size := Vector2i(160, 180)
+	var terminal_asset_size := Vector2i(192, 220)
 	var terminal_asset_check := BuildingPlacementGrid.validate_asset_dimensions(
 		terminal_asset_size,
 		Vector2i(3, 2)
 	)
 	if not bool(terminal_asset_check.get("valid", false)):
-		_fail("A 160 px wide 3x2 asset should satisfy the grid contract.")
+		_fail("A 192 px wide 3x2 asset should satisfy the square-grid contract.")
 		return
 	if bool(
 		BuildingPlacementGrid.validate_asset_dimensions(
-			Vector2i(161, 180),
+			Vector2i(193, 220),
 			Vector2i(3, 2)
 		).get("valid", true)
 	):
@@ -59,7 +59,7 @@ func _run() -> void:
 		terminal_origin,
 		Vector2i(3, 2)
 	)
-	if terminal_draw_rect.size != Vector2(160, 180):
+	if terminal_draw_rect.size != Vector2(192, 220):
 		_fail("Grid-native asset draw rect must preserve exact source dimensions.")
 		return
 	if (
@@ -73,7 +73,7 @@ func _run() -> void:
 		return
 
 	print(
-		"GRID_VISUAL_CONTRACT_OK projection=2:1 tile=64x32 "
+		"GRID_VISUAL_CONTRACT_OK projection=square tile=64x64 "
 		+ "nearest_cell_snap=true grid_owns_footprint=true "
 		+ "grid_owns_anchor=true grid_owns_scale=true "
 		+ "authoring_1_to_1=true padding=top_only "
@@ -103,14 +103,13 @@ func _check_round_trip() -> bool:
 			)
 			return false
 
-	# Each half-diamond should still snap to its nearest cell center rather than
-	# being floored into a neighboring tile.
+	# Square-grid picking snaps to the nearest cell center.
 	var near_center := (
 		BuildingPlacementGrid.tile_to_world(Vector2(2, 2))
 		+ Vector2(5, 2)
 	)
 	if BuildingPlacementGrid.world_to_tile(near_center) != Vector2i(2, 2):
-		_fail("Pointer snapping must use nearest-cell isometric rounding.")
+		_fail("Pointer snapping must use nearest-cell square-grid rounding.")
 		return false
 	return true
 
@@ -130,14 +129,12 @@ func _check_footprint_geometry() -> bool:
 			return false
 
 		var expected_width := (
-			float(footprint.x + footprint.y)
+			float(footprint.x)
 			* BuildingPlacementGrid.TILE_WIDTH
-			* 0.5
 		)
 		var expected_height := (
-			float(footprint.x + footprint.y)
+			float(footprint.y)
 			* BuildingPlacementGrid.TILE_HEIGHT
-			* 0.5
 		)
 		var size: Vector2 = contract.get(
 			"base_size",
@@ -177,8 +174,11 @@ func _check_footprint_geometry() -> bool:
 		if anchor_shape.size() != 4:
 			_fail("Visual contract must expose a four-point base polygon from anchor.")
 			return false
-		if anchor_shape[2].distance_to(Vector2.ZERO) > 0.01:
-			_fail("Front-center anchor must be the zero point of the authoring base.")
+		var bottom_center := (
+			anchor_shape[2] + anchor_shape[3]
+		) * 0.5
+		if bottom_center.distance_to(Vector2.ZERO) > 0.01:
+			_fail("Front-center anchor must be the midpoint of the square base bottom edge.")
 			return false
 	return true
 

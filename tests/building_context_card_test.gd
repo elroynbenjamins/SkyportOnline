@@ -101,7 +101,7 @@ func _run() -> void:
 	)
 	if String(
 		fuel_definition.get("visual_contract", "")
-	) != "grid_v1":
+	) != "square_grid_v1":
 		_fail("Basic Fuel should use the grid-first visual contract.")
 		return
 	if (

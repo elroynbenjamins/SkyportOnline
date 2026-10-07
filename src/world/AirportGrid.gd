@@ -311,15 +311,21 @@ func _initialize_starter_airport() -> void:
 	_place_building_internal("taxiway", Vector2i(11, 10), 0)
 	_place_building_internal("taxiway", Vector2i(12, 10), 0)
 	_place_building_internal("taxiway", Vector2i(13, 10), 0)
-	_place_building_internal("small_stand", Vector2i(11, 11), 0)
+
+	# Wider 3x2 stands give S aircraft the apron presence they have in
+	# Skyrama-style airport layouts instead of squeezing them into tiny pads.
+	_place_building_internal("small_stand", Vector2i(10, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
+
 	_place_building_internal("small_terminal", Vector2i(8, 14), 0)
-	_place_building_internal("travel_office", Vector2i(9, 10), 0)
+	_place_building_internal("travel_office", Vector2i(8, 10), 0)
 	_place_building_internal("ground_ops_depot", Vector2i(11, 14), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
+
+	# Service roads meet the lower stand edges without occupying stand cells.
+	_place_building_internal("service_road", Vector2i(10, 13), 0)
 	_place_building_internal("service_road", Vector2i(11, 13), 0)
 	_place_building_internal("service_road", Vector2i(12, 13), 0)
-	_place_building_internal("service_road", Vector2i(15, 12), 0)
 	_place_building_internal("service_road", Vector2i(15, 13), 0)
 	_place_building_internal("service_road", Vector2i(12, 14), 0)
 	_place_building_internal("service_road", Vector2i(12, 15), 0)

@@ -174,10 +174,31 @@ func _run() -> void:
 		var states: Array[String] = []
 		for plane in main.aircraft_demos:
 			states.append(String(plane.name) + ":" + plane.state + ":" + plane.get_taxi_hold_reason())
+			states.append(
+				"TURNAROUND=" + str(
+					main.ground_services.get_turnaround_snapshot(plane)
+				)
+			)
 		for plane in main.social_visitor_aircraft.values():
 			if is_instance_valid(plane):
 				states.append(String(plane.name) + ":" + plane.state)
-		errors.append("Real flight/NPC cycle stalled: " + "; ".join(states))
+		var vehicle_states: Array[String] = []
+		for vehicle in main.ground_services.get_children():
+			if (
+				is_instance_valid(vehicle)
+				and vehicle.has_method("get_motion_snapshot")
+			):
+				vehicle_states.append(str(vehicle.get_motion_snapshot()))
+		errors.append(
+			"Real flight/NPC cycle stalled: "
+			+ "; ".join(states)
+			+ " VEHICLES="
+			+ " | ".join(vehicle_states)
+			+ " WAITING="
+			+ str(main.ground_services.get_waiting_by_service())
+			+ " ACTIVE="
+			+ str(main.ground_services.get_active_count())
+		)
 	check(finished, "Real owned flight return and NPC departure should both complete.")
 	var social_state := ProfileStore.get_social_state()
 	check((social_state.get("reward_receipt_outbox", []) as Array).is_empty(), "NPC must not write a remote-owner reward receipt.")

@@ -105,6 +105,17 @@ const APRON_JOINT := Color("747b7c", 0.18)
 const APRON_YELLOW := Color("f1c84c")
 const APRON_RED := Color("d85f58")
 const APRON_LIGHT := Color("fff2bd")
+const FOUNDATION_PASSENGER_OUTER := Color("b9b7b0")
+const FOUNDATION_PASSENGER_INNER := Color("dedbd3")
+const FOUNDATION_SERVICE_OUTER := Color("9e9e97")
+const FOUNDATION_SERVICE_INNER := Color("c8c6bf")
+const FOUNDATION_OPERATIONS_OUTER := Color("858f91")
+const FOUNDATION_OPERATIONS_INNER := Color("aeb8b8")
+const FOUNDATION_GENERIC_OUTER := Color("9fa5a3")
+const FOUNDATION_GENERIC_INNER := Color("c5c9c6")
+const FOUNDATION_EDGE_LIGHT := Color("fffdf5", 0.30)
+const FOUNDATION_EDGE_DARK := Color("4f595a", 0.30)
+const FOUNDATION_SHADOW := Color(0.02, 0.04, 0.05, 0.16)
 const AIRPORT_SITE_CONCRETE := Color("c7c5bd")
 const AIRPORT_SITE_CONCRETE_LIGHT := Color("d9d7cf")
 const AIRPORT_SITE_CONCRETE_DARK := Color("9b9b96")
@@ -2107,6 +2118,288 @@ func _draw_apron_floodlight(
 		)
 
 
+func get_foundation_profile_for_definition(
+	definition: Dictionary
+) -> Dictionary:
+	var id := String(definition.get("id", ""))
+	var category := String(definition.get("category", ""))
+	if category == "Decorations":
+		return {
+			"enabled": false,
+			"style": "none"
+		}
+
+	var outer := FOUNDATION_GENERIC_OUTER
+	var inner := FOUNDATION_GENERIC_INNER
+	var style := "generic"
+	match category:
+		"Passenger":
+			outer = FOUNDATION_PASSENGER_OUTER
+			inner = FOUNDATION_PASSENGER_INNER
+			style = "passenger"
+		"Services":
+			outer = FOUNDATION_SERVICE_OUTER
+			inner = FOUNDATION_SERVICE_INNER
+			style = "service"
+		"Operations":
+			outer = FOUNDATION_OPERATIONS_OUTER
+			inner = FOUNDATION_OPERATIONS_INNER
+			style = "operations"
+		"Infrastructure":
+			style = "infrastructure"
+
+	if id.contains("hangar"):
+		outer = FOUNDATION_OPERATIONS_OUTER
+		inner = FOUNDATION_OPERATIONS_INNER
+		style = "hangar"
+	elif id.contains("fuel"):
+		outer = FOUNDATION_SERVICE_OUTER
+		inner = FOUNDATION_SERVICE_INNER
+		style = "fuel"
+	elif id.contains("stand"):
+		style = "stand"
+
+	return {
+		"enabled": true,
+		"style": style,
+		"outer": outer,
+		"inner": inner
+	}
+
+
+func _draw_canonical_building_foundation(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	strength: float = 1.0
+) -> void:
+	var profile := get_foundation_profile_for_definition(
+		definition
+	)
+	if not bool(profile.get("enabled", false)):
+		return
+
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+	var alpha := clampf(strength, 0.0, 1.0)
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	)
+
+	var shadow := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shadow.append(point + Vector2(2, 3))
+	draw_colored_polygon(
+		shadow,
+		Color(
+			FOUNDATION_SHADOW.r,
+			FOUNDATION_SHADOW.g,
+			FOUNDATION_SHADOW.b,
+			FOUNDATION_SHADOW.a * alpha
+		)
+	)
+
+	var outer: Color = profile.get(
+		"outer",
+		FOUNDATION_GENERIC_OUTER
+	)
+	var inner: Color = profile.get(
+		"inner",
+		FOUNDATION_GENERIC_INNER
+	)
+	draw_colored_polygon(
+		polygon,
+		Color(outer.r, outer.g, outer.b, alpha)
+	)
+
+	var inner_polygon := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		inner_polygon.append(
+			center + (point - center) * 0.92
+		)
+	draw_colored_polygon(
+		inner_polygon,
+		Color(inner.r, inner.g, inner.b, alpha)
+	)
+
+	# Fixed light direction matches the rest of the v2/v3 airport art.
+	draw_line(
+		polygon[0],
+		polygon[1],
+		Color(
+			FOUNDATION_EDGE_LIGHT.r,
+			FOUNDATION_EDGE_LIGHT.g,
+			FOUNDATION_EDGE_LIGHT.b,
+			FOUNDATION_EDGE_LIGHT.a * alpha
+		),
+		1.6
+	)
+	draw_line(
+		polygon[0],
+		polygon[3],
+		Color("ffffff", 0.12 * alpha),
+		1.0
+	)
+	draw_line(
+		polygon[2],
+		polygon[3],
+		Color(
+			FOUNDATION_EDGE_DARK.r,
+			FOUNDATION_EDGE_DARK.g,
+			FOUNDATION_EDGE_DARK.b,
+			FOUNDATION_EDGE_DARK.a * alpha
+		),
+		1.8
+	)
+	draw_line(
+		polygon[1],
+		polygon[2],
+		Color("465153", 0.18 * alpha),
+		1.2
+	)
+
+	var style := String(profile.get("style", "generic"))
+	if style == "fuel":
+		var front_left := polygon[3].lerp(
+			polygon[2],
+			0.12
+		)
+		var front_right := polygon[3].lerp(
+			polygon[2],
+			0.88
+		)
+		draw_line(
+			front_left,
+			front_right,
+			Color("f1c84c", 0.62 * alpha),
+			2.0
+		)
+	elif style == "hangar":
+		var rear_mid := polygon[0].lerp(
+			polygon[1],
+			0.5
+		)
+		var front_mid := polygon[3].lerp(
+			polygon[2],
+			0.5
+		)
+		draw_line(
+			rear_mid.lerp(center, 0.30),
+			front_mid.lerp(center, 0.18),
+			Color("f1c84c", 0.50 * alpha),
+			2.0
+		)
+	elif style == "passenger":
+		var front_a := polygon[3].lerp(
+			polygon[2],
+			0.22
+		)
+		var front_b := polygon[3].lerp(
+			polygon[2],
+			0.78
+		)
+		draw_line(
+			front_a,
+			front_b,
+			Color("f7f3e8", 0.44 * alpha),
+			1.5
+		)
+
+
+func _draw_canonical_foundation_front_lip(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	strength: float = 1.0
+) -> void:
+	var profile := get_foundation_profile_for_definition(
+		definition
+	)
+	if not bool(profile.get("enabled", false)):
+		return
+
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	)
+	var inner_polygon := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		inner_polygon.append(
+			center + (point - center) * 0.95
+		)
+
+	var outer: Color = profile.get(
+		"outer",
+		FOUNDATION_GENERIC_OUTER
+	)
+	var alpha := 0.78 * clampf(
+		strength,
+		0.0,
+		1.0
+	)
+	var lip_color := Color(
+		outer.r,
+		outer.g,
+		outer.b,
+		alpha
+	)
+
+	# Only the two camera-facing edges sit in front of the sprite. This masks
+	# mismatched painted platform edges while leaving the building facade and
+	# all upper art untouched.
+	var front_band := PackedVector2Array([
+		polygon[3],
+		polygon[2],
+		inner_polygon[2],
+		inner_polygon[3]
+	])
+	draw_colored_polygon(
+		front_band,
+		lip_color
+	)
+	var right_band := PackedVector2Array([
+		polygon[2],
+		polygon[1],
+		inner_polygon[1],
+		inner_polygon[2]
+	])
+	draw_colored_polygon(
+		right_band,
+		Color(
+			outer.r * 0.88,
+			outer.g * 0.88,
+			outer.b * 0.88,
+			alpha * 0.92
+		)
+	)
+	draw_line(
+		polygon[3],
+		polygon[2],
+		Color("535d5e", 0.42 * strength),
+		1.8
+	)
+	draw_line(
+		polygon[2],
+		polygon[1],
+		Color("485254", 0.32 * strength),
+		1.4
+	)
+
+
 func _draw_buildings() -> void:
 	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
 	buildings_to_draw.sort_custom(Callable(self, "_sort_buildings_by_depth"))
@@ -2176,6 +2469,9 @@ func _draw_buildings() -> void:
 			continue
 
 		if _definition_has_world_sprite(definition):
+			var integrated_world_base := (
+				_definition_uses_integrated_world_base(definition)
+			)
 			if id.contains("stand"):
 				_draw_generated_stand_pad(
 					definition,
@@ -2184,16 +2480,18 @@ func _draw_buildings() -> void:
 					int(building["rotation"]),
 					sprite_modulate.a
 				)
-			var integrated_world_base := (
-				_definition_uses_integrated_world_base(definition)
-			)
+			else:
+				# The visible foundation is always grid-authored. Painted
+				# sprite bases may add detail, but they no longer define the
+				# object's contact with the airport ground.
+				_draw_canonical_building_foundation(
+					definition,
+					origin,
+					footprint,
+					sprite_modulate.a
+				)
+
 			if not integrated_world_base:
-				if bool(definition.get("world_ground_pad", true)):
-					_draw_world_art_ground_pad(
-						definition,
-						origin,
-						footprint
-					)
 				_draw_apron_surface_micro_detail(
 					definition,
 					origin,
@@ -2201,12 +2499,12 @@ func _draw_buildings() -> void:
 					int(building["rotation"]),
 					sprite_modulate.a
 				)
-				_draw_building_contact_shadow(
-					definition,
-					origin,
-					footprint,
-					sprite_modulate.a
-				)
+			_draw_building_contact_shadow(
+				definition,
+				origin,
+				footprint,
+				sprite_modulate.a
+			)
 			_draw_building_sprite(
 				definition,
 				origin,
@@ -2215,6 +2513,13 @@ func _draw_buildings() -> void:
 				sprite_modulate,
 				sprite_offset
 			)
+			if not id.contains("stand"):
+				_draw_canonical_foundation_front_lip(
+					definition,
+					origin,
+					footprint,
+					sprite_modulate.a
+				)
 			if not integrated_world_base:
 				_draw_apron_prop_micro_detail(
 					definition,
@@ -4154,9 +4459,25 @@ func _draw_charter_visual_item(
 	rotation: int,
 	modulate: Color = Color.WHITE
 ) -> void:
-	# Charter/logistics placeables use exactly the same strict footprint
-	# renderer as normal buildings. Legacy bottom-center anchors are ignored so
-	# these special objects cannot float outside their occupied cells.
+	# Charter/logistics placeables use the same strict footprint renderer and
+	# the same canonical foundation language as normal airport buildings.
+	var visual_id := String(definition.get("id", ""))
+	if visual_id in CharterVisualCatalog.BUILDING_KEYS:
+		var foundation_definition := definition.duplicate(true)
+		if not foundation_definition.has("category"):
+			foundation_definition["category"] = "Services"
+		_draw_canonical_building_foundation(
+			foundation_definition,
+			origin,
+			footprint,
+			modulate.a
+		)
+		_draw_building_contact_shadow(
+			foundation_definition,
+			origin,
+			footprint,
+			modulate.a
+		)
 	_draw_building_sprite(
 		definition,
 		origin,
@@ -4164,6 +4485,16 @@ func _draw_charter_visual_item(
 		rotation,
 		modulate
 	)
+	if visual_id in CharterVisualCatalog.BUILDING_KEYS:
+		var lip_definition := definition.duplicate(true)
+		if not lip_definition.has("category"):
+			lip_definition["category"] = "Services"
+		_draw_canonical_foundation_front_lip(
+			lip_definition,
+			origin,
+			footprint,
+			modulate.a
+		)
 
 
 func set_charter_structure_preview(

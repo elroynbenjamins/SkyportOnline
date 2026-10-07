@@ -221,6 +221,31 @@ func _check_footprint_geometry() -> bool:
 		if anchor_shape[2].distance_to(Vector2.ZERO) > 0.01:
 			_fail("Projected front anchor must be the zero point of the authoring base.")
 			return false
+
+	var asymmetric_origin := Vector2i(6, 4)
+	var asymmetric_footprint := Vector2i(5, 2)
+	var asymmetric_contract := BuildingPlacementGrid.visual_contract(
+		asymmetric_footprint
+	)
+	var asymmetric_size := Vector2i(
+		int(asymmetric_contract.get("authoring_width_px", 0)),
+		int(asymmetric_contract.get("base_depth_px", 0))
+	)
+	var asymmetric_rect := BuildingPlacementGrid.asset_draw_rect(
+		asymmetric_origin,
+		asymmetric_footprint,
+		asymmetric_size
+	)
+	var asymmetric_bounds := BuildingPlacementGrid.footprint_bounds(
+		asymmetric_origin,
+		asymmetric_footprint
+	)
+	if asymmetric_rect != asymmetric_bounds:
+		_fail(
+			"Asymmetric grid-native art must align exactly to its footprint bounds."
+		)
+		return false
+
 	return true
 
 

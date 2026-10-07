@@ -152,6 +152,94 @@ func _run() -> void:
 		_fail("Later equal-priority dispatch should yield at a crossing.")
 		return
 
+	var entering_snapshot := {
+		"instance_id": 40,
+		"position": Vector2(0, 0),
+		"heading": 0.0,
+		"phase": "OUTBOUND",
+		"service_type": "pushback",
+		"traffic_sequence": 20,
+		"stand_uid": 77,
+		"route_progress": 0.82,
+		"stand_distance": 32.0,
+	}
+	var exiting_snapshot := {
+		"instance_id": 41,
+		"position": Vector2(120, 0),
+		"heading": PI,
+		"phase": "RETURNING",
+		"service_type": "cleaning",
+		"traffic_sequence": 99,
+		"stand_uid": 77,
+		"route_progress": 0.10,
+		"stand_distance": 28.0,
+	}
+	if ApronTrafficRules.stand_throat_state(
+		entering_snapshot
+	) != "entering":
+		_fail("Outbound vehicle near the stand should enter the stand-throat zone.")
+		return
+	if ApronTrafficRules.stand_throat_state(
+		exiting_snapshot
+	) != "exiting":
+		_fail("Returning vehicle near the stand should occupy the exit-throat zone.")
+		return
+
+	var distant_entry := entering_snapshot.duplicate(true)
+	distant_entry["stand_distance"] = 90.0
+	if ApronTrafficRules.stand_throat_state(
+		distant_entry
+	) != "road":
+		_fail("Long service roads must not queue vehicles before the apron throat.")
+		return
+
+	var exit_first := ApronTrafficRules.traffic_decision(
+		entering_snapshot,
+		[exiting_snapshot]
+	)
+	if not bool(exit_first.get("yielding", false)):
+		_fail("Entering vehicle should wait while another vehicle clears the stand exit.")
+		return
+	if String(exit_first.get("reason", "")) != "stand exit clearing":
+		_fail("Stand exit priority should expose the dedicated hold reason.")
+		return
+
+	var returning_decision := ApronTrafficRules.traffic_decision(
+		exiting_snapshot,
+		[entering_snapshot]
+	)
+	if bool(returning_decision.get("yielding", false)):
+		_fail("Vehicle clearing the stand should not yield to an entering vehicle.")
+		return
+
+	var later_entry := entering_snapshot.duplicate(true)
+	later_entry["instance_id"] = 43
+	later_entry["traffic_sequence"] = 22
+	var earlier_entry := entering_snapshot.duplicate(true)
+	earlier_entry["instance_id"] = 42
+	earlier_entry["traffic_sequence"] = 21
+	earlier_entry["position"] = Vector2(140, 0)
+	var entry_queue := ApronTrafficRules.traffic_decision(
+		later_entry,
+		[earlier_entry]
+	)
+	if not bool(entry_queue.get("yielding", false)):
+		_fail("Later stand entry should queue behind the earlier dispatch.")
+		return
+	if String(entry_queue.get("reason", "")) != "stand approach queue":
+		_fail("Stand entry queue should expose a dedicated traffic reason.")
+		return
+
+	var other_stand := earlier_entry.duplicate(true)
+	other_stand["stand_uid"] = 78
+	var different_stand_decision := ApronTrafficRules.traffic_decision(
+		later_entry,
+		[other_stand]
+	)
+	if bool(different_stand_decision.get("yielding", false)):
+		_fail("Vehicles approaching different stands should not share a throat queue.")
+		return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame
@@ -303,7 +391,7 @@ func _run() -> void:
 
 	print(
 		"Apron traffic passed: lanes, staging, staggered launches, "
-		+ "live yielding, priority, and deterministic traffic identity."
+		+ "live yielding, priority, stand-throat queues, and deterministic traffic identity."
 	)
 	quit(0)
 

@@ -9055,10 +9055,18 @@ func _taxiway_path_to_specific_runway(
 	runway_uid: int,
 	aircraft_size: String = ""
 ) -> Array[Vector2i]:
-	var reachable := _reachable_taxiway_dictionary()
-	if not reachable.has(_cell_key(start)):
+	# The proven BFS route is the connectivity source of truth. Routing V2 may
+	# replace it only when the smoothed result preserves the same valid runway
+	# endpoint. This keeps arbitrary player-built airports operational.
+	var legacy := _legacy_taxiway_path_to_specific_runway(
+		start,
+		runway_uid,
+		aircraft_size
+	)
+	if legacy.is_empty():
 		return []
 
+	var reachable := _reachable_taxiway_dictionary()
 	var goals := _taxiway_goals_for_runway_uid(
 		runway_uid,
 		aircraft_size,
@@ -9069,13 +9077,33 @@ func _taxiway_path_to_specific_runway(
 		start,
 		goals
 	)
-	if not smooth.is_empty():
-		return smooth
-	return _legacy_taxiway_path_to_specific_runway(
+	if _smooth_specific_route_is_valid(
+		smooth,
 		start,
 		runway_uid,
 		aircraft_size
-	)
+	):
+		return smooth
+	return legacy
+
+
+func _smooth_specific_route_is_valid(
+	path: Array[Vector2i],
+	start: Vector2i,
+	runway_uid: int,
+	aircraft_size: String
+) -> bool:
+	if path.is_empty() or path[0] != start:
+		return false
+	var reachable := _reachable_taxiway_dictionary()
+	for cell in path:
+		if not reachable.has(_cell_key(cell)):
+			return false
+	return _adjacent_runway_cell_for_uid(
+		path[path.size() - 1],
+		runway_uid,
+		aircraft_size
+	).x >= 0
 
 
 func _reachable_taxiway_dictionary() -> Dictionary:
@@ -9117,10 +9145,14 @@ func _taxiway_path_to_runway(
 	start: Vector2i,
 	aircraft_size: String = ""
 ) -> Array[Vector2i]:
-	var reachable := _reachable_taxiway_dictionary()
-	if not reachable.has(_cell_key(start)):
+	var legacy := _legacy_taxiway_path_to_runway(
+		start,
+		aircraft_size
+	)
+	if legacy.is_empty():
 		return []
 
+	var reachable := _reachable_taxiway_dictionary()
 	var goals: Dictionary = {}
 	for cell_variant in reachable.values():
 		var cell: Vector2i = cell_variant
@@ -9135,12 +9167,30 @@ func _taxiway_path_to_runway(
 		start,
 		goals
 	)
-	if not smooth.is_empty():
-		return smooth
-	return _legacy_taxiway_path_to_runway(
+	if _smooth_route_is_valid(
+		smooth,
 		start,
 		aircraft_size
-	)
+	):
+		return smooth
+	return legacy
+
+
+func _smooth_route_is_valid(
+	path: Array[Vector2i],
+	start: Vector2i,
+	aircraft_size: String
+) -> bool:
+	if path.is_empty() or path[0] != start:
+		return false
+	var reachable := _reachable_taxiway_dictionary()
+	for cell in path:
+		if not reachable.has(_cell_key(cell)):
+			return false
+	return _adjacent_runway_cell(
+		path[path.size() - 1],
+		aircraft_size
+	).x >= 0
 
 
 func _legacy_taxiway_path_to_specific_runway(

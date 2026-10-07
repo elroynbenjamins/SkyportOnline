@@ -1689,6 +1689,20 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 		_format_number(cost)
 	]
 
+	if active_building_id in ["taxiway", "service_road"]:
+		var network_connections := int(
+			status.get("network_connections", 0)
+		)
+		if network_connections > 0:
+			build_status.text += " • %d connection%s" % [
+				network_connections,
+				"" if network_connections == 1 else "s"
+			]
+		else:
+			build_status.text += " • New network segment"
+		if bool(status.get("runway_link", false)):
+			build_status.text += " • RUNWAY LINK"
+
 	var warning := String(status.get("warning", ""))
 	if not warning.is_empty():
 		build_status.text += "  •  ⚠ " + warning

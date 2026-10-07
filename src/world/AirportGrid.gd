@@ -575,6 +575,7 @@ func _draw_grid_first_cell(
 	)
 
 
+
 func _draw_grid_first_buildings() -> void:
 	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
 	buildings_to_draw.sort_custom(
@@ -598,10 +599,26 @@ func _draw_grid_first_buildings() -> void:
 			"origin",
 			Vector2i.ZERO
 		)
+		var rotation := int(building.get("rotation", 0))
 		var footprint := _footprint_for(
 			definition,
-			int(building.get("rotation", 0))
+			rotation
 		)
+		var id := String(definition.get("id", ""))
+
+		# Grid-native surface art is authored directly against the exact
+		# projected footprint and is therefore safe to show during the reset.
+		# Short Runway is the first production asset using this path.
+		if _definition_has_grid_native_surface(definition):
+			_draw_grid_native_surface(
+				definition,
+				origin,
+				footprint,
+				rotation,
+				Color.WHITE
+			)
+			continue
+
 		var fill := _grid_first_building_fill(definition)
 		for cell in PlacementGridV2.cells_for(origin, footprint):
 			_draw_grid_first_cell(
@@ -628,9 +645,79 @@ func _draw_grid_first_buildings() -> void:
 				2.0
 			)
 
-		var id := String(definition.get("id", ""))
 		if id in ["taxiway", "service_road"]:
 			_draw_grid_first_network_links(origin, id)
+
+func _definition_has_grid_native_surface(
+	definition: Dictionary
+) -> bool:
+	var paths: PackedStringArray = definition.get(
+		"grid_native_surface_paths",
+		PackedStringArray()
+	)
+	var size: Vector2i = definition.get(
+		"grid_native_surface_size",
+		Vector2i.ZERO
+	)
+	return paths.size() > 0 and size.x > 0 and size.y > 0
+
+
+func _grid_native_surface_path_for_rotation(
+	definition: Dictionary,
+	rotation: int
+) -> String:
+	var paths: PackedStringArray = definition.get(
+		"grid_native_surface_paths",
+		PackedStringArray()
+	)
+	if paths.is_empty():
+		return ""
+	return paths[rotation % paths.size()]
+
+
+func _draw_grid_native_surface(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int,
+	modulate: Color = Color.WHITE
+) -> void:
+	var path := _grid_native_surface_path_for_rotation(
+		definition,
+		rotation
+	)
+	if path.is_empty():
+		return
+
+	var asset_size: Vector2i = definition.get(
+		"grid_native_surface_size",
+		Vector2i.ZERO
+	)
+	var validation := PlacementGridV2.validate_asset_dimensions(
+		asset_size,
+		footprint
+	)
+	if not bool(validation.get("valid", false)):
+		return
+
+	var texture := _get_building_texture(path)
+	if texture == null:
+		return
+
+	var rect := PlacementGridV2.asset_draw_rect(
+		origin,
+		footprint,
+		asset_size
+	)
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
+
+	draw_texture_rect(
+		texture,
+		rect,
+		false,
+		modulate
+	)
 
 
 func _grid_first_building_fill(
@@ -703,6 +790,7 @@ func _draw_grid_first_network_links(
 		)
 
 
+
 func _draw_grid_first_preview() -> void:
 	if (
 		preview_building_id.is_empty()
@@ -724,21 +812,36 @@ func _draw_grid_first_preview() -> void:
 	var valid := bool(
 		preview_status.get("valid", false)
 	)
-	var fill := (
-		GRID_RESET_PREVIEW_VALID
-		if valid
-		else GRID_RESET_PREVIEW_INVALID
-	)
-	for cell in PlacementGridV2.cells_for(
-		preview_origin,
-		footprint
-	):
-		_draw_grid_first_cell(
-			cell,
-			fill,
-			Color("ffffff", 0.72),
-			1.5
+
+	if _definition_has_grid_native_surface(definition):
+		var preview_modulate := (
+			Color(0.82, 1.0, 0.86, 0.88)
+			if valid
+			else Color(1.0, 0.68, 0.68, 0.84)
 		)
+		_draw_grid_native_surface(
+			definition,
+			preview_origin,
+			footprint,
+			preview_rotation,
+			preview_modulate
+		)
+	else:
+		var fill := (
+			GRID_RESET_PREVIEW_VALID
+			if valid
+			else GRID_RESET_PREVIEW_INVALID
+		)
+		for cell in PlacementGridV2.cells_for(
+			preview_origin,
+			footprint
+		):
+			_draw_grid_first_cell(
+				cell,
+				fill,
+				Color("ffffff", 0.72),
+				1.5
+			)
 
 	var outline := _footprint_polygon(
 		preview_origin,
@@ -756,7 +859,6 @@ func _draw_grid_first_preview() -> void:
 			Color("ffffff", 0.92),
 			3.0
 		)
-
 
 func is_grid_first_visual_reset_enabled() -> bool:
 	return GRID_FIRST_VISUAL_RESET

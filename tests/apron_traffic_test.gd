@@ -165,7 +165,7 @@ func _run() -> void:
 	}
 	var exiting_snapshot := {
 		"instance_id": 41,
-		"position": Vector2(120, 0),
+		"position": Vector2(18, 0),
 		"heading": PI,
 		"phase": "RETURNING",
 		"service_type": "cleaning",
@@ -210,6 +210,9 @@ func _run() -> void:
 	)
 	if bool(returning_decision.get("yielding", false)):
 		_fail("Vehicle clearing the stand should not yield to an entering vehicle.")
+		return
+	if String(returning_decision.get("reason", "")) != "":
+		_fail("Stand-exit protection should bypass normal road-priority holds.")
 		return
 
 	var later_entry := entering_snapshot.duplicate(true)

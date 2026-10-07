@@ -117,8 +117,8 @@ func _run() -> void:
 				travel_origin = building.get("origin", Vector2i(-1, -1))
 			"small_terminal":
 				terminal_origin = building.get("origin", Vector2i(-1, -1))
-	if travel_origin != Vector2i(9, 10):
-		_fail("Strict sprite fitting must not move the Travel Office grid cells.")
+	if travel_origin != Vector2i(8, 10):
+		_fail("Starter spacing should keep the Travel Office clear of the wider stands.")
 		return
 	if terminal_origin != Vector2i(8, 14):
 		_fail("Strict sprite fitting must not move the Terminal grid cells.")

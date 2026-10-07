@@ -21,8 +21,8 @@ func _run() -> void:
 	var camera := Camera2D.new()
 	# Visual QA should judge the actual airport, not primarily the expansion
 	# overlay. Keep the starter airfield large enough to inspect at a glance.
-	camera.position = Vector2(95, 355)
-	camera.zoom = Vector2(1.10, 1.10)
+	camera.position = Vector2(736, 736)
+	camera.zoom = Vector2(0.96, 0.96)
 	camera.position_smoothing_enabled = false
 	camera.enabled = true
 	world.add_child(camera)

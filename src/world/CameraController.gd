@@ -204,8 +204,8 @@ func zoom_out() -> void:
 
 
 func reset_view(
-	world_position: Vector2 = Vector2(736, 736),
-	zoom_level: float = 0.84
+	world_position: Vector2 = Vector2(480, 480),
+	zoom_level: float = 0.62
 ) -> void:
 	_cancel_focus_tween()
 	position = world_position

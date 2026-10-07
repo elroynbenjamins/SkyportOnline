@@ -107,6 +107,7 @@ static func all() -> Array[Dictionary]:
 			"level": 1,
 			"color": Color("c7c5bd"),
 			"rotatable": false,
+			"movable": false,
 			"sizes": PackedStringArray([]),
 			"description": "Placeable airport concrete for aprons, service areas and terminal hardscape.",
 			"icon_path": "res://assets/production/airfield_v2/apron_icon_v2.svg",

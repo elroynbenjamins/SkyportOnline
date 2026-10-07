@@ -179,9 +179,9 @@ func _validate_art_coverage(
 	var id := String(definition.get("id", ""))
 	if bool(definition.get("event_decoration", false)):
 		return
-	if id in ["taxiway", "service_road"]:
-		return
-	if String(definition.get("surface_art", "")) == "runway_v2":
+	if not String(definition.get("surface_art", "")).is_empty():
+		# Procedural runway/pavement/apron surfaces intentionally have no
+		# standalone building sprite or atlas cell.
 		return
 
 	var atlas_path := String(

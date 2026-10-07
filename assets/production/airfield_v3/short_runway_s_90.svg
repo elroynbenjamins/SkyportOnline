@@ -1,64 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160" viewBox="0 0 320 160">
+<svg xmlns="http://www.w3.org/2000/svg" width="224" height="112" viewBox="0 0 224 112">
   <defs>
-    <linearGradient id="shoulder" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#778087"/>
-      <stop offset="1" stop-color="#555f65"/>
+    <clipPath id="footprint"><polygon points="160,0 224,32 64,112 0,80"/></clipPath>
+    <linearGradient id="grass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#88c84d"/><stop offset="1" stop-color="#5d9a3d"/>
+    </linearGradient>
+    <linearGradient id="curb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8c7a8"/><stop offset="1" stop-color="#ad9e86"/>
     </linearGradient>
     <linearGradient id="asphalt" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#485258"/>
-      <stop offset="0.55" stop-color="#394248"/>
-      <stop offset="1" stop-color="#30393f"/>
+      <stop offset="0" stop-color="#485057"/><stop offset=".55" stop-color="#343c43"/><stop offset="1" stop-color="#2b3339"/>
     </linearGradient>
-    <clipPath id="runwayClip">
-      <polygon points="247,7 306,36 73,153 14,124"/>
-    </clipPath>
   </defs>
+  <g clip-path="url(#footprint)">
+    <!-- Exact rotated 2x5 grid footprint: (160,0) (224,32) (64,112) (0,80). -->
+    <polygon points="160,0 224,32 64,112 0,80" fill="url(#grass)"/>
+    <polygon points="157,3 218,33 67,109 6,79" fill="#567d36" opacity=".38"/>
+    <polygon points="154,6 212,35 70,106 12,77" fill="url(#curb)"/>
+    <polygon points="149,10 204,37 75,102 20,75" fill="#756f68"/>
+    <polygon points="145,13 198,39 79,99 26,73" fill="url(#asphalt)"/>
 
-  <!-- Exact rotated 2x8 projected base: (256,0) (320,32) (64,160) (0,128). -->
-  <polygon points="256,0 320,32 64,160 0,128" fill="url(#shoulder)"/>
-  <polygon points="251,4 315,33 69,156 5,127" fill="#aeb5b7" opacity=".24"/>
-  <polygon points="247,7 306,36 73,153 14,124" fill="url(#asphalt)"/>
+    <g opacity=".16" fill="none" stroke-linecap="round">
+      <path d="M182 39 L56 102" stroke="#151b20" stroke-width="5"/>
+      <path d="M167 23 L37 88" stroke="#626b71" stroke-width="2.5"/>
+      <path d="M140 30 L50 75" stroke="#222a2f" stroke-width="1.8"/>
+      <path d="M175 48 L83 94" stroke="#566067" stroke-width="1.5"/>
+    </g>
 
-  <g clip-path="url(#runwayClip)" opacity=".15">
-    <path d="M292 36 L51 156" stroke="#151b1f" stroke-width="8"/>
-    <path d="M269 16 L25 138" stroke="#677178" stroke-width="5"/>
-    <path d="M230 18 L39 114" stroke="#232b30" stroke-width="3"/>
-    <path d="M277 49 L85 145" stroke="#596269" stroke-width="3"/>
+    <path d="M142 16 L30 72" fill="none" stroke="#ecebe1" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M194 40 L82 96" fill="none" stroke="#ecebe1" stroke-width="1.5" stroke-linecap="round"/>
+
+    <g fill="#f4f1e6">
+      <polygon points="179,25 173,28 177,31 183,28"/>
+      <polygon points="173,28 167,31 171,34 177,31"/>
+      <polygon points="167,31 161,34 165,37 171,34"/>
+      <polygon points="63,78 57,81 61,84 67,81"/>
+      <polygon points="57,81 51,84 55,87 61,84"/>
+      <polygon points="51,84 45,87 49,90 55,87"/>
+    </g>
+
+    <g fill="#f4f1e6">
+      <polygon points="151,41 140,46 143,49 154,44"/>
+      <polygon points="130,51 119,56 122,59 133,54"/>
+      <polygon points="109,62 98,67 101,70 112,65"/>
+      <polygon points="88,72 77,77 80,80 91,75"/>
+      <polygon points="141,45 130,50 134,54 145,49" opacity=".96"/>
+      <polygon points="94,69 83,74 87,78 98,73" opacity=".96"/>
+    </g>
+
+    <g fill="#ffd36d" stroke="#fff1b0" stroke-width=".7">
+      <circle cx="136" cy="15" r="2.1"/><circle cx="111" cy="28" r="2.1"/><circle cx="85" cy="41" r="2.1"/>
+      <circle cx="59" cy="54" r="2.1"/><circle cx="34" cy="67" r="2.1"/>
+      <circle cx="190" cy="43" r="2.1"/><circle cx="165" cy="56" r="2.1"/><circle cx="139" cy="69" r="2.1"/>
+      <circle cx="113" cy="82" r="2.1"/><circle cx="88" cy="95" r="2.1"/>
+    </g>
+
+    <g fill="#3f7f36" opacity=".75">
+      <circle cx="176" cy="14" r="1.7"/><circle cx="172" cy="13" r="1.2"/>
+      <circle cx="44" cy="92" r="1.6"/><circle cx="39" cy="90" r="1.1"/>
+      <circle cx="209" cy="29" r="1.4"/><circle cx="16" cy="78" r="1.3"/>
+    </g>
   </g>
-
-  <path d="M243 11 L19 123" fill="none" stroke="#e8ece8" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M302 37 L77 149" fill="none" stroke="#e8ece8" stroke-width="2.4" stroke-linecap="round"/>
-
-  <path d="M271 31 L49 142" fill="none" stroke="#f3f2e8" stroke-width="3.2"
-        stroke-linecap="round" stroke-dasharray="16 11"/>
-
-  <g stroke="#f3f2e8" stroke-width="3.1" stroke-linecap="round">
-    <path d="M285 22 L295 41"/>
-    <path d="M277 26 L287 45"/>
-    <path d="M269 30 L279 49"/>
-    <path d="M43 111 L53 130"/>
-    <path d="M35 115 L45 134"/>
-    <path d="M27 119 L37 138"/>
-  </g>
-
-  <g fill="#f3f2e8" opacity=".94">
-    <polygon points="229,48 217,54 223,59 235,53"/>
-    <polygon points="101,112 89,118 95,123 107,117"/>
-  </g>
-
-  <g stroke="#171d21" stroke-width="2.2" stroke-linecap="round" opacity=".30">
-    <path d="M245 48 L213 64"/><path d="M239 44 L207 60"/>
-    <path d="M113 106 L81 122"/><path d="M107 102 L75 118"/>
-  </g>
-
-  <g fill="#d8f5ff" stroke="#6b858d" stroke-width=".7">
-    <circle cx="227" cy="18" r="2.1"/><circle cx="183" cy="40" r="2.1"/><circle cx="139" cy="62" r="2.1"/>
-    <circle cx="95" cy="84" r="2.1"/><circle cx="51" cy="106" r="2.1"/>
-    <circle cx="271" cy="53" r="2.1"/><circle cx="227" cy="75" r="2.1"/><circle cx="183" cy="97" r="2.1"/>
-    <circle cx="139" cy="119" r="2.1"/><circle cx="95" cy="141" r="2.1"/>
-  </g>
-
-  <path d="M256 1 L319 32" fill="none" stroke="#eef3ef" stroke-opacity=".28" stroke-width="2"/>
-  <path d="M319 33 L64 159 L1 128" fill="none" stroke="#182126" stroke-opacity=".30" stroke-width="2"/>
 </svg>

@@ -2313,6 +2313,93 @@ func _draw_canonical_building_foundation(
 		)
 
 
+func _draw_canonical_foundation_front_lip(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	strength: float = 1.0
+) -> void:
+	var profile := get_foundation_profile_for_definition(
+		definition
+	)
+	if not bool(profile.get("enabled", false)):
+		return
+
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+	var center := _footprint_center_world(
+		origin,
+		footprint
+	)
+	var inner_polygon := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		inner_polygon.append(
+			center + (point - center) * 0.95
+		)
+
+	var outer: Color = profile.get(
+		"outer",
+		FOUNDATION_GENERIC_OUTER
+	)
+	var alpha := 0.78 * clampf(
+		strength,
+		0.0,
+		1.0
+	)
+	var lip_color := Color(
+		outer.r,
+		outer.g,
+		outer.b,
+		alpha
+	)
+
+	# Only the two camera-facing edges sit in front of the sprite. This masks
+	# mismatched painted platform edges while leaving the building facade and
+	# all upper art untouched.
+	var front_band := PackedVector2Array([
+		polygon[3],
+		polygon[2],
+		inner_polygon[2],
+		inner_polygon[3]
+	])
+	draw_colored_polygon(
+		front_band,
+		lip_color
+	)
+	var right_band := PackedVector2Array([
+		polygon[2],
+		polygon[1],
+		inner_polygon[1],
+		inner_polygon[2]
+	])
+	draw_colored_polygon(
+		right_band,
+		Color(
+			outer.r * 0.88,
+			outer.g * 0.88,
+			outer.b * 0.88,
+			alpha * 0.92
+		)
+	)
+	draw_line(
+		polygon[3],
+		polygon[2],
+		Color("535d5e", 0.42 * strength),
+		1.8
+	)
+	draw_line(
+		polygon[2],
+		polygon[1],
+		Color("485254", 0.32 * strength),
+		1.4
+	)
+
+
 func _draw_buildings() -> void:
 	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
 	buildings_to_draw.sort_custom(Callable(self, "_sort_buildings_by_depth"))
@@ -2426,6 +2513,13 @@ func _draw_buildings() -> void:
 				sprite_modulate,
 				sprite_offset
 			)
+			if not id.contains("stand"):
+				_draw_canonical_foundation_front_lip(
+					definition,
+					origin,
+					footprint,
+					sprite_modulate.a
+				)
 			if not integrated_world_base:
 				_draw_apron_prop_micro_detail(
 					definition,
@@ -4391,6 +4485,16 @@ func _draw_charter_visual_item(
 		rotation,
 		modulate
 	)
+	if visual_id in CharterVisualCatalog.BUILDING_KEYS:
+		var lip_definition := definition.duplicate(true)
+		if not lip_definition.has("category"):
+			lip_definition["category"] = "Services"
+		_draw_canonical_foundation_front_lip(
+			lip_definition,
+			origin,
+			footprint,
+			modulate.a
+		)
 
 
 func set_charter_structure_preview(

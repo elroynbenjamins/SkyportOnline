@@ -5614,6 +5614,9 @@ func _get_building_texture_image(
 func _building_at_visual_position(
 	world_position: Vector2
 ) -> Dictionary:
+	if GRID_FIRST_VISUAL_RESET:
+		return {}
+
 	var buildings_to_check: Array[Dictionary] = (
 		placed_buildings.duplicate(true)
 	)

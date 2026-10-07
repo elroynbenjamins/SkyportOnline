@@ -20,11 +20,11 @@ func _run() -> void:
 
 	var initial_layout := grid.export_airport_layout()
 	if initial_layout.size() != 1:
-		_fail("Builder start should contain only the Airport Office.")
+		_fail("Builder start should contain only the Main Airport Building.")
 		return
 	var initial: Dictionary = initial_layout[0]
 	if String(initial.get("definition_id", "")) != "airport_office":
-		_fail("Fixed Airport Office should be the only initial structure.")
+		_fail("Fixed Main Airport Building should be the only initial structure.")
 		return
 
 	var airside := grid.get_airside_status()
@@ -40,24 +40,27 @@ func _run() -> void:
 
 	if not _place(grid, "short_runway", Vector2i(0, 0)):
 		return
-	if not _place(grid, "small_hangar", Vector2i(0, 6)):
-		return
 	if not _place(grid, "small_stand", Vector2i(4, 6)):
 		return
-	for y in range(2, 8):
+	for y in range(2, 7):
+		if not _place(grid, "taxiway", Vector2i(3, y)):
+			return
+	if not _place(grid, "small_hangar", Vector2i(0, 10)):
+		return
+	for y in range(7, 11):
 		if not _place(grid, "taxiway", Vector2i(3, y)):
 			return
 
 	if not _place(grid, "basic_fuel", Vector2i(8, 5)):
 		return
-	if not _place(grid, "ground_ops_depot", Vector2i(5, 9)):
+	if not _place(grid, "ground_ops_depot", Vector2i(5, 10)):
 		return
 	for cell in [
 		# Fuel approach from the right side of the stand.
 		Vector2i(7, 6),
 		Vector2i(6, 6),
 		# Ground Ops approach from below the stand.
-		Vector2i(5, 8)
+		Vector2i(5, 9)
 	]:
 		if not _place(grid, "service_road", cell):
 			return

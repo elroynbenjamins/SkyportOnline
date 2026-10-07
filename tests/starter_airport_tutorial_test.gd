@@ -45,7 +45,7 @@ func _run() -> void:
 		return
 	var initial: Dictionary = layout[0]
 	if String(initial.get("definition_id", "")) != "airport_office":
-		_fail("Airport Office should be the only initial building.")
+		_fail("Main Airport Building should be the only initial building.")
 		return
 
 	var tutorial = TutorialScript.new()
@@ -59,21 +59,28 @@ func _run() -> void:
 		return
 	tutorial.refresh()
 
-	if not _expect_step(tutorial, "hangar", "small_hangar"):
-		return
-	if not _place(grid, "small_hangar", Vector2i(0, 6)):
-		return
-	tutorial.refresh()
-
 	if not _expect_step(tutorial, "stand", "small_stand"):
 		return
 	if not _place(grid, "small_stand", Vector2i(4, 6)):
 		return
 	tutorial.refresh()
 
-	if not _expect_step(tutorial, "taxi_network", "taxiway"):
+	if not _expect_step(tutorial, "runway_taxi", "taxiway"):
 		return
-	for y in range(2, 8):
+	for y in range(2, 7):
+		if not _place(grid, "taxiway", Vector2i(3, y)):
+			return
+	tutorial.refresh()
+
+	if not _expect_step(tutorial, "hangar", "small_hangar"):
+		return
+	if not _place(grid, "small_hangar", Vector2i(0, 10)):
+		return
+	tutorial.refresh()
+
+	if not _expect_step(tutorial, "hangar_taxi_network", "taxiway"):
+		return
+	for y in range(7, 11):
 		if not _place(grid, "taxiway", Vector2i(3, y)):
 			return
 	tutorial.refresh()
@@ -86,7 +93,7 @@ func _run() -> void:
 
 	if not _expect_step(tutorial, "ground_ops", "ground_ops_depot"):
 		return
-	if not _place(grid, "ground_ops_depot", Vector2i(5, 9)):
+	if not _place(grid, "ground_ops_depot", Vector2i(5, 10)):
 		return
 	tutorial.refresh()
 
@@ -97,7 +104,7 @@ func _run() -> void:
 		Vector2i(7, 6),
 		Vector2i(6, 6),
 		# Ground Ops approach from below the stand.
-		Vector2i(5, 8)
+		Vector2i(5, 9)
 	]:
 		if not _place(grid, "service_road", cell):
 			return
@@ -105,7 +112,7 @@ func _run() -> void:
 
 	if not _expect_step(tutorial, "terminal", "small_terminal"):
 		return
-	if not _place(grid, "small_terminal", Vector2i(10, 10)):
+	if not _place(grid, "small_terminal", Vector2i(9, 11)):
 		return
 	tutorial.refresh()
 
@@ -147,7 +154,7 @@ func _run() -> void:
 
 	print(
 		"STARTER_AIRPORT_TUTORIAL_OK initial=office_only "
-		+ "construction=8_free_steps rewards=2250"
+		+ "construction=9_guided_steps rewards=2250"
 	)
 	quit(0)
 
@@ -162,6 +169,13 @@ func _expect_step(tutorial, step_id: String, target: String) -> bool:
 		return false
 	if not bool(snapshot.get("tutorial_grant", false)):
 		_fail("Construction step %s should be a free tutorial grant." % step_id)
+		return false
+	var recommended: Vector2i = snapshot.get(
+		"recommended_origin",
+		Vector2i(-1, -1)
+	)
+	if recommended.x < 0 or recommended.y < 0:
+		_fail("Construction step %s should provide a recommended grid origin." % step_id)
 		return false
 	return true
 

@@ -293,9 +293,39 @@ func _on_starter_tutorial_changed(
 	var action := String(snapshot.get("action", ""))
 	var target := String(snapshot.get("target", ""))
 	if action == "build" and not target.is_empty():
-		call_deferred("_on_building_selected", target)
+		call_deferred(
+			"_start_starter_tutorial_build_step",
+			target,
+			snapshot.get(
+				"recommended_origin",
+				Vector2i(-1, -1)
+			)
+		)
 	elif step_id == "hangar_taxi":
 		call_deferred("_spawn_aircraft_demos")
+
+
+func _start_starter_tutorial_build_step(
+	building_id: String,
+	recommended_origin: Vector2i
+) -> void:
+	_on_building_selected(building_id)
+	if recommended_origin.x < 0 or recommended_origin.y < 0:
+		return
+	var preview := airport_grid.set_build_preview(
+		building_id,
+		airport_grid.tile_to_world(
+			Vector2(recommended_origin.x, recommended_origin.y)
+		),
+		0
+	)
+	var definition := BuildingCatalog.get_definition(building_id)
+	hud.show_build_preview(
+		_starter_tutorial_hud_definition(definition),
+		preview,
+		player_level,
+		coins
+	)
 
 
 func _on_starter_tutorial_coin_reward(

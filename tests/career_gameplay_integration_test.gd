@@ -34,29 +34,36 @@ func _build_required_starter_airside(main) -> bool:
 	if not _place_for_career(
 		main,
 		"short_runway",
-		Vector2i(0, 0)
+		Vector2i(4, 0)
 	):
 		return false
 
-	for y in range(2, 8):
+	for cell in [
+		Vector2i(8, 2),
+		Vector2i(4, 3),
+		Vector2i(5, 3),
+		Vector2i(6, 3),
+		Vector2i(7, 3),
+		Vector2i(8, 3)
+	]:
 		if not _place_for_career(
 			main,
 			"taxiway",
-			Vector2i(3, y)
+			cell
 		):
 			return false
 
 	if not _place_for_career(
 		main,
 		"small_stand",
-		Vector2i(4, 5)
+		Vector2i(6, 4)
 	):
 		return false
 
 	for cell in [
-		Vector2i(7, 7),
+		Vector2i(6, 6),
 		Vector2i(7, 6),
-		Vector2i(6, 6)
+		Vector2i(8, 6)
 	]:
 		if not _place_for_career(
 			main,

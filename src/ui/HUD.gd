@@ -2135,6 +2135,10 @@ func set_starter_tutorial(snapshot: Dictionary) -> void:
 
 	var active := bool(snapshot.get("active", false))
 	var complete := bool(snapshot.get("complete", false))
+	var title_value := String(snapshot.get("title", ""))
+	if not active and complete and title_value.is_empty():
+		tutorial_objective_panel.visible = false
+		return
 	tutorial_objective_panel.visible = active or complete
 
 	if complete:

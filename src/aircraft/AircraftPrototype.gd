@@ -1885,7 +1885,9 @@ func get_motion_feedback_snapshot() -> Dictionary:
 			takeoff_velocity / maxf(takeoff_speed, 1.0),
 			0.0,
 			1.0
-		)
+		),
+		"production_motion_art": true,
+		"motion_art_frames": AircraftMotionArt.frame_count()
 	}
 
 
@@ -2099,86 +2101,104 @@ func _draw_motion_feedback() -> void:
 
 	match motion_fx_kind:
 		"taxi_start":
-			for side in [-1.0, 1.0]:
-				var center := Vector2(
-					main_gear_x - 3.0 * progress,
-					gear_span * float(side)
+			var taxi_texture := AircraftMotionArt.taxi_texture(progress)
+			if taxi_texture != null:
+				for side in [-1.0, 1.0]:
+					_draw_motion_texture(
+						taxi_texture,
+						Vector2(
+							main_gear_x - 7.0 * progress * visual_scale,
+							gear_span * float(side)
+						),
+						Vector2(30, 22) * visual_scale,
+						0.72 * fade
+					)
+			else:
+				_draw_motion_fallback_puff(
+					Vector2(main_gear_x, 0),
+					5.0 * visual_scale,
+					0.16 * fade
 				)
-				draw_circle(
-					center,
-					(2.2 + 3.8 * progress) * visual_scale,
-					Color(0.80, 0.84, 0.82, 0.18 * fade)
-				)
+
 		"takeoff_start":
-			for offset in [-6.0, 0.0, 6.0]:
+			var wake := AircraftMotionArt.texture("takeoff_wake")
+			if wake != null:
+				_draw_motion_texture(
+					wake,
+					Vector2(tail_x - 16.0 * visual_scale, 0),
+					Vector2(44, 34) * visual_scale,
+					0.62 * fade
+				)
+			else:
 				draw_line(
-					Vector2(tail_x - 4.0, offset * visual_scale * 0.45),
-					Vector2(
-						tail_x - (15.0 + 13.0 * progress) * visual_scale,
-						offset * visual_scale * 0.45
-					),
-					Color(0.80, 0.92, 0.96, 0.18 * fade),
-					1.5
-				)
-		"rotation":
-			for offset in [-8.0, 0.0, 8.0]:
-				draw_line(
-					Vector2(tail_x, offset * visual_scale * 0.38),
-					Vector2(
-						tail_x - (18.0 + 18.0 * progress) * visual_scale,
-						offset * visual_scale * 0.38
-					),
-					Color(0.74, 0.89, 0.96, 0.16 * fade),
-					1.2
-				)
-		"touchdown":
-			for side in [-1.0, 1.0]:
-				var smoke_center := Vector2(
-					main_gear_x - 7.0 * progress * visual_scale,
-					gear_span * float(side)
-				)
-				draw_circle(
-					smoke_center,
-					(4.0 + 8.0 * progress) * visual_scale,
-					Color(0.88, 0.90, 0.88, 0.30 * fade)
-				)
-				draw_circle(
-					smoke_center + Vector2(-5, -2) * visual_scale,
-					(2.5 + 5.0 * progress) * visual_scale,
-					Color(0.94, 0.95, 0.93, 0.22 * fade)
-				)
-		"runway_exit":
-			for side in [-1.0, 1.0]:
-				draw_circle(
-					Vector2(
-						main_gear_x - 2.0 * progress * visual_scale,
-						gear_span * float(side)
-					),
-					(1.8 + 2.8 * progress) * visual_scale,
-					Color(0.84, 0.86, 0.84, 0.13 * fade)
-				)
-		"stand_stop":
-			draw_circle(
-				Vector2(main_gear_x - 2.0, 0),
-				(2.0 + 3.0 * progress) * visual_scale,
-				Color(0.80, 0.84, 0.82, 0.12 * fade)
-			)
-		"pushback":
-			var pulse := 0.55 + 0.45 * sin(
-				motion_fx_elapsed * 14.0
-			)
-			for side in [-1.0, 1.0]:
-				draw_arc(
-					Vector2(
-						main_gear_x,
-						gear_span * float(side)
-					),
-					4.0 * visual_scale,
-					0.0,
-					TAU,
-					10,
-					Color(1.0, 0.82, 0.36, 0.24 + 0.12 * pulse),
+					Vector2(tail_x, 0),
+					Vector2(tail_x - 24.0 * visual_scale, 0),
+					Color(0.80, 0.92, 0.96, 0.16 * fade),
 					1.4
+				)
+
+		"rotation":
+			var lift_wake := AircraftMotionArt.texture("takeoff_wake")
+			if lift_wake != null:
+				_draw_motion_texture(
+					lift_wake,
+					Vector2(tail_x - 20.0 * visual_scale, 0),
+					Vector2(52, 38) * visual_scale,
+					0.55 * fade
+				)
+
+		"touchdown":
+			var smoke := AircraftMotionArt.touchdown_texture(progress)
+			if smoke != null:
+				_draw_motion_texture(
+					smoke,
+					Vector2(
+						main_gear_x - 8.0 * progress * visual_scale,
+						0
+					),
+					Vector2(58, 42) * visual_scale,
+					0.92 * fade
+				)
+			else:
+				_draw_motion_fallback_puff(
+					Vector2(main_gear_x, 0),
+					10.0 * visual_scale,
+					0.28 * fade
+				)
+
+		"runway_exit":
+			var exit_puff := AircraftMotionArt.taxi_texture(progress)
+			if exit_puff != null:
+				_draw_motion_texture(
+					exit_puff,
+					Vector2(main_gear_x - 3.0, 0),
+					Vector2(28, 20) * visual_scale,
+					0.34 * fade
+				)
+
+		"stand_stop":
+			var stop_texture := AircraftMotionArt.texture("stand_stop")
+			if stop_texture != null:
+				_draw_motion_texture(
+					stop_texture,
+					Vector2(main_gear_x - 2.0, 0),
+					Vector2(30, 22) * visual_scale,
+					0.56 * fade
+				)
+
+		"pushback":
+			var pushback_texture := AircraftMotionArt.texture(
+				"pushback_roll"
+			)
+			if pushback_texture != null:
+				var pulse := 0.72 + 0.18 * sin(
+					motion_fx_elapsed * 12.0
+				)
+				_draw_motion_texture(
+					pushback_texture,
+					Vector2(main_gear_x + 4.0 * visual_scale, 0),
+					Vector2(34, 26) * visual_scale,
+					pulse
 				)
 
 	if state == "TAKEOFF_ROLL":
@@ -2187,73 +2207,91 @@ func _draw_motion_feedback() -> void:
 			0.0,
 			1.0
 		)
-		if speed_ratio > 0.24:
-			for offset in [-7.0, 0.0, 7.0]:
-				draw_line(
+		if speed_ratio > 0.20:
+			var roll_wake := AircraftMotionArt.texture("takeoff_wake")
+			if roll_wake != null:
+				var wake_size := Vector2(
+					40.0 + 30.0 * speed_ratio,
+					30.0 + 14.0 * speed_ratio
+				) * visual_scale
+				_draw_motion_texture(
+					roll_wake,
 					Vector2(
-						tail_x - 3.0 * visual_scale,
-						offset * visual_scale * 0.40
+						tail_x - 18.0 * speed_ratio * visual_scale,
+						0
 					),
-					Vector2(
-						tail_x - (11.0 + 22.0 * speed_ratio) * visual_scale,
-						offset * visual_scale * 0.40
-					),
-					Color(
-						0.74,
-						0.89,
-						0.96,
-						0.07 + 0.11 * speed_ratio
-					),
-					1.1
+					wake_size,
+					0.28 + 0.32 * speed_ratio
 				)
 
 	if state == "PUSHBACK_PREP" and externally_moving:
-		var speed_amount := clampf(
-			external_motion_speed / 80.0,
-			0.0,
-			1.0
-		)
-		draw_line(
-			Vector2(12, 0) * visual_scale,
-			Vector2(23 + 7 * speed_amount, 0) * visual_scale,
-			Color(1.0, 0.78, 0.28, 0.34 + 0.18 * speed_amount),
-			2.0
-		)
+		var live_pushback := AircraftMotionArt.texture("pushback_roll")
+		if live_pushback != null:
+			var speed_amount := clampf(
+				external_motion_speed / 80.0,
+				0.0,
+				1.0
+			)
+			_draw_motion_texture(
+				live_pushback,
+				Vector2(13, 0) * visual_scale,
+				Vector2(
+					30.0 + 8.0 * speed_amount,
+					24.0
+				) * visual_scale,
+				0.45 + 0.25 * speed_amount
+			)
 
 	if state in ["APPROACH", "CLIMBING"]:
 		var airborne := _airborne_shadow_factor()
-		var wake_strength := (
-			0.08
-			+ airborne * 0.12
-		)
-		var wake_length := (
-			18.0
-			+ airborne * 24.0
-		) * visual_scale
-		var wake_origin := (
-			Vector2(
-				-get_visual_half_length() * 0.78,
-				0
+		var airborne_wake := AircraftMotionArt.texture("takeoff_wake")
+		if airborne_wake != null and airborne > 0.04:
+			var wake_size := Vector2(
+				42.0 + airborne * 24.0,
+				30.0 + airborne * 12.0
+			) * visual_scale
+			var wake_origin := (
+				Vector2(
+					-get_visual_half_length() * 0.88
+					- 14.0 * airborne * visual_scale,
+					0
+				)
+				+ get_airborne_visual_local_offset()
 			)
-			+ get_airborne_visual_local_offset()
-		)
-		for side in [-1.0, 1.0]:
-			var side_offset := (
-				5.5
-				* visual_scale
-				* float(side)
+			_draw_motion_texture(
+				airborne_wake,
+				wake_origin,
+				wake_size,
+				0.18 + airborne * 0.18
 			)
-			draw_line(
-				wake_origin + Vector2(0, side_offset),
-				wake_origin + Vector2(-wake_length, side_offset),
-				Color(
-					0.80,
-					0.92,
-					0.98,
-					wake_strength
-				),
-				1.2
-			)
+
+
+func _draw_motion_texture(
+	texture: Texture2D,
+	center: Vector2,
+	size: Vector2,
+	alpha: float
+) -> void:
+	if texture == null:
+		return
+	draw_texture_rect(
+		texture,
+		Rect2(center - size * 0.5, size),
+		false,
+		Color(1, 1, 1, clampf(alpha, 0.0, 1.0))
+	)
+
+
+func _draw_motion_fallback_puff(
+	center: Vector2,
+	radius: float,
+	alpha: float
+) -> void:
+	draw_circle(
+		center,
+		radius,
+		Color(0.86, 0.90, 0.87, alpha)
+	)
 
 
 func _draw_shadow() -> void:

@@ -81,9 +81,11 @@ func _run() -> void:
 		return
 
 	print(
-		"STRICT_GRID_FOOTPRINTS_OK buildings=%d charter=%d "
-		+ "width_bounded=true centered=true grounded=true preview_same_geometry=true"
-		% [normal_checked, charter_checked]
+		(
+			"STRICT_GRID_FOOTPRINTS_OK buildings=%d charter=%d "
+			+ "width_bounded=true centered=true grounded=true "
+			+ "preview_same_geometry=true"
+		) % [normal_checked, charter_checked]
 	)
 	quit(0)
 

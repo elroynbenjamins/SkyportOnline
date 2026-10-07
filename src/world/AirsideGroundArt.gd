@@ -92,10 +92,9 @@ static func texture_for_frame(frame_name: String) -> Texture2D:
 
 
 static func taxi_texture(mask: int, runway_direction: Vector2i = Vector2i.ZERO) -> Texture2D:
-	if runway_direction != Vector2i.ZERO:
-		return texture_for_frame(
-			"taxi_runway_connector_%d" % _direction_rotation(runway_direction)
-		)
+	# The connection mask is the visual source of truth, including the runway
+	# edge itself. Keeping the same modular shape at runway entrances prevents
+	# the connector tile from breaking an otherwise continuous taxiway.
 	return texture_for_frame(_shape_frame("taxi", mask))
 
 

@@ -9,6 +9,10 @@ const PAVEMENT_ART := {
 	"service_road": {
 		"surface_art": "service_road_v2",
 		"icon": "res://assets/production/airfield_v2/service_road_icon_v2.svg"
+	},
+	"apron_tile": {
+		"surface_art": "apron_v2",
+		"icon": "res://assets/production/airfield_v2/apron_icon_v2.svg"
 	}
 }
 
@@ -31,6 +35,12 @@ func _run() -> void:
 	if not grid.has_method("_draw_service_road_detail"):
 		_fail("Service Road should retain connectivity-aware road detail.")
 		return
+	if not grid.has_method("_draw_apron_tile"):
+		_fail("Apron Concrete should render as connected airport hardscape.")
+		return
+	if not grid.has_method("_apron_visually_connects_to"):
+		_fail("Apron Concrete should merge cleanly with adjacent hardscape.")
+		return
 
 	var definitions: Array[Dictionary] = []
 	for building_id_variant in PAVEMENT_ART.keys():
@@ -41,6 +51,10 @@ func _run() -> void:
 			_fail("%s definition should exist." % building_id)
 			return
 		definitions.append(definition)
+
+		if building_id == "apron_tile" and bool(definition.get("movable", true)):
+			_fail("Apron Concrete should behave as fixed pavement after placement.")
+			return
 
 		if String(definition.get("art_tier", "")) != "surface_v2":
 			_fail("%s should use the surface_v2 art tier." % building_id)
@@ -90,6 +104,12 @@ func _run() -> void:
 	if int(snapshot.get("service_road_tiles", -1)) < 0:
 		_fail("Service Road v2 should retain connectivity diagnostics.")
 		return
+	if int(snapshot.get("apron_tiles", -1)) < 0:
+		_fail("Apron Concrete should expose surface diagnostics.")
+		return
+	if not grid._service_road_visually_connects_to(Vector2i(14, 13)):
+		_fail("Service roads should visually terminate into service facilities.")
+		return
 
 	var hud := preload("res://src/ui/HUD.gd").new()
 	root.add_child(hud)
@@ -116,7 +136,7 @@ func _run() -> void:
 			return
 
 	print(
-		"AIRFIELD_PAVEMENT_V2_OK taxiway=true service_road=true "
+		"AIRFIELD_PAVEMENT_V2_OK taxiway=true service_road=true apron=true "
 		+ "legacy_icons=false connectivity=true"
 	)
 	quit(0)

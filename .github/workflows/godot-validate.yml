@@ -51,6 +51,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture taxiway runway connection
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_taxiway_connection_ingame.gd
+
+      - name: Upload taxiway runway connection
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxiway-runway-connection-ingame
+          path: artifacts/taxiway_connection_ingame.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Validate grid and gameplay systems
         shell: bash
         run: |
@@ -62,6 +73,7 @@ jobs:
             tests/starter_airport_tutorial_test.gd
             tests/starter_building_grid_fit_test.gd
             tests/short_runway_grid_art_test.gd
+            tests/taxiway_grid_art_test.gd
             tests/airside_connectivity_test.gd
             tests/flight_rules_test.gd
             tests/resource_drop_rules_test.gd

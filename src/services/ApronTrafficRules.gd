@@ -184,7 +184,7 @@ static func _stand_throat_yield(
 			"blocker_id": other_id,
 		}
 	if self_state == "exiting" and other_state == "entering":
-		return {}
+		return {"protected": true}
 
 	# Same-direction stand merges use stable dispatch order. This avoids two
 	# vehicles visually entering/leaving the throat side-by-side.
@@ -194,7 +194,7 @@ static func _stand_throat_yield(
 	else:
 		self_yields = self_id > other_id
 	if not self_yields:
-		return {}
+		return {"protected": true}
 
 	return {
 		"yielding": true,
@@ -275,6 +275,8 @@ static func traffic_decision(
 				String(stand_yield.get("reason", "stand queue")),
 				int(stand_yield.get("blocker_id", other_id))
 			)
+			continue
+		if bool(stand_yield.get("protected", false)):
 			continue
 
 		var other_position: Vector2 = other.get(

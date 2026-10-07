@@ -208,6 +208,9 @@ jobs:
       - name: Test taxi motion and stand geometry
         run: timeout 20s godot --headless --path . --script res://tests/taxi_motion_test.gd
 
+      - name: Test aircraft ground motion V3
+        run: timeout 20s godot --headless --path . --script res://tests/aircraft_ground_motion_v3_test.gd
+
 
       - name: Test apron traffic spacing
         run: timeout 20s godot --headless --path . --script res://tests/apron_traffic_test.gd

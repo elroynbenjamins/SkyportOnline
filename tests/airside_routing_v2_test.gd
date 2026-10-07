@@ -138,7 +138,7 @@ func _run() -> void:
 		return
 
 	var tile_visual := grid.get_airside_tile_visual(
-		Vector2i(12, 10),
+		Vector2i(8, 3),
 		"taxiway"
 	)
 	if tile_visual.get("texture") == null:
@@ -150,7 +150,7 @@ func _run() -> void:
 
 	var preview_status := grid.set_build_preview(
 		"taxiway",
-		grid.tile_to_world(Vector2(14, 10)),
+		grid.tile_to_world(Vector2(13, 3)),
 		0
 	)
 	if int(preview_status.get("network_connections", 0)) <= 0:

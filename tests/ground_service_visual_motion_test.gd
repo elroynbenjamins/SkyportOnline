@@ -93,6 +93,21 @@ func _run() -> void:
 	if GroundServiceMotionRules.braking_distance("fuel") <= GroundServiceMotionRules.braking_distance("cargo"):
 		_fail("Fuel truck should begin braking earlier than the compact cargo tug.")
 		return
+	var early_distance := GroundServiceMotionRules.distance_progress_for_time(
+		0.05,
+		"cargo"
+	)
+	var middle_distance := GroundServiceMotionRules.distance_progress_for_time(
+		0.50,
+		"cargo"
+	)
+	var late_distance := GroundServiceMotionRules.distance_progress_for_time(
+		0.95,
+		"cargo"
+	)
+	if not (early_distance < 0.05 and middle_distance > 0.45 and late_distance > 0.95):
+		_fail("Service motion easing should accelerate early and brake late.")
+		return
 
 	var raw_service_route := PackedVector2Array([
 		Vector2(0, 0),
@@ -132,6 +147,21 @@ func _run() -> void:
 
 	cargo._process(0.10)
 	var cargo_motion := cargo.get_motion_snapshot()
+	var expected_travel_duration := (
+		GroundServiceMotionRules.route_length(
+			PackedVector2Array([
+				Vector2(0, 0),
+				Vector2(80, 0),
+				Vector2(80, 80)
+			])
+		) / cargo.drive_speed
+	)
+	if absf(
+		float(cargo_motion.get("travel_duration", 0.0))
+		- expected_travel_duration
+	) > 0.01:
+		_fail("Visual easing must preserve the legacy service travel duration.")
+		return
 	if cargo.phase != "OUTBOUND":
 		_fail("Cargo tug should begin in the outbound road-following phase.")
 		return
@@ -253,7 +283,7 @@ func _run() -> void:
 		(
 			"GROUND_SERVICE_VISUAL_MOTION_OK "
 			+ "bus=%.0f fuel=%.0f cleaning=%.0f cargo=%.0f tug=%.0f "
-			+ "road_following=true acceleration=true braking=true smooth_turn=true turn_lean=true beacon=true"
+			+ "road_following=true timing_stable=true acceleration=true braking=true smooth_turn=true turn_lean=true beacon=true"
 		) % [
 			float(widths["passenger"]),
 			float(widths["fuel"]),

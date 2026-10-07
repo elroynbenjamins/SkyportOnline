@@ -84,3 +84,19 @@ The current production landscape baseline is:
 It is a scene backdrop, not a substitute for grid-native runway, taxiway, apron or building art.
 
 Decorative roads do not belong in the default backdrop. Roads, taxiways, service routes, parking and other airport infrastructure should come from explicit placeable/gameplay assets so the landscape remains open and Skyrama-like.
+
+
+## Airfield surface art standard
+
+The **5×2 Small Runway** is the canonical base style for grid-native airfield surfaces.
+
+Taxiways, runway connectors, apron transitions and future airfield pavement should visually inherit:
+
+- the same dark blue-grey asphalt material depth;
+- the same warm beige stone/concrete curb treatment;
+- the same small inset blue edge-light treatment where lights are appropriate;
+- restrained warm yellow taxi guidance markings;
+- crisp upper-left highlights and lower-right contact shading;
+- exact `square_grid_iso_v1` footprint boundaries with no visual overhang.
+
+A connected taxiway network must read as one continuous paved system. Players place one Taxiway object; straight, corner, dead-end, T and cross visuals are selected automatically from adjacency rather than exposed as separate shop items.

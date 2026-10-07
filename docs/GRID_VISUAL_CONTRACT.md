@@ -39,3 +39,31 @@ For a `W × H` footprint:
 No airport background, building atlas, authored runway/taxiway texture, environmental decoration, ambient-life sprite or catalog preview is part of the live airport rendering path.
 
 Future visuals should be authored *for* these footprint contracts rather than scaled or offset after import.
+
+
+## Asset authoring coordinate system
+
+The contract now exposes the values a visual generator/importer must use directly:
+
+- `authoring_width_px` = exact projected footprint width;
+- `base_depth_px` = exact projected footprint depth;
+- `base_polygon_from_anchor` = the four base corners relative to the ground anchor;
+- the **front-center ground contact is (0, 0)** in anchor-relative coordinates;
+- `runtime_scale = (1, 1)` and `asset_pixels_per_world_pixel = 1`;
+- the asset body may extend **upward only** from the footprint base;
+- transparent padding is permitted **above only**;
+- no horizontal transparent padding or visual overhang is allowed.
+
+This means a future asset is not “fit to the grid” after generation. It is authored against the grid contract in the first place. Runtime placement only translates the asset so its front-center anchor matches the grid-authored anchor; it does not resize or hand-offset it.
+
+### Example projected bases
+
+| Footprint | Authoring width | Base depth |
+| --- | ---: | ---: |
+| 1×1 | 64 px | 32 px |
+| 2×1 | 96 px | 48 px |
+| 2×2 | 128 px | 64 px |
+| 3×2 | 160 px | 80 px |
+| 7×2 | 288 px | 144 px |
+
+A building may be taller than its base depth because the body rises above the ground plane. Its width still stays inside the contract width.

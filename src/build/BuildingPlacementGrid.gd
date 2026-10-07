@@ -142,19 +142,37 @@ static func visual_contract(
 		Vector2i.ZERO,
 		footprint
 	)
+	var base_width := bounds.size.x
+	var base_depth := bounds.size.y
+	var anchor_local := Vector2(
+		base_width * 0.5,
+		base_depth
+	)
+	var base_polygon_from_anchor := PackedVector2Array([
+		Vector2(0, -base_depth),
+		Vector2(base_width * 0.5, -base_depth * 0.5),
+		Vector2.ZERO,
+		Vector2(-base_width * 0.5, -base_depth * 0.5)
+	])
 	return {
 		"valid": true,
+		"contract_version": "grid_v1",
 		"projection": "isometric_2_to_1",
 		"tile_width": TILE_WIDTH,
 		"tile_height": TILE_HEIGHT,
 		"footprint": footprint,
 		"base_bounds": bounds,
 		"base_size": bounds.size,
+		"authoring_width_px": roundi(base_width),
+		"base_depth_px": roundi(base_depth),
 		"anchor_rule": "front_center",
-		"anchor_local": Vector2(
-			bounds.size.x * 0.5,
-			bounds.size.y
-		),
+		"anchor_local": anchor_local,
+		"base_polygon_from_anchor": base_polygon_from_anchor,
+		"asset_pixels_per_world_pixel": 1.0,
+		"runtime_scale": Vector2.ONE,
+		"horizontal_extent_rule": "inside_footprint_width",
+		"vertical_extent_rule": "body_may_extend_up_only",
+		"transparent_padding_rule": "top_only",
 		"max_horizontal_overhang_px": 0.0,
 		"grid_owns_footprint": true,
 		"grid_owns_anchor": true,

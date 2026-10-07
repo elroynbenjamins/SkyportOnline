@@ -36,7 +36,8 @@ func _run() -> void:
 	print(
 		"GRID_VISUAL_CONTRACT_OK projection=2:1 tile=64x32 "
 		+ "nearest_cell_snap=true grid_owns_footprint=true "
-		+ "grid_owns_anchor=true grid_owns_scale=true"
+		+ "grid_owns_anchor=true grid_owns_scale=true "
+		+ "authoring_1_to_1=true padding=top_only"
 	)
 	quit(0)
 
@@ -116,6 +117,28 @@ func _check_footprint_geometry() -> bool:
 			return false
 		if float(contract.get("max_horizontal_overhang_px", -1.0)) != 0.0:
 			_fail("Grid-native visuals may not define horizontal footprint overhang.")
+			return false
+		if int(contract.get("authoring_width_px", 0)) != roundi(expected_width):
+			_fail("Authoring width must equal the exact grid footprint width.")
+			return false
+		if int(contract.get("base_depth_px", 0)) != roundi(expected_height):
+			_fail("Authoring base depth must equal the exact grid footprint depth.")
+			return false
+		if contract.get("runtime_scale", Vector2.ZERO) != Vector2.ONE:
+			_fail("Grid-native assets must render at 1:1 world scale.")
+			return false
+		if String(contract.get("transparent_padding_rule", "")) != "top_only":
+			_fail("Any transparent visual padding may exist above the base only.")
+			return false
+		var anchor_shape: PackedVector2Array = contract.get(
+			"base_polygon_from_anchor",
+			PackedVector2Array()
+		)
+		if anchor_shape.size() != 4:
+			_fail("Visual contract must expose a four-point base polygon from anchor.")
+			return false
+		if anchor_shape[2].distance_to(Vector2.ZERO) > 0.01:
+			_fail("Front-center anchor must be the zero point of the authoring base.")
 			return false
 	return true
 

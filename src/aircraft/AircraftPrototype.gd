@@ -661,9 +661,6 @@ func get_pushback_target_position() -> Vector2:
 		"XL":
 			distance = maxf(distance, 62.0)
 
-	# Routing V2 makes route[1] the authored stand-access point. Preserve the
-	# established apron safety cap so pushback moves toward that lead-in but
-	# always stops before the aircraft enters the taxiway proper.
 	if departure_route.size() >= 2:
 		var first_leg := (
 			departure_route[1] - departure_route[0]

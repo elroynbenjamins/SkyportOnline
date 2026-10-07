@@ -117,6 +117,8 @@ static func load_profile() -> Dictionary:
 	if stored_social_state is Dictionary:
 		social_state = stored_social_state.duplicate(true)
 
+	var legacy_tutorial_default := not airport_layout.is_empty()
+
 	return {
 		"version": int(config.get_value("profile", "version", PROFILE_VERSION)),
 		"account_type": String(config.get_value("profile", "account_type", "guest")),
@@ -128,6 +130,13 @@ static func load_profile() -> Dictionary:
 		"airport_code": String(config.get_value("profile", "airport_code", "APT")),
 		"country_id": country_id,
 		"created_at_unix": int(config.get_value("profile", "created_at_unix", 0)),
+		"starter_tutorial_complete": bool(
+			config.get_value(
+				"profile",
+				"starter_tutorial_complete",
+				legacy_tutorial_default
+			)
+		),
 		"resource_inventory": inventory,
 		"passenger_balance": int(
 			config.get_value("profile", "passenger_balance", 20)
@@ -190,6 +199,7 @@ static func create_guest_airport(
 		"airport_code": airport_code.strip_edges().to_upper(),
 		"country_id": country_id,
 		"created_at_unix": int(Time.get_unix_time_from_system()),
+		"starter_tutorial_complete": false,
 		"resource_inventory": {},
 		"passenger_balance": 20,
 		"fuel_balance": FuelRules.DEFAULT_STARTING_FUEL,
@@ -287,6 +297,19 @@ static func save_airport_layout(
 	profile["airport_layout"] = layout.duplicate(true)
 	profile["owned_parcels"] = owned_parcels.duplicate(true)
 	profile["airport_storage"] = airport_storage.duplicate(true)
+	if not _save_profile(profile):
+		return {}
+	return profile
+
+
+static func set_starter_tutorial_complete(
+	complete: bool
+) -> Dictionary:
+	var profile := load_profile()
+	if profile.is_empty():
+		return {}
+
+	profile["starter_tutorial_complete"] = complete
 	if not _save_profile(profile):
 		return {}
 	return profile

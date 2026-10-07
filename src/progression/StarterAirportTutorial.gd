@@ -119,6 +119,7 @@ const STEPS := [
 		"target": "",
 		"reward": 1000
 	}
+]
 
 
 var airport_grid
@@ -310,9 +311,10 @@ func _service_road_ready() -> bool:
 	if fuel.is_empty() or ground_ops.is_empty():
 		return false
 
-	for station in [fuel, ground_ops]:
+	for station_variant in [fuel, ground_ops]:
+		var station: Dictionary = station_variant
 		var route: PackedVector2Array = airport_grid.get_service_route(
-			int((station as Dictionary).get("uid", -1)),
+			int(station.get("uid", -1)),
 			stand_uid
 		)
 		if route.size() < 3:

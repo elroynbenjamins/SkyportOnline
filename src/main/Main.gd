@@ -178,6 +178,12 @@ func _start_gameplay() -> void:
 		saved_layout.is_empty()
 		and saved_storage.is_empty()
 	)
+	var starter_tutorial_required := not bool(
+		current_profile.get(
+			"starter_tutorial_complete",
+			false
+		)
+	)
 	if new_builder_airport:
 		var starter := airport_grid.prepare_new_airport_builder_layout()
 		_persist_airport_layout()
@@ -212,7 +218,7 @@ func _start_gameplay() -> void:
 	_setup_service_upgrade_panel()
 	_setup_air_traffic_upgrade_panel()
 	_setup_runway_strategy_panel()
-	_setup_starter_tutorial(new_builder_airport)
+	_setup_starter_tutorial(starter_tutorial_required)
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
 	_refresh_starter_tutorial()
@@ -260,6 +266,9 @@ func _on_starter_tutorial_changed(
 	if bool(snapshot.get("complete", false)):
 		if last_starter_tutorial_step != "__complete":
 			last_starter_tutorial_step = "__complete"
+			var updated := ProfileStore.set_starter_tutorial_complete(true)
+			if not updated.is_empty():
+				current_profile = updated
 			hud.set_operation_status(
 				"Airport basics complete • your first operating airfield is ready.",
 				"success"

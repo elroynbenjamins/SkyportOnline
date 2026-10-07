@@ -105,6 +105,7 @@ const ONCOMING_CAUTION_RADIUS := 34.0
 const MIN_TRAFFIC_FACTOR := 0.18
 const STAND_ENTRY_PROGRESS := 0.78
 const STAND_EXIT_CLEAR_PROGRESS := 0.28
+const STAND_THROAT_RADIUS := 74.0
 
 
 static func right_of_way_priority(
@@ -128,6 +129,18 @@ static func stand_throat_state(
 	if stand_uid < 0:
 		return "road"
 	var phase := String(snapshot.get("phase", ""))
+	if snapshot.has("stand_distance"):
+		var stand_distance := maxf(
+			float(snapshot.get("stand_distance", INF)),
+			0.0
+		)
+		if stand_distance <= STAND_THROAT_RADIUS:
+			if phase == "OUTBOUND":
+				return "entering"
+			if phase == "RETURNING":
+				return "exiting"
+		return "road"
+
 	var progress := clampf(
 		float(snapshot.get("route_progress", 0.0)),
 		0.0,

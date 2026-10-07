@@ -21,6 +21,7 @@ var selected_building_rotation := 0
 var moving_building_uid := -1
 var placing_stored_building_uid := -1
 var airport_edit_mode := false
+var airport_expansion_mode := false
 var last_move_undo: Dictionary = {}
 var aircraft_demos: Array[AircraftPrototype] = []
 var ground_services: GroundServiceDispatcher
@@ -84,6 +85,12 @@ func _ready() -> void:
 	airport_grid.building_selected_world.connect(_on_building_selected_world)
 
 	hud.purchase_expansion_requested.connect(_on_purchase_expansion_requested)
+	hud.expansion_mode_requested.connect(
+		_on_expansion_mode_requested
+	)
+	hud.expansion_mode_cancel_requested.connect(
+		_on_expansion_mode_cancel_requested
+	)
 	hud.building_selected.connect(_on_building_selected)
 	hud.rotate_building_requested.connect(_on_rotate_building_requested)
 	hud.confirm_building_requested.connect(_on_confirm_building_requested)
@@ -115,7 +122,8 @@ func _ready() -> void:
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
 	hud.set_player_data(player_level, coins, gems)
 	hud.set_airside_status(airport_grid.get_airside_status())
-	airport_grid.select_parcel("north")
+	airport_grid.set_expansion_mode(false)
+	airport_grid.clear_parcel_selection()
 
 	if ProfileStore.has_airport():
 		current_profile = ProfileStore.load_profile()
@@ -1903,6 +1911,9 @@ func _process_priority_contract_return(
 
 
 func _on_navigation_requested(tab: String) -> void:
+	if airport_expansion_mode:
+		_exit_airport_expansion_mode(false)
+
 	if airport_edit_mode:
 		_exit_airport_edit_mode(false)
 	elif moving_building_uid >= 0:
@@ -2608,6 +2619,14 @@ func _on_world_tapped(world_position: Vector2) -> void:
 				player_level,
 				coins
 			)
+		return
+
+	if airport_expansion_mode:
+		if aircraft_context_card != null:
+			aircraft_context_card.close_card()
+		if building_context_card != null:
+			building_context_card.close_card()
+		airport_grid.select_world_position(world_position)
 		return
 
 	if airport_edit_mode:
@@ -4210,14 +4229,75 @@ func _on_network_status_changed(status: Dictionary) -> void:
 	hud.set_airside_status(status)
 
 
-func _on_parcel_selected(_parcel_id: String, parcel_data: Dictionary) -> void:
+
+func _on_expansion_mode_requested() -> void:
+	if moving_building_uid >= 0:
+		_cancel_building_move(false)
+	elif placing_stored_building_uid >= 0:
+		_cancel_stored_building_placement(false)
+	elif not selected_building_id.is_empty():
+		_on_cancel_building_requested()
+
 	if airport_edit_mode:
+		_exit_airport_edit_mode(false)
+
+	if aircraft_context_card != null:
+		aircraft_context_card.close_card()
+	if building_context_card != null:
+		building_context_card.close_card()
+	airport_grid.clear_synergy_selection()
+
+	airport_expansion_mode = true
+	airport_grid.set_expansion_mode(true)
+	airport_grid.clear_parcel_selection()
+	hud.enter_expansion_mode()
+
+	var candidates := airport_grid.get_expansion_candidate_ids()
+	if candidates.is_empty():
+		hud.set_operation_status(
+			"No adjacent expansion plots are available right now.",
+			"warning"
+		)
+	else:
+		hud.set_operation_status(
+			"Expand Land • select one of %d highlighted plots."
+			% candidates.size()
+		)
+
+
+func _on_expansion_mode_cancel_requested() -> void:
+	_exit_airport_expansion_mode(true)
+
+
+func _exit_airport_expansion_mode(
+	return_to_catalog: bool
+) -> void:
+	if not airport_expansion_mode:
+		hud.exit_expansion_mode(return_to_catalog)
 		return
-	if selected_building_id.is_empty():
-		hud.show_parcel(parcel_data, player_level, coins)
+	airport_expansion_mode = false
+	airport_grid.set_expansion_mode(false)
+	airport_grid.clear_parcel_selection()
+	hud.exit_expansion_mode(return_to_catalog)
+
+
+func _on_parcel_selected(
+	_parcel_id: String,
+	parcel_data: Dictionary
+) -> void:
+	if (
+		not airport_expansion_mode
+		or airport_edit_mode
+		or not selected_building_id.is_empty()
+	):
+		return
+	hud.show_parcel(parcel_data, player_level, coins)
 
 
 func _on_purchase_expansion_requested() -> void:
+	if not airport_expansion_mode:
+		return
+
 	var parcel_data: Dictionary = airport_grid.get_selected_parcel()
 	if parcel_data.is_empty() or parcel_data.get("owned", false):
 		return
@@ -4228,13 +4308,8 @@ func _on_purchase_expansion_requested() -> void:
 			"future"
 		)
 	) != "available":
-		hud.show_parcel(
-			parcel_data,
-			player_level,
-			coins
-		)
 		hud.set_operation_status(
-			"Expand a neighboring parcel first.",
+			"Choose one of the highlighted adjacent plots.",
 			"warning"
 		)
 		return
@@ -4249,11 +4324,6 @@ func _on_purchase_expansion_requested() -> void:
 		parcel_data.get("id", "")
 	)
 	if not airport_grid.purchase_selected():
-		hud.show_parcel(
-			airport_grid.get_selected_parcel(),
-			player_level,
-			coins
-		)
 		return
 
 	coins -= cost
@@ -4262,12 +4332,7 @@ func _on_purchase_expansion_requested() -> void:
 	_celebrate_parcel_expansion(
 		purchased_parcel_id
 	)
-	hud.show_parcel(
-		airport_grid.get_selected_parcel(),
-		player_level,
-		coins
-	)
-
+	_exit_airport_expansion_mode(false)
 
 func _on_placement_expand_requested(
 	parcel_id: String
@@ -4430,6 +4495,8 @@ func _celebrate_parcel_expansion(
 
 
 func _on_building_selected(building_id: String) -> void:
+	if airport_expansion_mode:
+		_exit_airport_expansion_mode(false)
 	airport_grid.clear_synergy_selection()
 	if airport_edit_mode:
 		_exit_airport_edit_mode(false)

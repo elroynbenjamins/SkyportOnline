@@ -5104,6 +5104,7 @@ func get_airfield_detail_snapshot() -> Dictionary:
 	var service_road_tiles := 0
 	var service_road_open_edges := 0
 	var service_barrier_candidates := 0
+	var service_facility_connections := 0
 	var apron_tiles := 0
 	var apron_open_edges := 0
 
@@ -5149,10 +5150,11 @@ func get_airfield_detail_snapshot() -> Dictionary:
 			service_road_tiles += 1
 			var connections := 0
 			for direction in directions:
-				if _service_road_visually_connects_to(
-					origin + direction
-				):
+				var neighbor := origin + direction
+				if _service_road_visually_connects_to(neighbor):
 					connections += 1
+					if _service_road_connects_to_facility(neighbor):
+						service_facility_connections += 1
 				else:
 					service_road_open_edges += 1
 			if (
@@ -5168,6 +5170,7 @@ func get_airfield_detail_snapshot() -> Dictionary:
 		"service_road_tiles": service_road_tiles,
 		"service_road_open_edges": service_road_open_edges,
 		"service_barrier_candidates": service_barrier_candidates,
+		"service_facility_connections": service_facility_connections,
 		"apron_tiles": apron_tiles,
 		"apron_open_edges": apron_open_edges,
 		"landside_scenery": get_landside_scenery_layout().size()
@@ -5707,6 +5710,30 @@ func _service_road_visually_connects_to(cell: Vector2i) -> bool:
 		or id.contains("stand")
 		or category == "Services"
 		or category == "Passenger"
+	)
+
+
+func _service_road_connects_to_facility(cell: Vector2i) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+	var building := _building_by_uid(int(occupied_cells[key]))
+	if building.is_empty():
+		return false
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return false
+	var id := String(definition.get("id", ""))
+	var category := String(definition.get("category", ""))
+	return (
+		id != "service_road"
+		and (
+			id.contains("stand")
+			or category == "Services"
+			or category == "Passenger"
+		)
 	)
 
 

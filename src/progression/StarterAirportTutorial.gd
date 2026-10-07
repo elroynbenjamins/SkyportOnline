@@ -4,45 +4,77 @@ extends Node
 signal changed(snapshot: Dictionary)
 signal coin_reward_earned(amount: int, reason: String)
 
-const TOTAL_STEPS := 10
+const TOTAL_STEPS := 14
 
 const STEPS := [
 	{
 		"id": "runway",
-		"title": "Build your runway",
-		"guidance": "Tap this tutorial objective to select the Short Runway, place it on open land, then confirm it. Every flight starts and ends here.",
+		"title": "Place your first runway",
+		"guidance": "Your Airport Office is ready. Place the free tutorial Short Runway on the open airside land.",
 		"action": "build",
 		"target": "short_runway",
-		"reward": 1500
+		"reward": 0
+	},
+	{
+		"id": "hangar",
+		"title": "Build the aircraft hangar",
+		"guidance": "Place the free Small Hangar. Your first aircraft will start here before taxiing to a stand.",
+		"action": "build",
+		"target": "small_hangar",
+		"reward": 0
 	},
 	{
 		"id": "stand",
 		"title": "Add a Small Stand",
-		"guidance": "Place one Small Stand. Your aircraft stops here for loading, fuel and ground service.",
+		"guidance": "Place the free Small Stand. Aircraft stop here for fuel, handling and loading.",
 		"action": "build",
 		"target": "small_stand",
-		"reward": 1000
+		"reward": 0
 	},
 	{
 		"id": "taxi_network",
 		"title": "Connect the airside",
-		"guidance": "Lay Taxiways so there is one continuous aircraft route: Hangar → Stand → Runway. Aircraft will physically follow this path.",
+		"guidance": "Lay free Taxiway tiles until Hangar → Stand → Runway is one continuous aircraft route.",
 		"action": "build",
 		"target": "taxiway",
-		"reward": 1500
+		"reward": 0
+	},
+	{
+		"id": "fuel_station",
+		"title": "Add fuel service",
+		"guidance": "Place the free Basic Fuel Station. Its truck needs a Service Road to reach your stand.",
+		"action": "build",
+		"target": "basic_fuel",
+		"reward": 0
+	},
+	{
+		"id": "ground_ops",
+		"title": "Add Ground Operations",
+		"guidance": "Place the free Ground Operations Depot for cleaning, catering, baggage, passenger vehicles and pushback.",
+		"action": "build",
+		"target": "ground_ops_depot",
+		"reward": 0
 	},
 	{
 		"id": "service_road",
 		"title": "Connect ground service",
-		"guidance": "Extend the Service Road to your stand. Fuel and service vehicles use roads; aircraft use taxiways.",
+		"guidance": "Lay free Service Road tiles so both Fuel and Ground Ops can drive to the stand. Aircraft use Taxiways; vehicles use Service Roads.",
 		"action": "build",
 		"target": "service_road",
-		"reward": 1000
+		"reward": 0
+	},
+	{
+		"id": "terminal",
+		"title": "Place the terminal",
+		"guidance": "Place the free Small Terminal to establish the passenger side of your new airport.",
+		"action": "build",
+		"target": "small_terminal",
+		"reward": 0
 	},
 	{
 		"id": "hangar_taxi",
 		"title": "Watch the first taxi",
-		"guidance": "Your Pico now leaves the hangar and follows the taxiway you built to the stand.",
+		"guidance": "Your Pico is ready. Watch it leave the hangar and follow the taxiway you built to the stand.",
 		"action": "aircraft",
 		"target": "",
 		"reward": 250
@@ -50,18 +82,18 @@ const STEPS := [
 	{
 		"id": "service",
 		"title": "Start ground service",
-		"guidance": "When the plane shows SERVICE, tap it. Fuel and service vehicles will drive to the stand.",
+		"guidance": "When the plane shows SERVICE, tap it. Fuel and service vehicles will use the road network you built.",
 		"action": "aircraft",
 		"target": "",
-		"reward": 500
+		"reward": 250
 	},
 	{
 		"id": "destination",
 		"title": "Choose the first route",
-		"guidance": "Open the World Map and choose a nearby unlocked destination for your first flight. Routes decide passengers, fuel, time and country resources.",
+		"guidance": "Open the World Map and choose a nearby unlocked destination. Routes decide passengers, fuel, time and country resources.",
 		"action": "world",
 		"target": "",
-		"reward": 500
+		"reward": 250
 	},
 	{
 		"id": "load",
@@ -69,25 +101,25 @@ const STEPS := [
 		"guidance": "When LOAD appears, tap it. Passenger stock is moved onto the aircraft before departure.",
 		"action": "aircraft",
 		"target": "",
-		"reward": 500
+		"reward": 250
 	},
 	{
 		"id": "send",
 		"title": "Send the aircraft",
-		"guidance": "When SEND appears, tap it. The tug pushes the plane back and it taxis toward the runway.",
+		"guidance": "When SEND appears, tap it. The tug pushes the plane back and it taxis toward your runway.",
 		"action": "aircraft",
 		"target": "",
-		"reward": 500
+		"reward": 250
 	},
 	{
 		"id": "takeoff",
 		"title": "First takeoff",
-		"guidance": "Watch the Pico taxi to the runway and depart. Your first working airport route is complete.",
+		"guidance": "Watch the Pico taxi to the runway and depart. You built and operated your first complete airport flow.",
 		"action": "aircraft",
 		"target": "",
-		"reward": 1500
+		"reward": 1000
 	}
-]
+
 
 var airport_grid
 var active := false
@@ -181,6 +213,10 @@ func _snapshot() -> Dictionary:
 		"guidance": String(step.get("guidance", "")),
 		"action": String(step.get("action", "")),
 		"target": String(step.get("target", "")),
+		"tutorial_grant": (
+			String(step.get("action", "")) == "build"
+			and not String(step.get("target", "")).is_empty()
+		),
 		"reward": int(step.get("reward", 0))
 	}
 
@@ -197,53 +233,31 @@ func _step_complete(index: int) -> bool:
 		0:
 			return _has_building("short_runway")
 		1:
-			return _has_building("small_stand")
+			return _has_building("small_hangar")
 		2:
-			return _airside_taxi_network_ready()
+			return _has_building("small_stand")
 		3:
-			return _service_road_ready()
+			return _airside_taxi_network_ready()
 		4:
-			return bool(
-				completed_events.get(
-					"hangar_taxi_complete",
-					false
-				)
-			)
+			return _has_building("basic_fuel")
 		5:
-			return bool(
-				completed_events.get(
-					"service_started",
-					false
-				)
-			)
+			return _has_building("ground_ops_depot")
 		6:
-			return bool(
-				completed_events.get(
-					"destination_selected",
-					false
-				)
-			)
+			return _service_road_ready()
 		7:
-			return bool(
-				completed_events.get(
-					"load_started",
-					false
-				)
-			)
+			return _has_building("small_terminal")
 		8:
-			return bool(
-				completed_events.get(
-					"send_started",
-					false
-				)
-			)
+			return bool(completed_events.get("hangar_taxi_complete", false))
 		9:
-			return bool(
-				completed_events.get(
-					"first_departure",
-					false
-				)
-			)
+			return bool(completed_events.get("service_started", false))
+		10:
+			return bool(completed_events.get("destination_selected", false))
+		11:
+			return bool(completed_events.get("load_started", false))
+		12:
+			return bool(completed_events.get("send_started", false))
+		13:
+			return bool(completed_events.get("first_departure", false))
 		_:
 			return false
 
@@ -284,14 +298,23 @@ func _service_road_ready() -> bool:
 	var stand_uid := _first_stand_uid()
 	if stand_uid < 0:
 		return false
+
 	var fuel: Dictionary = airport_grid.get_best_service_building(
 		"fuel",
 		"S"
 	)
-	if fuel.is_empty():
-		return false
-	var route: PackedVector2Array = airport_grid.get_service_route(
-		int(fuel.get("uid", -1)),
-		stand_uid
+	var ground_ops: Dictionary = airport_grid.get_best_service_building(
+		"cleaning",
+		"S"
 	)
-	return route.size() >= 3
+	if fuel.is_empty() or ground_ops.is_empty():
+		return false
+
+	for station in [fuel, ground_ops]:
+		var route: PackedVector2Array = airport_grid.get_service_route(
+			int((station as Dictionary).get("uid", -1)),
+			stand_uid
+		)
+		if route.size() < 3:
+			return false
+	return true

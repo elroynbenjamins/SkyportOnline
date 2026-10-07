@@ -17,6 +17,8 @@ func _run() -> void:
 	var grid := AirportGrid.new()
 	world.add_child(grid)
 	await process_frame
+	grid.prepare_new_airport_builder_layout()
+	await process_frame
 
 	var camera := Camera2D.new()
 	# Match the fixed Skyrama-style airport viewing angle: the logical square
@@ -48,23 +50,8 @@ func _run() -> void:
 		"2 aircraft awaiting turnaround"
 	)
 
-	# Add a small screenshot-only apron patch next to the starter terminal.
-	# This never touches saved gameplay state; it simply keeps the new
-	# purchasable ground surface visible in visual regression artifacts.
-	for apron_cell in [
-		Vector2i(8, 12),
-		Vector2i(9, 12),
-		Vector2i(8, 13),
-		Vector2i(9, 13)
-	]:
-		var apron_status := grid.set_build_preview(
-			"apron_tile",
-			grid.tile_to_world(Vector2(apron_cell)),
-			0
-		)
-		if bool(apron_status.get("valid", false)):
-			grid.confirm_build_preview()
-	grid.clear_build_preview()
+	# New-player QA intentionally leaves operational land empty. The Airport
+	# Office is the only placed structure before the tutorial begins.
 
 	var routes: Array[Dictionary] = grid.get_departure_routes("S")
 	var plane_count := mini(routes.size(), 2)

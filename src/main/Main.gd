@@ -182,7 +182,7 @@ func _start_gameplay() -> void:
 		var starter := airport_grid.prepare_new_airport_builder_layout()
 		_persist_airport_layout()
 		hud.set_operation_status(
-			"Build your airfield • place RUNWAY + STAND, then connect TAXIWAYS",
+			"New airport • follow the tutorial to build your first operating airfield",
 			"warning"
 		)
 		if (
@@ -273,6 +273,12 @@ func _on_starter_tutorial_changed(
 		String(snapshot.get("guidance", "Follow the tutorial step.")),
 		"warning"
 	)
+	var action := String(snapshot.get("action", ""))
+	var target := String(snapshot.get("target", ""))
+	if action == "build" and not target.is_empty():
+		call_deferred("_on_building_selected", target)
+	elif step_id == "hangar_taxi":
+		call_deferred("_spawn_aircraft_demos")
 
 
 func _on_starter_tutorial_coin_reward(
@@ -290,6 +296,52 @@ func _on_starter_tutorial_coin_reward(
 		],
 		"success"
 	)
+
+
+func _starter_tutorial_snapshot() -> Dictionary:
+	if starter_tutorial == null or not starter_tutorial_enabled:
+		return {}
+	return starter_tutorial.get_snapshot()
+
+
+func _starter_tutorial_build_target() -> String:
+	var snapshot := _starter_tutorial_snapshot()
+	if not bool(snapshot.get("active", false)):
+		return ""
+	if String(snapshot.get("action", "")) != "build":
+		return ""
+	return String(snapshot.get("target", ""))
+
+
+func _is_starter_tutorial_grant(building_id: String) -> bool:
+	return (
+		not building_id.is_empty()
+		and building_id == _starter_tutorial_build_target()
+	)
+
+
+func _starter_tutorial_hud_definition(
+	definition: Dictionary
+) -> Dictionary:
+	var result := definition.duplicate(true)
+	if _is_starter_tutorial_grant(
+		String(definition.get("id", ""))
+	):
+		result["cost"] = 0
+		result["level"] = 1
+		result["tutorial_grant"] = true
+	return result
+
+
+func _starter_tutorial_blocks_building(
+	building_id: String
+) -> bool:
+	var snapshot := _starter_tutorial_snapshot()
+	if not bool(snapshot.get("active", false)):
+		return false
+	var action := String(snapshot.get("action", ""))
+	var target := String(snapshot.get("target", ""))
+	return action != "build" or building_id != target
 
 
 func _tutorial_aircraft() -> AircraftPrototype:
@@ -588,6 +640,14 @@ func _setup_runway_strategy_panel() -> void:
 
 
 func _spawn_aircraft_demos() -> void:
+	if (
+		starter_tutorial_enabled
+		and String(
+			_starter_tutorial_snapshot().get("action", "")
+		) == "build"
+	):
+		return
+
 	var routes: Array[Dictionary] = airport_grid.get_departure_routes("S")
 	if routes.is_empty():
 		hud.set_operation_status(
@@ -2504,6 +2564,9 @@ func _on_world_tapped(world_position: Vector2) -> void:
 		var definition: Dictionary = BuildingCatalog.get_definition(
 			selected_building_id
 		)
+		var hud_definition := _starter_tutorial_hud_definition(
+			definition
+		)
 		if moving_building_uid >= 0:
 			var move_status := airport_grid.set_move_preview(
 				world_position,
@@ -2531,7 +2594,7 @@ func _on_world_tapped(world_position: Vector2) -> void:
 				selected_building_rotation
 			)
 			hud.show_build_preview(
-				definition,
+				hud_definition,
 				status,
 				player_level,
 				coins
@@ -4373,12 +4436,30 @@ func _on_building_selected(building_id: String) -> void:
 	if definition.is_empty():
 		return
 
+	if _starter_tutorial_blocks_building(building_id):
+		var required := _starter_tutorial_build_target()
+		if required.is_empty():
+			hud.set_operation_status(
+				"Finish the current tutorial objective before building something else.",
+				"warning"
+			)
+		else:
+			var required_definition := BuildingCatalog.get_definition(required)
+			hud.set_operation_status(
+				"Tutorial • place %s first." % String(
+					required_definition.get("name", required)
+				),
+				"warning"
+			)
+		return
+
+	var hud_definition := _starter_tutorial_hud_definition(definition)
 	selected_building_id = building_id
 	selected_building_rotation = 0
 	airport_grid.clear_parcel_selection()
 	airport_grid.clear_build_preview()
-	hud.enter_building_mode(definition)
-	hud.show_build_preview(definition, {}, player_level, coins)
+	hud.enter_building_mode(hud_definition)
+	hud.show_build_preview(hud_definition, {}, player_level, coins)
 
 
 func _on_rotate_building_requested() -> void:
@@ -4405,7 +4486,7 @@ func _on_rotate_building_requested() -> void:
 		)
 	else:
 		hud.show_build_preview(
-			definition,
+			_starter_tutorial_hud_definition(definition),
 			status,
 			player_level,
 			coins
@@ -4427,16 +4508,24 @@ func _on_confirm_building_requested() -> void:
 	if definition.is_empty():
 		return
 
-	var required_level := int(definition["level"])
-	var cost := int(definition["cost"])
+	var tutorial_grant := _is_starter_tutorial_grant(
+		selected_building_id
+	)
+	var required_level := (
+		1 if tutorial_grant else int(definition["level"])
+	)
+	var cost := 0 if tutorial_grant else int(definition["cost"])
 	var status: Dictionary = airport_grid.get_build_preview_status()
+	var hud_definition := _starter_tutorial_hud_definition(
+		definition
+	)
 
 	if player_level < required_level or coins < cost:
-		hud.show_build_preview(definition, status, player_level, coins)
+		hud.show_build_preview(hud_definition, status, player_level, coins)
 		return
 
 	if not bool(status.get("valid", false)):
-		hud.show_build_preview(definition, status, player_level, coins)
+		hud.show_build_preview(hud_definition, status, player_level, coins)
 		return
 
 	var placed: Dictionary = airport_grid.confirm_build_preview()
@@ -4468,12 +4557,20 @@ func _on_confirm_building_requested() -> void:
 		)
 	hud.set_player_data(player_level, coins, gems)
 	hud.set_operation_status(
-		"Construction complete • %s placed" % String(
-			definition.get("name", "Building")
-		),
+		(
+			"Tutorial grant placed • %s • FREE"
+			if tutorial_grant
+			else "Construction complete • %s placed"
+		) % String(definition.get("name", "Building")),
 		"success"
 	)
-	hud.show_build_preview(definition, {}, player_level, coins)
+	if selected_building_id == String(definition.get("id", "")):
+		hud.show_build_preview(
+			_starter_tutorial_hud_definition(definition),
+			{},
+			player_level,
+			coins
+		)
 
 
 func _confirm_building_move() -> void:

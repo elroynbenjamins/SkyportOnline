@@ -116,6 +116,21 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"connection_family": "apron"
 		},
 		{
+			"id": "airport_office",
+			"name": "Airport Office",
+			"menu_name": "AIRPORT OFFICE",
+			"category": "Administration",
+			"footprint": Vector2i(2, 2),
+			"cost": 0,
+			"level": 1,
+			"color": Color("d9c48a"),
+			"rotatable": false,
+			"movable": false,
+			"hidden_from_catalog": true,
+			"sizes": PackedStringArray([]),
+			"description": "The fixed administration building and identity anchor for your airport."
+		},
+		{
 			"id": "small_terminal",
 			"name": "Small Terminal",
 			"menu_name": "TERMINAL",
@@ -800,6 +815,8 @@ static func get_menu_definitions(
 ) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for definition in all():
+		if bool(definition.get("hidden_from_catalog", false)):
+			continue
 		if bool(definition.get("event_decoration", false)):
 			var required := String(
 				definition.get("required_cosmetic_id", "")

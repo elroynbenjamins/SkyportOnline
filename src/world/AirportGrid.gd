@@ -335,9 +335,9 @@ func _initialize_starter_airport() -> void:
 
 
 func prepare_new_airport_builder_layout() -> Dictionary:
-	# New airports begin with a roomy 16x16 owned construction zone. The
-	# player places the runway, stands and taxiways themselves; only the
-	# landside/service core and a starter hangar are pre-positioned.
+	# A brand-new airport starts deliberately almost empty. The fixed Airport
+	# Office is the identity anchor; every operational system is taught and
+	# placed by the player through the starter tutorial.
 	for parcel_id in BUILDER_STARTER_PARCELS:
 		if parcels.has(parcel_id):
 			parcels[parcel_id]["owned"] = true
@@ -346,27 +346,11 @@ func prepare_new_airport_builder_layout() -> Dictionary:
 	stored_buildings.clear()
 	next_building_uid = 1
 
-	_place_building_internal("small_hangar", Vector2i(1, 8), 0)
-	_place_building_internal("basic_fuel", Vector2i(5, 8), 0)
-	_place_building_internal("travel_office", Vector2i(5, 11), 0)
-	_place_building_internal("small_terminal", Vector2i(9, 13), 0)
-	_place_building_internal("ground_ops_depot", Vector2i(12, 13), 0)
-
-	# A starter service-road spine gives fuel/ops vehicles a sensible base;
-	# the player extends it toward whichever stands they choose to build.
-	for cell in [
-		Vector2i(7, 8),
-		Vector2i(7, 9),
-		Vector2i(7, 10),
-		Vector2i(7, 11),
-		Vector2i(7, 12),
-		Vector2i(8, 12),
-		Vector2i(9, 12),
-		Vector2i(10, 12),
-		Vector2i(11, 12),
-		Vector2i(12, 12)
-	]:
-		_place_building_internal("service_road", cell, 0)
+	_place_building_internal(
+		"airport_office",
+		Vector2i(13, 13),
+		0
+	)
 
 	selected_id = ""
 	_rebuild_occupied_cells()
@@ -383,11 +367,17 @@ func prepare_new_airport_builder_layout() -> Dictionary:
 		"runways": int(airside_status.get("runways", 0)),
 		"stands": int(airside_status.get("stands_total", 0)),
 		"hangars": int(airside_status.get("hangars_total", 0)),
+		"starter_buildings": PackedStringArray([
+			"airport_office"
+		]),
 		"next_steps": PackedStringArray([
 			"Place a Short Runway",
+			"Place a Small Hangar",
 			"Place a Small Stand",
-			"Connect runway, stand and hangar with Taxiways",
-			"Extend Service Roads to the stand"
+			"Connect them with Taxiways",
+			"Place Fuel + Ground Ops",
+			"Connect Service Roads",
+			"Place the Small Terminal"
 		])
 	}
 

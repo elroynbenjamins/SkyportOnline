@@ -1639,6 +1639,9 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 
 	var required_level := int(definition["level"])
 	var cost := int(definition["cost"])
+	var tutorial_grant := bool(
+		definition.get("tutorial_grant", false)
+	)
 
 	if player_level < required_level:
 		build_status.text = "Locked until airport Lv %d." % required_level
@@ -1655,7 +1658,11 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	_update_placement_expand_action(status)
 
 	if status.is_empty():
-		build_status.text = "Tap owned land to preview • Cost 🪙 %s" % _format_number(cost)
+		build_status.text = (
+			"Tutorial grant • FREE • tap owned land to preview"
+			if tutorial_grant
+			else "Tap owned land to preview • Cost 🪙 %s" % _format_number(cost)
+		)
 		place_button.text = "TAP LAND"
 		place_button.disabled = true
 		return
@@ -1667,13 +1674,21 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 		return
 
 	var footprint: Vector2i = status.get("footprint", definition["footprint"])
-	build_status.text = "Valid %dx%d • %s%s • Cost 🪙 %s" % [
-		footprint.x,
-		footprint.y,
-		_size_text(definition),
-		_service_text(definition),
-		_format_number(cost)
-	]
+	if tutorial_grant:
+		build_status.text = "Valid %dx%d • %s%s • TUTORIAL FREE" % [
+			footprint.x,
+			footprint.y,
+			_size_text(definition),
+			_service_text(definition)
+		]
+	else:
+		build_status.text = "Valid %dx%d • %s%s • Cost 🪙 %s" % [
+			footprint.x,
+			footprint.y,
+			_size_text(definition),
+			_service_text(definition),
+			_format_number(cost)
+		]
 
 	if active_building_id in ["taxiway", "service_road"]:
 		var network_connections := int(
@@ -1693,7 +1708,11 @@ func show_build_preview(definition: Dictionary, status: Dictionary, player_level
 	if not warning.is_empty():
 		build_status.text += "  •  ⚠ " + warning
 	build_status.text += _synergy_preview_suffix(status)
-	place_button.text = "BUILD  🪙 %s" % _format_number(cost)
+	place_button.text = (
+		"PLACE FREE"
+		if tutorial_grant
+		else "BUILD  🪙 %s" % _format_number(cost)
+	)
 	place_button.disabled = false
 
 

@@ -21,6 +21,14 @@ const TILE_WIDTH := 64.0
 const TILE_HEIGHT := 32.0
 const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.0
 const DEFAULT_WORLD_SPRITE_VISIBLE_WIDTH_SCALE := 0.92
+const BUILDING_PRESENTATION_SCALE_PASSENGER := 0.84
+const BUILDING_PRESENTATION_SCALE_SERVICE := 0.82
+const BUILDING_PRESENTATION_SCALE_OPERATIONS := 0.84
+const BUILDING_PRESENTATION_SCALE_HANGAR := 0.80
+const BUILDING_PRESENTATION_SCALE_FUEL := 0.82
+const BUILDING_PRESENTATION_SCALE_TOWER := 0.90
+const BUILDING_PRESENTATION_SCALE_DECORATION := 0.92
+const BUILDING_PRESENTATION_SCALE_GENERIC := 0.86
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
@@ -5100,6 +5108,34 @@ func _sprite_visible_bounds_for_rotation(
 	return bounds
 
 
+func get_building_presentation_scale(
+	definition: Dictionary
+) -> float:
+	var id := String(definition.get("id", ""))
+	var category := String(definition.get("category", ""))
+
+	if id.contains("stand"):
+		return 1.0
+	if id.contains("hangar"):
+		return BUILDING_PRESENTATION_SCALE_HANGAR
+	if id.contains("fuel"):
+		return BUILDING_PRESENTATION_SCALE_FUEL
+	if id.contains("tower"):
+		return BUILDING_PRESENTATION_SCALE_TOWER
+
+	match category:
+		"Passenger":
+			return BUILDING_PRESENTATION_SCALE_PASSENGER
+		"Services":
+			return BUILDING_PRESENTATION_SCALE_SERVICE
+		"Operations":
+			return BUILDING_PRESENTATION_SCALE_OPERATIONS
+		"Decorations":
+			return BUILDING_PRESENTATION_SCALE_DECORATION
+		_:
+			return BUILDING_PRESENTATION_SCALE_GENERIC
+
+
 func _building_sprite_rect(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -5154,6 +5190,8 @@ func _building_sprite_rect(
 							"world_sprite_visible_width_scale",
 							DEFAULT_WORLD_SPRITE_VISIBLE_WIDTH_SCALE
 						)
+					) * get_building_presentation_scale(
+						definition
 					),
 					0.25,
 					1.0
@@ -5166,6 +5204,8 @@ func _building_sprite_rect(
 	var draw_size := _grid_fitted_world_sprite_size(
 		definition,
 		footprint
+	) * get_building_presentation_scale(
+		definition
 	)
 	var center := _footprint_center_world(
 		origin,

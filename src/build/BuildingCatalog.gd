@@ -25,8 +25,15 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Handles small aircraft.",
 			"icon_path": "res://assets/production/airfield_v2/runway_icon_v2.svg",
-			"art_tier": "surface_v2",
-			"surface_art": "runway_v2"
+			"art_tier": "grid_native_v3",
+			"surface_art": "short_runway_s_v3",
+			"visual_contract": "square_grid_iso_v1",
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v3/short_runway_s_0.svg",
+				"res://assets/production/airfield_v3/short_runway_s_90.svg"
+			]),
+			"grid_native_surface_size": Vector2i(320, 160),
+			"grid_native_surface_runtime_scale": Vector2.ONE
 		},
 		{
 			"id": "small_stand",

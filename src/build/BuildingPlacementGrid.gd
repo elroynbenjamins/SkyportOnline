@@ -208,16 +208,29 @@ static func asset_draw_rect(
 	if not bool(validation.get("valid", false)):
 		return Rect2()
 
+	var contract := visual_contract(footprint)
 	var anchor := footprint_front_anchor_world(
 		origin,
 		footprint
+	)
+	var base_anchor_local: Vector2 = contract.get(
+		"anchor_local",
+		Vector2.ZERO
 	)
 	var size := Vector2(
 		float(asset_size_px.x),
 		float(asset_size_px.y)
 	)
+
+	# The projected front corner is not the horizontal center of an
+	# asymmetric W×H footprint. Using bottom-center shifts 5×2 art by 48 px.
+	# Preserve the contract's exact X anchor; extra asset height is top-only.
+	var asset_anchor_local := Vector2(
+		base_anchor_local.x,
+		size.y
+	)
 	return Rect2(
-		anchor - Vector2(size.x * 0.5, size.y),
+		anchor - asset_anchor_local,
 		size
 	)
 
@@ -270,7 +283,7 @@ static func visual_contract(
 		"base_polygon_from_anchor": base_polygon_from_anchor,
 		"asset_pixels_per_world_pixel": 1.0,
 		"runtime_scale": Vector2.ONE,
-		"draw_rect_rule": "asset_bottom_center_to_projected_front_anchor",
+		"draw_rect_rule": "asset_contract_anchor_to_projected_front_corner",
 		"horizontal_extent_rule": "inside_projected_footprint_width",
 		"vertical_extent_rule": "body_may_extend_up_only",
 		"transparent_padding_rule": "top_only",

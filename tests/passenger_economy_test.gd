@@ -30,20 +30,9 @@ func _run() -> void:
 		{},
 		0
 	)
-	if not (
-		passenger_upgrade_panel.building_image.texture
-		is AtlasTexture
-	):
+	if passenger_upgrade_panel.building_image.texture != null:
 		_fail(
-			"Travel Office upgrade panel should use production atlas art."
-		)
-		return
-	if (
-		passenger_upgrade_panel.building_image.texture_filter
-		!= CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	):
-		_fail(
-			"Passenger upgrade building art should use smooth filtering."
+			"Grid-first reset should keep passenger upgrade panels free of legacy building art."
 		)
 		return
 	passenger_upgrade_panel.close_panel()

@@ -92,56 +92,24 @@ func _run() -> void:
 	if not card.title_label.text.contains("LV 1"):
 		_fail("Building card should show upgrade level.")
 		return
-	if card.building_image.texture == null:
-		_fail("Building card should load the building icon.")
+	if card.building_image.texture != null:
+		_fail("Grid-first reset should keep building cards free of legacy building art.")
 		return
 
 	var fuel_definition := BuildingCatalog.get_definition(
 		"basic_fuel"
 	)
 	if String(
-		fuel_definition.get("art_tier", "")
-	) != "canonical_v2":
-		_fail("Basic Fuel should use the canonical v2 quality tier.")
-		return
-	if String(
-		fuel_definition.get("world_sprite_atlas_path", "")
-	) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
-		_fail("Basic Fuel should resolve to the canonical production atlas.")
-		return
-	var fuel_regions: Array = fuel_definition.get(
-		"world_sprite_regions",
-		[]
-	)
-	var expected_fuel_regions := [
-		Rect2(896, 448, 448, 448),
-		Rect2(1344, 448, 448, 448)
-	]
-	if fuel_regions != expected_fuel_regions:
-		_fail("Basic Fuel should expose both approved canonical atlas views.")
-		return
-	if not (card.building_image.texture is AtlasTexture):
-		_fail("Basic Fuel context card should use canonical v2 atlas art.")
-		return
-	var fuel_preview := card.building_image.texture as AtlasTexture
-	if fuel_preview.atlas == null:
-		_fail("Basic Fuel context-card atlas preview should retain its atlas.")
-		return
-	if String(
-		fuel_preview.atlas.resource_path
-	) != BuildingCatalog.PRODUCTION_BUILDING_ATLAS:
-		_fail("Basic Fuel context card should preview the canonical production atlas.")
-		return
-	if fuel_preview.region != fuel_regions[0]:
-		_fail("Basic Fuel context card should preview its first canonical atlas view.")
+		fuel_definition.get("visual_contract", "")
+	) != "grid_v1":
+		_fail("Basic Fuel should use the grid-first visual contract.")
 		return
 	if (
-		card.building_image.texture_filter
-		!= CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		fuel_definition.has("art_tier")
+		or fuel_definition.has("world_sprite_atlas_path")
+		or fuel_definition.has("world_sprite_regions")
 	):
-		_fail(
-			"Building context art should use smooth mipmapped filtering."
-		)
+		_fail("Basic Fuel should not expose legacy art metadata.")
 		return
 	if not card.stat_one_label.text.contains("x1.00"):
 		_fail("Building card should show service speed stat.")

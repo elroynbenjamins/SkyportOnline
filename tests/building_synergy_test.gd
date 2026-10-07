@@ -183,9 +183,11 @@ func _run() -> void:
 		"tow_operations"
 	]:
 		var definition := BuildingCatalog.get_definition(building_id)
-		var icon_path := String(definition.get("icon_path", ""))
-		if icon_path.is_empty() or not ResourceLoader.exists(icon_path):
-			_fail("%s should have a real synergy-pass icon." % building_id)
+		if String(definition.get("visual_contract", "")) != "grid_v1":
+			_fail("%s should use the grid-first visual contract." % building_id)
+			return
+		if definition.has("icon_path") or definition.has("world_sprite_path"):
+			_fail("%s should not retain legacy art metadata." % building_id)
 			return
 
 	print(

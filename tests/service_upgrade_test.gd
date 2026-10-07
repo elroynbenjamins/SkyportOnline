@@ -59,59 +59,17 @@ func _run() -> void:
 	var ground_ops_definition := BuildingCatalog.get_definition(
 		"ground_ops_depot"
 	)
-	var ground_ops_atlas_path := String(
-		ground_ops_definition.get(
-			"world_sprite_atlas_path",
-			""
-		)
-	)
-	if (
-		ground_ops_atlas_path
-		!= BuildingCatalog.PRODUCTION_BUILDING_ATLAS
-	):
-		_fail("Ground Ops should use the canonical v2 production atlas.")
+	if String(
+		ground_ops_definition.get("visual_contract", "")
+	) != "grid_v1":
+		_fail("Ground Ops should use the grid-first visual contract.")
 		return
-	if not (
-		service_upgrade_panel.building_image.texture
-		is AtlasTexture
-	):
-		_fail(
-			"Ground Ops upgrade panel should use canonical v2 atlas art."
-		)
+	if ground_ops_definition.has("world_sprite_atlas_path"):
+		_fail("Ground Ops should not retain legacy atlas metadata.")
 		return
-	var ground_ops_preview := (
-		service_upgrade_panel.building_image.texture
-		as AtlasTexture
-	)
-	if (
-		ground_ops_preview.atlas == null
-		or String(
-			ground_ops_preview.atlas.resource_path
-		) != ground_ops_atlas_path
-	):
+	if service_upgrade_panel.building_image.texture != null:
 		_fail(
-			"Ground Ops upgrade panel should retain the canonical production atlas."
-		)
-		return
-	var ground_ops_regions: Array = ground_ops_definition.get(
-		"world_sprite_regions",
-		[]
-	)
-	if (
-		ground_ops_regions.is_empty()
-		or ground_ops_preview.region
-		!= ground_ops_regions[0]
-	):
-		_fail(
-			"Ground Ops upgrade panel should preview its exact canonical atlas cell."
-		)
-		return
-	if (
-		service_upgrade_panel.building_image.texture_filter
-		!= CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	):
-		_fail(
-			"Service upgrade building art should use smooth filtering."
+			"Grid-first reset should keep service upgrade panels free of legacy building art."
 		)
 		return
 	service_upgrade_panel.close_panel()

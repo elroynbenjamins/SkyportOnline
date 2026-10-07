@@ -107,7 +107,7 @@ func _run() -> void:
 	if int(snapshot.get("apron_tiles", -1)) < 0:
 		_fail("Apron Concrete should expose surface diagnostics.")
 		return
-	if not grid._service_road_visually_connects_to(Vector2i(14, 13)):
+	if not grid._service_road_visually_connects_to(Vector2i(4, 12)):
 		_fail("Service roads should visually terminate into service facilities.")
 		return
 

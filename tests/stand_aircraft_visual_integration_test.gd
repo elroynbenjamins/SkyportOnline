@@ -151,8 +151,8 @@ func _run() -> void:
 		_fail("Directional S-class sprites should grow from Pico through Voyager.")
 		return
 
-	if float(widths["voyager_v32"]) >= 96.0:
-		_fail("Largest S aircraft should remain comfortably inside the 2x2 stand.")
+	if float(widths["voyager_v32"]) >= 108.0:
+		_fail("Largest S aircraft should remain comfortably inside the roomier 3x2 stand.")
 		return
 	if float(widths["nimbus_n40"]) <= float(widths["voyager_v32"]):
 		_fail("First M aircraft should render larger than the largest S aircraft.")
@@ -223,7 +223,7 @@ func _run() -> void:
 			"status": "Stand ready",
 			"tone": "success",
 			"stat_one": "AIRCRAFT\nS",
-			"stat_two": "FOOTPRINT\n2x2"
+			"stat_two": "FOOTPRINT\n3x2"
 		}
 	)
 	if card.building_image.texture == null:

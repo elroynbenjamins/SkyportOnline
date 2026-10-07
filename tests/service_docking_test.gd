@@ -142,6 +142,14 @@ func _run() -> void:
 		"passenger_in"
 	)
 
+	if base_route.size() < 3:
+		_fail("Starter service route should visibly traverse placed service-road cells.")
+		return
+	for index in range(base_route.size() - 1):
+		if fuel_route[index].distance_to(base_route[index]) > 0.01:
+			_fail("Aircraft docking approach should preserve the service-road route prefix.")
+			return
+
 	var expected_fuel := pico.get_service_docking_position(
 		"fuel",
 		"fuel"
@@ -150,6 +158,28 @@ func _run() -> void:
 		expected_fuel
 	) > 0.01:
 		_fail("Service route should terminate at the aircraft fuel anchor.")
+		return
+
+	var fuel_staging := fuel_route[fuel_route.size() - 2]
+	var passenger_staging := passenger_route[
+		passenger_route.size() - 2
+	]
+	var expected_passenger := pico.get_service_docking_position(
+		"passenger",
+		"passenger_in"
+	)
+	if absf(fuel_staging.distance_to(expected_fuel) - 23.0) > 0.2:
+		_fail("Fuel truck should use the tuned 23px aircraft staging distance.")
+		return
+	if absf(
+		passenger_staging.distance_to(expected_passenger) - 27.0
+	) > 0.2:
+		_fail("Passenger bus should stage farther out than the fuel truck.")
+		return
+	if dispatcher._service_staging_distance("pushback") >= (
+		dispatcher._service_staging_distance("fuel")
+	):
+		_fail("Pushback tug should use the tightest aircraft staging distance.")
 		return
 
 	if fuel_route[fuel_route.size() - 1].distance_to(
@@ -187,7 +217,7 @@ func _run() -> void:
 
 	print(
 		"Service docking passed: distinct scalable aircraft anchors, "
-		+ "routed parking positions, and visual service connections."
+		+ "service-road prefix, tuned staging, routed docking, and visual connections."
 	)
 	quit(0)
 

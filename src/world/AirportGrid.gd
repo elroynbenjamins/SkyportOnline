@@ -19,7 +19,8 @@ signal building_selected_world(data: Dictionary)
 
 const TILE_WIDTH := 64.0
 const TILE_HEIGHT := 32.0
-const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.35
+const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.0
+const DEFAULT_WORLD_SPRITE_VISIBLE_WIDTH_SCALE := 0.92
 const PARCEL_SIZE := 8
 const PARCEL_COLUMNS := 3
 const PARCEL_ROWS := 3
@@ -4153,26 +4154,14 @@ func _draw_charter_visual_item(
 	rotation: int,
 	modulate: Color = Color.WHITE
 ) -> void:
-	if String(definition.get("anchor", "center")) != "bottom_center":
-		_draw_building_sprite(definition, origin, footprint, rotation, modulate)
-		return
-	var sprite_path := _sprite_path_for_rotation(definition, rotation)
-	if sprite_path.is_empty():
-		return
-	var texture := _get_building_texture(sprite_path)
-	if texture == null:
-		return
-	var polygon := _footprint_polygon(origin, footprint)
-	if polygon.size() < 4:
-		return
-	var draw_size: Vector2 = definition.get("world_sprite_size", Vector2(160, 120))
-	var offset := _sprite_offset_for_rotation(definition, rotation)
-	var lift := float(definition.get("bottom_anchor_lift", 0.0))
-	var anchor_point := (polygon[2] as Vector2) + offset + Vector2(0, -lift)
-	draw_texture_rect(
-		texture,
-		Rect2(anchor_point - Vector2(draw_size.x * 0.5, draw_size.y), draw_size),
-		false,
+	# Charter/logistics placeables use exactly the same strict footprint
+	# renderer as normal buildings. Legacy bottom-center anchors are ignored so
+	# these special objects cannot float outside their occupied cells.
+	_draw_building_sprite(
+		definition,
+		origin,
+		footprint,
+		rotation,
 		modulate
 	)
 
@@ -4714,28 +4703,28 @@ func _grid_fitted_world_sprite_size(
 		"world_sprite_size",
 		Vector2(160, 120)
 	)
-	if not bool(
-		definition.get("world_sprite_grid_fit", false)
-	):
-		return configured_size
 	if configured_size.x <= 0.0:
 		return configured_size
 
-	# Production atlas cells often contain their own concrete/landscaping base.
-	# Keep that base close to the building's logical isometric footprint instead
-	# of letting the full 448px atlas cell sprawl across neighbouring grid cells.
+	# This is the fallback for unreadable/missing alpha bounds. It is strict by
+	# design: even legacy art is not allowed to render wider than its occupied
+	# isometric footprint.
 	var footprint_width := (
 		float(footprint.x + footprint.y)
 		* TILE_WIDTH
 		* 0.5
 	)
-	var width_scale := float(
-		definition.get(
-			"world_sprite_max_width_scale",
-			WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG
-		)
+	var visible_scale := clampf(
+		float(
+			definition.get(
+				"world_sprite_visible_width_scale",
+				DEFAULT_WORLD_SPRITE_VISIBLE_WIDTH_SCALE
+			)
+		),
+		0.25,
+		WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG
 	)
-	var max_width := footprint_width * maxf(width_scale, 1.0)
+	var max_width := footprint_width * visible_scale
 	if configured_size.x <= max_width:
 		return configured_size
 
@@ -4787,103 +4776,185 @@ func _building_sprite_rect(
 	rotation: int,
 	extra_offset: Vector2 = Vector2.ZERO
 ) -> Rect2:
-	if bool(
-		definition.get(
-			"world_sprite_auto_ground",
-			false
-		)
-	):
-		var sprite_path := _sprite_path_for_rotation(
+	# Grid-fit is a renderer invariant for every placeable world sprite.
+	# Definitions may choose to render narrower than their footprint, but they
+	# cannot opt out of grounding, centering or the maximum footprint width.
+	var sprite_path := _sprite_path_for_rotation(
+		definition,
+		rotation
+	)
+	var image = _get_building_texture_image(
+		sprite_path
+	)
+	if image != null:
+		var source := _sprite_region_for_rotation(
 			definition,
 			rotation
 		)
-		var image = _get_building_texture_image(
-			sprite_path
+		var source_size := Vector2(
+			image.get_width(),
+			image.get_height()
 		)
-		if image != null:
-			var source := _sprite_region_for_rotation(
-				definition,
-				rotation
-			)
-			var source_size := Vector2(
-				image.get_width(),
-				image.get_height()
-			)
-			if (
-				source.size.x > 0.0
-				and source.size.y > 0.0
-			):
-				source_size = source.size
-			var bounds := (
-				_sprite_visible_bounds_for_rotation(
-					definition,
-					rotation
-				)
-			)
-			if bounds.size.x > 0 and bounds.size.y > 0:
-				return SpritePlacementV2.grounded_rect(
-					bounds,
-					source_size,
-					_footprint_polygon(
-						origin,
-						footprint
-					),
-					_footprint_center_world(
-						origin,
-						footprint
-					),
+		if (
+			source.size.x > 0.0
+			and source.size.y > 0.0
+		):
+			source_size = source.size
+
+		var bounds := _sprite_visible_bounds_for_rotation(
+			definition,
+			rotation
+		)
+		if bounds.size.x > 0 and bounds.size.y > 0:
+			return SpritePlacementV2.grounded_rect(
+				bounds,
+				source_size,
+				_footprint_polygon(
+					origin,
+					footprint
+				),
+				_footprint_center_world(
+					origin,
+					footprint
+				),
+				clampf(
 					float(
 						definition.get(
 							"world_sprite_visible_width_scale",
-							1.0
+							DEFAULT_WORLD_SPRITE_VISIBLE_WIDTH_SCALE
 						)
 					),
-					extra_offset
-				)
+					0.25,
+					1.0
+				),
+				extra_offset
+			)
 
-	# Legacy fallback for buildings not yet migrated to Placement V2.
-	var configured_size: Vector2 = definition.get(
-		"world_sprite_size",
-		Vector2(160, 120)
-	)
+	# Last-resort fallback. No hand-authored static offset is allowed to move
+	# the object away from its logical cells.
 	var draw_size := _grid_fitted_world_sprite_size(
 		definition,
 		footprint
 	)
-	var offset := _sprite_offset_for_rotation(
-		definition,
-		rotation
-	)
-	if (
-		configured_size.x > 0.0
-		and draw_size.x < configured_size.x
-	):
-		var fit_scale := draw_size.x / configured_size.x
-		offset *= fit_scale
-		extra_offset *= fit_scale
-		if bool(
-			definition.get(
-				"world_sprite_ground_align",
-				false
-			)
-		):
-			var footprint_bottom := (
-				float(footprint.x + footprint.y)
-				* TILE_HEIGHT
-				* 0.25
-			)
-			offset.y += (
-				footprint_bottom
-				* (1.0 - fit_scale)
-			)
 	var center := _footprint_center_world(
 		origin,
 		footprint
 	)
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	var front_y := center.y
+	for point_variant in polygon:
+		front_y = maxf(
+			front_y,
+			(point_variant as Vector2).y
+		)
 	return Rect2(
-		center - draw_size * 0.5 + offset + extra_offset,
+		Vector2(
+			center.x - draw_size.x * 0.5,
+			front_y - draw_size.y
+		) + extra_offset,
 		draw_size
 	)
+
+
+func get_grid_fit_snapshot_for_definition(
+	definition: Dictionary,
+	origin: Vector2i = Vector2i.ZERO,
+	rotation: int = 0
+) -> Dictionary:
+	if definition.is_empty() or not _definition_has_world_sprite(definition):
+		return {"valid": false}
+
+	var footprint := _footprint_for(
+		definition,
+		rotation
+	)
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	var rect := _building_sprite_rect(
+		definition,
+		origin,
+		footprint,
+		rotation
+	)
+	var bounds := _sprite_visible_bounds_for_rotation(
+		definition,
+		rotation
+	)
+	if polygon.size() < 4 or bounds.size.x <= 0 or bounds.size.y <= 0:
+		return {
+			"valid": false,
+			"footprint": footprint,
+			"rect": rect
+		}
+
+	var source := _sprite_region_for_rotation(
+		definition,
+		rotation
+	)
+	var source_size := source.size
+	if source_size.x <= 0.0 or source_size.y <= 0.0:
+		var image = _get_building_texture_image(
+			_sprite_path_for_rotation(
+				definition,
+				rotation
+			)
+		)
+		if image == null:
+			return {"valid": false}
+		source_size = Vector2(
+			image.get_width(),
+			image.get_height()
+		)
+
+	var min_x := INF
+	var max_x := -INF
+	var front_y := -INF
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		min_x = minf(min_x, point.x)
+		max_x = maxf(max_x, point.x)
+		front_y = maxf(front_y, point.y)
+
+	var scale_x := rect.size.x / maxf(source_size.x, 1.0)
+	var scale_y := rect.size.y / maxf(source_size.y, 1.0)
+	var visible_left := (
+		rect.position.x
+		+ float(bounds.position.x) * scale_x
+	)
+	var visible_right := (
+		rect.position.x
+		+ float(bounds.end.x) * scale_x
+	)
+	var visible_bottom := (
+		rect.position.y
+		+ float(bounds.end.y) * scale_y
+	)
+	var visible_center_x := (
+		visible_left + visible_right
+	) * 0.5
+	var footprint_center := _footprint_center_world(
+		origin,
+		footprint
+	)
+
+	return {
+		"valid": true,
+		"footprint": footprint,
+		"rect": rect,
+		"footprint_width": maxf(max_x - min_x, 1.0),
+		"visible_width": maxf(visible_right - visible_left, 0.0),
+		"front_y": front_y,
+		"visible_bottom": visible_bottom,
+		"center_x": footprint_center.x,
+		"visible_center_x": visible_center_x,
+		"bottom_delta": visible_bottom - front_y,
+		"center_delta": visible_center_x - footprint_center.x
+	}
 
 
 func _get_building_texture_image(
@@ -5020,38 +5091,35 @@ func _draw_building_contact_shadow(
 		return
 	if String(definition.get("id", "")) in [
 		"taxiway",
-		"service_road"
+		"service_road",
+		"apron_tile"
 	]:
 		return
 
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
 	var center := _footprint_center_world(
 		origin,
 		footprint
-	) + Vector2(4, 7)
-	var radius := clampf(
-		float(footprint.x + footprint.y) * 9.5,
-		15.0,
-		58.0
 	)
-	draw_set_transform(
-		center,
-		0.0,
-		Vector2(1.0, 0.34)
-	)
-	draw_circle(
-		Vector2.ZERO,
-		radius,
+	var shadow := PackedVector2Array()
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		shadow.append(
+			center + (point - center) * 0.78
+		)
+	draw_colored_polygon(
+		shadow,
 		Color(
 			0.02,
 			0.04,
 			0.05,
-			0.13 * clampf(strength, 0.0, 1.0)
+			0.12 * clampf(strength, 0.0, 1.0)
 		)
-	)
-	draw_set_transform(
-		Vector2.ZERO,
-		0.0,
-		Vector2.ONE
 	)
 
 
@@ -6477,33 +6545,26 @@ func _draw_build_preview() -> void:
 		)
 
 	if _definition_has_world_sprite(definition):
-		var shadow_center := (
-			_footprint_center_world(
+		var preview_polygon := _footprint_polygon(
+			preview_origin,
+			footprint
+		)
+		if preview_polygon.size() >= 4:
+			var preview_center := _footprint_center_world(
 				preview_origin,
 				footprint
 			)
-			+ Vector2(0, 9)
-		)
-		draw_set_transform(
-			shadow_center,
-			0.0,
-			Vector2(1.0, 0.42)
-		)
-		draw_circle(
-			Vector2.ZERO,
-			maxf(
-				16.0,
-				float(
-					footprint.x + footprint.y
-				) * 6.5
-			),
-			Color(0.02, 0.05, 0.06, 0.21)
-		)
-		draw_set_transform(
-			Vector2.ZERO,
-			0.0,
-			Vector2.ONE
-		)
+			var preview_shadow := PackedVector2Array()
+			for point_variant in preview_polygon:
+				var point: Vector2 = point_variant
+				preview_shadow.append(
+					preview_center
+					+ (point - preview_center) * 0.78
+				)
+			draw_colored_polygon(
+				preview_shadow,
+				Color(0.02, 0.05, 0.06, 0.18)
+			)
 
 		var ghost := (
 			Color(0.96, 1.0, 0.97, 0.95)

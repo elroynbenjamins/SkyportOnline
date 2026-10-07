@@ -257,6 +257,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture all-building grid QA screenshot
+        run: timeout 60s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_building_grid_qa.gd
+
+      - name: Upload all-building grid QA screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-grid-qa
+          path: artifacts/building_grid_qa.png
+          if-no-files-found: error
+          retention-days: 7
+
 
       - name: Diagnose production building art alignment
         run: timeout 30s godot --headless --path . --script res://tests/building_art_alignment_test.gd

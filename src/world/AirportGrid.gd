@@ -455,13 +455,10 @@ func _draw() -> void:
 
 
 func _draw_grid_first_scene() -> void:
-	# Grid-first reset: no authored airport art is allowed to participate in
-	# world placement. Everything visible here is derived from the same grid
-	# geometry used by collision, routing and placement validation.
-	draw_rect(
-		Rect2(-1800, -700, 3600, 2600),
-		GRID_RESET_BACKGROUND
-	)
+	# Grid-first reset still blocks authored placeable/building art, but the
+	# independent AirportBackdrop is allowed to remain visible underneath.
+	# Do not paint an opaque board behind the parcels: that would hide the
+	# authored landscape and make the airport look like a floating green slab.
 	_draw_grid_first_parcels()
 	_draw_grid_first_buildings()
 	_draw_hovered_building_outline()

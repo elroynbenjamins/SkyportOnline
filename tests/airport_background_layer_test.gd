@@ -23,8 +23,11 @@ func _run() -> void:
 	if not bool(snapshot.get("independent_from_airport_grid", false)):
 		_fail("Background must remain independent from AirportGrid placement logic.")
 		return
-	if int(snapshot.get("airport_land_points", 0)) != 4:
-		_fail("Airport background should expose one continuous four-point landmass.")
+	if not bool(snapshot.get("continuous_landscape", false)):
+		_fail("Airport background should be one continuous landscape.")
+		return
+	if bool(snapshot.get("airport_land_overlay", true)):
+		_fail("Backdrop should not reveal the airport as a separate land slab.")
 		return
 	if int(snapshot.get("field_groups", 0)) < 4:
 		_fail("Background should contain multiple authored distant-field groups.")
@@ -32,8 +35,17 @@ func _run() -> void:
 	if int(snapshot.get("tree_groups", 0)) < 6:
 		_fail("Background should contain a substantial tree-belt layer.")
 		return
-	if int(snapshot.get("road_sections", 0)) < 2:
-		_fail("Background should contain the distant access-road network.")
+	if int(snapshot.get("road_sections", -1)) != 0:
+		_fail("Default airport backdrop should not contain a decorative road.")
+		return
+	if int(snapshot.get("parking_groups", -1)) != 0:
+		_fail("Default airport backdrop should not contain decorative parking.")
+		return
+	if int(snapshot.get("hill_layers", 0)) < 3:
+		_fail("Background should contain layered distant hills.")
+		return
+	if not bool(snapshot.get("water_strip", false)):
+		_fail("Background should contain a subtle distant water feature.")
 		return
 
 	var background_path := String(
@@ -81,7 +93,7 @@ func _run() -> void:
 
 	print(
 		"AIRPORT_BACKGROUND_OK environment_v3=true authored=true "
-		+ "fields=4 trees=6 roads=2 independent_layer=true"
+		+ "fields=4 trees=7 hills=3 roads=0 independent_layer=true"
 	)
 	quit(0)
 

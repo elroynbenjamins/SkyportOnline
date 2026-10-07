@@ -13,14 +13,14 @@ script = ExtResource("1_main")
 script = ExtResource("2_grid")
 
 [node name="Camera" type="Camera2D" parent="."]
-position = Vector2(90, 350)
+position = Vector2(736, 736)
 zoom = Vector2(0.84, 0.84)
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0
-limit_left = -1200
-limit_top = -500
-limit_right = 1200
-limit_bottom = 1450
+limit_left = -800
+limit_top = -480
+limit_right = 2304
+limit_bottom = 1952
 script = ExtResource("3_camera")
 
 [node name="HUD" type="CanvasLayer" parent="."]

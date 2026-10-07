@@ -2,13 +2,13 @@ class_name BuildingPlacementGrid
 extends RefCounted
 
 const TILE_WIDTH := 64.0
-const TILE_HEIGHT := 32.0
+const TILE_HEIGHT := 64.0
 
 
 static func tile_to_world(tile: Vector2) -> Vector2:
 	return Vector2(
-		(tile.x - tile.y) * TILE_WIDTH * 0.5,
-		(tile.x + tile.y) * TILE_HEIGHT * 0.5
+		tile.x * TILE_WIDTH,
+		tile.y * TILE_HEIGHT
 	)
 
 
@@ -19,10 +19,8 @@ static func world_to_tile(world_position: Vector2) -> Vector2i:
 
 static func world_to_tile_float(world_position: Vector2) -> Vector2:
 	return Vector2(
-		world_position.x / TILE_WIDTH
-			+ world_position.y / TILE_HEIGHT,
+		world_position.x / TILE_WIDTH,
 		world_position.y / TILE_HEIGHT
-			- world_position.x / TILE_WIDTH
 	)
 
 
@@ -75,35 +73,39 @@ static func footprint_polygon(
 	if footprint.x <= 0 or footprint.y <= 0:
 		return PackedVector2Array()
 
-	var a := tile_to_world(Vector2(origin.x, origin.y))
-	var b := tile_to_world(
-		Vector2(origin.x + footprint.x - 1, origin.y)
+	var first_center := tile_to_world(
+		Vector2(origin.x, origin.y)
 	)
-	var c := tile_to_world(
+	var last_center := tile_to_world(
 		Vector2(
 			origin.x + footprint.x - 1,
 			origin.y + footprint.y - 1
 		)
 	)
-	var d := tile_to_world(
-		Vector2(origin.x, origin.y + footprint.y - 1)
-	)
+	var left := first_center.x - TILE_WIDTH * 0.5
+	var top := first_center.y - TILE_HEIGHT * 0.5
+	var right := last_center.x + TILE_WIDTH * 0.5
+	var bottom := last_center.y + TILE_HEIGHT * 0.5
 
 	return PackedVector2Array([
-		a + Vector2(0, -TILE_HEIGHT * 0.5),
-		b + Vector2(TILE_WIDTH * 0.5, 0),
-		c + Vector2(0, TILE_HEIGHT * 0.5),
-		d + Vector2(-TILE_WIDTH * 0.5, 0)
+		Vector2(left, top),
+		Vector2(right, top),
+		Vector2(right, bottom),
+		Vector2(left, bottom)
 	])
 
 
 static func tile_polygon(tile: Vector2i) -> PackedVector2Array:
 	var center := tile_to_world(Vector2(tile.x, tile.y))
+	var half := Vector2(
+		TILE_WIDTH * 0.5,
+		TILE_HEIGHT * 0.5
+	)
 	return PackedVector2Array([
-		center + Vector2(0, -TILE_HEIGHT * 0.5),
-		center + Vector2(TILE_WIDTH * 0.5, 0),
-		center + Vector2(0, TILE_HEIGHT * 0.5),
-		center + Vector2(-TILE_WIDTH * 0.5, 0)
+		center + Vector2(-half.x, -half.y),
+		center + Vector2(half.x, -half.y),
+		center + Vector2(half.x, half.y),
+		center + Vector2(-half.x, half.y)
 	])
 
 
@@ -136,10 +138,13 @@ static func footprint_front_anchor_world(
 	origin: Vector2i,
 	footprint: Vector2i
 ) -> Vector2:
-	var polygon := footprint_polygon(origin, footprint)
-	if polygon.size() < 4:
+	var bounds := footprint_bounds(origin, footprint)
+	if bounds.size.x <= 0.0 or bounds.size.y <= 0.0:
 		return Vector2.ZERO
-	return polygon[2]
+	return Vector2(
+		bounds.position.x + bounds.size.x * 0.5,
+		bounds.position.y + bounds.size.y
+	)
 
 
 static func validate_asset_dimensions(
@@ -234,15 +239,15 @@ static func visual_contract(
 		base_depth
 	)
 	var base_polygon_from_anchor := PackedVector2Array([
-		Vector2(0, -base_depth),
-		Vector2(base_width * 0.5, -base_depth * 0.5),
-		Vector2.ZERO,
-		Vector2(-base_width * 0.5, -base_depth * 0.5)
+		Vector2(-base_width * 0.5, -base_depth),
+		Vector2(base_width * 0.5, -base_depth),
+		Vector2(base_width * 0.5, 0),
+		Vector2(-base_width * 0.5, 0)
 	])
 	return {
 		"valid": true,
-		"contract_version": "grid_v1",
-		"projection": "isometric_2_to_1",
+		"contract_version": "square_grid_v1",
+		"projection": "square_cartesian",
 		"tile_width": TILE_WIDTH,
 		"tile_height": TILE_HEIGHT,
 		"footprint": footprint,

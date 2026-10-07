@@ -7732,11 +7732,15 @@ func _draw_selected_outline() -> void:
 
 
 func _tile_points(center: Vector2) -> PackedVector2Array:
+	var half := Vector2(
+		TILE_WIDTH * 0.5,
+		TILE_HEIGHT * 0.5
+	)
 	return PackedVector2Array([
-		center + Vector2(0, -TILE_HEIGHT * 0.5),
-		center + Vector2(TILE_WIDTH * 0.5, 0),
-		center + Vector2(0, TILE_HEIGHT * 0.5),
-		center + Vector2(-TILE_WIDTH * 0.5, 0)
+		center + Vector2(-half.x, -half.y),
+		center + Vector2(half.x, -half.y),
+		center + Vector2(half.x, half.y),
+		center + Vector2(-half.x, half.y)
 	])
 
 

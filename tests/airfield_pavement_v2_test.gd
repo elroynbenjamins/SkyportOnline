@@ -38,6 +38,12 @@ func _run() -> void:
 	if not grid.has_method("_draw_apron_tile"):
 		_fail("Apron Concrete should use the authored v2 ground renderer.")
 		return
+	if not grid.has_method("_pavement_connection_directions"):
+		_fail("Pavement should build continuous connection-aware ribbons.")
+		return
+	if not grid.has_method("_draw_runway_taxiway_flare"):
+		_fail("Taxiway-to-runway joins should use a dedicated transition flare.")
+		return
 	if not grid.has_method("_apron_visually_connects_to"):
 		_fail("Apron Concrete should blend into adjacent airport hardscape.")
 		return

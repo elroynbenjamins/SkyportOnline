@@ -21,8 +21,8 @@ func _run() -> void:
 	var camera := Camera2D.new()
 	# Match the fixed Skyrama-style airport viewing angle: the logical square
 	# grid is projected into 2:1 ground diamonds and framed in landscape.
-	camera.position = Vector2(0, 320)
-	camera.zoom = Vector2(0.90, 0.90)
+	camera.position = Vector2(0, 390)
+	camera.zoom = Vector2(0.84, 0.84)
 	camera.position_smoothing_enabled = false
 	camera.enabled = true
 	world.add_child(camera)

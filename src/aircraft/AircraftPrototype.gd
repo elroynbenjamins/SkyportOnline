@@ -661,26 +661,20 @@ func get_pushback_target_position() -> Vector2:
 		"XL":
 			distance = maxf(distance, 62.0)
 
-	# Follow the authored departure polyline instead of clamping pushback to
-	# only its first segment. Routing V2 adds a short stand-access waypoint,
-	# so a multi-segment tow keeps the aircraft moving a useful distance
-	# toward the taxiway without skipping the route geometry.
+	# Routing V2 makes route[1] the authored stand-access point. Preserve the
+	# established apron safety cap so pushback moves toward that lead-in but
+	# always stops before the aircraft enters the taxiway proper.
 	if departure_route.size() >= 2:
-		var remaining := distance
-		for index in range(departure_route.size() - 1):
-			var from_point := departure_route[index]
-			var to_point := departure_route[index + 1]
-			var leg := to_point - from_point
-			var leg_length := leg.length()
-			if leg_length <= 0.001:
-				continue
-			if remaining <= leg_length:
-				return from_point + leg.normalized() * remaining
-			remaining -= leg_length
-
-		# Very compact layouts may not contain the full requested tow distance.
-		# In that case stop at the farthest safe point already on the route.
-		return departure_route[departure_route.size() - 1]
+		var first_leg := (
+			departure_route[1] - departure_route[0]
+		)
+		var direction := first_leg.normalized()
+		if direction != Vector2.ZERO:
+			distance = minf(
+				distance,
+				first_leg.length() * 0.72
+			)
+			return departure_route[0] + direction * distance
 
 	return global_position + Vector2(-distance, 0).rotated(
 		rotation

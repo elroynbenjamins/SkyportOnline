@@ -5192,6 +5192,39 @@ func get_airside_preview_visual() -> Dictionary:
 	return visual
 
 
+func _append_airside_preview_status() -> void:
+	if (
+		preview_building_id not in ["taxiway", "service_road"]
+		or preview_origin.x < 0
+		or preview_origin.y < 0
+	):
+		return
+
+	var visual := get_airside_tile_visual(
+		preview_origin,
+		preview_building_id
+	)
+	var mask := int(visual.get("mask", 0))
+	var connection_count := 0
+	for bit in [
+		AirsideGroundArt.NORTH,
+		AirsideGroundArt.EAST,
+		AirsideGroundArt.SOUTH,
+		AirsideGroundArt.WEST
+	]:
+		if (mask & int(bit)) != 0:
+			connection_count += 1
+
+	preview_status["network_connections"] = connection_count
+	preview_status["runway_link"] = (
+		preview_building_id == "taxiway"
+		and visual.get(
+			"runway_direction",
+			Vector2i.ZERO
+		) != Vector2i.ZERO
+	)
+
+
 func _draw_airside_surface_preview(
 	origin: Vector2i,
 	kind: String,
@@ -6938,6 +6971,7 @@ func set_build_preview(
 		preview_origin,
 		preview_rotation
 	)
+	_append_airside_preview_status()
 	_refresh_preview_snap_feedback(
 		previous_origin,
 		previous_rotation
@@ -6989,6 +7023,7 @@ func begin_move_preview(uid: int) -> Dictionary:
 		preview_rotation,
 		preview_ignore_uid
 	)
+	_append_airside_preview_status()
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = uid
 	_refresh_building_labels()
@@ -7014,6 +7049,7 @@ func set_move_preview(
 		preview_rotation,
 		preview_ignore_uid
 	)
+	_append_airside_preview_status()
 	preview_status["mode"] = "move"
 	preview_status["building_uid"] = preview_ignore_uid
 	_refresh_preview_snap_feedback(
@@ -7068,6 +7104,7 @@ func set_stored_building_preview(
 		preview_origin,
 		preview_rotation
 	)
+	_append_airside_preview_status()
 	preview_status["mode"] = "stored"
 	preview_status["building_uid"] = preview_stored_uid
 	_refresh_preview_snap_feedback(
@@ -7091,6 +7128,7 @@ func refresh_build_preview(rotation: int) -> Dictionary:
 		preview_rotation,
 		preview_ignore_uid
 	)
+	_append_airside_preview_status()
 	if preview_mode == "move":
 		preview_status["mode"] = "move"
 		preview_status["building_uid"] = preview_ignore_uid

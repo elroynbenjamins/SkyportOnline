@@ -75,7 +75,9 @@ static func all() -> Array[Dictionary]:
 			"description": "Connects runways and stands.",
 			"icon_path": "res://assets/production/airfield_v2/taxiway_icon_v2.svg",
 			"art_tier": "surface_v2",
-			"surface_art": "taxiway_v2"
+			"surface_art": "taxiway_v2",
+			"connection_family": "airside",
+			"connects_to": PackedStringArray(["taxiway", "runway", "stand", "hangar"])
 		},
 		{
 			"id": "service_road",
@@ -91,7 +93,26 @@ static func all() -> Array[Dictionary]:
 			"description": "Ground vehicles use service roads to reach aircraft.",
 			"icon_path": "res://assets/production/airfield_v2/service_road_icon_v2.svg",
 			"art_tier": "surface_v2",
-			"surface_art": "service_road_v2"
+			"surface_art": "service_road_v2",
+			"connection_family": "ground_service",
+			"connects_to": PackedStringArray(["service_road", "stand", "service", "passenger"])
+		},
+		{
+			"id": "apron_tile",
+			"name": "Apron Concrete",
+			"menu_name": "APRON CONCRETE",
+			"category": "Infrastructure",
+			"footprint": Vector2i(1, 1),
+			"cost": 100,
+			"level": 1,
+			"color": Color("c7c5bd"),
+			"rotatable": false,
+			"sizes": PackedStringArray([]),
+			"description": "Placeable airport concrete for aprons, service areas and terminal hardscape.",
+			"icon_path": "res://assets/production/airfield_v2/apron_icon_v2.svg",
+			"art_tier": "surface_v2",
+			"surface_art": "apron_v2",
+			"connection_family": "apron"
 		},
 		{
 			"id": "small_terminal",

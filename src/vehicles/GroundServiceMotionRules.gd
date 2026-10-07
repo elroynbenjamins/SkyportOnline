@@ -105,6 +105,110 @@ static func braking_distance(service_type: String) -> float:
 			return 25.0
 
 
+static func travel_ramp_fraction(service_type: String) -> float:
+	match service_type:
+		"passenger":
+			return 0.18
+		"fuel", "catering":
+			return 0.16
+		"cleaning":
+			return 0.14
+		"cargo":
+			return 0.13
+		"pushback":
+			return 0.11
+		_:
+			return 0.14
+
+
+static func distance_progress_for_time(
+	time_progress: float,
+	service_type: String
+) -> float:
+	var t := clampf(time_progress, 0.0, 1.0)
+	var ramp := clampf(
+		travel_ramp_fraction(service_type),
+		0.05,
+		0.32
+	)
+	var cruise_speed := 1.0 / (1.0 - ramp)
+
+	if t < ramp:
+		return clampf(
+			cruise_speed * t * t / (2.0 * ramp),
+			0.0,
+			1.0
+		)
+	if t > 1.0 - ramp:
+		var remaining := 1.0 - t
+		return clampf(
+			1.0
+			- cruise_speed
+			* remaining
+			* remaining
+			/ (2.0 * ramp),
+			0.0,
+			1.0
+		)
+	return clampf(
+		cruise_speed * (t - ramp * 0.5),
+		0.0,
+		1.0
+	)
+
+
+static func sample_route_at_progress(
+	route: PackedVector2Array,
+	progress: float
+) -> Dictionary:
+	if route.is_empty():
+		return {
+			"position": Vector2.ZERO,
+			"target_index": 0,
+			"done": true,
+		}
+	if route.size() == 1:
+		return {
+			"position": route[0],
+			"target_index": 0,
+			"done": true,
+		}
+
+	var total := route_length(route)
+	if total <= 0.001:
+		return {
+			"position": route[route.size() - 1],
+			"target_index": route.size() - 1,
+			"done": true,
+		}
+	var target_distance := total * clampf(progress, 0.0, 1.0)
+	var walked := 0.0
+	for index in range(1, route.size()):
+		var from_point := route[index - 1]
+		var to_point := route[index]
+		var segment := from_point.distance_to(to_point)
+		if segment <= 0.001:
+			continue
+		if walked + segment >= target_distance:
+			var local := clampf(
+				(target_distance - walked) / segment,
+				0.0,
+				1.0
+			)
+			return {
+				"position": from_point.lerp(to_point, local),
+				"target_index": index,
+				"done": progress >= 1.0,
+			}
+		walked += segment
+
+	return {
+		"position": route[route.size() - 1],
+		"target_index": route.size() - 1,
+		"done": true,
+	}
+
+
 static func turn_angle_degrees(
 	previous: Vector2,
 	current: Vector2,

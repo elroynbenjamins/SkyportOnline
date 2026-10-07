@@ -56,6 +56,13 @@ func _run() -> void:
 			return
 
 	if stand_definition.get(
+		"footprint",
+		Vector2i.ZERO
+	) != Vector2i(3, 2):
+		_fail("Small Stand should use the wider 3x2 gameplay footprint.")
+		return
+
+	if stand_definition.get(
 		"world_sprite_size",
 		Vector2.ZERO
 	) != Vector2(192, 192):
@@ -151,8 +158,28 @@ func _run() -> void:
 		_fail("Directional S-class sprites should grow from Pico through Voyager.")
 		return
 
-	if float(widths["voyager_v32"]) >= 96.0:
-		_fail("Largest S aircraft should remain comfortably inside the 2x2 stand.")
+	var stand_fp: Vector2i = stand_definition.get(
+		"footprint",
+		Vector2i.ONE
+	)
+	var stand_polygon := grid._footprint_polygon(
+		Vector2i.ZERO,
+		stand_fp
+	)
+	var stand_width := 0.0
+	if stand_polygon.size() >= 4:
+		var min_x := INF
+		var max_x := -INF
+		for point_variant in stand_polygon:
+			var point: Vector2 = point_variant
+			min_x = minf(min_x, point.x)
+			max_x = maxf(max_x, point.x)
+		stand_width = max_x - min_x
+	if (
+		stand_width <= 0.0
+		or float(widths["voyager_v32"]) >= stand_width * 0.72
+	):
+		_fail("Largest S aircraft should remain comfortably inside the wider stand.")
 		return
 	if float(widths["nimbus_n40"]) <= float(widths["voyager_v32"]):
 		_fail("First M aircraft should render larger than the largest S aircraft.")
@@ -223,7 +250,7 @@ func _run() -> void:
 			"status": "Stand ready",
 			"tone": "success",
 			"stat_one": "AIRCRAFT\nS",
-			"stat_two": "FOOTPRINT\n2x2"
+			"stat_two": "FOOTPRINT\n3x2"
 		}
 	)
 	if card.building_image.texture == null:

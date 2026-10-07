@@ -56,6 +56,20 @@ func _run() -> void:
 
 		plane.queue_free()
 
+	if (
+		float(scales["pico_p8"])
+		< 1.08
+	):
+		_fail("Configured S aircraft should be visibly larger than the old baseline.")
+		return
+
+	if (
+		float(scales["horizon_h88"])
+		< 1.60
+	):
+		_fail("M aircraft should preserve a strong visual presence beside buildings.")
+		return
+
 	if not (
 		float(scales["pico_p8"])
 		< float(scales["swift_s14"])

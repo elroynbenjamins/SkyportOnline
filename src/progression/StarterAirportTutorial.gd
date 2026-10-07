@@ -58,9 +58,9 @@ const STEPS := [
 	{
 		"id": "destination",
 		"title": "Choose the first route",
-		"guidance": "Open the World Map and choose Brussels for your first flight. Routes decide passengers, fuel, time and country resources.",
+		"guidance": "Open the World Map and choose a nearby unlocked destination for your first flight. Routes decide passengers, fuel, time and country resources.",
 		"action": "world",
-		"target": "brussels",
+		"target": "",
 		"reward": 500
 	},
 	{

@@ -62,3 +62,23 @@ The asset is acceptable only when it is visually equal to or better than that re
 8. overall polish and cohesion
 
 This atlas is the floor, not the ceiling.
+
+
+## Environment and background standard
+
+The airport background should support the same polished stylized game-art level as the building atlas without competing with placeable content.
+
+- use authored landscape shapes rather than a single flat green fill;
+- keep upper-left lighting and lower-right contact shading consistent with buildings;
+- use layered grass, field, tree, road, hedge, parking and approach details at the scene edges;
+- keep the central airport land quieter and lower-contrast so the construction grid remains immediately readable;
+- preserve the fixed 2:1 isometric presentation in road, field and scenery direction;
+- never bake gameplay footprints, collision, routing or placement ownership into the background image;
+- never cover the background with an opaque grid-reset rectangle;
+- background scenery must remain visually outside or beneath the logical build layer and must not imply false usable tiles.
+
+The current production landscape baseline is:
+
+`assets/production/environment_v3/airport_landscape_v3.svg`
+
+It is a scene backdrop, not a substitute for grid-native runway, taxiway, apron or building art.

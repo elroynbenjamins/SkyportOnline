@@ -42,6 +42,9 @@ jobs:
       - name: Test starter airport network V2
         run: timeout 25s godot --headless --path . --script res://tests/starter_airport_network_v2_test.gd
 
+      - name: Test starter airport tutorial
+        run: timeout 25s godot --headless --path . --script res://tests/starter_airport_tutorial_test.gd
+
       - name: Start main scene smoke test
         run: godot --headless --path . --quit-after 3 --verbose
 

@@ -305,13 +305,26 @@ func _run() -> void:
 		_fail("Third stand should remain disconnected before adding taxiway.")
 		return
 
-	var connector_position := grid.tile_to_world(Vector2(15, 10))
-	var connector_preview := grid.set_build_preview("taxiway", connector_position, 0)
-	if not bool(connector_preview.get("valid", false)):
-		_fail("Connector taxiway test placement should be valid.")
-		return
+	for connector_cell in [
+		Vector2i(14, 10),
+		Vector2i(15, 10)
+	]:
+		var connector_position := grid.tile_to_world(
+			Vector2(connector_cell.x, connector_cell.y)
+		)
+		var connector_preview := grid.set_build_preview(
+			"taxiway",
+			connector_position,
+			0
+		)
+		if not bool(connector_preview.get("valid", false)):
+			_fail(
+				"Connector taxiway placement should be valid at %s."
+				% str(connector_cell)
+			)
+			return
+		grid.confirm_build_preview()
 
-	grid.confirm_build_preview()
 	var connected := grid.get_airside_status()
 	if int(connected.get("stands_connected", 0)) != 3:
 		_fail("All three stands should connect after extending the taxiway.")

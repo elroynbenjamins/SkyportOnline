@@ -154,9 +154,9 @@ The starter **Taxiway** uses the same grid-native contract as the Small Runway.
 - runtime scale: **1:1**;
 - exact projected diamond: `(32,0) → (64,16) → (32,32) → (0,16)`;
 - base art matches the Small Runway's dark asphalt, beige curb, blue inset lights and warm yellow taxi centerline;
-- the production atlas is `taxiway_autotile_atlas.svg`, sized **256×128 px**;
-- it contains **16 exact 64×32 variants**, one for every N/E/S/W connection combination;
-- the game chooses the atlas region automatically from the actual neighboring gameplay cells.
+- the QA atlas is `taxiway_autotile_atlas.svg`, sized **256×128 px**;
+- production runtime uses **16 separate 64×32 SVG variants** under `airfield_v3/taxiway_variants/` to avoid texture-filter bleed between neighboring atlas cells;
+- the game chooses the correct standalone variant automatically from the actual neighboring gameplay cells.
 
 ### Taxiway autotile bitmask
 
@@ -185,4 +185,4 @@ Taxiway visual connectivity uses the same adjacency rule as routing. A taxiway a
 - aircraft stands;
 - hangars.
 
-Taxiway-to-taxiway openings are baked into the selected atlas variant. When a taxiway touches a runway, stand or hangar, a late seam pass opens that larger asset's curb/foundation too. For the **5×2 Small Runway**, the asphalt throat crosses the shared grid edge and covers the beige curb only at the connected side cell, while a small hold-short accent remains visible. This makes the network read as one continuous paved system without requiring a separate connector item.
+Taxiway-to-taxiway openings are baked into the selected standalone variant. When a taxiway touches a runway, stand or hangar, a late seam pass opens that larger asset's curb/foundation too. For the **5×2 Small Runway**, the asphalt throat crosses the shared grid edge and covers the beige curb only at the connected side cell, while a small hold-short accent remains visible. This makes the network read as one continuous paved system without requiring a separate connector item.

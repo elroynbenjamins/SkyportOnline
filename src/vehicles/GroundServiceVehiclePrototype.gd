@@ -345,6 +345,16 @@ func _rotate_heading_toward(
 	)
 
 
+func _stand_throat_distance() -> float:
+	if phase == "OUTBOUND" and not outbound_route.is_empty():
+		return position.distance_to(
+			outbound_route[outbound_route.size() - 1]
+		)
+	if phase == "RETURNING" and not return_route.is_empty():
+		return position.distance_to(return_route[0])
+	return INF
+
+
 func get_apron_traffic_snapshot() -> Dictionary:
 	return {
 		"instance_id": get_instance_id(),
@@ -356,10 +366,12 @@ func get_apron_traffic_snapshot() -> Dictionary:
 		"stand_uid": traffic_stand_uid,
 		"yielding": traffic_waiting,
 		"route_progress": visual_route_progress,
+		"stand_distance": _stand_throat_distance(),
 		"stand_zone": ApronTrafficRules.stand_throat_state({
 			"stand_uid": traffic_stand_uid,
 			"phase": phase,
 			"route_progress": visual_route_progress,
+			"stand_distance": _stand_throat_distance(),
 		}),
 	}
 

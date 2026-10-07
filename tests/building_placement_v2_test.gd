@@ -118,6 +118,25 @@ func _run() -> void:
 		)
 		return
 
+	# Even a bad/legacy definition asking to draw wider than its footprint
+	# must be clamped by the shared placement helper.
+	var oversized_rect := SpritePlacementV2.grounded_rect(
+		bounds,
+		Vector2(128, 128),
+		polygon,
+		center,
+		2.5
+	)
+	var oversized_scale_x := oversized_rect.size.x / 128.0
+	var oversized_visible_width := (
+		float(bounds.size.x) * oversized_scale_x
+	)
+	if oversized_visible_width > footprint_width + 0.01:
+		_fail(
+			"Placement V2 must clamp visible art to the footprint width."
+		)
+		return
+
 	print(
 		"BUILDING_PLACEMENT_V2_OK geometry=centralized "
 		+ "alpha_grounded=true png_padding_ignored=true"

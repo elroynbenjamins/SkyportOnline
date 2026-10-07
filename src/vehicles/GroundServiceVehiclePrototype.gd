@@ -117,7 +117,10 @@ func start_service(
 
 func _process(delta: float) -> void:
 	motion_clock += delta
-	var moving := phase in ["OUTBOUND", "RETURNING"]
+	var moving := (
+		phase in ["OUTBOUND", "RETURNING"]
+		and not traffic_waiting
+	)
 	visual_motion_amount = move_toward(
 		visual_motion_amount,
 		1.0 if moving else 0.0,

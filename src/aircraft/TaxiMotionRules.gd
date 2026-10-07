@@ -202,6 +202,134 @@ static func speed_for_target(
 	return maxf(base_speed * factor, base_speed * 0.48)
 
 
+static func anticipation_distance(
+	aircraft_size: String,
+	profile: Dictionary = {}
+) -> float:
+	if profile.has("taxi_anticipation_distance"):
+		return maxf(
+			float(profile.get("taxi_anticipation_distance", 24.0)),
+			10.0
+		)
+	return corner_radius(aircraft_size, profile) * 1.75
+
+
+static func braking_distance(
+	aircraft_size: String,
+	profile: Dictionary = {}
+) -> float:
+	if profile.has("taxi_braking_distance"):
+		return maxf(
+			float(profile.get("taxi_braking_distance", 30.0)),
+			12.0
+		)
+	match aircraft_size:
+		"M":
+			return 40.0
+		"L":
+			return 52.0
+		"XL":
+			return 66.0
+		_:
+			return 30.0
+
+
+static func lookahead_heading(
+	route: PackedVector2Array,
+	current_position: Vector2,
+	target_index: int,
+	aircraft_size: String,
+	profile: Dictionary = {}
+) -> float:
+	if route.is_empty():
+		return 0.0
+	var safe_target := clampi(
+		target_index,
+		0,
+		route.size() - 1
+	)
+	var target := route[safe_target]
+	var to_target := target - current_position
+	if to_target.length_squared() < 0.0001:
+		if safe_target > 0:
+			return (
+				route[safe_target]
+				- route[safe_target - 1]
+			).angle()
+		return 0.0
+
+	var current_direction := to_target.normalized()
+	if safe_target >= route.size() - 1:
+		return current_direction.angle()
+
+	var outgoing := (
+		route[safe_target + 1]
+		- route[safe_target]
+	).normalized()
+	if outgoing == Vector2.ZERO:
+		return current_direction.angle()
+
+	var distance := to_target.length()
+	var anticipation := anticipation_distance(
+		aircraft_size,
+		profile
+	)
+	var blend := 1.0 - clampf(
+		distance / maxf(anticipation, 1.0),
+		0.0,
+		1.0
+	)
+	# Keep the visual heading close to the actual movement vector to avoid
+	# sideways-looking aircraft, while still beginning the nose turn early.
+	blend *= 0.62
+	var blended := current_direction.lerp(
+		outgoing,
+		blend
+	).normalized()
+	if blended == Vector2.ZERO:
+		return current_direction.angle()
+	return blended.angle()
+
+
+static func braking_speed_factor(
+	distance_to_stop: float,
+	aircraft_size: String,
+	profile: Dictionary = {},
+	minimum_factor: float = 0.28
+) -> float:
+	var distance := braking_distance(
+		aircraft_size,
+		profile
+	)
+	var ratio := clampf(
+		distance_to_stop / maxf(distance, 1.0),
+		0.0,
+		1.0
+	)
+	# Smoothstep gives a gentle initial reduction and stronger braking near
+	# the stop line / parking point.
+	var eased := ratio * ratio * (3.0 - 2.0 * ratio)
+	return lerpf(
+		clampf(minimum_factor, 0.12, 0.95),
+		1.0,
+		eased
+	)
+
+
+static func endpoint_heading(
+	route: PackedVector2Array
+) -> float:
+	if route.size() < 2:
+		return 0.0
+	var direction := (
+		route[route.size() - 1]
+		- route[route.size() - 2]
+	).normalized()
+	if direction == Vector2.ZERO:
+		return 0.0
+	return direction.angle()
+
+
 static func _append_if_distinct(
 	result: PackedVector2Array,
 	point: Vector2

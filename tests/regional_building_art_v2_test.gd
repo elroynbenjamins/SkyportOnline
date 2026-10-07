@@ -168,8 +168,14 @@ func _run() -> void:
 			_fail("%s Build Tray should preview its first authored orientation." % building_id)
 			return
 
-	if BuildingCatalog.get_definition("medium_stand").get("footprint", Vector2i.ZERO) != Vector2i(3, 3):
-		_fail("Medium Stand gameplay footprint must remain 3x3.")
+	if BuildingCatalog.get_definition("medium_stand").get("footprint", Vector2i.ZERO) != Vector2i(4, 3):
+		_fail("Medium Stand should use the roomier 4x3 gameplay footprint.")
+		return
+	if BuildingCatalog.get_definition("regional_fuel").get("footprint", Vector2i.ZERO) != Vector2i(4, 3):
+		_fail("Regional Fuel should use the roomier 4x3 gameplay footprint.")
+		return
+	if BuildingCatalog.get_definition("rapid_regional_fuel").get("footprint", Vector2i.ZERO) != Vector2i(5, 4):
+		_fail("Regional Rapid Fuel should use the roomier 5x4 gameplay footprint.")
 		return
 	if int(BuildingCatalog.get_definition("regional_fuel").get("vehicle_capacity", 0)) != 2:
 		_fail("Regional Fuel gameplay capacity must remain two vehicles.")
@@ -180,7 +186,7 @@ func _run() -> void:
 
 	print(
 		"REGIONAL_BUILDING_ART_V2_OK unique=true medium_stand=true regional_fuel=true "
-		+ "rapid_regional_fuel=true views=6 gameplay_unchanged=true"
+		+ "rapid_regional_fuel=true views=6 scale_rebalanced=true"
 	)
 	quit(0)
 

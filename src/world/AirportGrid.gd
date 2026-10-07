@@ -8761,9 +8761,12 @@ func get_departure_route_options_for_stand(
 			start_taxiway.y
 		)
 	)
+	# Keep a short visual lead-in before the actual taxiway, but place the
+	# access waypoint close enough to the taxiway that normal pushback can
+	# remain inside this first protected stand segment.
 	var stand_access_position := stand_position.lerp(
 		first_taxi_position,
-		0.52
+		0.90
 	)
 
 	for runway in placed_buildings:

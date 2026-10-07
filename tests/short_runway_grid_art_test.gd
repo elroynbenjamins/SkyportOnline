@@ -113,6 +113,26 @@ func _run() -> void:
 		_fail("Rotated Short Runway should draw at exactly 224x112 world px.")
 		return
 
+	var bounds_0 := BuildingPlacementGrid.footprint_bounds(
+		Vector2i(8, 8),
+		Vector2i(5, 2)
+	)
+	var bounds_90 := BuildingPlacementGrid.footprint_bounds(
+		Vector2i(8, 8),
+		Vector2i(2, 5)
+	)
+	if rect_0.position != bounds_0.position:
+		_fail(
+			"5x2 runway draw rect must start at the exact footprint bounds; "
+			+ "no sideways anchor shift is allowed."
+		)
+		return
+	if rect_90.position != bounds_90.position:
+		_fail(
+			"Rotated 2x5 runway draw rect must start at the exact footprint bounds."
+		)
+		return
+
 	print(
 		"SHORT_RUNWAY_GRID_ART_OK footprint=5x2 rotated=2x5 "
 		+ "asset=224x112 runtime_scale=1 orientations=2"

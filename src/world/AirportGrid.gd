@@ -5164,15 +5164,10 @@ func get_airfield_detail_snapshot() -> Dictionary:
 func _draw_apron_tile(origin: Vector2i) -> void:
 	var center := tile_to_world(Vector2(origin.x, origin.y))
 	var points := _tile_points(center)
-	draw_colored_polygon(points, APRON_CONCRETE_DARK)
 
-	var inner_points := PackedVector2Array()
-	for point_variant in points:
-		var point: Vector2 = point_variant
-		inner_points.append(
-			center + (point - center) * 0.94
-		)
-	draw_colored_polygon(inner_points, APRON_CONCRETE)
+	# Apron concrete is a floor system, not a stack of individual diamonds.
+	# Fill the full tile and only draw perimeter edges where the hardscape ends.
+	draw_colored_polygon(points, APRON_CONCRETE)
 
 	var directions := [
 		[Vector2i(0, -1), points[0], points[1]],
@@ -5183,18 +5178,29 @@ func _draw_apron_tile(origin: Vector2i) -> void:
 	for item_variant in directions:
 		var item: Array = item_variant
 		var direction: Vector2i = item[0]
-		if _apron_visually_connects_to(origin + direction):
-			continue
 		var a: Vector2 = item[1]
 		var b: Vector2 = item[2]
+		if _apron_visually_connects_to(origin + direction):
+			continue
+
+		# A slightly darker exposed edge gives the concrete a grounded curb/
+		# shoulder without outlining every internal tile seam.
 		draw_line(
-			a.lerp(b, 0.06),
-			a.lerp(b, 0.94),
-			Color("767b7a", 0.32),
-			1.8
+			a.lerp(b, 0.03),
+			a.lerp(b, 0.97),
+			APRON_CONCRETE_DARK,
+			3.0
+		)
+		draw_line(
+			a.lerp(b, 0.08),
+			a.lerp(b, 0.92),
+			Color("f7f3e9", 0.18),
+			1.0
 		)
 
 	var seed := absi(origin.x * 37 + origin.y * 61)
+	# Sparse construction joints stop large apron areas from looking flat,
+	# while remaining subtle enough that connected tiles still read as one pad.
 	if seed % 3 == 0:
 		draw_line(
 			center + Vector2(-15, 7),
@@ -5206,7 +5212,7 @@ func _draw_apron_tile(origin: Vector2i) -> void:
 		draw_circle(
 			center + Vector2(9, -4),
 			1.4,
-			Color("a9aaa4", 0.36)
+			Color("a9aaa4", 0.30)
 		)
 
 
@@ -5233,75 +5239,196 @@ func _apron_visually_connects_to(cell: Vector2i) -> bool:
 	)
 
 
+func _pavement_connection_directions(
+	origin: Vector2i,
+	kind: String
+) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for direction in [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]:
+		var neighbor := origin + direction
+		var connected := (
+			_taxiway_visually_connects_to(neighbor)
+			if kind == "taxiway"
+			else _service_road_visually_connects_to(neighbor)
+		)
+		if connected:
+			result.append(direction)
+	return result
+
+
 func _draw_pavement_tile(
 	origin: Vector2i,
 	kind: String
 ) -> void:
 	var center := tile_to_world(Vector2(origin.x, origin.y))
-	var points := _tile_points(center)
 	var outer := TAXIWAY_OUTER
 	var inner := TAXIWAY_INNER
+	var outer_width := 26.0
+	var inner_width := 20.0
 	if kind == "service_road":
 		outer = SERVICE_ROAD_OUTER
 		inner = SERVICE_ROAD_INNER
+		outer_width = 18.0
+		inner_width = 13.0
 
-	draw_colored_polygon(points, outer)
-
-	var inner_points := PackedVector2Array()
-	for point_variant in points:
-		var point: Vector2 = point_variant
-		inner_points.append(
-			center + (point - center) * 0.88
-		)
-	draw_colored_polygon(inner_points, inner)
-
-	# Fixed upper-left sunlight: highlight the upper edges and darken
-	# the lower edges so these flat surfaces match the building art.
-	draw_line(
-		points[0],
-		points[1],
-		PAVEMENT_HIGHLIGHT,
-		1.8
-	)
-	draw_line(
-		points[0],
-		points[3],
-		Color("ffffff", 0.10),
-		1.2
-	)
-	draw_line(
-		points[2],
-		points[3],
-		PAVEMENT_SHADOW,
-		2.0
-	)
-	draw_line(
-		points[1],
-		points[2],
-		Color("182226", 0.16),
-		1.4
-	)
-
-	_draw_pavement_edge_detail(
+	var connections := _pavement_connection_directions(
 		origin,
-		kind,
-		points
+		kind
+	)
+
+	# Draw the pavement as connected ribbons rather than as full isometric
+	# diamonds. Corners and T-junctions now visually merge into one network.
+	if connections.is_empty():
+		draw_set_transform(
+			center,
+			0.0,
+			Vector2(1.0, 0.52)
+		)
+		draw_circle(
+			Vector2.ZERO,
+			outer_width * 0.52,
+			outer
+		)
+		draw_circle(
+			Vector2.ZERO,
+			inner_width * 0.52,
+			inner
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+	else:
+		for direction in connections:
+			var edge_tile := (
+				Vector2(origin.x, origin.y)
+				+ Vector2(direction.x, direction.y) * 0.52
+			)
+			var edge_world := tile_to_world(edge_tile)
+			draw_line(
+				center,
+				edge_world,
+				Color(0.02, 0.05, 0.06, 0.18),
+				outer_width + 4.0,
+				true
+			)
+			draw_line(
+				center,
+				edge_world,
+				outer,
+				outer_width,
+				true
+			)
+			draw_line(
+				center,
+				edge_world,
+				inner,
+				inner_width,
+				true
+			)
+
+			if (
+				kind == "taxiway"
+				and _cell_is_runway_surface(
+					origin + direction
+				)
+			):
+				_draw_runway_taxiway_flare(
+					center,
+					edge_world
+				)
+
+		# Round joins hide the square overlap produced by multiple thick arms.
+		draw_circle(
+			center,
+			outer_width * 0.52,
+			outer
+		)
+		draw_circle(
+			center,
+			inner_width * 0.52,
+			inner
+		)
+
+	# Fixed upper-left lighting keeps the flat paving consistent with the
+	# canonical building art without reintroducing visible tile boundaries.
+	var light_offset := Vector2(-3, -3)
+	var shadow_offset := Vector2(3, 4)
+	draw_circle(
+		center + shadow_offset,
+		2.0,
+		Color("182226", 0.18)
+	)
+	draw_circle(
+		center + light_offset,
+		1.4,
+		Color("ffffff", 0.14)
 	)
 
 	var seed := absi(origin.x * 29 + origin.y * 43)
-	if seed % 2 == 0:
+	if seed % 3 == 0 and connections.size() == 2:
 		var seam_color := (
-			Color("b8c1c3", 0.12)
+			Color("b8c1c3", 0.10)
 			if kind == "taxiway"
-			else Color("eee6dc", 0.14)
+			else Color("eee6dc", 0.12)
 		)
 		draw_line(
-			center + Vector2(-12, 6),
-			center + Vector2(12, -6),
+			center + Vector2(-7, 3),
+			center + Vector2(7, -3),
 			seam_color,
 			1.0
 		)
 
+
+func _cell_is_runway_surface(cell: Vector2i) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+	var building := _building_by_uid(int(occupied_cells[key]))
+	if building.is_empty():
+		return false
+	return String(
+		building.get("definition_id", "")
+	).contains("runway")
+
+
+func _draw_runway_taxiway_flare(
+	center: Vector2,
+	edge_world: Vector2
+) -> void:
+	var direction := (edge_world - center).normalized()
+	if direction == Vector2.ZERO:
+		return
+	var normal := Vector2(-direction.y, direction.x)
+	var shoulder_half := 15.5
+	var throat_half := 10.5
+	var throat := edge_world - direction * 13.0
+	var flare := PackedVector2Array([
+		throat - normal * throat_half,
+		edge_world - normal * shoulder_half,
+		edge_world + normal * shoulder_half,
+		throat + normal * throat_half
+	])
+	draw_colored_polygon(
+		flare,
+		TAXIWAY_OUTER
+	)
+	var inner_flare := PackedVector2Array([
+		throat - normal * 8.0,
+		edge_world - normal * 12.5,
+		edge_world + normal * 12.5,
+		throat + normal * 8.0
+	])
+	draw_colored_polygon(
+		inner_flare,
+		TAXIWAY_INNER
+	)
 
 
 func _draw_pavement_edge_detail(
@@ -5309,87 +5436,49 @@ func _draw_pavement_edge_detail(
 	kind: String,
 	points: PackedVector2Array
 ) -> void:
-	var directions := [
-		[Vector2i(0, -1), points[0], points[1]],
-		[Vector2i(1, 0), points[1], points[2]],
-		[Vector2i(0, 1), points[2], points[3]],
-		[Vector2i(-1, 0), points[3], points[0]]
-	]
-	for item_variant in directions:
-		var item: Array = item_variant
-		var direction: Vector2i = item[0]
-		var neighbor := origin + direction
-		var connected := false
-		if kind == "taxiway":
-			connected = _taxiway_visually_connects_to(neighbor)
-		else:
-			connected = _service_road_visually_connects_to(neighbor)
-		if connected:
-			continue
-
-		var a: Vector2 = item[1]
-		var b: Vector2 = item[2]
-		var seam_color := (
-			Color("9cb671", 0.30)
-			if kind == "taxiway"
-			else Color("b6aa8e", 0.28)
-		)
-		draw_line(
-			a.lerp(b, 0.08),
-			a.lerp(b, 0.92),
-			seam_color,
-			2.2
-		)
-		if kind == "service_road" and (
-			origin.x * 7 + origin.y * 11
-		) % 4 == 0:
-			var center := a.lerp(b, 0.5)
-			draw_line(
-				center + Vector2(-4, 1),
-				center + Vector2(4, -1),
-				Color("4a5355", 0.42),
-				1.4
-			)
+	# Retained for compatibility with older diagnostics. Connected-ribbon
+	# pavement no longer outlines each individual tile.
+	pass
 
 
 func _draw_service_road_detail(origin: Vector2i) -> void:
 	var center := tile_to_world(Vector2(origin.x, origin.y))
-	var directions: Array[Vector2i] = [
-		Vector2i(1, 0),
-		Vector2i(-1, 0),
-		Vector2i(0, 1),
-		Vector2i(0, -1)
-	]
-	var connections := 0
-	for direction in directions:
-		var neighbor := origin + direction
-		if not _service_road_visually_connects_to(neighbor):
-			continue
-		connections += 1
+	var connections := _pavement_connection_directions(
+		origin,
+		"service_road"
+	)
+	for direction in connections:
 		var edge_tile := (
 			Vector2(origin.x, origin.y)
-			+ Vector2(direction.x, direction.y) * 0.48
+			+ Vector2(direction.x, direction.y) * 0.50
 		)
 		draw_dashed_line(
 			center,
 			tile_to_world(edge_tile),
-			Color("f2eee6", 0.85),
-			1.8,
+			Color("f2eee6", 0.78),
+			1.5,
 			5.0
 		)
 
-	if connections == 0:
+	if connections.is_empty():
 		draw_line(
-			center + Vector2(-8, 4),
-			center + Vector2(8, -4),
-			Color("f2eee6", 0.75),
-			1.8
+			center + Vector2(-7, 3),
+			center + Vector2(7, -3),
+			Color("f2eee6", 0.66),
+			1.6
 		)
 
-	# Small amber reflector at junctions reads clearly at default zoom.
-	if connections >= 2:
-		draw_circle(center, 3.0, Color(0.08, 0.10, 0.10, 0.55))
-		draw_circle(center, 1.8, Color("ffd77a"))
+	if connections.size() >= 2:
+		draw_circle(
+			center,
+			2.6,
+			Color(0.08, 0.10, 0.10, 0.46)
+		)
+		draw_circle(
+			center,
+			1.5,
+			Color("ffd77a")
+		)
 
 
 func _service_road_visually_connects_to(cell: Vector2i) -> bool:
@@ -5417,67 +5506,66 @@ func _service_road_visually_connects_to(cell: Vector2i) -> bool:
 
 func _draw_taxiway_detail(origin: Vector2i) -> void:
 	var center := tile_to_world(Vector2(origin.x, origin.y))
-	var connections := get_taxiway_connection_count(origin)
-	var directions: Array[Vector2i] = [
-		Vector2i(1, 0),
-		Vector2i(-1, 0),
-		Vector2i(0, 1),
-		Vector2i(0, -1)
-	]
-	for direction: Vector2i in directions:
-		var neighbor: Vector2i = origin + direction
-		if not _taxiway_visually_connects_to(neighbor):
-			continue
+	var connections := _pavement_connection_directions(
+		origin,
+		"taxiway"
+	)
+	for direction: Vector2i in connections:
 		var edge_tile := (
 			Vector2(origin.x, origin.y)
-			+ Vector2(direction.x, direction.y) * 0.48
+			+ Vector2(direction.x, direction.y) * 0.50
 		)
 		var edge_world := tile_to_world(edge_tile)
 		draw_line(
 			center,
 			edge_world,
 			Color("f0c94c"),
-			3.2
+			2.8,
+			true
 		)
 
-		# Blue edge reflectors add airport character without changing
-		# the actual taxi network.
+		# Blue edge lights sit to either side of the centerline and continue
+		# cleanly around corners and junctions.
 		var dir_world := (edge_world - center).normalized()
 		if dir_world != Vector2.ZERO:
 			var normal := Vector2(-dir_world.y, dir_world.x)
 			for side in [-1.0, 1.0]:
 				var light_pos := (
 					center
-					+ dir_world * 18.0
-					+ normal * 8.0 * float(side)
+					+ dir_world * 17.0
+					+ normal * 8.5 * float(side)
 				)
 				draw_circle(
 					light_pos,
-					2.5,
-					Color(0.03, 0.08, 0.10, 0.72)
+					2.3,
+					Color(0.03, 0.08, 0.10, 0.66)
 				)
 				draw_circle(
 					light_pos,
-					1.4,
+					1.25,
 					Color("68c7f0")
 				)
 
-	if connections == 0:
+	if connections.is_empty():
 		draw_line(
-			center + Vector2(-8, 4),
-			center + Vector2(8, -4),
+			center + Vector2(-7, 3),
+			center + Vector2(7, -3),
 			Color("f0c94c"),
-			3.0
+			2.6
 		)
-	draw_circle(center, 3.5, Color("f4d866"))
 
-	if connections >= 3:
+	draw_circle(
+		center,
+		2.8,
+		Color("f4d866")
+	)
+	if connections.size() >= 3:
 		draw_circle(
 			center,
-			8.0,
-			Color("f4d866"),
+			7.0,
+			Color("f4d866", 0.76),
 			false,
-			1.5
+			1.4
 		)
 
 

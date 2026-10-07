@@ -9,6 +9,10 @@ const PAVEMENT_ART := {
 	"service_road": {
 		"surface_art": "service_road_v2",
 		"icon": "res://assets/production/airfield_v2/service_road_icon_v2.svg"
+	},
+	"apron_tile": {
+		"surface_art": "apron_v2",
+		"icon": "res://assets/production/airfield_v2/apron_icon_v2.svg"
 	}
 }
 
@@ -30,6 +34,12 @@ func _run() -> void:
 		return
 	if not grid.has_method("_draw_service_road_detail"):
 		_fail("Service Road should retain connectivity-aware road detail.")
+		return
+	if not grid.has_method("_draw_apron_tile"):
+		_fail("Apron Concrete should use the authored v2 ground renderer.")
+		return
+	if not grid.has_method("_apron_visually_connects_to"):
+		_fail("Apron Concrete should blend into adjacent airport hardscape.")
 		return
 
 	var definitions: Array[Dictionary] = []
@@ -116,7 +126,7 @@ func _run() -> void:
 			return
 
 	print(
-		"AIRFIELD_PAVEMENT_V2_OK taxiway=true service_road=true "
+		"AIRFIELD_PAVEMENT_V2_OK taxiway=true service_road=true apron=true "
 		+ "legacy_icons=false connectivity=true"
 	)
 	quit(0)

@@ -356,6 +356,11 @@ func get_apron_traffic_snapshot() -> Dictionary:
 		"stand_uid": traffic_stand_uid,
 		"yielding": traffic_waiting,
 		"route_progress": visual_route_progress,
+		"stand_zone": ApronTrafficRules.stand_throat_state({
+			"stand_uid": traffic_stand_uid,
+			"phase": phase,
+			"route_progress": visual_route_progress,
+		}),
 	}
 
 

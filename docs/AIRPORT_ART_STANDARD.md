@@ -70,9 +70,9 @@ The airport background should support the same polished stylized game-art level 
 
 - use authored landscape shapes rather than a single flat green fill;
 - keep upper-left lighting and lower-right contact shading consistent with buildings;
-- use layered grass, field, tree, road, hedge, parking and approach details at the scene edges;
+- use layered grass, rolling hills, distant water and tree belts at the scene edges;
 - keep the central airport land quieter and lower-contrast so the construction grid remains immediately readable;
-- preserve the fixed 2:1 isometric presentation in road, field and scenery direction;
+- preserve the fixed 2:1 isometric presentation in field and scenery direction;
 - never bake gameplay footprints, collision, routing or placement ownership into the background image;
 - never cover the background with an opaque grid-reset rectangle;
 - background scenery must remain visually outside or beneath the logical build layer and must not imply false usable tiles.
@@ -82,3 +82,5 @@ The current production landscape baseline is:
 `assets/production/environment_v3/airport_landscape_v3.svg`
 
 It is a scene backdrop, not a substitute for grid-native runway, taxiway, apron or building art.
+
+Decorative roads do not belong in the default backdrop. Roads, taxiways, service routes, parking and other airport infrastructure should come from explicit placeable/gameplay assets so the landscape remains open and Skyrama-like.

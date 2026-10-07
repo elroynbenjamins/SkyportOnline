@@ -354,6 +354,10 @@ func _deploy_reserve_aircraft() -> void:
 			plan.is_empty()
 			and saved.is_empty()
 			and uid in ["owned-1", "owned-2"]
+			and not (
+				starter_tutorial_enabled
+				and uid == "owned-1"
+			)
 		):
 			plan = _create_current_flight_plan(
 				profile,

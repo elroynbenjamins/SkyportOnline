@@ -42,6 +42,7 @@ jobs:
             tests/starter_airport_network_v2_test.gd
             tests/starter_airport_tutorial_test.gd
             tests/starter_building_grid_fit_test.gd
+            tests/short_runway_grid_art_test.gd
             tests/airside_connectivity_test.gd
             tests/flight_rules_test.gd
             tests/resource_drop_rules_test.gd

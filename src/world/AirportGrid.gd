@@ -694,16 +694,16 @@ func _definition_has_grid_native_surface(
 	return paths.size() > 0 and size.x > 0 and size.y > 0
 
 
+
 func _definition_has_grid_native_autotile(
 	definition: Dictionary
 ) -> bool:
+	var paths: PackedStringArray = definition.get(
+		"grid_native_autotile_variant_paths",
+		PackedStringArray()
+	)
 	return (
-		not String(
-			definition.get(
-				"grid_native_autotile_atlas_path",
-				""
-			)
-		).is_empty()
+		paths.size() >= 16
 		and int(
 			definition.get(
 				"grid_native_autotile_variant_count",
@@ -711,7 +711,6 @@ func _definition_has_grid_native_autotile(
 			)
 		) >= 16
 	)
-
 
 func _taxiway_connection_mask(
 	origin: Vector2i
@@ -752,6 +751,19 @@ func _taxiway_variant_name(mask: int) -> String:
 		_: return "cross"
 
 
+func _taxiway_variant_path(
+	definition: Dictionary,
+	mask: int
+) -> String:
+	var paths: PackedStringArray = definition.get(
+		"grid_native_autotile_variant_paths",
+		PackedStringArray()
+	)
+	if paths.size() < 16:
+		return ""
+	return paths[clampi(mask, 0, 15)]
+
+
 func _taxiway_variant_region(mask: int) -> Rect2:
 	var safe_mask := clampi(mask, 0, 15)
 	var column := safe_mask % 4
@@ -764,22 +776,24 @@ func _taxiway_variant_region(mask: int) -> Rect2:
 	)
 
 
+
 func _draw_grid_native_taxiway_variant(
 	definition: Dictionary,
 	origin: Vector2i,
 	modulate: Color = Color.WHITE
 ) -> void:
-	var atlas_path := String(
-		definition.get(
-			"grid_native_autotile_atlas_path",
-			""
-		)
+	var mask := _taxiway_connection_mask(
+		origin
 	)
-	if atlas_path.is_empty():
+	var variant_path := _taxiway_variant_path(
+		definition,
+		mask
+	)
+	if variant_path.is_empty():
 		return
 
 	var texture := _get_building_texture(
-		atlas_path
+		variant_path
 	)
 	if texture == null:
 		return
@@ -793,16 +807,12 @@ func _draw_grid_native_taxiway_variant(
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
 
-	var mask := _taxiway_connection_mask(
-		origin
-	)
-	draw_texture_rect_region(
+	draw_texture_rect(
 		texture,
 		rect,
-		_taxiway_variant_region(mask),
+		false,
 		modulate
 	)
-
 
 func _grid_native_surface_path_for_rotation(
 	definition: Dictionary,
@@ -1029,7 +1039,11 @@ func get_taxiway_visual_connection_snapshot(
 		"runway_connected": kinds.values().has("runway"),
 		"mask": mask,
 		"variant_name": _taxiway_variant_name(mask),
-		"atlas_region": _taxiway_variant_region(mask)
+		"atlas_region": _taxiway_variant_region(mask),
+		"variant_path": _taxiway_variant_path(
+			BuildingCatalog.get_definition("taxiway"),
+			mask
+		)
 	}
 
 func _draw_grid_first_network_links(

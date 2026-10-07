@@ -88,7 +88,7 @@ func _run() -> void:
 	for cell in [
 		Vector2i(7, 7),
 		Vector2i(7, 6),
-		Vector2i(6, 6)
+		Vector2i(7, 5)
 	]:
 		if not _place(grid, "service_road", cell):
 			return

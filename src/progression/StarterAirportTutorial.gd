@@ -284,13 +284,13 @@ func _service_road_ready() -> bool:
 	var stand_uid := _first_stand_uid()
 	if stand_uid < 0:
 		return false
-	var fuel := airport_grid.get_best_service_building(
+	var fuel: Dictionary = airport_grid.get_best_service_building(
 		"fuel",
 		"S"
 	)
 	if fuel.is_empty():
 		return false
-	var route = airport_grid.get_service_route(
+	var route: PackedVector2Array = airport_grid.get_service_route(
 		int(fuel.get("uid", -1)),
 		stand_uid
 	)

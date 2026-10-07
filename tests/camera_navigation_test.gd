@@ -20,11 +20,11 @@ func _run() -> void:
 	await process_frame
 
 	camera.reset_view()
-	if camera.position.distance_to(Vector2(480, 480)) > 0.01:
-		_fail("Default camera reset should center the 16x16 starter build area.")
+	if camera.position.distance_to(Vector2(0, 320)) > 0.01:
+		_fail("Default camera reset should frame the projected starter airport from the Skyrama-style view.")
 		return
-	if absf(camera.zoom.x - 0.62) > 0.001:
-		_fail("Default camera reset should frame the 16x16 starter build area.")
+	if absf(camera.zoom.x - 0.88) > 0.001:
+		_fail("Default camera zoom should keep the projected starter airport readable in landscape.")
 		return
 
 	camera.position = Vector2(100, 200)

@@ -183,7 +183,7 @@ func _run() -> void:
 		"tow_operations"
 	]:
 		var definition := BuildingCatalog.get_definition(building_id)
-		if String(definition.get("visual_contract", "")) != "square_grid_v1":
+		if String(definition.get("visual_contract", "")) != "square_grid_iso_v1":
 			_fail("%s should use the grid-first visual contract." % building_id)
 			return
 		if definition.has("icon_path") or definition.has("world_sprite_path"):

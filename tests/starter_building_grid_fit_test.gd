@@ -43,6 +43,20 @@ func _run() -> void:
 			)
 			return
 
+	var unit_contract := BuildingPlacementGrid.visual_contract(Vector2i.ONE)
+	if unit_contract.get("logical_tile_size", Vector2.ZERO) != Vector2(64, 64):
+		_fail("Gameplay cells must remain true 64x64 logical squares.")
+		return
+	if absf(float(unit_contract.get("projected_tile_width", 0.0)) - 64.0) > 0.01:
+		_fail("Skyrama ground projection should draw a 64 px wide cell diamond.")
+		return
+	if absf(float(unit_contract.get("projected_tile_height", 0.0)) - 32.0) > 0.01:
+		_fail("Skyrama ground projection should draw a 32 px deep cell diamond.")
+		return
+	if String(unit_contract.get("projection", "")) != "skyrama_isometric_2_to_1":
+		_fail("Grid contract should explicitly expose the Skyrama-style projection.")
+		return
+
 	var terminal := BuildingCatalog.get_definition("small_terminal")
 	var terminal_contract := grid.get_grid_visual_contract_for_definition(
 		terminal,
@@ -55,17 +69,17 @@ func _run() -> void:
 		_fail("Terminal visual contract must use its exact 3x2 logical footprint.")
 		return
 
-	var terminal_asset_size := Vector2i(192, 220)
+	var terminal_asset_size := Vector2i(160, 180)
 	var terminal_asset_check := BuildingPlacementGrid.validate_asset_dimensions(
 		terminal_asset_size,
 		Vector2i(3, 2)
 	)
 	if not bool(terminal_asset_check.get("valid", false)):
-		_fail("A 192 px wide 3x2 asset should satisfy the square-grid contract.")
+		_fail("A 160 px wide 3x2 asset should satisfy the projected square-grid contract.")
 		return
 	if bool(
 		BuildingPlacementGrid.validate_asset_dimensions(
-			Vector2i(193, 220),
+			Vector2i(161, 180),
 			Vector2i(3, 2)
 		).get("valid", true)
 	):
@@ -81,7 +95,7 @@ func _run() -> void:
 		terminal_origin,
 		Vector2i(3, 2)
 	)
-	if terminal_draw_rect.size != Vector2(192, 220):
+	if terminal_draw_rect.size != Vector2(160, 180):
 		_fail("Grid-native asset draw rect must preserve exact source dimensions.")
 		return
 	if (
@@ -95,7 +109,7 @@ func _run() -> void:
 		return
 
 	print(
-		"GRID_VISUAL_CONTRACT_OK projection=square tile=64x64 "
+		"GRID_VISUAL_CONTRACT_OK projection=skyrama_iso logical=64x64 projected=64x32 "
 		+ "nearest_cell_snap=true grid_owns_footprint=true "
 		+ "grid_owns_anchor=true grid_owns_scale=true "
 		+ "authoring_1_to_1=true padding=top_only "
@@ -131,7 +145,7 @@ func _check_round_trip() -> bool:
 		+ Vector2(5, 2)
 	)
 	if BuildingPlacementGrid.world_to_tile(near_center) != Vector2i(2, 2):
-		_fail("Pointer snapping must use nearest-cell square-grid rounding.")
+		_fail("Pointer snapping must use nearest logical square-cell rounding in the projected view.")
 		return false
 	return true
 
@@ -151,12 +165,14 @@ func _check_footprint_geometry() -> bool:
 			return false
 
 		var expected_width := (
-			float(footprint.x)
-			* BuildingPlacementGrid.TILE_WIDTH
+			float(footprint.x + footprint.y)
+			* BuildingPlacementGrid.PROJECTED_TILE_WIDTH
+			* 0.5
 		)
 		var expected_height := (
-			float(footprint.y)
-			* BuildingPlacementGrid.TILE_HEIGHT
+			float(footprint.x + footprint.y)
+			* BuildingPlacementGrid.PROJECTED_TILE_HEIGHT
+			* 0.5
 		)
 		var size: Vector2 = contract.get(
 			"base_size",
@@ -196,11 +212,8 @@ func _check_footprint_geometry() -> bool:
 		if anchor_shape.size() != 4:
 			_fail("Visual contract must expose a four-point base polygon from anchor.")
 			return false
-		var bottom_center := (
-			anchor_shape[2] + anchor_shape[3]
-		) * 0.5
-		if bottom_center.distance_to(Vector2.ZERO) > 0.01:
-			_fail("Front-center anchor must be the midpoint of the square base bottom edge.")
+		if anchor_shape[2].distance_to(Vector2.ZERO) > 0.01:
+			_fail("Projected front anchor must be the zero point of the authoring base.")
 			return false
 	return true
 

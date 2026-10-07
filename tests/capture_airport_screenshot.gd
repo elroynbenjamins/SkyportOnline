@@ -19,10 +19,10 @@ func _run() -> void:
 	await process_frame
 
 	var camera := Camera2D.new()
-	# Visual QA should judge the actual airport, not primarily the expansion
-	# overlay. Keep the starter airfield large enough to inspect at a glance.
-	camera.position = Vector2(736, 736)
-	camera.zoom = Vector2(0.96, 0.96)
+	# Match the fixed Skyrama-style airport viewing angle: the logical square
+	# grid is projected into 2:1 ground diamonds and framed in landscape.
+	camera.position = Vector2(0, 320)
+	camera.zoom = Vector2(0.90, 0.90)
 	camera.position_smoothing_enabled = false
 	camera.enabled = true
 	world.add_child(camera)

@@ -1,73 +1,34 @@
 # Grid → Visual Contract
 
-The airport grid is the authority for every placeable object's world geometry.
+The airport uses a **square logical construction grid** with a separate **Skyrama-style isometric screen projection**.
 
-## Grid
+## Logical grid
 
-- **True square Cartesian grid**, Skyrama-style.
-- One logical cell is **64 × 64 px** at 1× world scale.
-- A cell coordinate represents the center of its square.
-- X moves horizontally by 64 px.
-- Y moves vertically by 64 px.
-- Screen/world picking snaps to the nearest square-cell center.
+Gameplay never uses 64×32 cells.
 
-There is no isometric diamond projection in the placement system.
+- Every logical cell is **64 × 64**.
+- Footprints remain exact square-cell counts such as `1×1`, `2×2`, `3×2` and `8×2`.
+- Placement, collision, routing, ownership and rotation all operate on those logical square cells.
+- 90° rotation swaps `W × H` to `H × W`.
 
-## Placeable-object rules
+This is the Lego-block rule.
 
-Every placeable definition owns a logical footprint such as `1×1`, `2×2`, `3×2` or `7×2`.
+## Skyrama-style view
 
-The grid derives occupied cells, rectangular footprint bounds, selection/hover/placement outlines, collision, routing positions and the future art anchor.
+The square ground is projected into a fixed 2:1 isometric view for presentation:
 
-For a `W × H` footprint:
+- logical cell: **64 × 64**;
+- projected cell diamond: **64 px wide × 32 px deep**;
+- logical X projects down-right;
+- logical Y projects down-left;
+- the camera itself stays fixed-angle;
+- pointer input is inverse-projected back to the nearest logical square cell.
 
-- base width = `W × 64 px`;
-- base height = `H × 64 px`;
-- 90° rotation swaps `W × H` to `H × W`;
-- ground anchor = **bottom-center of the rectangular footprint**.
+So a tile **looks** like a 64×32 diamond on screen, but it **is** still one square 64×64 gameplay cell.
 
-Art never changes the logical footprint.
+## Placeable footprints
 
-## Examples
-
-| Footprint | Grid base |
-| --- | ---: |
-| 1×1 | 64 × 64 px |
-| 2×1 | 128 × 64 px |
-| 2×2 | 128 × 128 px |
-| 3×2 | 192 × 128 px |
-| 8×2 | 512 × 128 px |
-
-This is the Lego-block rule: roads, taxiways, buildings, stands and runways all occupy exact square-cell rectangles.
-
-## Current reset mode
-
-`AirportGrid.GRID_FIRST_VISUAL_RESET` keeps the live airport intentionally primitive.
-
-The airport currently renders square land cells, exact placeable footprints, square road/taxiway cells, network guide lines, and placement/selection feedback. Legacy airport building/background/surface art is not in the active rendering path.
-
-## Future artwork
-
-The artwork can still have perspective, depth and a Skyrama-like illustrated appearance. That perspective belongs **inside the asset**, not in the placement grid.
-
-The square grid remains unchanged underneath it.
-
-The asset contract exposes:
-
-- `authoring_width_px` = exact footprint width;
-- `base_depth_px` = exact footprint height;
-- `base_polygon_from_anchor` = rectangular base corners;
-- `runtime_scale = (1, 1)`;
-- `asset_pixels_per_world_pixel = 1`;
-- no horizontal footprint overhang.
-
-A future texture is accepted only when its source width exactly matches the footprint width and its height is at least the footprint height. Runtime places its bottom-center on the footprint's bottom-center anchor without resizing or hand-tuned offsets.
-
-Buildings may visually rise upward above their occupied rectangle. Their logical occupied cells remain exact squares.
-
-## Starter scale reference
-
-The starter airport uses these baseline footprints before new art is generated:
+The logical sizes currently locked for the starter airport are:
 
 - Short Runway: **8×2**
 - Small Aircraft Stand: **2×2**
@@ -77,12 +38,60 @@ The starter airport uses these baseline footprints before new art is generated:
 - Taxiway / Service Road / Apron: **1×1**
 - Regional Runway: **12×3**
 
-The upper **16×8** cells of the initial 16×16 owned construction area are kept free of pre-positioned buildings so the player has a clear airside construction zone.
+The upper **16×8 logical cells** of the initial 16×16 owned construction area remain free of pre-positioned buildings for player-built airside infrastructure.
 
-## Contract identifier
+## Projected art bases
 
-New placeables expose:
+Art is authored against the projected footprint, while gameplay remains square.
 
-`visual_contract = "square_grid_v1"`
+For a logical `W × H` footprint:
 
-Any future airport asset should be generated against this square-grid contract from the start.
+- projected base width = `(W + H) × 32 px`;
+- projected base depth = `(W + H) × 16 px`;
+- the projected front corner is the ground anchor;
+- the asset body may rise upward from that base;
+- runtime does not resize or hand-offset a valid asset.
+
+Examples:
+
+| Logical footprint | Projected base |
+| --- | ---: |
+| 1×1 | 64 × 32 px |
+| 2×1 | 96 × 48 px |
+| 2×2 | 128 × 64 px |
+| 3×2 | 160 × 80 px |
+| 8×2 | 320 × 160 px |
+| 12×3 | 480 × 240 px |
+
+This keeps future buildings, runway pieces and roads visually aligned with the same projected ground diamonds the player sees.
+
+## Current reset mode
+
+`AirportGrid.GRID_FIRST_VISUAL_RESET` is still active.
+
+The airport therefore uses primitive ground colors and footprint blocks while we validate geometry. No deleted legacy airport art has been reintroduced.
+
+The reset view now intentionally resembles the Skyrama composition more closely:
+
+- angled 2:1 ground grid;
+- greener grass field;
+- fixed landscape framing;
+- buildable land extending toward the foreground.
+
+## Asset contract
+
+The current placeable contract identifier is:
+
+`visual_contract = "square_grid_iso_v1"`
+
+The contract exposes both logical and visual geometry:
+
+- `logical_tile_size = (64, 64)`;
+- `projected_tile_width = 64`;
+- `projected_tile_height = 32`;
+- projected footprint polygon and bounds;
+- exact projected art width/depth;
+- projected front ground anchor;
+- `runtime_scale = (1, 1)`.
+
+Future airport art should be generated specifically for this contract.

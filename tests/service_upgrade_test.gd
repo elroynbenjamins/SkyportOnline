@@ -61,7 +61,7 @@ func _run() -> void:
 	)
 	if String(
 		ground_ops_definition.get("visual_contract", "")
-	) != "square_grid_v1":
+	) != "square_grid_iso_v1":
 		_fail("Ground Ops should use the grid-first visual contract.")
 		return
 	if ground_ops_definition.has("world_sprite_atlas_path"):

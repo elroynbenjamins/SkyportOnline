@@ -5,9 +5,9 @@ extends Node2D
 @onready var hud = $HUD
 @onready var airport_setup = $AirportSetup
 
-var player_level: int = 4
+var player_level: int = 1
 var player_xp: int = 0
-var coins: int = 18420
+var coins: int = 20000
 var gems: int = 120
 var resource_inventory: Dictionary = {}
 var reward_rng := RandomNumberGenerator.new()

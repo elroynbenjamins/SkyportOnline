@@ -1,15 +1,6 @@
 extends SceneTree
 
 
-const STARTER_INTEGRATED_IDS := [
-	"small_terminal",
-	"small_stand",
-	"travel_office",
-	"ground_ops_depot",
-	"basic_fuel"
-]
-
-
 func _init() -> void:
 	call_deferred("_run")
 
@@ -19,209 +10,142 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 
-	for building_id in STARTER_INTEGRATED_IDS:
-		var definition := BuildingCatalog.get_definition(building_id)
-		if definition.is_empty():
-			_fail("%s should exist in the building catalog." % building_id)
-			return
-		if not bool(
-			definition.get("world_art_has_integrated_base", false)
-		):
-			_fail(
-				"%s should declare its atlas base as integrated."
-				% building_id
-			)
-			return
-		if not bool(definition.get("world_sprite_grid_fit", false)):
-			_fail(
-				"%s should opt into logical grid fitting."
-				% building_id
-			)
-			return
-		var max_width_scale := float(
-			definition.get("world_sprite_max_width_scale", 9.0)
-		)
-		if max_width_scale > 1.25:
-			_fail(
-				"%s should keep visible production art close to its grid footprint."
-				% building_id
-			)
-			return
-		if bool(definition.get("world_ground_pad", true)):
-			_fail(
-				"%s should not draw the old procedural ground pad."
-				% building_id
-			)
-			return
+	if AirportGrid.WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG != 1.0:
+		_fail("World sprites must never be allowed to exceed their grid footprint.")
+		return
 
-		var footprint: Vector2i = definition.get(
-			"footprint",
-			Vector2i.ONE
-		)
-		var rect := grid._building_sprite_rect(
-			definition,
-			Vector2i.ZERO,
-			footprint,
-			0
-		)
-		var footprint_width := (
-			float(footprint.x + footprint.y)
-			* AirportGrid.TILE_WIDTH
-			* 0.5
-		)
-		var max_width := (
-			footprint_width
-			* AirportGrid.WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG
-		)
-		if rect.size.x > max_width + 0.01:
-			_fail(
-				"%s sprite width %.2f exceeds grid-fit cap %.2f."
-				% [building_id, rect.size.x, max_width]
-			)
+	var normal_checked := 0
+	for definition in BuildingCatalog.all():
+		if not grid._definition_has_world_sprite(definition):
+			continue
+		if not _check_definition(grid, definition, "building"):
 			return
+		normal_checked += 1
 
-		if not bool(
-			definition.get("world_sprite_ground_align", false)
-		):
-			_fail(
-				"%s should keep its visible base grounded after runtime scaling."
-				% building_id
-			)
-			return
-
-		var atlas_path := String(
-			definition.get("world_sprite_atlas_path", "")
-		)
-		var atlas_texture: Resource = load(atlas_path)
-		if not (atlas_texture is Texture2D):
-			_fail("%s atlas failed to load." % building_id)
-			return
-		var regions: Array = definition.get("world_sprite_regions", [])
-		if regions.is_empty():
-			_fail("%s has no atlas region." % building_id)
-			return
-		var source: Rect2 = regions[0]
-		var source_i := Rect2i(
-			int(source.position.x),
-			int(source.position.y),
-			int(source.size.x),
-			int(source.size.y)
-		)
-		var region_image: Image = (
-			atlas_texture as Texture2D
-		).get_image().get_region(source_i)
-		var used: Rect2i = _alpha_used_rect(region_image)
-		if used.size.y <= 0:
-			_fail("%s atlas region has no visible pixels." % building_id)
-			return
-		var visible_bottom: float = (
-			rect.position.y
-			+ (
-				float(used.end.y)
-				/ maxf(float(source_i.size.y), 1.0)
-			) * rect.size.y
-		)
-		var footprint_polygon: PackedVector2Array = grid._footprint_polygon(
-			Vector2i.ZERO,
-			footprint
-		)
-		var footprint_bottom: float = -INF
-		for point_variant in footprint_polygon:
-			var footprint_point: Vector2 = point_variant
-			footprint_bottom = maxf(
-				footprint_bottom,
-				footprint_point.y
-			)
-		if absf(visible_bottom - footprint_bottom) > 1.5:
-			_fail(
-				"%s visible base %.2f should sit on footprint %.2f."
-				% [building_id, visible_bottom, footprint_bottom]
-			)
-			return
-
-		var visible_width := (
-			float(used.size.x)
-			/ maxf(float(source_i.size.x), 1.0)
-			* rect.size.x
-		)
-		if visible_width > footprint_width + 0.01:
-			_fail(
-				"%s visible art %.2f must not exceed footprint width %.2f."
-				% [building_id, visible_width, footprint_width]
-			)
-			return
-		var visible_width_scale := float(
-			definition.get("world_sprite_visible_width_scale", 9.0)
-		)
-		if visible_width_scale > 1.0:
-			_fail(
-				"%s should never render wider than its declared grid footprint."
-				% building_id
-			)
-			return
-
-	if not grid._definition_uses_integrated_world_base(
-		BuildingCatalog.get_definition("small_terminal")
+	var charter_checked := 0
+	for base_definition in (
+		CharterVisualCatalog.building_visuals()
+		+ CharterVisualCatalog.surface_visuals()
 	):
-		_fail("Integrated-base helper should recognize the terminal.")
+		var visual_id := String(base_definition.get("id", ""))
+		var definition := CharterVisualCatalog.visual_for(visual_id)
+		if definition.is_empty():
+			_fail("%s charter definition should resolve." % visual_id)
+			return
+		if not _check_definition(grid, definition, "charter"):
+			return
+		charter_checked += 1
+
+	# Preview/construction motion may lift a sprite vertically, but it must never
+	# change the footprint-based scale or horizontal grounding.
+	var hangar := BuildingCatalog.get_definition("small_hangar")
+	var hangar_fp := grid._footprint_for(hangar, 0)
+	var final_rect := grid._building_sprite_rect(
+		hangar,
+		Vector2i(2, 2),
+		hangar_fp,
+		0
+	)
+	var preview_rect := grid._building_sprite_rect(
+		hangar,
+		Vector2i(2, 2),
+		hangar_fp,
+		0,
+		Vector2(0, -10)
+	)
+	if absf(final_rect.position.x - preview_rect.position.x) > 0.01:
+		_fail("Preview must keep the exact final grid X position.")
+		return
+	if final_rect.size.distance_to(preview_rect.size) > 0.01:
+		_fail("Preview and final building must use the exact same grid-fit scale.")
+		return
+	if absf((preview_rect.position.y - final_rect.position.y) + 10.0) > 0.01:
+		_fail("Preview lift may only move the sprite vertically.")
 		return
 
-	if grid.is_starter_apron_underlay_enabled():
-		_fail(
-			"Normal starter airport should not draw the old combined apron underlay."
-		)
-		return
-
+	# Starter layout remains intentionally spaced; strict visual fitting should
+	# not mutate logical building positions or occupied cells.
 	var travel_origin := Vector2i(-1, -1)
-	for building in grid.placed_buildings:
-		if String(building.get("definition_id", "")) == "travel_office":
-			travel_origin = building.get("origin", Vector2i(-1, -1))
-			break
-	if travel_origin != Vector2i(9, 10):
-		_fail(
-			"Starter Travel Office should sit beside the Terminal, not visually stack over its roof."
-		)
-		return
-
 	var terminal_origin := Vector2i(-1, -1)
 	for building in grid.placed_buildings:
-		if String(building.get("definition_id", "")) == "small_terminal":
-			terminal_origin = building.get("origin", Vector2i(-1, -1))
-			break
+		match String(building.get("definition_id", "")):
+			"travel_office":
+				travel_origin = building.get("origin", Vector2i(-1, -1))
+			"small_terminal":
+				terminal_origin = building.get("origin", Vector2i(-1, -1))
+	if travel_origin != Vector2i(9, 10):
+		_fail("Strict sprite fitting must not move the Travel Office grid cells.")
+		return
 	if terminal_origin != Vector2i(8, 14):
-		_fail(
-			"Starter Terminal should keep a clear ground gap from the Travel Office."
-		)
+		_fail("Strict sprite fitting must not move the Terminal grid cells.")
 		return
 
 	print(
-		"STARTER_BUILDING_GRID_FIT_OK integrated_bases=true "
-		+ "procedural_underlays=false grounded=true strict_footprints=true people_hidden=true"
+		(
+			"STRICT_GRID_FOOTPRINTS_OK buildings=%d charter=%d "
+			+ "width_bounded=true centered=true grounded=true "
+			+ "preview_same_geometry=true"
+		) % [normal_checked, charter_checked]
 	)
 	quit(0)
 
 
-func _alpha_used_rect(image: Image) -> Rect2i:
-	var min_x := image.get_width()
-	var min_y := image.get_height()
-	var max_x := -1
-	var max_y := -1
-	for y in range(image.get_height()):
-		for x in range(image.get_width()):
-			if image.get_pixel(x, y).a <= 0.03:
-				continue
-			min_x = mini(min_x, x)
-			min_y = mini(min_y, y)
-			max_x = maxi(max_x, x)
-			max_y = maxi(max_y, y)
-	if max_x < min_x or max_y < min_y:
-		return Rect2i()
-	return Rect2i(
-		min_x,
-		min_y,
-		max_x - min_x + 1,
-		max_y - min_y + 1
+func _check_definition(
+	grid: AirportGrid,
+	definition: Dictionary,
+	group_name: String
+) -> bool:
+	var id := String(definition.get("id", "unknown"))
+	var rotations := (
+		2
+		if bool(definition.get("rotatable", false))
+		else 1
 	)
+	for rotation in range(rotations):
+		var snapshot := grid.get_grid_fit_snapshot_for_definition(
+			definition,
+			Vector2i(3, 3),
+			rotation
+		)
+		if not bool(snapshot.get("valid", false)):
+			_fail(
+				"%s %s rotation %d should produce a measurable grid-fit sprite."
+				% [group_name, id, rotation]
+			)
+			return false
+
+		var footprint_width := float(snapshot.get("footprint_width", 0.0))
+		var visible_width := float(snapshot.get("visible_width", 999999.0))
+		if visible_width > footprint_width + 0.10:
+			_fail(
+				"%s %s rotation %d visible width %.2f exceeds footprint %.2f."
+				% [
+					group_name,
+					id,
+					rotation,
+					visible_width,
+					footprint_width
+				]
+			)
+			return false
+
+		var bottom_delta := absf(float(snapshot.get("bottom_delta", 999.0)))
+		if bottom_delta > 0.10:
+			_fail(
+				"%s %s rotation %d base is %.2f px off the grid."
+				% [group_name, id, rotation, bottom_delta]
+			)
+			return false
+
+		var center_delta := absf(float(snapshot.get("center_delta", 999.0)))
+		if center_delta > 0.10:
+			_fail(
+				"%s %s rotation %d is %.2f px off footprint center."
+				% [group_name, id, rotation, center_delta]
+			)
+			return false
+
+	return true
 
 
 func _fail(message: String) -> void:

@@ -2,6 +2,8 @@ class_name BuildingSpritePlacement
 extends RefCounted
 
 const ALPHA_THRESHOLD := 0.03
+const MIN_VISIBLE_WIDTH_SCALE := 0.25
+const MAX_VISIBLE_WIDTH_SCALE := 1.0
 
 
 static func visible_bounds(
@@ -91,9 +93,17 @@ static func grounded_rect(
 		front_y = maxf(front_y, point.y)
 
 	var footprint_width := maxf(max_x - min_x, 1.0)
+	# A placeable object's visible art may be narrower than its logical
+	# footprint, but never wider. This makes the grid authoritative even when
+	# atlas files contain oversized bases, shadows or hand-tuned legacy sizes.
+	var strict_width_scale := clampf(
+		visible_width_scale,
+		MIN_VISIBLE_WIDTH_SCALE,
+		MAX_VISIBLE_WIDTH_SCALE
+	)
 	var target_visible_width := (
 		footprint_width
-		* maxf(visible_width_scale, 0.25)
+		* strict_width_scale
 	)
 	var pixel_scale := (
 		target_visible_width

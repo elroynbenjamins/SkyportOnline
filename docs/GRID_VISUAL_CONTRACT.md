@@ -138,7 +138,7 @@ The small-aircraft **Short Runway** is the first placeable surface promoted from
 - authored image size: **224×112 px** in either orientation;
 - runtime scale: **1:1**;
 - no horizontal overhang;
-- bottom-center asset anchor maps to the projected front footprint corner;
+- the contract's exact local anchor maps to the projected front footprint corner;
 - two production orientations are supplied under `assets/production/airfield_v3/`;
 - the visible runway shoulder, asphalt, markings and edge lights all stay inside the exact projected footprint.
 
@@ -153,14 +153,36 @@ The starter **Taxiway** uses the same grid-native contract as the Small Runway.
 - authored image size: **64×32 px**;
 - runtime scale: **1:1**;
 - exact projected diamond: `(32,0) → (64,16) → (32,32) → (0,16)`;
-- base art contains the concept-style curb/asphalt material;
-- connection openings are drawn dynamically from the actual neighboring gameplay cells.
+- base art matches the Small Runway's dark asphalt, beige curb, blue inset lights and warm yellow taxi centerline;
+- the production atlas is `taxiway_autotile_atlas.svg`, sized **256×128 px**;
+- it contains **16 exact 64×32 variants**, one for every N/E/S/W connection combination;
+- the game chooses the atlas region automatically from the actual neighboring gameplay cells.
 
-Taxiway visual connectivity uses the same adjacency rule as routing. A taxiway automatically opens and extends toward neighboring:
+### Taxiway autotile bitmask
+
+The four logical directions use a stable bitmask:
+
+- North / `(0,-1)` = **1**
+- East / `(1,0)` = **2**
+- South / `(0,1)` = **4**
+- West / `(-1,0)` = **8**
+
+This produces all 16 variants:
+
+- `0` isolated
+- `1/2/4/8` four dead ends
+- `5/10` two straights
+- `3/6/9/12` four corners
+- `7/11/13/14` four T-junctions
+- `15` four-way cross
+
+Players never select these pieces manually. They place one **Taxiway** item and the renderer picks the correct version continuously.
+
+Taxiway visual connectivity uses the same adjacency rule as routing. A taxiway automatically opens toward neighboring:
 
 - taxiways;
 - runways;
 - aircraft stands;
 - hangars.
 
-When a taxiway touches a runway cell, the connection overlay extends slightly past the shared grid edge and covers the runway curb at that seam. This makes the asphalt and yellow taxi centerline visually enter the runway without requiring a separate connector object. The overlay remains inside the union of the two connected gameplay footprints.
+Taxiway-to-taxiway openings are baked into the selected atlas variant. When a taxiway touches a runway, stand or hangar, a late seam pass opens that larger asset's curb/foundation too. For the **5×2 Small Runway**, the asphalt throat crosses the shared grid edge and covers the beige curb only at the connected side cell, while a small hold-short accent remains visible. This makes the network read as one continuous paved system without requiring a separate connector item.

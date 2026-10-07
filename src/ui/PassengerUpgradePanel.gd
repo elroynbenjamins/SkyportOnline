@@ -36,7 +36,11 @@ func open_building(
 		String(definition.get("name", "Passenger Building")).to_upper(),
 		level
 	]
-	building_image.texture = _building_texture(definition)
+	var preview_texture: Texture2D = _building_texture(
+		definition
+	)
+	building_image.texture = preview_texture
+	building_image.visible = preview_texture != null
 
 	current_stats_label.text = (
 		"CURRENT\n"

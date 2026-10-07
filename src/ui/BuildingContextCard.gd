@@ -254,7 +254,11 @@ func _refresh() -> void:
 	)
 	details_button.visible = show_details
 
-	building_image.texture = _building_texture(definition)
+	var preview_texture: Texture2D = _building_texture(
+		definition
+	)
+	building_image.texture = preview_texture
+	building_image.visible = preview_texture != null
 
 
 func _make_stat_card(

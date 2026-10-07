@@ -146,9 +146,10 @@ func _run() -> void:
 		return
 
 
+	var atc_origin := Vector2i(2, 2)
 	var atc := grid._place_building_internal(
 		"atc_tower",
-		Vector2i(2, 2),
+		atc_origin,
 		0
 	)
 	grid._rebuild_occupied_cells()
@@ -159,54 +160,72 @@ func _run() -> void:
 		atc_definition,
 		0
 	)
-	var atc_center := grid._footprint_center_world(
-		Vector2i(2, 2),
-		atc_footprint
+
+	# Grid-first interaction: the exact logical footprint is the selectable
+	# surface. No invisible sprite silhouette may extend the hit target.
+	var footprint_point := grid.tile_to_world(
+		Vector2(atc_origin.x, atc_origin.y)
 	)
-	var tower_cab_point := atc_center + Vector2(0, -70)
-	var cab_tile := grid.world_to_tile(tower_cab_point)
-	if grid.occupied_cells.has(
-		grid._cell_key(cab_tile)
+	var footprint_tile := grid.world_to_tile(
+		footprint_point
+	)
+	if not grid.occupied_cells.has(
+		grid._cell_key(footprint_tile)
 	):
 		_fail(
-			"ATC visual-hit test point must sit above its ground footprint."
+			"ATC grid-footprint point should resolve to an occupied cell."
 		)
 		return
 
-	var visual_hit := grid._building_at_visual_position(
-		tower_cab_point
-	)
-	if int(visual_hit.get("uid", -1)) != int(
-		atc.get("uid", -2)
-	):
-		_fail(
-			"Tapping the visible upper ATC artwork should select the tower."
-		)
-		return
-
-	var selected_visual_uids: Array[int] = []
+	var selected_grid_uids: Array[int] = []
 	grid.building_selected_world.connect(
 		func(selected: Dictionary) -> void:
-			selected_visual_uids.append(
+			selected_grid_uids.append(
 				int(selected.get("uid", -1))
 			)
 	)
-	grid.select_world_position(tower_cab_point)
+	grid.select_world_position(footprint_point)
 	if (
-		selected_visual_uids.is_empty()
-		or selected_visual_uids[-1] != int(
+		selected_grid_uids.is_empty()
+		or selected_grid_uids[-1] != int(
 			atc.get("uid", -2)
 		)
 	):
 		_fail(
-			"World selection should use visible sprite art before ground-tile fallback."
+			"World selection should resolve from the ATC grid footprint."
+		)
+		return
+
+	var atc_center := grid._footprint_center_world(
+		atc_origin,
+		atc_footprint
+	)
+	var legacy_sprite_only_point := (
+		atc_center + Vector2(0, -70)
+	)
+	var legacy_tile := grid.world_to_tile(
+		legacy_sprite_only_point
+	)
+	if grid.occupied_cells.has(
+		grid._cell_key(legacy_tile)
+	):
+		_fail(
+			"Legacy sprite-only test point must remain outside the ATC footprint."
+		)
+		return
+	var legacy_visual_hit := grid._building_at_visual_position(
+		legacy_sprite_only_point
+	)
+	if not legacy_visual_hit.is_empty():
+		_fail(
+			"Grid-first reset must not expose legacy sprite hit regions."
 		)
 		return
 
 	print(
 		"Building move mode passed: eligibility, self-overlap, collision, "
 		+ "cancel, confirm, upgrade preservation, layout restore and "
-		+ "high-detail visual hit selection."
+		+ "exact grid-footprint selection."
 	)
 	quit(0)
 

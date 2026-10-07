@@ -577,6 +577,7 @@ func _draw_grid_first_cell(
 
 
 
+
 func _draw_grid_first_buildings() -> void:
 	var buildings_to_draw: Array[Dictionary] = placed_buildings.duplicate(true)
 	buildings_to_draw.sort_custom(
@@ -609,6 +610,18 @@ func _draw_grid_first_buildings() -> void:
 		)
 		var id := String(definition.get("id", ""))
 
+		if (
+			id == "taxiway"
+			and _definition_has_grid_native_autotile(definition)
+		):
+			_draw_grid_native_taxiway_variant(
+				definition,
+				origin,
+				Color.WHITE
+			)
+			taxiway_origins.append(origin)
+			continue
+
 		# Grid-native surface art is authored directly against the exact
 		# projected footprint and is safe during the reset.
 		if _definition_has_grid_native_surface(definition):
@@ -619,9 +632,7 @@ func _draw_grid_first_buildings() -> void:
 				rotation,
 				Color.WHITE
 			)
-			if id == "taxiway":
-				taxiway_origins.append(origin)
-			elif id == "service_road":
+			if id == "service_road":
 				service_road_origins.append(origin)
 			continue
 
@@ -656,9 +667,9 @@ func _draw_grid_first_buildings() -> void:
 		elif id == "service_road":
 			service_road_origins.append(origin)
 
-	# Draw connection seams after all base pieces. This guarantees that a
-	# taxiway automatically opens the curb of a neighboring runway rather than
-	# being covered by whichever asset happened to draw later.
+	# Base taxiway-to-taxiway joins are baked into the selected autotile.
+	# These late seams are only for entering larger assets such as a runway,
+	# stand or hangar, so their curb/foundation is visibly opened too.
 	for taxiway_origin in taxiway_origins:
 		_draw_grid_native_taxiway_connections(
 			taxiway_origin
@@ -681,6 +692,116 @@ func _definition_has_grid_native_surface(
 		Vector2i.ZERO
 	)
 	return paths.size() > 0 and size.x > 0 and size.y > 0
+
+
+func _definition_has_grid_native_autotile(
+	definition: Dictionary
+) -> bool:
+	return (
+		not String(
+			definition.get(
+				"grid_native_autotile_atlas_path",
+				""
+			)
+		).is_empty()
+		and int(
+			definition.get(
+				"grid_native_autotile_variant_count",
+				0
+			)
+		) >= 16
+	)
+
+
+func _taxiway_connection_mask(
+	origin: Vector2i
+) -> int:
+	var mask := 0
+	for item in [
+		[Vector2i(0, -1), 1],
+		[Vector2i(1, 0), 2],
+		[Vector2i(0, 1), 4],
+		[Vector2i(-1, 0), 8]
+	]:
+		var direction: Vector2i = item[0]
+		var bit: int = int(item[1])
+		if not _airside_visual_connection_kind_at(
+			origin + direction
+		).is_empty():
+			mask |= bit
+	return mask
+
+
+func _taxiway_variant_name(mask: int) -> String:
+	match clampi(mask, 0, 15):
+		0: return "isolated"
+		1: return "dead_n"
+		2: return "dead_e"
+		3: return "corner_ne"
+		4: return "dead_s"
+		5: return "straight_ns"
+		6: return "corner_es"
+		7: return "t_nes"
+		8: return "dead_w"
+		9: return "corner_wn"
+		10: return "straight_ew"
+		11: return "t_new"
+		12: return "corner_sw"
+		13: return "t_nsw"
+		14: return "t_esw"
+		_: return "cross"
+
+
+func _taxiway_variant_region(mask: int) -> Rect2:
+	var safe_mask := clampi(mask, 0, 15)
+	var column := safe_mask % 4
+	var row := int(safe_mask / 4)
+	return Rect2(
+		column * 64,
+		row * 32,
+		64,
+		32
+	)
+
+
+func _draw_grid_native_taxiway_variant(
+	definition: Dictionary,
+	origin: Vector2i,
+	modulate: Color = Color.WHITE
+) -> void:
+	var atlas_path := String(
+		definition.get(
+			"grid_native_autotile_atlas_path",
+			""
+		)
+	)
+	if atlas_path.is_empty():
+		return
+
+	var texture := _get_building_texture(
+		atlas_path
+	)
+	if texture == null:
+		return
+
+	var asset_size := Vector2i(64, 32)
+	var rect := PlacementGridV2.asset_draw_rect(
+		origin,
+		Vector2i.ONE,
+		asset_size
+	)
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
+
+	var mask := _taxiway_connection_mask(
+		origin
+	)
+	draw_texture_rect_region(
+		texture,
+		rect,
+		_taxiway_variant_region(mask),
+		modulate
+	)
 
 
 func _grid_native_surface_path_for_rotation(
@@ -799,6 +920,7 @@ func _airside_visual_connection_kind_at(
 	return ""
 
 
+
 func _draw_grid_native_taxiway_connections(
 	origin: Vector2i,
 	alpha: float = 1.0
@@ -806,15 +928,13 @@ func _draw_grid_native_taxiway_connections(
 	var center := tile_to_world(
 		Vector2(origin.x, origin.y)
 	)
-	var directions: Array[Vector2i] = [
+
+	for direction: Vector2i in [
 		Vector2i(1, 0),
 		Vector2i(-1, 0),
 		Vector2i(0, 1),
 		Vector2i(0, -1)
-	]
-	var connected_count := 0
-
-	for direction: Vector2i in directions:
+	]:
 		var neighbor := origin + direction
 		var connection_kind := _airside_visual_connection_kind_at(
 			neighbor
@@ -822,71 +942,62 @@ func _draw_grid_native_taxiway_connections(
 		if connection_kind.is_empty():
 			continue
 
-		connected_count += 1
+		# Taxiway-to-taxiway openings already exist in the selected 16-state
+		# atlas variant. Only larger neighboring assets need a seam punched
+		# through their own curb/foundation.
+		if connection_kind == "taxiway":
+			continue
+
 		var neighbor_center := tile_to_world(
 			Vector2(neighbor.x, neighbor.y)
 		)
-		# 0.50 is the shared grid edge. Extend slightly beyond it so the
-		# connector actually punches through the beige runway/stand curb.
-		var end := center.lerp(
+		var seam_start := center.lerp(
 			neighbor_center,
-			0.61
+			0.39
+		)
+		var seam_end := center.lerp(
+			neighbor_center,
+			0.62
 		)
 
-		var outer := Color("b7a78d", 0.96 * alpha)
-		var inner := Color("3c464c", 1.0 * alpha)
-		var centerline := Color("f1c84c", 0.98 * alpha)
-
+		# Dark undercut + asphalt fully covers the closed curb at the shared
+		# edge. This is the runway-side opening requested by the art system.
 		draw_line(
-			center,
-			end,
-			outer,
-			14.0
+			seam_start,
+			seam_end,
+			Color("272f34", 0.92 * alpha),
+			12.0
 		)
 		draw_line(
-			center,
-			end,
-			inner,
-			10.0
+			seam_start,
+			seam_end,
+			Color("3e484e", 1.0 * alpha),
+			9.0
 		)
 		draw_line(
-			center,
-			end,
-			centerline,
-			1.8
+			seam_start,
+			seam_end,
+			Color("efc84e", 0.98 * alpha),
+			1.7
 		)
 
-		# Runway joins get a subtle darker throat so the asphalt reads as one
-		# continuous surface instead of a yellow line touching a curb.
 		if connection_kind == "runway":
-			var throat_start := center.lerp(
+			# A tiny hold-short accent keeps the seam readable as runway entry
+			# while still looking like one continuous paved network.
+			var hold_center := center.lerp(
 				neighbor_center,
-				0.43
+				0.42
 			)
+			var tangent := Vector2(
+				-(neighbor_center - center).y,
+				(neighbor_center - center).x
+			).normalized()
 			draw_line(
-				throat_start,
-				end,
-				Color("343e44", 1.0 * alpha),
-				8.0
+				hold_center - tangent * 4.5,
+				hold_center + tangent * 4.5,
+				Color("f4efe0", 0.92 * alpha),
+				1.4
 			)
-			draw_line(
-				throat_start,
-				end,
-				centerline,
-				1.8
-			)
-
-	if connected_count > 0:
-		draw_circle(
-			center,
-			5.2,
-			Color("3c464c", 1.0 * alpha)
-		)
-		draw_circle(
-			center,
-			1.25,
-			Color("f5d35e", 1.0 * alpha)
-		)
 
 
 func get_taxiway_visual_connection_snapshot(
@@ -907,13 +1018,19 @@ func get_taxiway_visual_connection_snapshot(
 			continue
 		count += 1
 		kinds["%d,%d" % [direction.x, direction.y]] = kind
+
+	var mask := _taxiway_connection_mask(
+		origin
+	)
 	return {
 		"origin": origin,
 		"connection_count": count,
 		"kinds": kinds,
-		"runway_connected": kinds.values().has("runway")
+		"runway_connected": kinds.values().has("runway"),
+		"mask": mask,
+		"variant_name": _taxiway_variant_name(mask),
+		"atlas_region": _taxiway_variant_region(mask)
 	}
-
 
 func _draw_grid_first_network_links(
 	origin: Vector2i,
@@ -977,7 +1094,25 @@ func _draw_grid_first_preview() -> void:
 		preview_status.get("valid", false)
 	)
 
-	if _definition_has_grid_native_surface(definition):
+	if (
+		preview_building_id == "taxiway"
+		and _definition_has_grid_native_autotile(definition)
+	):
+		var preview_modulate := (
+			Color(0.82, 1.0, 0.86, 0.88)
+			if valid
+			else Color(1.0, 0.68, 0.68, 0.84)
+		)
+		_draw_grid_native_taxiway_variant(
+			definition,
+			preview_origin,
+			preview_modulate
+		)
+		_draw_grid_native_taxiway_connections(
+			preview_origin,
+			0.88 if valid else 0.58
+		)
+	elif _definition_has_grid_native_surface(definition):
 		var preview_modulate := (
 			Color(0.82, 1.0, 0.86, 0.88)
 			if valid
@@ -990,11 +1125,6 @@ func _draw_grid_first_preview() -> void:
 			preview_rotation,
 			preview_modulate
 		)
-		if preview_building_id == "taxiway":
-			_draw_grid_native_taxiway_connections(
-				preview_origin,
-				0.88 if valid else 0.58
-			)
 	else:
 		var fill := (
 			GRID_RESET_PREVIEW_VALID

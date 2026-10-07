@@ -29,6 +29,7 @@ signal done_airport_edit_requested
 signal navigation_requested(tab: String)
 signal handling_attention_requested
 signal fuel_order_requested
+signal tutorial_action_requested(action: String, target: String)
 
 var interface_root: Control
 var title_label: Label
@@ -56,6 +57,10 @@ var airside_status_chip: Button
 var operation_status_chip: Button
 var atc_status_chip: Button
 var handling_attention_button: Button
+var tutorial_objective_panel: PanelContainer
+var tutorial_objective_button: Button
+var tutorial_action := ""
+var tutorial_target := ""
 var status_detail_panel: PanelContainer
 var status_detail_title: Label
 var status_detail_body: Label
@@ -301,23 +306,44 @@ func _build_interface() -> void:
 	)
 	top_row.add_child(settings_button)
 
-	var objective_panel := PanelContainer.new()
-	objective_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	objective_panel.offset_left = -300
-	objective_panel.offset_top = 82
-	objective_panel.offset_right = -10
-	objective_panel.offset_bottom = 117
-	root.add_child(objective_panel)
-	GameUIStyle.apply_panel(objective_panel, "hud_task")
-	objective_panel.visible = false
+	tutorial_objective_panel = PanelContainer.new()
+	tutorial_objective_panel.set_anchors_preset(
+		Control.PRESET_TOP_RIGHT
+	)
+	tutorial_objective_panel.offset_left = -360
+	tutorial_objective_panel.offset_top = 82
+	tutorial_objective_panel.offset_right = -10
+	tutorial_objective_panel.offset_bottom = 117
+	root.add_child(tutorial_objective_panel)
+	GameUIStyle.apply_panel(
+		tutorial_objective_panel,
+		"hud_task"
+	)
+	tutorial_objective_panel.visible = false
 
-	var objective := Label.new()
-	objective.text = "BUILD YOUR AIRPORT • EXPAND"
-	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	objective.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	objective.add_theme_font_size_override("font_size", 11)
-	objective.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
-	objective_panel.add_child(objective)
+	tutorial_objective_button = Button.new()
+	tutorial_objective_button.text = "AIRPORT BASICS"
+	tutorial_objective_button.alignment = (
+		HORIZONTAL_ALIGNMENT_CENTER
+	)
+	tutorial_objective_button.add_theme_font_size_override(
+		"font_size",
+		11
+	)
+	tutorial_objective_button.tooltip_text = (
+		"Follow the starter airport tutorial."
+	)
+	GameUIStyle.apply_button(
+		tutorial_objective_button,
+		"nav",
+		true
+	)
+	tutorial_objective_button.pressed.connect(
+		_on_tutorial_objective_pressed
+	)
+	tutorial_objective_panel.add_child(
+		tutorial_objective_button
+	)
 
 	var status_strip := HBoxContainer.new()
 	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -2098,6 +2124,71 @@ func show_airport_expanded(
 func _hide_expansion_banner() -> void:
 	if expansion_banner != null:
 		expansion_banner.visible = false
+
+
+func set_starter_tutorial(snapshot: Dictionary) -> void:
+	if (
+		tutorial_objective_panel == null
+		or tutorial_objective_button == null
+	):
+		return
+
+	var active := bool(snapshot.get("active", false))
+	var complete := bool(snapshot.get("complete", false))
+	tutorial_objective_panel.visible = active or complete
+
+	if complete:
+		tutorial_action = ""
+		tutorial_target = ""
+		tutorial_objective_button.text = (
+			"AIRPORT BASICS • COMPLETE"
+		)
+		tutorial_objective_button.tooltip_text = String(
+			snapshot.get(
+				"guidance",
+				"Starter airport tutorial complete."
+			)
+		)
+		tutorial_objective_button.disabled = true
+		return
+
+	tutorial_action = String(
+		snapshot.get("action", "")
+	)
+	tutorial_target = String(
+		snapshot.get("target", "")
+	)
+	var step := int(snapshot.get("step", 1))
+	var total := maxi(int(snapshot.get("total", 1)), 1)
+	var title := String(snapshot.get("title", "Airport basics"))
+	var reward := maxi(int(snapshot.get("reward", 0)), 0)
+	tutorial_objective_button.text = (
+		"%d/%d • %s%s" % [
+			step,
+			total,
+			title.to_upper(),
+			(
+				" • +%s" % _format_number(reward)
+				if reward > 0
+				else ""
+			)
+		]
+	)
+	tutorial_objective_button.tooltip_text = String(
+		snapshot.get("guidance", "")
+	)
+	tutorial_objective_button.disabled = (
+		tutorial_action.is_empty()
+	)
+
+
+func _on_tutorial_objective_pressed() -> void:
+	if tutorial_action.is_empty():
+		return
+	tutorial_action_requested.emit(
+		tutorial_action,
+		tutorial_target
+	)
 
 
 func set_operation_status(

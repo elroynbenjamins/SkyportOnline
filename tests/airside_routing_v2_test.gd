@@ -48,6 +48,20 @@ func _run() -> void:
 	):
 		_fail("Taxi straight and corner should use distinct atlas frames.")
 		return
+	var runway_join := AirsideGroundArt.taxi_texture(
+		AirsideGroundArt.EAST | AirsideGroundArt.WEST,
+		Vector2i(1, 0)
+	)
+	if runway_join == null:
+		_fail("Runway-connected taxiway art should remain available.")
+		return
+	if (
+		(runway_join as AtlasTexture).region
+		!= (straight as AtlasTexture).region
+	):
+		_fail("Runway entrances should preserve the connected taxiway shape.")
+		return
+
 	if AirsideGroundArt.hold_short_texture(Vector2i(1, 0)) == null:
 		_fail("Runway hold-short art should load.")
 		return

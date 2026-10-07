@@ -14,6 +14,31 @@ func _run() -> void:
 		_fail("World sprites must never be allowed to exceed their grid footprint.")
 		return
 
+	if not grid.has_method("_draw_canonical_building_foundation"):
+		_fail("All placeable buildings should use a canonical grid foundation.")
+		return
+	var terminal_profile := grid.get_foundation_profile_for_definition(
+		BuildingCatalog.get_definition("small_terminal")
+	)
+	if (
+		not bool(terminal_profile.get("enabled", false))
+		or String(terminal_profile.get("style", "")) != "passenger"
+	):
+		_fail("Terminal should resolve to the passenger foundation profile.")
+		return
+	var fuel_profile := grid.get_foundation_profile_for_definition(
+		BuildingCatalog.get_definition("basic_fuel")
+	)
+	if String(fuel_profile.get("style", "")) != "fuel":
+		_fail("Fuel stations should resolve to the fuel foundation profile.")
+		return
+	var decor_profile := grid.get_foundation_profile_for_definition(
+		BuildingCatalog.get_definition("autumn_event_flag")
+	)
+	if bool(decor_profile.get("enabled", true)):
+		_fail("Decorations should not receive a hard airport foundation.")
+		return
+
 	var normal_checked := 0
 	for definition in BuildingCatalog.all():
 		if not grid._definition_has_world_sprite(definition):

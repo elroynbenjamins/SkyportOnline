@@ -81,8 +81,14 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S", "M", "L"]),
 			"description": "Connects runways and stands.",
 			"icon_path": "res://assets/production/airfield_v2/taxiway_icon_v2.svg",
-			"art_tier": "surface_v2",
-			"surface_art": "taxiway_v2",
+			"art_tier": "grid_native_v3",
+			"surface_art": "taxiway_1x1_v3",
+			"visual_contract": "square_grid_iso_v1",
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v3/taxiway_1x1.svg"
+			]),
+			"grid_native_surface_size": Vector2i(64, 32),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
 			"connection_family": "airside",
 			"connects_to": PackedStringArray(["taxiway", "runway", "stand", "hangar"])
 		},

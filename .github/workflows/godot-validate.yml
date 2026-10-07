@@ -81,6 +81,8 @@ jobs:
             tests/aircraft_context_card_test.gd
             tests/building_context_card_test.gd
             tests/land_expansion_progression_test.gd
+            tests/airport_expansion_district_test.gd
+            tests/expansion_shop_mode_test.gd
             tests/placement_expansion_test.gd
             tests/airport_edit_hud_test.gd
             tests/building_move_mode_test.gd

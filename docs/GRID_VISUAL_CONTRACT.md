@@ -77,8 +77,8 @@ The independent scene backdrop is now an exception by design: it may use authore
 The reset view now intentionally resembles the Skyrama composition more closely:
 
 - angled 2:1 ground grid;
-- richer authored grass, field, road and tree framing around the airport;
-- a quieter central airport land shoulder so placement cells remain easy to read;
+- richer authored grass, distant hills, water and tree framing around the airport;
+- a quiet continuous grass center so placement cells remain easy to read;
 - fixed landscape framing;
 - buildable land extending toward the foreground;
 - no opaque reset rectangle covering the scene backdrop.
@@ -111,3 +111,19 @@ The tutorial forces the player through eight free construction grants in order: 
 Only the exact active tutorial target is free and exempt from its normal level requirement. Normal catalog prices remain unchanged. The first aircraft is spawned only after the construction sequence is complete; the tutorial then teaches taxi, service, destination selection, loading, pushback/send and takeoff.
 
 Tutorial completion is persisted so an interrupted tutorial resumes, while legacy airports with an existing layout are treated as already onboarded.
+
+
+## Expansion visibility
+
+Expansion parcels are gameplay data, not permanent scenery.
+
+- normal airport play shows only land the player already owns;
+- unowned parcel outlines, labels and future lock markers remain hidden;
+- the Build/Shop drawer contains **Expand Land**;
+- choosing Expand Land enters a temporary expansion-selection mode;
+- only currently connected, adjacent plots are revealed;
+- disconnected future plots remain hidden even in expansion mode;
+- selecting a highlighted plot opens its level/cost requirements;
+- after purchase or cancel, the expansion overlay disappears and the clean landscape returns.
+
+Do not reintroduce a permanent expansion-slot board around the airport.

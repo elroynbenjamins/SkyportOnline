@@ -69,14 +69,18 @@ This keeps future buildings, runway pieces and roads visually aligned with the s
 
 `AirportGrid.GRID_FIRST_VISUAL_RESET` is still active.
 
-The airport therefore uses primitive ground colors and footprint blocks while we validate geometry. No deleted legacy airport art has been reintroduced.
+The airport therefore uses primitive footprint blocks for **placeable gameplay content** while we validate geometry. Deleted legacy buildings and misaligned ground-piece art are still not allowed back into the placement layer.
+
+The independent scene backdrop is now an exception by design: it may use authored environment art because it does not own placement, collision, routing, or footprints. The production background is `environment_v3/airport_landscape_v3.svg`.
 
 The reset view now intentionally resembles the Skyrama composition more closely:
 
 - angled 2:1 ground grid;
-- greener grass field;
+- richer authored grass, field, road and tree framing around the airport;
+- a quieter central airport land shoulder so placement cells remain easy to read;
 - fixed landscape framing;
-- buildable land extending toward the foreground.
+- buildable land extending toward the foreground;
+- no opaque reset rectangle covering the scene backdrop.
 
 ## Asset contract
 

@@ -89,7 +89,7 @@ func _run() -> void:
 	# Cached definitions remain isolated from caller mutations.
 	var definition_copy := BuildingCatalog.get_definition("small_stand")
 	definition_copy["cost"] = -1
-	check(int(BuildingCatalog.get_definition("small_stand")["cost"]) == 4500, "Catalog cache must return independent definitions.")
+	check(int(BuildingCatalog.get_definition("small_stand")["cost"]) == 3000, "Catalog cache must return independent definitions.")
 	var styled_button := Button.new()
 	GameUIStyle.apply_button(styled_button, "primary", true)
 	var first_style := styled_button.get_theme_stylebox("normal")

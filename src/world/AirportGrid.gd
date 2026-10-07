@@ -2133,6 +2133,10 @@ func _draw_buildings() -> void:
 				_draw_service_road_detail(origin)
 			continue
 
+		if id == "apron_tile":
+			_draw_apron_tile(origin)
+			continue
+
 		var dimmed := _placement_focus_active()
 		var construction_visual := _construction_visual_state(
 			int(building.get("uid", -1))
@@ -5087,6 +5091,8 @@ func get_airfield_detail_snapshot() -> Dictionary:
 	var service_road_tiles := 0
 	var service_road_open_edges := 0
 	var service_barrier_candidates := 0
+	var apron_tiles := 0
+	var apron_open_edges := 0
 
 	var directions: Array[Vector2i] = [
 		Vector2i(1, 0),
@@ -5132,6 +5138,15 @@ func get_airfield_detail_snapshot() -> Dictionary:
 				and (origin.x + origin.y) % 2 == 0
 			):
 				service_barrier_candidates += 1
+			continue
+
+		if id == "apron_tile":
+			apron_tiles += 1
+			for direction in directions:
+				if not _apron_visually_connects_to(
+					origin + direction
+				):
+					apron_open_edges += 1
 
 	return {
 		"runways": runway_count,
@@ -5140,8 +5155,82 @@ func get_airfield_detail_snapshot() -> Dictionary:
 		"service_road_tiles": service_road_tiles,
 		"service_road_open_edges": service_road_open_edges,
 		"service_barrier_candidates": service_barrier_candidates,
+		"apron_tiles": apron_tiles,
+		"apron_open_edges": apron_open_edges,
 		"landside_scenery": get_landside_scenery_layout().size()
 	}
+
+
+func _draw_apron_tile(origin: Vector2i) -> void:
+	var center := tile_to_world(Vector2(origin.x, origin.y))
+	var points := _tile_points(center)
+	draw_colored_polygon(points, APRON_CONCRETE_DARK)
+
+	var inner_points := PackedVector2Array()
+	for point_variant in points:
+		var point: Vector2 = point_variant
+		inner_points.append(
+			center + (point - center) * 0.94
+		)
+	draw_colored_polygon(inner_points, APRON_CONCRETE)
+
+	var directions := [
+		[Vector2i(0, -1), points[0], points[1]],
+		[Vector2i(1, 0), points[1], points[2]],
+		[Vector2i(0, 1), points[2], points[3]],
+		[Vector2i(-1, 0), points[3], points[0]]
+	]
+	for item_variant in directions:
+		var item: Array = item_variant
+		var direction: Vector2i = item[0]
+		if _apron_visually_connects_to(origin + direction):
+			continue
+		var a: Vector2 = item[1]
+		var b: Vector2 = item[2]
+		draw_line(
+			a.lerp(b, 0.06),
+			a.lerp(b, 0.94),
+			Color("767b7a", 0.32),
+			1.8
+		)
+
+	var seed := absi(origin.x * 37 + origin.y * 61)
+	if seed % 3 == 0:
+		draw_line(
+			center + Vector2(-15, 7),
+			center + Vector2(15, -7),
+			APRON_JOINT,
+			1.0
+		)
+	if seed % 5 == 0:
+		draw_circle(
+			center + Vector2(9, -4),
+			1.4,
+			Color("a9aaa4", 0.36)
+		)
+
+
+func _apron_visually_connects_to(cell: Vector2i) -> bool:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return false
+	var building := _building_by_uid(int(occupied_cells[key]))
+	if building.is_empty():
+		return false
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return false
+	var id := String(definition.get("id", ""))
+	var category := String(definition.get("category", ""))
+	return (
+		id == "apron_tile"
+		or id.contains("stand")
+		or category == "Passenger"
+		or category == "Services"
+	)
 
 
 func _draw_pavement_tile(
@@ -5310,7 +5399,20 @@ func _service_road_visually_connects_to(cell: Vector2i) -> bool:
 	var building := _building_by_uid(int(occupied_cells[key]))
 	if building.is_empty():
 		return false
-	return String(building.get("definition_id", "")) == "service_road"
+
+	var definition := BuildingCatalog.get_definition(
+		String(building.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return false
+	var id := String(definition.get("id", ""))
+	var category := String(definition.get("category", ""))
+	return (
+		id == "service_road"
+		or id.contains("stand")
+		or category == "Services"
+		or category == "Passenger"
+	)
 
 
 func _draw_taxiway_detail(origin: Vector2i) -> void:
@@ -5991,7 +6093,10 @@ func _draw_build_preview() -> void:
 				1.4
 			)
 
-	if String(definition.get("surface_art", "")) == "runway_v2":
+	var preview_surface_art := String(
+		definition.get("surface_art", "")
+	)
+	if preview_surface_art == "runway_v2":
 		_draw_runway_surface_v2(
 			definition,
 			preview_origin,
@@ -5999,6 +6104,14 @@ func _draw_build_preview() -> void:
 			preview_rotation,
 			0.72 if valid else 0.48
 		)
+	elif preview_surface_art == "taxiway_v2":
+		_draw_pavement_tile(preview_origin, "taxiway")
+		_draw_taxiway_detail(preview_origin)
+	elif preview_surface_art == "service_road_v2":
+		_draw_pavement_tile(preview_origin, "service_road")
+		_draw_service_road_detail(preview_origin)
+	elif preview_surface_art == "apron_v2":
+		_draw_apron_tile(preview_origin)
 
 	var footprint_outline := _footprint_polygon(
 		preview_origin,

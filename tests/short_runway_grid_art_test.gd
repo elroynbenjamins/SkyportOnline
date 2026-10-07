@@ -13,8 +13,8 @@ func _run() -> void:
 		_fail("Short Runway definition should exist.")
 		return
 
-	if definition.get("footprint", Vector2i.ZERO) != Vector2i(8, 2):
-		_fail("Short Runway must remain exactly 8x2 logical cells.")
+	if definition.get("footprint", Vector2i.ZERO) != Vector2i(5, 2):
+		_fail("Short Runway must remain exactly 5x2 logical cells.")
 		return
 	if String(
 		definition.get("art_tier", "")
@@ -39,8 +39,8 @@ func _run() -> void:
 		"grid_native_surface_size",
 		Vector2i.ZERO
 	)
-	if asset_size != Vector2i(320, 160):
-		_fail("8x2 Short Runway art must be authored at exactly 320x160 px.")
+	if asset_size != Vector2i(224, 112):
+		_fail("5x2 Short Runway art must be authored at exactly 224x112 px.")
 		return
 
 	for path in paths:
@@ -51,9 +51,9 @@ func _run() -> void:
 		if not (texture is Texture2D):
 			_fail("Short Runway art should import as Texture2D: %s" % path)
 			return
-		if texture.get_size() != Vector2(320, 160):
+		if texture.get_size() != Vector2(224, 112):
 			_fail(
-				"Short Runway texture must import at 320x160: %s"
+				"Short Runway texture must import at 224x112: %s"
 				% path
 			)
 			return
@@ -71,10 +71,10 @@ func _run() -> void:
 		0
 	)
 	if int(contract_0.get("authoring_width_px", 0)) != 320:
-		_fail("8x2 runway contract should require 320 px width.")
+		_fail("5x2 runway contract should require 224 px width.")
 		return
 	if int(contract_0.get("base_depth_px", 0)) != 160:
-		_fail("8x2 runway contract should require 160 px base depth.")
+		_fail("5x2 runway contract should require 112 px base depth.")
 		return
 	if contract_0.get("runtime_scale", Vector2.ZERO) != Vector2.ONE:
 		_fail("Short Runway should render at runtime scale 1:1.")
@@ -84,14 +84,14 @@ func _run() -> void:
 		definition,
 		1
 	)
-	if contract_90.get("footprint", Vector2i.ZERO) != Vector2i(2, 8):
-		_fail("Rotated Short Runway should occupy exactly 2x8 cells.")
+	if contract_90.get("footprint", Vector2i.ZERO) != Vector2i(2, 5):
+		_fail("Rotated Short Runway should occupy exactly 2x5 cells.")
 		return
 	if int(contract_90.get("authoring_width_px", 0)) != 320:
-		_fail("Rotated 2x8 runway should still use a 320 px art base.")
+		_fail("Rotated 2x5 runway should still use a 224 px art base.")
 		return
 	if int(contract_90.get("base_depth_px", 0)) != 160:
-		_fail("Rotated 2x8 runway should still use a 160 px art depth.")
+		_fail("Rotated 2x5 runway should still use a 112 px art depth.")
 		return
 
 	var rect_0 := grid.get_grid_visual_draw_rect_for_definition(
@@ -106,16 +106,16 @@ func _run() -> void:
 		1,
 		asset_size
 	)
-	if rect_0.size != Vector2(320, 160):
-		_fail("Placed Short Runway should draw at exactly 320x160 world px.")
+	if rect_0.size != Vector2(224, 112):
+		_fail("Placed Short Runway should draw at exactly 224x112 world px.")
 		return
-	if rect_90.size != Vector2(320, 160):
-		_fail("Rotated Short Runway should draw at exactly 320x160 world px.")
+	if rect_90.size != Vector2(224, 112):
+		_fail("Rotated Short Runway should draw at exactly 224x112 world px.")
 		return
 
 	print(
-		"SHORT_RUNWAY_GRID_ART_OK footprint=8x2 rotated=2x8 "
-		+ "asset=320x160 runtime_scale=1 orientations=2"
+		"SHORT_RUNWAY_GRID_ART_OK footprint=5x2 rotated=2x5 "
+		+ "asset=224x112 runtime_scale=1 orientations=2"
 	)
 	quit(0)
 

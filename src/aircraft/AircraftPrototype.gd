@@ -26,6 +26,7 @@ signal handling_action_requested(
 const MOTION_FX_DURATION := 0.72
 const TOUCHDOWN_FX_DURATION := 0.96
 const EXTERNAL_PUSHBACK_MIN_DISTANCE := 0.35
+const NO_HEADING_OVERRIDE := 999999.0
 
 
 var departure_route := PackedVector2Array()
@@ -928,6 +929,7 @@ func _process_predeparture_transfer(delta: float) -> void:
 		or route_index >= predeparture_transfer_route.size() - 1
 	):
 		taxi_current_speed = 0.0
+		_align_to_route_endpoint(predeparture_transfer_route)
 		predeparture_transfer_route = PackedVector2Array()
 		_set_state("WAITING_FUEL")
 		predeparture_transfer_completed.emit()
@@ -952,7 +954,15 @@ func _process_predeparture_transfer(delta: float) -> void:
 		taxi_speed
 	)
 	if target_index >= predeparture_transfer_route.size() - 1:
-		target_speed = minf(target_speed, taxi_speed * 0.48)
+		target_speed = minf(target_speed, taxi_speed * 0.54)
+		target_speed *= TaxiMotionRules.braking_speed_factor(
+			position.distance_to(
+				predeparture_transfer_route[target_index]
+			),
+			aircraft_size,
+			aircraft_profile,
+			0.30
+		)
 	taxi_current_speed = _approach_taxi_speed(
 		taxi_current_speed,
 		target_speed,
@@ -962,12 +972,17 @@ func _process_predeparture_transfer(delta: float) -> void:
 		predeparture_transfer_route[target_index],
 		taxi_current_speed,
 		delta,
-		taxi_turn_rate_deg
+		taxi_turn_rate_deg,
+		_taxi_heading_for_route(
+			predeparture_transfer_route,
+			target_index
+		)
 	):
 		route_index = target_index
 		_release_taxi_segment()
 		if route_index >= predeparture_transfer_route.size() - 1:
 			taxi_current_speed = 0.0
+			_align_to_route_endpoint(predeparture_transfer_route)
 			predeparture_transfer_route = PackedVector2Array()
 			_set_state("WAITING_FUEL")
 			predeparture_transfer_completed.emit()
@@ -1150,6 +1165,15 @@ func _process_departure_taxi(delta: float) -> void:
 		target_index,
 		taxi_speed
 	)
+	if target_index >= departure_hold_short_index:
+		target_speed *= TaxiMotionRules.braking_speed_factor(
+			position.distance_to(
+				departure_route[target_index]
+			),
+			aircraft_size,
+			aircraft_profile,
+			0.30
+		)
 	taxi_current_speed = _approach_taxi_speed(
 		taxi_current_speed,
 		target_speed,
@@ -1160,7 +1184,11 @@ func _process_departure_taxi(delta: float) -> void:
 		departure_route[target_index],
 		taxi_current_speed,
 		delta,
-		taxi_turn_rate_deg
+		taxi_turn_rate_deg,
+		_taxi_heading_for_route(
+			departure_route,
+			target_index
+		)
 	):
 		route_index = target_index
 		_release_taxi_segment()
@@ -1198,6 +1226,14 @@ func _process_runway_entry(delta: float) -> void:
 		return
 
 	var target_speed := taxi_speed * 0.62
+	target_speed *= TaxiMotionRules.braking_speed_factor(
+		position.distance_to(
+			departure_route[runway_entry_index]
+		),
+		aircraft_size,
+		aircraft_profile,
+		0.58
+	)
 	taxi_current_speed = _approach_taxi_speed(
 		taxi_current_speed,
 		target_speed,
@@ -1207,7 +1243,8 @@ func _process_runway_entry(delta: float) -> void:
 		departure_route[runway_entry_index],
 		taxi_current_speed,
 		delta,
-		taxi_turn_rate_deg
+		taxi_turn_rate_deg,
+		_departure_runway_heading()
 	):
 		route_index = runway_entry_index
 		taxi_current_speed = 0.0
@@ -1357,6 +1394,7 @@ func _process_landing_roll(delta: float) -> void:
 func _process_taxi_in(delta: float) -> void:
 	if route_index >= arrival_route.size() - 1:
 		taxi_current_speed = 0.0
+		_align_to_route_endpoint(arrival_route)
 		_set_state("PARKED")
 		arrival_completed.emit()
 		return
@@ -1380,12 +1418,20 @@ func _process_taxi_in(delta: float) -> void:
 		taxi_speed
 	)
 
-	# Final stand approach is deliberately slower so larger sprites do not
-	# visually overshoot or cut through the terminal/apron.
+	# Final stand approach slows progressively rather than switching to one
+	# fixed slow speed at the last waypoint.
 	if target_index >= arrival_route.size() - 1:
 		target_speed = minf(
 			target_speed,
-			taxi_speed * 0.48
+			taxi_speed * 0.54
+		)
+		target_speed *= TaxiMotionRules.braking_speed_factor(
+			position.distance_to(
+				arrival_route[target_index]
+			),
+			aircraft_size,
+			aircraft_profile,
+			0.26
 		)
 
 	taxi_current_speed = _approach_taxi_speed(
@@ -1398,7 +1444,11 @@ func _process_taxi_in(delta: float) -> void:
 		arrival_route[target_index],
 		taxi_current_speed,
 		delta,
-		taxi_turn_rate_deg
+		taxi_turn_rate_deg,
+		_taxi_heading_for_route(
+			arrival_route,
+			target_index
+		)
 	):
 		route_index = target_index
 		_release_taxi_segment()
@@ -1409,6 +1459,7 @@ func _process_taxi_in(delta: float) -> void:
 
 		if route_index >= arrival_route.size() - 1:
 			taxi_current_speed = 0.0
+			_align_to_route_endpoint(arrival_route)
 			_set_state("PARKED")
 			arrival_completed.emit()
 
@@ -1471,15 +1522,19 @@ func _move_toward_point(
 	target: Vector2,
 	speed: float,
 	delta: float,
-	turn_rate_degrees: float = -1.0
+	turn_rate_degrees: float = -1.0,
+	heading_override: float = NO_HEADING_OVERRIDE
 ) -> bool:
 	var to_target := target - position
 	var distance := to_target.length()
 	if distance <= maxf(speed, 1.0) * delta:
 		position = target
 		if to_target.length() > 0.001:
+			var target_heading := to_target.angle()
+			if absf(heading_override) < 1000.0:
+				target_heading = heading_override
 			_rotate_toward_heading(
-				to_target.angle(),
+				target_heading,
 				delta,
 				turn_rate_degrees
 			)
@@ -1488,8 +1543,11 @@ func _move_toward_point(
 
 	var direction := to_target.normalized()
 	position += direction * maxf(speed, 1.0) * delta
+	var target_heading := direction.angle()
+	if absf(heading_override) < 1000.0:
+		target_heading = heading_override
 	_rotate_toward_heading(
-		direction.angle(),
+		target_heading,
 		delta,
 		turn_rate_degrees
 	)
@@ -1517,6 +1575,45 @@ func _rotate_toward_heading(
 		-maximum_step,
 		maximum_step
 	)
+
+
+func _taxi_heading_for_route(
+	route: PackedVector2Array,
+	target_index: int
+) -> float:
+	return TaxiMotionRules.lookahead_heading(
+		route,
+		position,
+		target_index,
+		aircraft_size,
+		aircraft_profile
+	)
+
+
+func _departure_runway_heading() -> float:
+	if departure_route.size() < 2:
+		return NO_HEADING_OVERRIDE
+	var runway_end := departure_route[
+		departure_route.size() - 1
+	]
+	var runway_entry := departure_route[
+		departure_route.size() - 2
+	]
+	var direction := (
+		runway_end - runway_entry
+	).normalized()
+	if direction == Vector2.ZERO:
+		return NO_HEADING_OVERRIDE
+	return direction.angle()
+
+
+func _align_to_route_endpoint(
+	route: PackedVector2Array
+) -> void:
+	if route.size() < 2:
+		return
+	rotation = TaxiMotionRules.endpoint_heading(route)
+	queue_redraw()
 
 
 func _approach_taxi_speed(

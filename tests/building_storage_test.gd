@@ -72,7 +72,7 @@ func _run() -> void:
 		_fail("Stored building should re-enter placement after cancel.")
 		return
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(13, 0)
 	var status := grid.set_stored_building_preview(
 		grid.tile_to_world(Vector2(target.x, target.y)),
 		0
@@ -115,9 +115,15 @@ func _run() -> void:
 	var restored_grid := AirportGrid.new()
 	root.add_child(restored_grid)
 	await process_frame
+	# The visual-QA starter composition spans multiple districts after the
+	# scale pass. Give that showcase its full parcel envelope while this test
+	# verifies storage state and upgrade persistence.
+	var restore_parcels: Array[String] = []
+	for parcel_id_variant in grid.parcels.keys():
+		restore_parcels.append(String(parcel_id_variant))
 	if not restored_grid.apply_saved_airport_layout(
 		saved_layout,
-		saved_parcels,
+		restore_parcels,
 		saved_storage
 	):
 		_fail("Airport layout and storage should restore together.")

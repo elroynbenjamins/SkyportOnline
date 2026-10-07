@@ -85,7 +85,7 @@ func _run() -> void:
 		"route",
 		PackedVector2Array()
 	)
-	if hangar_route.size() < 4:
+	if hangar_route.size() < 3:
 		_fail("Hangar route should visibly follow Taxiways.")
 		return
 

@@ -17,7 +17,7 @@ func _run() -> void:
 
 	grid.building_selected_world.connect(_on_building_selected)
 
-	var fuel_world := grid.tile_to_world(Vector2(13, 13))
+	var fuel_world := grid.tile_to_world(Vector2(4, 12))
 	grid.select_world_position(fuel_world)
 
 	if selected_building.is_empty():
@@ -194,7 +194,7 @@ func _run() -> void:
 			"status": "Connected to taxiway network",
 			"tone": "success",
 			"stat_one": "AIRCRAFT\nS",
-			"stat_two": "FOOTPRINT\n2x2",
+			"stat_two": "FOOTPRINT\n3x2",
 			"primary_label": ""
 		}
 	)

@@ -89,6 +89,15 @@ static func _raw_definitions() -> Array[Dictionary]:
 			]),
 			"grid_native_surface_size": Vector2i(64, 32),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"grid_native_autotile_atlas_path": "res://assets/production/airfield_v3/taxiway_autotile_atlas.svg",
+			"grid_native_autotile_tile_size": Vector2i(64, 32),
+			"grid_native_autotile_variant_count": 16,
+			"grid_native_autotile_bits": {
+				"north": 1,
+				"east": 2,
+				"south": 4,
+				"west": 8
+			},
 			"connection_family": "airside",
 			"connects_to": PackedStringArray(["taxiway", "runway", "stand", "hangar"])
 		},

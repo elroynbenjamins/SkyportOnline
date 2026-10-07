@@ -134,6 +134,23 @@ func _run() -> void:
 		_fail("Starter taxiway should expose its real connection mask.")
 		return
 
+	grid.set_build_preview(
+		"taxiway",
+		grid.tile_to_world(Vector2(14, 10)),
+		0
+	)
+	var preview_visual := grid.get_airside_preview_visual()
+	if preview_visual.get("texture") == null:
+		_fail("Taxiway placement preview should use production ground art.")
+		return
+	if int(preview_visual.get("mask", 0)) == 0:
+		_fail("Taxiway placement preview should show live neighbor connections.")
+		return
+	if String(preview_visual.get("building_id", "")) != "taxiway":
+		_fail("Airside preview snapshot should identify the selected ground piece.")
+		return
+	grid.clear_build_preview()
+
 	var plane := AircraftPrototype.new()
 	root.add_child(plane)
 	plane.configure_aircraft_type("pico_p8")

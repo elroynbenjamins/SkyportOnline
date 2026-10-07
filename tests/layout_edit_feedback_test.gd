@@ -17,6 +17,9 @@ func _run() -> void:
 		return
 
 	var fuel_uid := int(fuel.get("uid", -1))
+	if not grid.purchase_parcel("west"):
+		_fail("West parcel should unlock the starter fuel plot for edit testing.")
+		return
 	if not grid.purchase_parcel("north"):
 		_fail("North parcel should unlock for edit-feedback testing.")
 		return

@@ -143,3 +143,24 @@ The small-aircraft **Short Runway** is the first placeable surface promoted from
 - the visible runway shoulder, asphalt, markings and edge lights all stay inside the exact projected footprint.
 
 This asset is allowed to render during `GRID_FIRST_VISUAL_RESET` because its artwork is authored directly against `square_grid_iso_v1`. Other placeable art remains blocked until it meets the same contract.
+
+
+## Taxiway production surface
+
+The starter **Taxiway** uses the same grid-native contract as the Small Runway.
+
+- logical footprint: **1×1** cell;
+- authored image size: **64×32 px**;
+- runtime scale: **1:1**;
+- exact projected diamond: `(32,0) → (64,16) → (32,32) → (0,16)`;
+- base art contains the concept-style curb/asphalt material;
+- connection openings are drawn dynamically from the actual neighboring gameplay cells.
+
+Taxiway visual connectivity uses the same adjacency rule as routing. A taxiway automatically opens and extends toward neighboring:
+
+- taxiways;
+- runways;
+- aircraft stands;
+- hangars.
+
+When a taxiway touches a runway cell, the connection overlay extends slightly past the shared grid edge and covers the runway curb at that seam. This makes the asphalt and yellow taxi centerline visually enter the runway without requiring a separate connector object. The overlay remains inside the union of the two connected gameplay footprints.

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160" viewBox="0 0 320 160">
+  <defs>
+    <linearGradient id="shoulder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#778087"/>
+      <stop offset="1" stop-color="#555f65"/>
+    </linearGradient>
+    <linearGradient id="asphalt" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#485258"/>
+      <stop offset="0.55" stop-color="#394248"/>
+      <stop offset="1" stop-color="#30393f"/>
+    </linearGradient>
+    <clipPath id="runwayClip">
+      <polygon points="73,7 306,124 247,153 14,36"/>
+    </clipPath>
+  </defs>
+
+  <!-- Exact 8x2 projected base: (64,0) (320,128) (256,160) (0,32). -->
+  <polygon points="64,0 320,128 256,160 0,32" fill="url(#shoulder)"/>
+  <polygon points="69,4 315,127 251,156 5,33" fill="#aeb5b7" opacity=".24"/>
+  <polygon points="73,7 306,124 247,153 14,36" fill="url(#asphalt)"/>
+
+  <!-- Subtle asphalt panels / wear. -->
+  <g clip-path="url(#runwayClip)" opacity=".15">
+    <path d="M28 36 L269 156" stroke="#151b1f" stroke-width="8"/>
+    <path d="M51 16 L295 138" stroke="#677178" stroke-width="5"/>
+    <path d="M90 18 L281 114" stroke="#232b30" stroke-width="3"/>
+    <path d="M43 49 L235 145" stroke="#596269" stroke-width="3"/>
+  </g>
+
+  <!-- Edge lines kept safely inside the footprint. -->
+  <path d="M77 11 L301 123" fill="none" stroke="#e8ece8" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M18 37 L243 149" fill="none" stroke="#e8ece8" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- Dashed center line. -->
+  <path d="M49 31 L271 142" fill="none" stroke="#f3f2e8" stroke-width="3.2"
+        stroke-linecap="round" stroke-dasharray="16 11"/>
+
+  <!-- Threshold bars, visually aligned across the short axis. -->
+  <g stroke="#f3f2e8" stroke-width="3.1" stroke-linecap="round">
+    <path d="M35 22 L25 41"/>
+    <path d="M43 26 L33 45"/>
+    <path d="M51 30 L41 49"/>
+    <path d="M277 111 L267 130"/>
+    <path d="M285 115 L275 134"/>
+    <path d="M293 119 L283 138"/>
+  </g>
+
+  <!-- Small aiming-point blocks. -->
+  <g fill="#f3f2e8" opacity=".94">
+    <polygon points="91,48 103,54 97,59 85,53"/>
+    <polygon points="219,112 231,118 225,123 213,117"/>
+  </g>
+
+  <!-- Restrained tire wear around touchdown zones. -->
+  <g stroke="#171d21" stroke-width="2.2" stroke-linecap="round" opacity=".30">
+    <path d="M75 48 L107 64"/><path d="M81 44 L113 60"/>
+    <path d="M207 106 L239 122"/><path d="M213 102 L245 118"/>
+  </g>
+
+  <!-- Edge lights: deliberately small so they read at gameplay zoom. -->
+  <g fill="#d8f5ff" stroke="#6b858d" stroke-width=".7">
+    <circle cx="93" cy="18" r="2.1"/><circle cx="137" cy="40" r="2.1"/><circle cx="181" cy="62" r="2.1"/>
+    <circle cx="225" cy="84" r="2.1"/><circle cx="269" cy="106" r="2.1"/>
+    <circle cx="49" cy="53" r="2.1"/><circle cx="93" cy="75" r="2.1"/><circle cx="137" cy="97" r="2.1"/>
+    <circle cx="181" cy="119" r="2.1"/><circle cx="225" cy="141" r="2.1"/>
+  </g>
+
+  <!-- Thin upper-left highlight / lower-right contact shade for v2 lighting. -->
+  <path d="M64 1 L319 128" fill="none" stroke="#eef3ef" stroke-opacity=".28" stroke-width="2"/>
+  <path d="M319 129 L256 159 L1 32" fill="none" stroke="#182126" stroke-opacity=".30" stroke-width="2"/>
+</svg>

@@ -32,6 +32,25 @@ jobs:
       - name: Start main scene smoke test
         run: godot --headless --path . --quit-after 3 --verbose
 
+      - name: Prepare virtual display for runway QA
+        shell: bash
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb
+          fi
+
+      - name: Capture 5x2 small runway
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_short_runway_ingame.gd
+
+      - name: Upload 5x2 small runway screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: short-runway-5x2-ingame
+          path: artifacts/short_runway_ingame.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Validate grid and gameplay systems
         shell: bash
         run: |

@@ -1,28 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="300" viewBox="0 0 512 300">
-  <defs>
-    <linearGradient id="asphalt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#667177"/><stop offset=".55" stop-color="#4f5a60"/><stop offset="1" stop-color="#3d474d"/></linearGradient>
-    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b91d6"/><stop offset="1" stop-color="#1b5e98"/></linearGradient>
-    <linearGradient id="tree" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#76b85a"/><stop offset="1" stop-color="#3e7d42"/></linearGradient>
-  </defs>
-  <polygon points="62,120 287,24 474,118 246,223" fill="#192326" opacity=".25"/>
-  <polygon points="51,108 286,12 486,111 246,217" fill="#aeb5ae"/>
-  <polygon points="69,108 286,20 467,111 246,204" fill="url(#asphalt)"/>
-  <g stroke="#f3f1e8" stroke-width="3" opacity=".86">
-    <line x1="115" y1="91" x2="270" y2="153"/><line x1="145" y1="78" x2="300" y2="140"/><line x1="176" y1="66" x2="331" y2="128"/><line x1="207" y1="53" x2="362" y2="115"/>
-    <line x1="280" y1="162" x2="420" y2="103"/><line x1="250" y1="149" x2="390" y2="90"/><line x1="220" y1="137" x2="360" y2="78"/>
-  </g>
-  <g stroke="#e5c94b" stroke-width="4" opacity=".9"><line x1="83" y1="119" x2="246" y2="187"/><line x1="246" y1="187" x2="449" y2="102"/></g>
-  <g>
-    <g transform="translate(144 109)"><polygon points="-20,-8 3,-18 24,-8 1,3" fill="#d9e6ec"/><polygon points="-14,-8 4,-15 18,-8 0,-1" fill="#78b7d8"/><circle cx="-9" cy="1" r="3" fill="#283238"/><circle cx="12" cy="-8" r="3" fill="#283238"/></g>
-    <g transform="translate(231 96)"><polygon points="-20,-8 3,-18 24,-8 1,3" fill="#f5d05f"/><polygon points="-14,-8 4,-15 18,-8 0,-1" fill="#88b4c8"/><circle cx="-9" cy="1" r="3" fill="#283238"/><circle cx="12" cy="-8" r="3" fill="#283238"/></g>
-    <g transform="translate(327 133)"><polygon points="-20,-8 3,-18 24,-8 1,3" fill="#e7ebe9"/><polygon points="-14,-8 4,-15 18,-8 0,-1" fill="#6fa5c3"/><circle cx="-9" cy="1" r="3" fill="#283238"/><circle cx="12" cy="-8" r="3" fill="#283238"/></g>
-    <g transform="translate(366 96)"><polygon points="-20,-8 3,-18 24,-8 1,3" fill="#d86152"/><polygon points="-14,-8 4,-15 18,-8 0,-1" fill="#719ab0"/><circle cx="-9" cy="1" r="3" fill="#283238"/><circle cx="12" cy="-8" r="3" fill="#283238"/></g>
-  </g>
-  <g stroke="#58686e" stroke-width="4"><line x1="94" y1="102" x2="94" y2="61"/><line x1="432" y1="115" x2="432" y2="73"/></g>
-  <g fill="#eef7ff" stroke="#25363d" stroke-width="2"><ellipse cx="94" cy="59" rx="12" ry="5"/><ellipse cx="432" cy="71" rx="12" ry="5"/></g>
-  <g>
-    <ellipse cx="73" cy="161" rx="25" ry="9" fill="#243127" opacity=".2"/><rect x="68" y="133" width="8" height="27" fill="#775b3b"/><circle cx="72" cy="126" r="24" fill="url(#tree)"/><circle cx="56" cy="132" r="15" fill="#4b9147"/><circle cx="89" cy="133" r="16" fill="#5aa44d"/>
-    <ellipse cx="449" cy="152" rx="25" ry="9" fill="#243127" opacity=".2"/><rect x="445" y="124" width="8" height="27" fill="#775b3b"/><circle cx="449" cy="117" r="24" fill="url(#tree)"/><circle cx="433" cy="123" r="15" fill="#4b9147"/><circle cx="466" cy="124" r="16" fill="#5aa44d"/>
-  </g>
-  <g transform="translate(98 174)"><polygon points="0,0 44,-18 75,-2 31,17" fill="#e4e6df"/><polygon points="14,-2 44,-14 62,-5 32,7" fill="url(#blue)"/><path d="M35 -9 l10 3 -8 8 z" fill="#fff"/></g>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="300" viewBox="0 0 512 300" shape-rendering="crispEdges">
+<metadata>Grid-native 4x3 landside parking module. Every ground cell uses the 64x32 airport isometric grid.</metadata>
+<ellipse cx="260" cy="236" rx="176" ry="26" fill="#172126" opacity=".18"/>
+<polygon points="112,118.8 158.4,142 112,165.2 65.6,142" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="158.4,142 204.8,165.2 158.4,188.39999999999998 112,165.2" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="204.8,165.20000000000002 251.20000000000002,188.4 204.8,211.6 158.4,188.4" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="251.2,188.4 297.59999999999997,211.6 251.2,234.79999999999998 204.79999999999998,211.6" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="65.6,142 112,165.2 65.6,188.39999999999998 19.199999999999996,165.2" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="112,165.20000000000002 158.4,188.4 112,211.6 65.6,188.4" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="158.4,188.4 204.8,211.6 158.4,234.79999999999998 112,211.6" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="204.8,211.60000000000002 251.20000000000002,234.8 204.8,258 158.4,234.8" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="19.200000000000003,165.20000000000002 65.6,188.4 19.200000000000003,211.6 -27.199999999999996,188.4" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="65.6,188.4 112,211.6 65.6,234.79999999999998 19.199999999999996,211.6" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="112,211.60000000000002 158.4,234.8 112,258 65.6,234.8" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<polygon points="158.4,234.8 204.8,258 158.4,281.2 112,258" fill="#59646a" stroke="#434d50" stroke-width="1.2"/>
+<path d="M97 145 L309 251 M129 129 L341 235 M161 113 L373 219" stroke="#f3f0e7" stroke-width="2.4" opacity=".88"/>
+<path d="M111 180 L278 264 M248 115 L415 199" stroke="#f2c94d" stroke-width="3" opacity=".9"/>
+<g transform="translate(175 163)"><polygon points="-14,-4 1,-11 17,-4 2,4" fill="#edf1ee" stroke="#314047" stroke-width="1.2"/><polygon points="-8,-5 1,-9 10,-5 1,-1" fill="#78aec8"/><circle cx="-7" cy="2" r="2" fill="#253136"/><circle cx="10" cy="-4" r="2" fill="#253136"/></g><g transform="translate(245 151)"><polygon points="-14,-4 1,-11 17,-4 2,4" fill="#f4cf57" stroke="#314047" stroke-width="1.2"/><polygon points="-8,-5 1,-9 10,-5 1,-1" fill="#78aec8"/><circle cx="-7" cy="2" r="2" fill="#253136"/><circle cx="10" cy="-4" r="2" fill="#253136"/></g><g transform="translate(303 190)"><polygon points="-14,-4 1,-11 17,-4 2,4" fill="#d85f58" stroke="#314047" stroke-width="1.2"/><polygon points="-8,-5 1,-9 10,-5 1,-1" fill="#78aec8"/><circle cx="-7" cy="2" r="2" fill="#253136"/><circle cx="10" cy="-4" r="2" fill="#253136"/></g><g transform="translate(361 176)"><polygon points="-14,-4 1,-11 17,-4 2,4" fill="#e8ecea" stroke="#314047" stroke-width="1.2"/><polygon points="-8,-5 1,-9 10,-5 1,-1" fill="#78aec8"/><circle cx="-7" cy="2" r="2" fill="#253136"/><circle cx="10" cy="-4" r="2" fill="#253136"/></g>
+<g stroke="#53656b" stroke-width="5"><line x1="118" y1="151" x2="118" y2="100"/><line x1="403" y1="203" x2="403" y2="152"/></g>
+<g fill="#eef8ff" stroke="#2c4249" stroke-width="2"><ellipse cx="118" cy="98" rx="13" ry="5"/><ellipse cx="403" cy="150" rx="13" ry="5"/></g>
+<g><rect x="92" y="172" width="8" height="30" fill="#74593c"/><circle cx="96" cy="165" r="24" fill="#4e9247"/><circle cx="79" cy="172" r="15" fill="#5ea64e"/><circle cx="112" cy="172" r="16" fill="#68af54"/></g>
 </svg>

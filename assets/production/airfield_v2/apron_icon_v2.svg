@@ -1,21 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="180" viewBox="0 0 256 180">
-  <defs>
-    <linearGradient id="apron" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#e1ded5"/>
-      <stop offset="0.55" stop-color="#c7c5bd"/>
-      <stop offset="1" stop-color="#a5a59f"/>
-    </linearGradient>
-  </defs>
-  <polygon points="128,24 232,76 128,130 24,78" fill="#172126" opacity="0.22"/>
-  <polygon points="128,15 238,70 128,126 18,71" fill="#989994"/>
-  <polygon points="128,21 225,70 128,119 31,70" fill="url(#apron)"/>
-  <polyline points="128,15 238,70 128,126" fill="none" stroke="#fffdf7" stroke-width="2" opacity="0.28"/>
-  <polyline points="128,126 18,71 128,15" fill="none" stroke="#656b6b" stroke-width="2.3" opacity="0.30"/>
-  <g stroke="#747b7c" stroke-width="1.3" opacity="0.22">
-    <line x1="78" y1="45" x2="178" y2="95"/>
-    <line x1="58" y1="79" x2="128" y2="114"/>
-    <line x1="128" y1="27" x2="199" y2="63"/>
-  </g>
-  <path d="M54 72 L128 109 L202 72" fill="none" stroke="#f1c84c" stroke-width="3" opacity="0.50"/>
-  <circle cx="128" cy="109" r="3" fill="#f1c84c" opacity="0.72"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="180" viewBox="0 0 256 180" shape-rendering="crispEdges">
+<metadata>Grid-native 2x2 apron preview built from exact 64x32 construction cells.</metadata>
+<g transform="translate(64 20) scale(1.5)"><polygon points="64,22 96,38 64,54 32,38" fill="#c9c7be" stroke="#8f9490" stroke-width="1.2"/><path d="M64,22 L96,38" stroke="#fffdf6" stroke-width="1" opacity=".28"/><path d="M96,38 L64,54" stroke="#4f595a" stroke-width="1.4" opacity=".25"/><polygon points="96,38 128,54 96,70 64,54" fill="#c9c7be" stroke="#8f9490" stroke-width="1.2"/><path d="M96,38 L128,54" stroke="#fffdf6" stroke-width="1" opacity=".28"/><path d="M128,54 L96,70" stroke="#4f595a" stroke-width="1.4" opacity=".25"/><polygon points="32,38 64,54 32,70 0,54" fill="#c9c7be" stroke="#8f9490" stroke-width="1.2"/><path d="M32,38 L64,54" stroke="#fffdf6" stroke-width="1" opacity=".28"/><path d="M64,54 L32,70" stroke="#4f595a" stroke-width="1.4" opacity=".25"/><polygon points="64,54 96,70 64,86 32,70" fill="#c9c7be" stroke="#8f9490" stroke-width="1.2"/><path d="M64,54 L96,70" stroke="#fffdf6" stroke-width="1" opacity=".28"/><path d="M96,70 L64,86" stroke="#4f595a" stroke-width="1.4" opacity=".25"/>
+<path d="M32 54 L64 70 L96 54" fill="none" stroke="#f2c94d" stroke-width="2.1"/>
+<path d="M18 52 L64 75 L110 52" fill="none" stroke="#ffffff" stroke-width="1" opacity=".52"/>
+<rect x="58" y="65" width="12" height="5" fill="#68767a" opacity=".35"/>
+</g></svg>

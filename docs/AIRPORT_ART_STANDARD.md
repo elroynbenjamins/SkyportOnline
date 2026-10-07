@@ -62,3 +62,32 @@ The asset is acceptable only when it is visually equal to or better than that re
 8. overall polish and cohesion
 
 This atlas is the floor, not the ceiling.
+
+
+## Grid-native asset contract
+
+The airport construction grid is authoritative. The canonical cell is **64 × 32 px in isometric world space**.
+
+All buyable/placeable airport art must be authored as grid-native modular pieces:
+
+- one logical cell uses the exact diamond `(32,0) → (64,16) → (32,32) → (0,16)`
+- an `N × M` footprint is the exact union of those cells under the game's isometric transform
+- taxiways, service roads and other connectable surfaces must meet neighbouring cells at the exact shared edge midpoint and keep identical connection widths
+- runway, apron, stand and building ground-contact art must align to the declared logical footprint; visible architecture may rise upward but the ground base, painted slab and contact shadow must not claim neighbouring logical cells
+- rotatable placeables need the gameplay-required grid orientations, with the footprint swapped exactly when rotation swaps X/Y
+- build-tray and management previews should be derived from the same grid geometry rather than redrawn with a different perspective
+- decorative scenery may overhang visually only when it is not player-placeable; once scenery becomes buyable/placeable, it must gain a grid-native base
+- do not use arbitrary free-form diamonds, perspective-skewed rectangles, or oversized painted bases to make an asset appear larger than its logical footprint
+
+Think of placeable airport content as **Lego blocks**: art detail can be rich, but every base and every connector must snap cleanly to the same 64 × 32 construction system.
+
+### Grid-native quality gate
+
+Before shipping a placeable asset, verify:
+
+1. declared footprint matches the visible ground-contact footprint
+2. cell edges and connector midpoints line up exactly
+3. no ground paint or shadow leaks into an unoccupied neighbouring cell
+4. rotation preserves the same grid contract
+5. world and preview art share the same perspective and footprint
+6. normal gameplay zoom still reads as one coherent airport set

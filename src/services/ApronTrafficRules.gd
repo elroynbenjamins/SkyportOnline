@@ -167,6 +167,28 @@ static func _stand_throat_yield(
 	if self_state == "road" or other_state == "road":
 		return {}
 
+	var self_type := String(
+		self_snapshot.get("service_type", "")
+	)
+	var other_type := String(
+		other_snapshot.get("service_type", "")
+	)
+
+	# Departure-critical pushback may pass normal inbound service traffic at
+	# the stand throat. It still yields to a vehicle actively clearing the
+	# exit, and two pushback tugs still serialize by dispatch sequence.
+	if self_state == "entering" and other_state == "entering":
+		if self_type == "pushback" and other_type != "pushback":
+			return {"protected": true}
+		if self_type != "pushback" and other_type == "pushback":
+			return {
+				"yielding": true,
+				"reason": "pushback entering",
+				"blocker_id": int(
+					other_snapshot.get("instance_id", -1)
+				),
+			}
+
 	var self_id := int(self_snapshot.get("instance_id", -1))
 	var other_id := int(other_snapshot.get("instance_id", -1))
 	var self_sequence := int(

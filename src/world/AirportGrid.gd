@@ -157,6 +157,7 @@ const EDIT_DIM_MODULATE := Color(0.78, 0.82, 0.80, 0.70)
 
 var parcels: Dictionary = {}
 var selected_id := ""
+var expansion_mode_active := false
 var parcel_labels: Dictionary = {}
 
 var placed_buildings: Array[Dictionary] = []
@@ -468,6 +469,7 @@ func _draw_grid_first_scene() -> void:
 	_draw_selected_outline()
 
 
+
 func _draw_grid_first_parcels() -> void:
 	for py in range(PARCEL_ROWS):
 		for px in range(PARCEL_COLUMNS):
@@ -475,18 +477,19 @@ func _draw_grid_first_parcels() -> void:
 			if parcel.is_empty():
 				continue
 
-			var state := "owned"
-			if not bool(parcel.get("owned", false)):
-				var progression_state := String(
-					_parcel_progression_data(
-						String(parcel.get("id", ""))
-					).get("progression_state", "future")
+			var owned := bool(parcel.get("owned", false))
+			if not owned:
+				if not expansion_mode_active:
+					continue
+				var candidate := _parcel_progression_data(
+					String(parcel.get("id", ""))
 				)
-				state = (
-					"available"
-					if progression_state == "available"
-					else "locked"
-				)
+				if String(
+					candidate.get("progression_state", "future")
+				) != "available":
+					continue
+				_draw_grid_first_expansion_candidate(candidate)
+				continue
 
 			var start_x := int(parcel.get("px", 0)) * PARCEL_SIZE
 			var start_y := int(parcel.get("py", 0)) * PARCEL_SIZE
@@ -495,11 +498,50 @@ func _draw_grid_first_parcels() -> void:
 					var cell := Vector2i(x, y)
 					_draw_grid_first_cell(
 						cell,
-						_grid_first_parcel_fill(state),
+						GRID_RESET_OWNED,
 						GRID_RESET_LINE,
 						1.0
 					)
 
+
+func _draw_grid_first_expansion_candidate(
+	parcel: Dictionary
+) -> void:
+	var origin := Vector2i(
+		int(parcel.get("px", 0)) * PARCEL_SIZE,
+		int(parcel.get("py", 0)) * PARCEL_SIZE
+	)
+	var perimeter := _footprint_polygon(
+		origin,
+		Vector2i(PARCEL_SIZE, PARCEL_SIZE)
+	)
+	if perimeter.size() < 4:
+		return
+
+	var shadow := PackedVector2Array()
+	for point_variant in perimeter:
+		var point: Vector2 = point_variant
+		shadow.append(point + Vector2(5, 8))
+	draw_colored_polygon(
+		shadow,
+		Color(0.02, 0.06, 0.04, 0.18)
+	)
+
+	draw_colored_polygon(
+		perimeter,
+		Color("78bd63", 0.24)
+	)
+	draw_polyline(
+		PackedVector2Array([
+			perimeter[0],
+			perimeter[1],
+			perimeter[2],
+			perimeter[3],
+			perimeter[0]
+		]),
+		Color("ffe19a", 0.90),
+		2.4
+	)
 
 func _grid_first_parcel_fill(state: String) -> Color:
 	match state:
@@ -816,6 +858,7 @@ func _draw_world_terrain_background() -> void:
 	)
 
 
+
 func _draw_parcel_tiles(parcel: Dictionary) -> void:
 	var start_x: int = int(parcel["px"]) * PARCEL_SIZE
 	var start_y: int = int(parcel["py"]) * PARCEL_SIZE
@@ -825,13 +868,16 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 			String(parcel.get("id", ""))
 		).get("progression_state", "future")
 	)
+
+	if not owned:
+		if not expansion_mode_active:
+			return
+		if progression_state != "available":
+			return
+
 	var terrain_state := "owned"
 	if not owned:
-		terrain_state = (
-			"available"
-			if progression_state == "available"
-			else "locked"
-		)
+		terrain_state = "available"
 
 	var show_placement_grid := _placement_grid_visible()
 	for y in range(start_y, start_y + PARCEL_SIZE):
@@ -869,7 +915,6 @@ func _draw_parcel_tiles(parcel: Dictionary) -> void:
 				center,
 				terrain_state
 			)
-
 
 func _terrain_surface_color_for_state(
 	state: String
@@ -1384,15 +1429,24 @@ func _draw_perimeter_tree(base: Vector2) -> void:
 	)
 
 
+
 func _draw_expansion_boundary_visuals() -> void:
+	if not expansion_mode_active:
+		return
+
 	for parcel_id_variant in parcels.keys():
 		var parcel_id := String(parcel_id_variant)
 		var parcel := _parcel_progression_data(parcel_id)
-		if parcel.is_empty() or bool(parcel.get("owned", false)):
+		if (
+			parcel.is_empty()
+			or bool(parcel.get("owned", false))
+			or String(
+				parcel.get("progression_state", "future")
+			) != "available"
+		):
 			continue
 		_draw_expansion_perimeter(parcel)
 		_draw_expansion_marker(parcel)
-
 
 func _draw_expansion_perimeter(parcel: Dictionary) -> void:
 	var state := String(parcel.get("progression_state", "future"))
@@ -1512,20 +1566,26 @@ func _draw_expansion_marker(parcel: Dictionary) -> void:
 		)
 
 
+
 func get_parcel_visual_state(parcel_id: String) -> Dictionary:
 	var parcel := _parcel_progression_data(parcel_id)
 	if parcel.is_empty():
 		return {}
 	var state := String(parcel.get("progression_state", "future"))
+	var is_candidate := (
+		expansion_mode_active
+		and not bool(parcel.get("owned", false))
+		and state == "available"
+	)
 	return {
 		"state": state,
 		"zone_name": String(parcel.get("name", "")),
 		"accent": parcel.get("accent", Color.WHITE),
-		"show_boundary": not bool(parcel.get("owned", false)),
-		"show_construction_marker": state == "available",
-		"show_lock_marker": state == "future"
+		"show_boundary": is_candidate,
+		"show_construction_marker": is_candidate,
+		"show_lock_marker": false,
+		"visible_in_expansion_mode": is_candidate
 	}
-
 
 func _draw_parcel_unlock_fx() -> void:
 	for parcel_id_variant in parcel_unlock_fx.keys():
@@ -7691,8 +7751,22 @@ func _draw_preview_expansion_outline() -> void:
 			)
 
 
+
 func _draw_selected_outline() -> void:
-	if selected_id.is_empty() or not parcels.has(selected_id):
+	if (
+		not expansion_mode_active
+		or selected_id.is_empty()
+		or not parcels.has(selected_id)
+	):
+		return
+
+	var selected := _parcel_progression_data(selected_id)
+	if (
+		bool(selected.get("owned", false))
+		or String(
+			selected.get("progression_state", "future")
+		) != "available"
+	):
 		return
 
 	var parcel: Dictionary = parcels[selected_id]
@@ -7705,8 +7779,6 @@ func _draw_selected_outline() -> void:
 	if perimeter.size() < 4:
 		return
 
-	# Selecting expansion land should highlight the parcel, not reveal the
-	# construction-cell grid. Keep normal land browsing as one clean boundary.
 	draw_polyline(
 		PackedVector2Array([
 			perimeter[0],
@@ -7716,9 +7788,8 @@ func _draw_selected_outline() -> void:
 			perimeter[0]
 		]),
 		SELECTED_LINE,
-		2.5
+		3.2
 	)
-
 
 func _tile_points(center: Vector2) -> PackedVector2Array:
 	return PackedVector2Array([
@@ -7737,6 +7808,7 @@ func world_to_tile(world_position: Vector2) -> Vector2i:
 	return PlacementGridV2.world_to_tile(
 		world_position
 	)
+
 
 
 func select_world_position(world_position: Vector2) -> void:
@@ -7771,10 +7843,20 @@ func select_world_position(world_position: Vector2) -> void:
 	selected_synergy_uid = -1
 	_refresh_building_labels()
 	queue_redraw()
-	var parcel := _parcel_for_tile(tile)
-	if not parcel.is_empty():
-		select_parcel(String(parcel["id"]))
 
+	if not expansion_mode_active:
+		return
+
+	var parcel := _parcel_for_tile(tile)
+	if parcel.is_empty():
+		return
+	var parcel_id := String(parcel.get("id", ""))
+	var data := _parcel_progression_data(parcel_id)
+	if String(
+		data.get("progression_state", "future")
+	) != "available":
+		return
+	select_parcel(parcel_id)
 
 func clear_building_selection() -> void:
 	var changed := (
@@ -7803,6 +7885,35 @@ func clear_parcel_selection() -> void:
 	selected_id = ""
 	_refresh_parcel_labels()
 	queue_redraw()
+
+
+func set_expansion_mode(active: bool) -> void:
+	expansion_mode_active = active
+	if not active:
+		selected_id = ""
+	else:
+		var selected := _parcel_progression_data(selected_id)
+		if (
+			selected.is_empty()
+			or bool(selected.get("owned", false))
+			or String(
+				selected.get("progression_state", "future")
+			) != "available"
+		):
+			selected_id = ""
+	_refresh_parcel_labels()
+	queue_redraw()
+
+
+func is_expansion_mode_active() -> bool:
+	return expansion_mode_active
+
+
+func get_expansion_candidate_ids() -> PackedStringArray:
+	var result := PackedStringArray()
+	for parcel in get_expansion_frontier():
+		result.append(String(parcel.get("id", "")))
+	return result
 
 
 func get_selected_parcel() -> Dictionary:
@@ -8775,46 +8886,44 @@ func _create_parcel_labels() -> void:
 		_update_parcel_label(id)
 
 
+
 func _update_parcel_label(id: String) -> void:
 	if not parcel_labels.has(id):
 		return
 
-	var parcel := _parcel_progression_data(id)
 	var label: Label = parcel_labels[id]
-	var state := String(
-		parcel.get("progression_state", "future")
-	)
+	label.visible = false
+	if not expansion_mode_active:
+		return
+
+	var parcel := _parcel_progression_data(id)
+	if (
+		parcel.is_empty()
+		or bool(parcel.get("owned", false))
+		or String(
+			parcel.get("progression_state", "future")
+		) != "available"
+	):
+		return
+
 	var zone_name := String(
 		parcel.get(
 			"name",
 			id.replace("_", " ").capitalize()
 		)
 	)
-	label.visible = false
-	match state:
-		"owned":
-			label.visible = false
-		"available":
-			label.visible = true
-			label.text = "%s\nLv %d • %s coins" % [
-				zone_name.to_upper(),
-				int(parcel.get("level", 1)),
-				_format_number(
-					int(parcel.get("cost", 0))
-				)
-			]
-			label.add_theme_color_override(
-				"font_color",
-				Color("ffe19a")
-			)
-		_:
-			label.visible = selected_id == id
-			label.text = "%s\nConnect adjacent land" % zone_name.to_upper()
-			label.add_theme_color_override(
-				"font_color",
-				Color("aab8b2")
-			)
-
+	label.visible = true
+	label.text = "%s\nLv %d • %s coins" % [
+		zone_name.to_upper(),
+		int(parcel.get("level", 1)),
+		_format_number(
+			int(parcel.get("cost", 0))
+		)
+	]
+	label.add_theme_color_override(
+		"font_color",
+		Color("ffe19a")
+	)
 
 func _refresh_building_labels() -> void:
 	for label in building_labels:

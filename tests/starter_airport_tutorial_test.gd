@@ -55,7 +55,7 @@ func _run() -> void:
 		_fail("Tutorial should start by asking for a runway.")
 		return
 
-	if not _place(grid, "short_runway", Vector2i(0, 0)):
+	if not _place(grid, "short_runway", Vector2i(4, 0)):
 		return
 	tutorial.refresh()
 	if String(
@@ -64,7 +64,7 @@ func _run() -> void:
 		_fail("Runway placement should advance to the stand step.")
 		return
 
-	if not _place(grid, "small_stand", Vector2i(4, 5)):
+	if not _place(grid, "small_stand", Vector2i(6, 4)):
 		return
 	tutorial.refresh()
 	if String(
@@ -73,8 +73,15 @@ func _run() -> void:
 		_fail("Stand placement should advance to taxiway guidance.")
 		return
 
-	for y in range(2, 8):
-		if not _place(grid, "taxiway", Vector2i(3, y)):
+	for cell in [
+		Vector2i(8, 2),
+		Vector2i(4, 3),
+		Vector2i(5, 3),
+		Vector2i(6, 3),
+		Vector2i(7, 3),
+		Vector2i(8, 3)
+	]:
+		if not _place(grid, "taxiway", cell):
 			return
 	tutorial.refresh()
 	if String(
@@ -86,9 +93,9 @@ func _run() -> void:
 		return
 
 	for cell in [
-		Vector2i(7, 7),
+		Vector2i(6, 6),
 		Vector2i(7, 6),
-		Vector2i(6, 6)
+		Vector2i(8, 6)
 	]:
 		if not _place(grid, "service_road", cell):
 			return

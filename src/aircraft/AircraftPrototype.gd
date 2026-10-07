@@ -1217,6 +1217,10 @@ func _process_runway_entry(delta: float) -> void:
 
 
 func _process_takeoff_roll(delta: float) -> void:
+	if departure_route.size() < 2:
+		takeoff_velocity = 0.0
+		return
+
 	var runway_end_index := departure_route.size() - 1
 	takeoff_velocity = minf(
 		takeoff_velocity
@@ -1246,6 +1250,9 @@ func _process_takeoff_roll(delta: float) -> void:
 
 
 func _process_climb(delta: float) -> void:
+	if departure_route.is_empty():
+		return
+
 	var climb_target := departure_route[departure_route.size() - 1]
 	if _move_toward_point(
 		climb_target,

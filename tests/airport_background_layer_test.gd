@@ -17,8 +17,8 @@ func _run() -> void:
 		return
 
 	var snapshot: Dictionary = backdrop.get_visual_snapshot()
-	if not bool(snapshot.get("production_environment_v2", false)):
-		_fail("Airport background should use production environment-v2 assets.")
+	if not bool(snapshot.get("production_environment_v3", false)):
+		_fail("Airport background should use the authored environment-v3 asset.")
 		return
 	if not bool(snapshot.get("independent_from_airport_grid", false)):
 		_fail("Background must remain independent from AirportGrid placement logic.")
@@ -36,17 +36,24 @@ func _run() -> void:
 		_fail("Background should contain the distant access-road network.")
 		return
 
-	for path in [
-		"res://assets/production/environment_v2/distant_fields_v2.svg",
-		"res://assets/production/environment_v2/tree_cluster_v2.svg",
-		"res://assets/production/environment_v2/conifer_cluster_v2.svg",
-		"res://assets/production/environment_v2/parking_lot_v2.svg",
-		"res://assets/production/environment_v2/hedge_strip_v2.svg",
-		"res://assets/production/environment_v2/entrance_sign_v2.svg"
-	]:
-		if not ResourceLoader.exists(path):
-			_fail("Missing production background asset: %s" % path)
-			return
+	var background_path := String(
+		snapshot.get("background_asset", "")
+	)
+	if background_path.is_empty():
+		_fail("Airport background should expose its authored asset path.")
+		return
+	if not ResourceLoader.exists(background_path):
+		_fail(
+			"Missing production background asset: %s"
+			% background_path
+		)
+		return
+	if not bool(snapshot.get("authored_backdrop_texture", false)):
+		_fail("Authored airport backdrop texture should load successfully.")
+		return
+	if not bool(snapshot.get("grid_safe_center", false)):
+		_fail("Background should preserve a quiet, grid-safe airport center.")
+		return
 
 	var scene_file := FileAccess.open(
 		"res://src/main/Main.tscn",
@@ -73,8 +80,8 @@ func _run() -> void:
 		return
 
 	print(
-		"AIRPORT_BACKGROUND_OK environment_v2=true fields=4 trees=6 "
-		+ "roads=2 independent_layer=true"
+		"AIRPORT_BACKGROUND_OK environment_v3=true authored=true "
+		+ "fields=4 trees=6 roads=2 independent_layer=true"
 	)
 	quit(0)
 

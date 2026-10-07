@@ -19,8 +19,10 @@ func _run() -> void:
 	await process_frame
 
 	var camera := Camera2D.new()
-	camera.position = Vector2(90, 350)
-	camera.zoom = Vector2(0.92, 0.92)
+	# Visual QA should judge the actual airport, not primarily the expansion
+	# overlay. Keep the starter airfield large enough to inspect at a glance.
+	camera.position = Vector2(95, 355)
+	camera.zoom = Vector2(1.10, 1.10)
 	camera.position_smoothing_enabled = false
 	camera.enabled = true
 	world.add_child(camera)
@@ -45,7 +47,24 @@ func _run() -> void:
 	hud.set_operation_status(
 		"2 aircraft awaiting turnaround"
 	)
-	grid.select_parcel("north")
+
+	# Add a small screenshot-only apron patch next to the starter terminal.
+	# This never touches saved gameplay state; it simply keeps the new
+	# purchasable ground surface visible in visual regression artifacts.
+	for apron_cell in [
+		Vector2i(8, 12),
+		Vector2i(9, 12),
+		Vector2i(8, 13),
+		Vector2i(9, 13)
+	]:
+		var apron_status := grid.set_build_preview(
+			"apron_tile",
+			grid.tile_to_world(Vector2(apron_cell)),
+			0
+		)
+		if bool(apron_status.get("valid", false)):
+			grid.confirm_build_preview()
+	grid.clear_build_preview()
 
 	var routes: Array[Dictionary] = grid.get_departure_routes("S")
 	var plane_count := mini(routes.size(), 2)

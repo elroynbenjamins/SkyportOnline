@@ -22,14 +22,17 @@ func _run() -> void:
 		return
 
 	var north_visual := grid.get_parcel_visual_state("north")
+	if bool(north_visual.get("show_boundary", true)):
+		_fail("Expansion plots must stay hidden during normal airport play.")
+		return
+
+	grid.set_expansion_mode(true)
+	north_visual = grid.get_parcel_visual_state("north")
 	if not bool(north_visual.get("show_boundary", false)):
-		_fail("Unowned connected land should render an expansion boundary.")
+		_fail("Connected land should appear after entering expansion mode.")
 		return
 	if not bool(north_visual.get("show_construction_marker", false)):
-		_fail("Available land should render a construction/purchase marker.")
-		return
-	if bool(north_visual.get("show_lock_marker", true)):
-		_fail("Connected purchasable land should not render as future-locked.")
+		_fail("Available land should show a purchase marker in expansion mode.")
 		return
 
 	var north_west := grid.get_parcel("north_west")
@@ -37,8 +40,11 @@ func _run() -> void:
 	if String(north_west.get("progression_state", "")) != "future":
 		_fail("International Reserve should begin disconnected.")
 		return
-	if not bool(north_west_visual.get("show_lock_marker", false)):
-		_fail("Disconnected future land should render a lock marker.")
+	if bool(north_west_visual.get("show_boundary", true)):
+		_fail("Disconnected future land should stay hidden in expansion mode.")
+		return
+	if bool(north_west_visual.get("show_lock_marker", true)):
+		_fail("Expansion mode should not clutter the airport with future locks.")
 		return
 	if String(north_west_visual.get("zone_name", "")) != "International Reserve":
 		_fail("Visual state should expose the district identity.")
@@ -102,6 +108,7 @@ func _run() -> void:
 	var hud := preload("res://src/ui/HUD.gd").new()
 	root.add_child(hud)
 	await process_frame
+	hud.enter_expansion_mode()
 
 	hud.show_parcel(east, 8, 50000)
 	if hud.parcel_title.text != "REGIONAL APRON":
@@ -121,8 +128,8 @@ func _run() -> void:
 	if hud.parcel_title.text != "INTERNATIONAL RESERVE":
 		_fail("Future expansion HUD should retain the district identity.")
 		return
-	if not hud.parcel_requirements.text.contains("Connect adjacent airport land"):
-		_fail("Future district should explain its connection requirement.")
+	if not hud.parcel_requirements.text.contains("not connected"):
+		_fail("Future district should explain that it is not selectable yet.")
 		return
 	if not hud.purchase_button.disabled:
 		_fail("Disconnected future district must remain unpurchasable.")
@@ -139,7 +146,7 @@ func _run() -> void:
 
 	print(
 		"Airport expansion districts passed: named progression, regional runway "
-		+ "path, world visual states, district HUD and milestone celebration."
+		+ "path, shop-only visual states, district HUD and milestone celebration."
 	)
 	quit(0)
 

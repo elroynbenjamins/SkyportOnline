@@ -1136,12 +1136,32 @@ func _route_to_aircraft_service_anchor(
 	var from_aircraft := docking - aircraft.global_position
 	var staging := docking
 	if from_aircraft.length() > 0.01:
-		staging = docking + from_aircraft.normalized() * 18.0
+		staging = (
+			docking
+			+ from_aircraft.normalized()
+			* _service_staging_distance(service_type)
+		)
 
 	var result := base_route.duplicate()
 	result[result.size() - 1] = staging
 	result.append(docking)
 	return result
+
+
+func _service_staging_distance(service_type: String) -> float:
+	match service_type:
+		"passenger":
+			return 27.0
+		"fuel", "catering":
+			return 23.0
+		"cleaning":
+			return 18.0
+		"cargo":
+			return 20.0
+		"pushback":
+			return 15.0
+		_:
+			return 18.0
 
 
 func _on_service_started(

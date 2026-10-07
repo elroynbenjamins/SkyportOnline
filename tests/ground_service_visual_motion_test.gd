@@ -84,36 +84,123 @@ func _run() -> void:
 		_fail("Service turn lean should remain tightly capped.")
 		return
 
+	if GroundServiceMotionRules.corner_radius("passenger") <= GroundServiceMotionRules.corner_radius("cargo"):
+		_fail("Passenger bus should use a wider road corner than the cargo tug.")
+		return
+	if GroundServiceMotionRules.turn_rate_degrees("pushback") <= GroundServiceMotionRules.turn_rate_degrees("passenger"):
+		_fail("Pushback tug should steer more tightly than the passenger bus.")
+		return
+	if GroundServiceMotionRules.braking_distance("fuel") <= GroundServiceMotionRules.braking_distance("cargo"):
+		_fail("Fuel truck should begin braking earlier than the compact cargo tug.")
+		return
+	var early_distance := GroundServiceMotionRules.distance_progress_for_time(
+		0.05,
+		"cargo"
+	)
+	var middle_distance := GroundServiceMotionRules.distance_progress_for_time(
+		0.50,
+		"cargo"
+	)
+	var late_distance := GroundServiceMotionRules.distance_progress_for_time(
+		0.95,
+		"cargo"
+	)
+	if not (early_distance < 0.05 and middle_distance > 0.45 and late_distance > 0.95):
+		_fail("Service motion easing should accelerate early and brake late.")
+		return
+
+	var raw_service_route := PackedVector2Array([
+		Vector2(0, 0),
+		Vector2(80, 0),
+		Vector2(80, 80)
+	])
+	var refined_service_route := GroundServiceMotionRules.refined_route(
+		raw_service_route,
+		"cargo"
+	)
+	if refined_service_route.size() <= raw_service_route.size():
+		_fail("Service-road corner should gain smoothing points.")
+		return
+	if (
+		refined_service_route[0] != raw_service_route[0]
+		or refined_service_route[
+			refined_service_route.size() - 1
+		] != raw_service_route[raw_service_route.size() - 1]
+	):
+		_fail("Service-route smoothing should preserve facility and docking endpoints.")
+		return
+
 	var cargo := GroundServiceVehiclePrototype.new()
 	root.add_child(cargo)
 	await process_frame
 	cargo.drive_speed = 100.0
+	cargo.set_service_pose_rotation(PI * 0.5)
 	cargo.start_service(
 		PackedVector2Array([
 			Vector2(0, 0),
-			Vector2(10, 0),
-			Vector2(10, 100)
+			Vector2(80, 0),
+			Vector2(80, 80)
 		]),
-		4.0,
+		0.5,
 		"cargo"
 	)
 
-	cargo._process(0.20)
-	if cargo.phase != "OUTBOUND" or cargo.route_index != 1:
-		_fail("Cargo tug should reach the first route corner while remaining outbound.")
+	cargo._process(0.10)
+	var cargo_motion := cargo.get_motion_snapshot()
+	var expected_travel_duration := (
+		GroundServiceMotionRules.route_length(
+			PackedVector2Array([
+				Vector2(0, 0),
+				Vector2(80, 0),
+				Vector2(80, 80)
+			])
+		) / cargo.drive_speed
+	)
+	if absf(
+		float(cargo_motion.get("travel_duration", 0.0))
+		- expected_travel_duration
+	) > 0.01:
+		_fail("Visual easing must preserve the legacy service travel duration.")
+		return
+	if cargo.phase != "OUTBOUND":
+		_fail("Cargo tug should begin in the outbound road-following phase.")
+		return
+	if float(cargo_motion.get("current_speed", 0.0)) <= 0.0:
+		_fail("Cargo tug should accelerate progressively from rest.")
+		return
+	if not bool(cargo_motion.get("production_road_following", false)):
+		_fail("Cargo tug should report production service-road following.")
 		return
 	if cargo.visual_motion_amount <= 0.0:
 		_fail("Moving service vehicle should ramp into visual suspension motion.")
 		return
 
-	var before_turn := cargo.rotation
-	cargo._process(0.05)
-	var after_turn := cargo.rotation
-	if after_turn <= before_turn:
-		_fail("Service vehicle heading should begin turning toward the next apron segment.")
+	var saw_corner := false
+	var saw_anticipation := false
+	for _step in range(80):
+		var before_rotation := cargo.rotation
+		cargo._process(0.05)
+		if cargo.route_index > 0:
+			saw_corner = true
+		if cargo.rotation > before_rotation + 0.001:
+			saw_anticipation = true
+		if cargo.phase == "SERVICING":
+			break
+
+	if not saw_corner:
+		_fail("Cargo tug should advance through the service-road corner.")
 		return
-	if after_turn >= PI * 0.5 - 0.01:
-		_fail("Service vehicle heading should turn smoothly instead of snapping 90 degrees.")
+	if not saw_anticipation:
+		_fail("Service vehicle nose should anticipate the next road segment.")
+		return
+	if cargo.phase != "SERVICING":
+		_fail("Cargo tug should reach the aircraft docking point.")
+		return
+	if absf(cargo.rotation - PI * 0.5) > 0.01:
+		_fail("Service vehicle should finish on its authored aircraft docking heading.")
+		return
+	if cargo.current_drive_speed > 0.01:
+		_fail("Service vehicle should fully stop before service begins.")
 		return
 
 	var bob_limit := GroundServiceVehicleArt.motion_bob_amplitude("cargo")
@@ -131,16 +218,25 @@ func _run() -> void:
 	fuel.start_service(
 		PackedVector2Array([
 			Vector2(0, 0),
-			Vector2(10, 0),
-			Vector2(10, -100)
+			Vector2(80, 0),
+			Vector2(80, -80)
 		]),
 		4.0
 	)
-	fuel._process(0.20)
-	var fuel_before_turn := fuel.rotation
-	fuel._process(0.05)
-	if fuel.rotation >= fuel_before_turn:
-		_fail("Fuel truck should smoothly turn toward a negative apron segment.")
+	fuel._process(0.10)
+	var fuel_motion := fuel.get_motion_snapshot()
+	if float(fuel_motion.get("current_speed", 0.0)) <= 0.0:
+		_fail("Fuel truck should accelerate progressively from rest.")
+		return
+	var fuel_turned := false
+	for _step in range(50):
+		var before_heading := fuel.rotation
+		fuel._process(0.05)
+		if fuel.rotation < before_heading - 0.001:
+			fuel_turned = true
+			break
+	if not fuel_turned:
+		_fail("Fuel truck should anticipate and smoothly enter its negative road turn.")
 		return
 	if fuel.rotation <= -PI * 0.5 + 0.01:
 		_fail("Fuel truck should not snap instantly to the next route heading.")
@@ -187,7 +283,7 @@ func _run() -> void:
 		(
 			"GROUND_SERVICE_VISUAL_MOTION_OK "
 			+ "bus=%.0f fuel=%.0f cleaning=%.0f cargo=%.0f tug=%.0f "
-			+ "smooth_turn=true turn_lean=true beacon=true"
+			+ "road_following=true timing_stable=true acceleration=true braking=true smooth_turn=true turn_lean=true beacon=true"
 		) % [
 			float(widths["passenger"]),
 			float(widths["fuel"]),

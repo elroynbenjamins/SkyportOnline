@@ -140,7 +140,7 @@ func _run() -> void:
 
 	var far_service := grid.get_preview_synergy_summary(
 		"basic_fuel",
-		Vector2i(8, 1),
+		Vector2i(20, 0),
 		0,
 		fuel_uid
 	)
@@ -161,7 +161,7 @@ func _run() -> void:
 		fuel_definition,
 		{
 			"valid": true,
-			"footprint": Vector2i(2, 2),
+			"footprint": Vector2i(3, 2),
 			"synergy": fuel_coverage
 		}
 	)

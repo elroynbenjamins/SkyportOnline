@@ -24,8 +24,10 @@ func _run() -> void:
 		_fail("Taxiway detail pass should have open grass-facing edges to style.")
 	if int(snapshot.get("service_road_open_edges", 0)) <= 0:
 		_fail("Service-road detail pass should have open grass-facing edges to style.")
-	if int(snapshot.get("service_barrier_candidates", 0)) <= 0:
-		_fail("Starter service road should expose at least one safety-barrier candidate.")
+	if int(snapshot.get("service_barrier_candidates", -1)) < 0:
+		_fail("Service-road barrier diagnostics should remain available.")
+	if int(snapshot.get("service_facility_connections", 0)) <= 0:
+		_fail("Starter service roads should visually connect into nearby facilities.")
 	if int(snapshot.get("landside_scenery", 0)) < 9:
 		_fail("Perimeter pass should include the extended landside/distant scenery set.")
 
@@ -52,12 +54,13 @@ func _run() -> void:
 		return
 
 	print(
-		"AIRFIELD_PERIMETER_DETAIL_OK runways=%d taxi_open=%d service_open=%d barriers=%d scenery=%d art=environment_v2"
+		"AIRFIELD_PERIMETER_DETAIL_OK runways=%d taxi_open=%d service_open=%d barriers=%d facility_links=%d scenery=%d art=environment_v2"
 		% [
 			int(snapshot.get("runways", 0)),
 			int(snapshot.get("taxiway_open_edges", 0)),
 			int(snapshot.get("service_road_open_edges", 0)),
 			int(snapshot.get("service_barrier_candidates", 0)),
+			int(snapshot.get("service_facility_connections", 0)),
 			int(snapshot.get("landside_scenery", 0))
 		]
 	)

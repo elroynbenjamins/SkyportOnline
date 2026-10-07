@@ -21,6 +21,28 @@ func _run() -> void:
 		_fail("Airport must remain in grid-first visual reset mode.")
 		return
 
+	var expected_footprints := {
+		"short_runway": Vector2i(8, 2),
+		"small_stand": Vector2i(2, 2),
+		"small_terminal": Vector2i(3, 2),
+		"small_hangar": Vector2i(3, 2),
+		"basic_fuel": Vector2i(2, 2),
+		"taxiway": Vector2i(1, 1),
+		"service_road": Vector2i(1, 1),
+		"regional_runway": Vector2i(12, 3)
+	}
+	for definition_id_variant in expected_footprints.keys():
+		var definition_id := String(definition_id_variant)
+		var definition := BuildingCatalog.get_definition(definition_id)
+		var actual: Vector2i = definition.get("footprint", Vector2i.ZERO)
+		var expected: Vector2i = expected_footprints[definition_id_variant]
+		if actual != expected:
+			_fail(
+				"%s footprint %s should be %s for the square-grid scale."
+				% [definition_id, str(actual), str(expected)]
+			)
+			return
+
 	var terminal := BuildingCatalog.get_definition("small_terminal")
 	var terminal_contract := grid.get_grid_visual_contract_for_definition(
 		terminal,
@@ -119,7 +141,7 @@ func _check_footprint_geometry() -> bool:
 		Vector2i(1, 1),
 		Vector2i(2, 2),
 		Vector2i(3, 2),
-		Vector2i(7, 2)
+		Vector2i(8, 2)
 	]:
 		var contract := BuildingPlacementGrid.visual_contract(
 			footprint

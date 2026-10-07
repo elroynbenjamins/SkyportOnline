@@ -24,6 +24,19 @@ func _run() -> void:
 			_fail("%s should be part of the free starter construction area." % parcel_id)
 			return
 
+	# Keep the upper half of the 16x16 starter plot clear for the player's
+	# runway, stand and taxiway construction. Pre-positioned landside/service
+	# buildings must not consume these cells.
+	for y in range(0, 8):
+		for x in range(0, 16):
+			var key := grid._cell_key(Vector2i(x, y))
+			if grid.occupied_cells.has(key):
+				_fail(
+					"Starter airside reserve should be empty at %s."
+					% str(Vector2i(x, y))
+				)
+				return
+
 	var airside := grid.get_airside_status()
 	if int(airside.get("runways", -1)) != 0:
 		_fail("Player should place the starter runway themselves.")

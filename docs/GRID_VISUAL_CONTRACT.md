@@ -36,7 +36,7 @@ Art never changes the logical footprint.
 | 2×1 | 128 × 64 px |
 | 2×2 | 128 × 128 px |
 | 3×2 | 192 × 128 px |
-| 7×2 | 448 × 128 px |
+| 8×2 | 512 × 128 px |
 
 This is the Lego-block rule: roads, taxiways, buildings, stands and runways all occupy exact square-cell rectangles.
 
@@ -64,6 +64,20 @@ The asset contract exposes:
 A future texture is accepted only when its source width exactly matches the footprint width and its height is at least the footprint height. Runtime places its bottom-center on the footprint's bottom-center anchor without resizing or hand-tuned offsets.
 
 Buildings may visually rise upward above their occupied rectangle. Their logical occupied cells remain exact squares.
+
+## Starter scale reference
+
+The starter airport uses these baseline footprints before new art is generated:
+
+- Short Runway: **8×2**
+- Small Aircraft Stand: **2×2**
+- Small Terminal: **3×2**
+- Small Hangar: **3×2**
+- Basic Fuel Station: **2×2**
+- Taxiway / Service Road / Apron: **1×1**
+- Regional Runway: **12×3**
+
+The upper **16×8** cells of the initial 16×16 owned construction area are kept free of pre-positioned buildings so the player has a clear airside construction zone.
 
 ## Contract identifier
 

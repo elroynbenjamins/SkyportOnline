@@ -19,6 +19,14 @@ func _run() -> void:
 	root.add_child(camera)
 	await process_frame
 
+	camera.reset_view()
+	if camera.position.distance_to(Vector2(480, 480)) > 0.01:
+		_fail("Default camera reset should center the 16x16 starter build area.")
+		return
+	if absf(camera.zoom.x - 0.62) > 0.001:
+		_fail("Default camera reset should frame the 16x16 starter build area.")
+		return
+
 	camera.position = Vector2(100, 200)
 	camera.set_zoom_level(1.0)
 	camera.pan_by_screen_delta(Vector2(64, -32))

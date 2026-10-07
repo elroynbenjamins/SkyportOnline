@@ -7,6 +7,8 @@ signal returned_to_station
 
 @export var drive_speed: float = 125.0
 
+var current_drive_speed := 0.0
+
 var outbound_route := PackedVector2Array()
 var return_route := PackedVector2Array()
 var route_index := 0
@@ -47,10 +49,14 @@ func start_service(route: PackedVector2Array, duration: float) -> void:
 		queue_free()
 		return
 
-	outbound_route = route
-	return_route = route.duplicate()
+	outbound_route = GroundServiceMotionRules.refined_route(
+		route,
+		"fuel"
+	)
+	return_route = outbound_route.duplicate()
 	return_route.reverse()
 	route_index = 0
+	current_drive_speed = 0.0
 	service_duration = maxf(duration, 0.4)
 	service_remaining = service_duration
 	position = outbound_route[0]
@@ -78,6 +84,7 @@ func _process(delta: float) -> void:
 			)
 			if launch_delay_remaining <= 0.0:
 				phase = "OUTBOUND"
+				current_drive_speed = 0.0
 				queue_redraw()
 		"OUTBOUND":
 			if _follow_route(outbound_route, delta):
@@ -91,6 +98,7 @@ func _process(delta: float) -> void:
 			if service_remaining <= 0.0:
 				phase = "RETURNING"
 				route_index = 0
+				current_drive_speed = 0.0
 				service_completed.emit()
 				queue_redraw()
 		"RETURNING":
@@ -100,35 +108,120 @@ func _process(delta: float) -> void:
 				queue_free()
 
 
-func _follow_route(points: PackedVector2Array, delta: float) -> bool:
+func _follow_route(
+	points: PackedVector2Array,
+	delta: float
+) -> bool:
 	if points.size() < 2:
 		return true
 
-	var target_index := mini(route_index + 1, points.size() - 1)
+	var target_index := mini(
+		route_index + 1,
+		points.size() - 1
+	)
 	var target := points[target_index]
 	var to_target := target - position
 	var distance := to_target.length()
 
-	if distance <= drive_speed * delta:
-		if distance > 0.001:
-			rotation = lerp_angle(
-				rotation,
-				to_target.angle(),
-				clampf(delta * 10.0, 0.0, 1.0)
-			)
+	var target_speed := GroundServiceMotionRules.speed_for_target(
+		points,
+		target_index,
+		drive_speed,
+		"fuel",
+		position
+	)
+	var rate := GroundServiceMotionRules.acceleration("fuel")
+	if target_speed < current_drive_speed:
+		rate = GroundServiceMotionRules.deceleration("fuel")
+	current_drive_speed = move_toward(
+		current_drive_speed,
+		target_speed,
+		rate * delta
+	)
+	var movement_speed := maxf(
+		current_drive_speed,
+		drive_speed * 0.18
+	)
+	var target_heading := GroundServiceMotionRules.lookahead_heading(
+		points,
+		position,
+		target_index,
+		"fuel"
+	)
+	var turn_rate := deg_to_rad(
+		GroundServiceMotionRules.turn_rate_degrees("fuel")
+	)
+
+	if distance <= movement_speed * delta:
 		position = target
+		rotation = _rotate_heading_toward(
+			rotation,
+			target_heading,
+			turn_rate * delta
+		)
 		route_index = target_index
-		return route_index >= points.size() - 1
+		if route_index >= points.size() - 1:
+			current_drive_speed = 0.0
+			rotation = GroundServiceMotionRules.endpoint_heading(points)
+			queue_redraw()
+			return true
+		queue_redraw()
+		return false
 
 	var direction := to_target.normalized()
-	position += direction * drive_speed * delta
-	rotation = lerp_angle(
+	position += direction * movement_speed * delta
+	rotation = _rotate_heading_toward(
 		rotation,
-		direction.angle(),
-		clampf(delta * 8.0, 0.0, 1.0)
+		target_heading,
+		turn_rate * delta
 	)
 	queue_redraw()
 	return false
+
+
+func _rotate_heading_toward(
+	current_heading: float,
+	target_heading: float,
+	maximum_step: float
+) -> float:
+	var difference := wrapf(
+		target_heading - current_heading,
+		-PI,
+		PI
+	)
+	return current_heading + clampf(
+		difference,
+		-maximum_step,
+		maximum_step
+	)
+
+
+func get_motion_snapshot() -> Dictionary:
+	var route := (
+		return_route
+		if phase == "RETURNING"
+		else outbound_route
+	)
+	return {
+		"phase": phase,
+		"service_type": "fuel",
+		"route_index": route_index,
+		"route_points": route.size(),
+		"route_length": GroundServiceMotionRules.route_length(route),
+		"current_speed": current_drive_speed,
+		"turn_rate_deg": GroundServiceMotionRules.turn_rate_degrees(
+			"fuel"
+		),
+		"corner_radius": GroundServiceMotionRules.corner_radius(
+			"fuel"
+		),
+		"braking_distance": GroundServiceMotionRules.braking_distance(
+			"fuel"
+		),
+		"production_road_following": true,
+	}
+
+
 
 
 func _draw() -> void:

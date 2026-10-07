@@ -8,6 +8,9 @@ signal returned_to_station
 @export var drive_speed: float = 125.0
 
 var current_drive_speed := 0.0
+var outbound_travel_duration := 0.0
+var return_travel_duration := 0.0
+var phase_travel_elapsed := 0.0
 
 var outbound_route := PackedVector2Array()
 var return_route := PackedVector2Array()
@@ -49,6 +52,7 @@ func start_service(route: PackedVector2Array, duration: float) -> void:
 		queue_free()
 		return
 
+	var baseline_length := GroundServiceMotionRules.route_length(route)
 	outbound_route = GroundServiceMotionRules.refined_route(
 		route,
 		"fuel"
@@ -57,6 +61,12 @@ func start_service(route: PackedVector2Array, duration: float) -> void:
 	return_route.reverse()
 	route_index = 0
 	current_drive_speed = 0.0
+	outbound_travel_duration = maxf(
+		baseline_length / maxf(drive_speed, 1.0),
+		0.08
+	)
+	return_travel_duration = outbound_travel_duration
+	phase_travel_elapsed = 0.0
 	service_duration = maxf(duration, 0.4)
 	service_remaining = service_duration
 	position = outbound_route[0]
@@ -87,7 +97,11 @@ func _process(delta: float) -> void:
 				current_drive_speed = 0.0
 				queue_redraw()
 		"OUTBOUND":
-			if _follow_route(outbound_route, delta):
+			if _follow_route(
+			outbound_route,
+			delta,
+			outbound_travel_duration
+		):
 				phase = "SERVICING"
 				if has_service_pose_rotation:
 					rotation = service_pose_rotation
@@ -99,10 +113,15 @@ func _process(delta: float) -> void:
 				phase = "RETURNING"
 				route_index = 0
 				current_drive_speed = 0.0
+				phase_travel_elapsed = 0.0
 				service_completed.emit()
 				queue_redraw()
 		"RETURNING":
-			if _follow_route(return_route, delta):
+			if _follow_route(
+			return_route,
+			delta,
+			return_travel_duration
+		):
 				phase = "DONE"
 				returned_to_station.emit()
 				queue_free()
@@ -110,37 +129,48 @@ func _process(delta: float) -> void:
 
 func _follow_route(
 	points: PackedVector2Array,
-	delta: float
+	delta: float,
+	travel_duration: float
 ) -> bool:
 	if points.size() < 2:
 		return true
 
-	var target_index := mini(
-		route_index + 1,
+	var duration := maxf(travel_duration, 0.01)
+	var previous_position := position
+	phase_travel_elapsed = minf(
+		phase_travel_elapsed + delta,
+		duration
+	)
+	var time_progress := clampf(
+		phase_travel_elapsed / duration,
+		0.0,
+		1.0
+	)
+	var distance_progress := (
+		GroundServiceMotionRules.distance_progress_for_time(
+			time_progress,
+			"fuel"
+		)
+	)
+	var sample := GroundServiceMotionRules.sample_route_at_progress(
+		points,
+		distance_progress
+	)
+	position = sample.get("position", position)
+	var target_index := clampi(
+		int(sample.get("target_index", 1)),
+		1,
 		points.size() - 1
 	)
-	var target := points[target_index]
-	var to_target := target - position
-	var distance := to_target.length()
+	route_index = (
+		points.size() - 1
+		if bool(sample.get("done", false))
+		else maxi(target_index - 1, 0)
+	)
 
-	var target_speed := GroundServiceMotionRules.speed_for_target(
-		points,
-		target_index,
-		drive_speed,
-		"fuel",
-		position
-	)
-	var rate := GroundServiceMotionRules.acceleration("fuel")
-	if target_speed < current_drive_speed:
-		rate = GroundServiceMotionRules.deceleration("fuel")
-	current_drive_speed = move_toward(
-		current_drive_speed,
-		target_speed,
-		rate * delta
-	)
-	var movement_speed := maxf(
-		current_drive_speed,
-		drive_speed * 0.18
+	current_drive_speed = (
+		previous_position.distance_to(position)
+		/ maxf(delta, 0.001)
 	)
 	var target_heading := GroundServiceMotionRules.lookahead_heading(
 		points,
@@ -151,31 +181,19 @@ func _follow_route(
 	var turn_rate := deg_to_rad(
 		GroundServiceMotionRules.turn_rate_degrees("fuel")
 	)
-
-	if distance <= movement_speed * delta:
-		position = target
-		rotation = _rotate_heading_toward(
-			rotation,
-			target_heading,
-			turn_rate * delta
-		)
-		route_index = target_index
-		if route_index >= points.size() - 1:
-			current_drive_speed = 0.0
-			rotation = GroundServiceMotionRules.endpoint_heading(points)
-			queue_redraw()
-			return true
-		queue_redraw()
-		return false
-
-	var direction := to_target.normalized()
-	position += direction * movement_speed * delta
 	rotation = _rotate_heading_toward(
 		rotation,
 		target_heading,
 		turn_rate * delta
 	)
 	queue_redraw()
+
+	if bool(sample.get("done", false)):
+		position = points[points.size() - 1]
+		route_index = points.size() - 1
+		current_drive_speed = 0.0
+		rotation = GroundServiceMotionRules.endpoint_heading(points)
+		return true
 	return false
 
 
@@ -209,6 +227,12 @@ func get_motion_snapshot() -> Dictionary:
 		"route_points": route.size(),
 		"route_length": GroundServiceMotionRules.route_length(route),
 		"current_speed": current_drive_speed,
+		"travel_elapsed": phase_travel_elapsed,
+		"travel_duration": (
+			return_travel_duration
+			if phase == "RETURNING"
+			else outbound_travel_duration
+		),
 		"turn_rate_deg": GroundServiceMotionRules.turn_rate_degrees(
 			"fuel"
 		),

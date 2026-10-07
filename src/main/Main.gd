@@ -1,13 +1,17 @@
 extends Node2D
 
+const StarterTutorialScript := preload(
+	"res://src/progression/StarterAirportTutorial.gd"
+)
+
 @onready var airport_grid: AirportGrid = $AirportGrid
 @onready var camera_controller = $Camera
 @onready var hud = $HUD
 @onready var airport_setup = $AirportSetup
 
-var player_level: int = 4
+var player_level: int = 1
 var player_xp: int = 0
-var coins: int = 18420
+var coins: int = 20000
 var gems: int = 120
 var resource_inventory: Dictionary = {}
 var reward_rng := RandomNumberGenerator.new()
@@ -49,6 +53,9 @@ var current_profile: Dictionary = {}
 var gameplay_started := false
 var current_event_snapshot: Dictionary = {}
 var handling_attention_elapsed := 0.0
+var starter_tutorial
+var starter_tutorial_enabled := false
+var last_starter_tutorial_step := ""
 
 
 func _process(delta: float) -> void:
@@ -100,6 +107,9 @@ func _ready() -> void:
 		_on_handling_attention_requested
 	)
 	hud.fuel_order_requested.connect(_on_fuel_order_requested)
+	hud.tutorial_action_requested.connect(
+		_on_starter_tutorial_action_requested
+	)
 	airport_setup.airport_created.connect(_on_airport_created)
 
 	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
@@ -164,7 +174,11 @@ func _start_gameplay() -> void:
 		current_profile.get("owned_parcels", []),
 		saved_storage
 	)
-	if saved_layout.is_empty() and saved_storage.is_empty():
+	var new_builder_airport := (
+		saved_layout.is_empty()
+		and saved_storage.is_empty()
+	)
+	if new_builder_airport:
 		var starter := airport_grid.prepare_new_airport_builder_layout()
 		_persist_airport_layout()
 		hud.set_operation_status(
@@ -199,8 +213,130 @@ func _start_gameplay() -> void:
 	_setup_service_upgrade_panel()
 	_setup_air_traffic_upgrade_panel()
 	_setup_runway_strategy_panel()
+	_setup_starter_tutorial(new_builder_airport)
 	reward_rng.randomize()
 	_spawn_aircraft_demos()
+	_refresh_starter_tutorial()
+
+
+func _setup_starter_tutorial(enabled: bool) -> void:
+	starter_tutorial_enabled = enabled
+	starter_tutorial = StarterTutorialScript.new()
+	starter_tutorial.changed.connect(
+		_on_starter_tutorial_changed
+	)
+	starter_tutorial.coin_reward_earned.connect(
+		_on_starter_tutorial_coin_reward
+	)
+	add_child(starter_tutorial)
+	starter_tutorial.configure(
+		airport_grid,
+		enabled
+	)
+
+
+func _refresh_starter_tutorial() -> void:
+	if (
+		starter_tutorial == null
+		or not starter_tutorial_enabled
+	):
+		return
+	starter_tutorial.refresh()
+
+
+func _notify_starter_tutorial(event_id: String) -> void:
+	if (
+		starter_tutorial == null
+		or not starter_tutorial_enabled
+	):
+		return
+	starter_tutorial.notify_event(event_id)
+
+
+func _on_starter_tutorial_changed(
+	snapshot: Dictionary
+) -> void:
+	hud.set_starter_tutorial(snapshot)
+	var step_id := String(snapshot.get("id", ""))
+	if bool(snapshot.get("complete", false)):
+		if last_starter_tutorial_step != "__complete":
+			last_starter_tutorial_step = "__complete"
+			hud.set_operation_status(
+				"Airport basics complete • your first operating airfield is ready.",
+				"success"
+			)
+		return
+
+	if step_id.is_empty() or step_id == last_starter_tutorial_step:
+		return
+	last_starter_tutorial_step = step_id
+	hud.set_operation_status(
+		String(snapshot.get("guidance", "Follow the tutorial step.")),
+		"warning"
+	)
+
+
+func _on_starter_tutorial_coin_reward(
+	amount: int,
+	reason: String
+) -> void:
+	if amount <= 0:
+		return
+	coins += amount
+	hud.set_player_data(player_level, coins, gems)
+	hud.set_operation_status(
+		"%s complete • +%d coins" % [
+			reason,
+			amount
+		],
+		"success"
+	)
+
+
+func _tutorial_aircraft() -> AircraftPrototype:
+	var attention := _next_handling_aircraft()
+	if attention != null:
+		return attention
+	for aircraft in aircraft_demos:
+		if aircraft != null and is_instance_valid(aircraft):
+			return aircraft
+	return null
+
+
+func _on_starter_tutorial_action_requested(
+	action: String,
+	target: String
+) -> void:
+	match action:
+		"build":
+			if target.is_empty():
+				return
+			_on_building_selected(target)
+		"aircraft":
+			var aircraft := _tutorial_aircraft()
+			if aircraft == null:
+				hud.set_operation_status(
+					"Finish the runway, stand and connections first.",
+					"warning"
+				)
+				return
+			camera_controller.focus_world_position(
+				aircraft.global_position,
+				0.30,
+				0.84
+			)
+			_show_aircraft_context(aircraft)
+		"world":
+			var aircraft := _tutorial_aircraft()
+			if aircraft == null:
+				return
+			_on_aircraft_context_choose_route_requested(
+				aircraft
+			)
+			if world_map != null:
+				world_map.set_assignment_status(
+					"Tutorial • choose a nearby unlocked destination."
+				)
 
 
 func _setup_fuel_system() -> void:
@@ -516,12 +652,18 @@ func _spawn_aircraft_demos() -> void:
 			_on_aircraft_handling_action_requested
 		)
 
-		var destination := DestinationCatalog.get_destination("brussels")
-		var initial_plan := _create_current_flight_plan(
-			aircraft.get_aircraft_profile(),
-			destination
-		)
-		aircraft.assign_flight_plan(initial_plan)
+		if not (
+			starter_tutorial_enabled
+			and spawned == 0
+		):
+			var destination := DestinationCatalog.get_destination(
+				"brussels"
+			)
+			var initial_plan := _create_current_flight_plan(
+				aircraft.get_aircraft_profile(),
+				destination
+			)
+			aircraft.assign_flight_plan(initial_plan)
 		aircraft.name = label
 		aircraft.z_index = 80 + spawned
 		aircraft.state_changed.connect(
@@ -604,6 +746,7 @@ func _on_predeparture_transfer_completed(
 		"%s at loading stand • fuel truck and loading can begin" % label,
 		"success"
 	)
+	_notify_starter_tutorial("hangar_taxi_complete")
 	ground_services.request_turnaround(
 		aircraft,
 		label,
@@ -1135,6 +1278,13 @@ func _on_demo_aircraft_state_changed(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
+	if state == "SERVICING":
+		_notify_starter_tutorial("service_started")
+	elif state == "LOADING":
+		_notify_starter_tutorial("load_started")
+	elif state == "PUSHBACK_PREP":
+		_notify_starter_tutorial("send_started")
+
 	match state:
 		"TAXIING_TO_STAND":
 			hud.set_operation_status(
@@ -1241,6 +1391,7 @@ func _on_demo_aircraft_departed(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> void:
+	_notify_starter_tutorial("first_departure")
 	var plan := aircraft.get_flight_plan()
 	hud.set_operation_status(
 		"%s → %s • %s" % [
@@ -2321,6 +2472,7 @@ func _on_world_map_flight_assignment_requested(
 	var previous_state := aircraft.state
 	var plan := _create_current_flight_plan(profile, destination)
 	aircraft.assign_flight_plan(plan)
+	_notify_starter_tutorial("destination_selected")
 	_apply_event_visual_to_aircraft(
 		aircraft,
 		current_event_snapshot
@@ -4800,6 +4952,7 @@ func _refresh_layout_dependent_systems() -> void:
 	):
 		_spawn_aircraft_demos()
 	_refresh_operations_analytics()
+	_refresh_starter_tutorial()
 
 
 func _persist_airport_layout() -> void:

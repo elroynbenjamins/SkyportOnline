@@ -751,6 +751,25 @@ func get_grid_visual_contract_for_definition(
 	return contract
 
 
+func get_grid_visual_draw_rect_for_definition(
+	definition: Dictionary,
+	origin: Vector2i,
+	rotation: int,
+	asset_size_px: Vector2i
+) -> Rect2:
+	if definition.is_empty():
+		return Rect2()
+	var footprint := _footprint_for(
+		definition,
+		rotation
+	)
+	return PlacementGridV2.asset_draw_rect(
+		origin,
+		footprint,
+		asset_size_px
+	)
+
+
 func _draw_world_terrain_background() -> void:
 	draw_rect(
 		Rect2(-1800, -700, 3600, 2600),

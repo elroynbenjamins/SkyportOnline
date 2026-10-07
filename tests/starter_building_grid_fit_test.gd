@@ -33,11 +33,51 @@ func _run() -> void:
 		_fail("Terminal visual contract must use its exact 3x2 logical footprint.")
 		return
 
+	var terminal_asset_size := Vector2i(160, 180)
+	var terminal_asset_check := BuildingPlacementGrid.validate_asset_dimensions(
+		terminal_asset_size,
+		Vector2i(3, 2)
+	)
+	if not bool(terminal_asset_check.get("valid", false)):
+		_fail("A 160 px wide 3x2 asset should satisfy the grid contract.")
+		return
+	if bool(
+		BuildingPlacementGrid.validate_asset_dimensions(
+			Vector2i(161, 180),
+			Vector2i(3, 2)
+		).get("valid", true)
+	):
+		_fail("A 3x2 asset with the wrong width must be rejected.")
+		return
+	var terminal_origin := Vector2i(4, 5)
+	var terminal_draw_rect := BuildingPlacementGrid.asset_draw_rect(
+		terminal_origin,
+		Vector2i(3, 2),
+		terminal_asset_size
+	)
+	var terminal_anchor := BuildingPlacementGrid.footprint_front_anchor_world(
+		terminal_origin,
+		Vector2i(3, 2)
+	)
+	if terminal_draw_rect.size != Vector2(160, 180):
+		_fail("Grid-native asset draw rect must preserve exact source dimensions.")
+		return
+	if (
+		terminal_draw_rect.position
+		+ Vector2(
+			terminal_draw_rect.size.x * 0.5,
+			terminal_draw_rect.size.y
+		)
+	).distance_to(terminal_anchor) > 0.01:
+		_fail("Asset bottom-center must land exactly on the grid front anchor.")
+		return
+
 	print(
 		"GRID_VISUAL_CONTRACT_OK projection=2:1 tile=64x32 "
 		+ "nearest_cell_snap=true grid_owns_footprint=true "
 		+ "grid_owns_anchor=true grid_owns_scale=true "
-		+ "authoring_1_to_1=true padding=top_only"
+		+ "authoring_1_to_1=true padding=top_only "
+		+ "draw=bottom_center_to_front_anchor"
 	)
 	quit(0)
 

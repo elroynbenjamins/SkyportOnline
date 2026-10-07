@@ -67,3 +67,15 @@ This means a future asset is not “fit to the grid” after generation. It is a
 | 7×2 | 288 px | 144 px |
 
 A building may be taller than its base depth because the body rises above the ground plane. Its width still stays inside the contract width.
+
+
+## Runtime placement rule
+
+A future texture is accepted only when its source width exactly matches `authoring_width_px` and its height is at least `base_depth_px`. The runtime then uses `asset_draw_rect()`:
+
+1. compute the footprint's front-center ground anchor;
+2. keep the source texture at **1:1 scale**;
+3. place the texture so its **bottom-center pixel** lands on that anchor;
+4. reject a wrong-width asset instead of auto-scaling it.
+
+There is therefore no alpha-bound scan, guessed offset, per-building nudge, or “fit this image into the cell” stage in the new path. Incorrect art fails the contract and must be regenerated/fixed.

@@ -132,6 +132,91 @@ static func footprint_bounds(
 	)
 
 
+static func footprint_front_anchor_world(
+	origin: Vector2i,
+	footprint: Vector2i
+) -> Vector2:
+	var polygon := footprint_polygon(origin, footprint)
+	if polygon.size() < 4:
+		return Vector2.ZERO
+	return polygon[2]
+
+
+static func validate_asset_dimensions(
+	asset_size_px: Vector2i,
+	footprint: Vector2i
+) -> Dictionary:
+	var contract := visual_contract(footprint)
+	if not bool(contract.get("valid", false)):
+		return {
+			"valid": false,
+			"reason": "Invalid footprint."
+		}
+
+	var expected_width := int(
+		contract.get("authoring_width_px", 0)
+	)
+	var minimum_height := int(
+		contract.get("base_depth_px", 0)
+	)
+	if asset_size_px.x != expected_width:
+		return {
+			"valid": false,
+			"reason": (
+				"Asset width must be exactly %d px for footprint %dx%d."
+				% [
+					expected_width,
+					footprint.x,
+					footprint.y
+				]
+			),
+			"expected_width_px": expected_width,
+			"minimum_height_px": minimum_height
+		}
+	if asset_size_px.y < minimum_height:
+		return {
+			"valid": false,
+			"reason": (
+				"Asset height must be at least %d px so the full grid base fits."
+				% minimum_height
+			),
+			"expected_width_px": expected_width,
+			"minimum_height_px": minimum_height
+		}
+	return {
+		"valid": true,
+		"reason": "",
+		"expected_width_px": expected_width,
+		"minimum_height_px": minimum_height
+	}
+
+
+static func asset_draw_rect(
+	origin: Vector2i,
+	footprint: Vector2i,
+	asset_size_px: Vector2i
+) -> Rect2:
+	var validation := validate_asset_dimensions(
+		asset_size_px,
+		footprint
+	)
+	if not bool(validation.get("valid", false)):
+		return Rect2()
+
+	var anchor := footprint_front_anchor_world(
+		origin,
+		footprint
+	)
+	var size := Vector2(
+		float(asset_size_px.x),
+		float(asset_size_px.y)
+	)
+	return Rect2(
+		anchor - Vector2(size.x * 0.5, size.y),
+		size
+	)
+
+
 static func visual_contract(
 	footprint: Vector2i
 ) -> Dictionary:
@@ -170,6 +255,7 @@ static func visual_contract(
 		"base_polygon_from_anchor": base_polygon_from_anchor,
 		"asset_pixels_per_world_pixel": 1.0,
 		"runtime_scale": Vector2.ONE,
+		"draw_rect_rule": "asset_bottom_center_to_front_anchor",
 		"horizontal_extent_rule": "inside_footprint_width",
 		"vertical_extent_rule": "body_may_extend_up_only",
 		"transparent_padding_rule": "top_only",

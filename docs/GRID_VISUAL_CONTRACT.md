@@ -7,7 +7,7 @@ The airport uses a **square logical construction grid** with a separate **Skyram
 Gameplay never uses 64×32 cells.
 
 - Every logical cell is **64 × 64**.
-- Footprints remain exact square-cell counts such as `1×1`, `2×2`, `3×2` and `8×2`.
+- Footprints remain exact square-cell counts such as `1×1`, `2×2`, `3×2` and `5×2`.
 - Placement, collision, routing, ownership and rotation all operate on those logical square cells.
 - 90° rotation swaps `W × H` to `H × W`.
 
@@ -31,7 +31,7 @@ So a tile **looks** like a 64×32 diamond on screen, but it **is** still one squ
 The logical sizes currently locked for the starter airport are:
 
 - Fixed Airport Office: **2×2** — the only structure present on a brand-new airport
-- Short Runway: **8×2**
+- Short Runway: **5×2**
 - Small Aircraft Stand: **2×2**
 - Small Terminal: **3×2**
 - Small Hangar: **3×2**
@@ -61,7 +61,7 @@ Examples:
 | 2×1 | 96 × 48 px |
 | 2×2 | 128 × 64 px |
 | 3×2 | 160 × 80 px |
-| 8×2 | 320 × 160 px |
+| 5×2 | 224 × 112 px |
 | 12×3 | 480 × 240 px |
 
 This keeps future buildings, runway pieces and roads visually aligned with the same projected ground diamonds the player sees.
@@ -133,9 +133,9 @@ Do not reintroduce a permanent expansion-slot board around the airport.
 
 The small-aircraft **Short Runway** is the first placeable surface promoted from reset geometry to grid-native production art.
 
-- logical footprint: **8×2** cells;
-- rotated footprint: **2×8** cells;
-- authored image size: **320×160 px** in either orientation;
+- logical footprint: **5×2** cells;
+- rotated footprint: **2×5** cells;
+- authored image size: **224×112 px** in either orientation;
 - runtime scale: **1:1**;
 - no horizontal overhang;
 - bottom-center asset anchor maps to the projected front footprint corner;

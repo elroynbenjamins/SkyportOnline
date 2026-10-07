@@ -134,11 +134,14 @@ func _run() -> void:
 		_fail("Starter taxiway should expose its real connection mask.")
 		return
 
-	grid.set_build_preview(
+	var preview_status := grid.set_build_preview(
 		"taxiway",
 		grid.tile_to_world(Vector2(14, 10)),
 		0
 	)
+	if int(preview_status.get("network_connections", 0)) <= 0:
+		_fail("Taxiway preview should report its live network connections.")
+		return
 	var preview_visual := grid.get_airside_preview_visual()
 	if preview_visual.get("texture") == null:
 		_fail("Taxiway placement preview should use production ground art.")

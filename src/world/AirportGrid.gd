@@ -5172,6 +5172,64 @@ func get_airside_tile_visual(
 	}
 
 
+func get_airside_preview_visual() -> Dictionary:
+	if (
+		preview_building_id not in ["taxiway", "service_road"]
+		or preview_origin.x < 0
+		or preview_origin.y < 0
+	):
+		return {}
+
+	var visual := get_airside_tile_visual(
+		preview_origin,
+		preview_building_id
+	)
+	visual["building_id"] = preview_building_id
+	visual["origin"] = preview_origin
+	visual["valid"] = bool(
+		preview_status.get("valid", false)
+	)
+	return visual
+
+
+func _draw_airside_surface_preview(
+	origin: Vector2i,
+	kind: String,
+	valid: bool
+) -> void:
+	var visual := get_airside_tile_visual(
+		origin,
+		kind
+	)
+	var texture: Texture2D = visual.get(
+		"texture"
+	)
+	if texture == null:
+		return
+
+	var center := tile_to_world(
+		Vector2(origin.x, origin.y)
+	)
+	var tile_size := Vector2(
+		TILE_WIDTH,
+		TILE_HEIGHT
+	)
+	draw_texture_rect(
+		texture,
+		Rect2(
+			center - tile_size * 0.5,
+			tile_size
+		),
+		false,
+		Color(
+			1.0,
+			1.0 if valid else 0.72,
+			1.0 if valid else 0.72,
+			0.90 if valid else 0.62
+		)
+	)
+
+
 func _adjacent_runway_direction(
 	origin: Vector2i
 ) -> Vector2i:
@@ -6114,13 +6172,22 @@ func _draw_build_preview() -> void:
 				1.4
 			)
 
-	if String(definition.get("surface_art", "")) == "runway_v2":
+	var preview_surface_art := String(
+		definition.get("surface_art", "")
+	)
+	if preview_surface_art == "runway_v2":
 		_draw_runway_surface_v2(
 			definition,
 			preview_origin,
 			footprint,
 			preview_rotation,
 			0.72 if valid else 0.48
+		)
+	elif preview_building_id in ["taxiway", "service_road"]:
+		_draw_airside_surface_preview(
+			preview_origin,
+			preview_building_id,
+			valid
 		)
 
 	var footprint_outline := _footprint_polygon(

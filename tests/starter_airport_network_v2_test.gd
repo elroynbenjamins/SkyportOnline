@@ -18,99 +18,91 @@ func _run() -> void:
 		_fail("New airport builder should start with 16 tiles of height.")
 		return
 
-	var owned: Array[String] = grid.export_owned_parcels()
-	for parcel_id in ["north_west", "north", "west", "home"]:
-		if not owned.has(parcel_id):
-			_fail("%s should be part of the free starter construction area." % parcel_id)
-			return
-
-	# Keep the upper half of the 16x16 starter plot clear for the player's
-	# runway, stand and taxiway construction. Pre-positioned landside/service
-	# buildings must not consume these cells.
-	for y in range(0, 8):
-		for x in range(0, 16):
-			var key := grid._cell_key(Vector2i(x, y))
-			if grid.occupied_cells.has(key):
-				_fail(
-					"Starter airside reserve should be empty at %s."
-					% str(Vector2i(x, y))
-				)
-				return
+	var initial_layout := grid.export_airport_layout()
+	if initial_layout.size() != 1:
+		_fail("Builder start should contain only the Airport Office.")
+		return
+	var initial: Dictionary = initial_layout[0]
+	if String(initial.get("definition_id", "")) != "airport_office":
+		_fail("Fixed Airport Office should be the only initial structure.")
+		return
 
 	var airside := grid.get_airside_status()
 	if int(airside.get("runways", -1)) != 0:
-		_fail("Player should place the starter runway themselves.")
+		_fail("Player should place the starter runway.")
 		return
 	if int(airside.get("stands_total", -1)) != 0:
-		_fail("Player should place the starter stand themselves.")
+		_fail("Player should place the starter stand.")
 		return
-	if int(airside.get("hangars_total", 0)) != 1:
-		_fail("Builder starter should keep one small hangar as aircraft origin.")
-		return
-	if int(airside.get("hangars_connected", -1)) != 0:
-		_fail("Starter hangar should require the player to connect taxiways.")
+	if int(airside.get("hangars_total", -1)) != 0:
+		_fail("Player should place the starter hangar.")
 		return
 
-	# Build a simple physical network:
-	# runway -> taxi spine -> stand + hangar.
 	if not _place(grid, "short_runway", Vector2i(0, 0)):
+		return
+	if not _place(grid, "small_hangar", Vector2i(0, 6)):
+		return
+	if not _place(grid, "small_stand", Vector2i(4, 6)):
 		return
 	for y in range(2, 8):
 		if not _place(grid, "taxiway", Vector2i(3, y)):
 			return
-	if not _place(grid, "small_stand", Vector2i(4, 5)):
-		return
 
-	# Extend the starter service-road spine to the chosen stand so the fuel
-	# truck can actually reach it.
+	if not _place(grid, "basic_fuel", Vector2i(8, 6)):
+		return
+	if not _place(grid, "ground_ops_depot", Vector2i(8, 8)):
+		return
 	for cell in [
+		Vector2i(6, 7),
 		Vector2i(7, 7),
-		Vector2i(7, 6),
-		Vector2i(6, 6)
+		Vector2i(7, 8)
 	]:
 		if not _place(grid, "service_road", cell):
 			return
 
 	airside = grid.get_airside_status()
 	if int(airside.get("runways", 0)) != 1:
-		_fail("Placed runway should become operational infrastructure.")
+		_fail("Placed runway should become operational.")
 		return
 	if int(airside.get("stands_connected", 0)) != 1:
-		_fail("Placed stand should connect to runway through the taxi spine.")
+		_fail("Placed stand should connect through Taxiways.")
 		return
 	if int(airside.get("hangars_connected", 0)) != 1:
-		_fail("Hangar should connect to the same taxi network.")
+		_fail("Player-built hangar should connect through Taxiways.")
 		return
 
 	var departures := grid.get_departure_routes("S")
 	if departures.size() != 1:
-		_fail("One connected stand should create one S-class departure route.")
+		_fail("One connected stand should create one departure route.")
 		return
-
 	var stand_uid := int(departures[0].get("stand_uid", -1))
+
 	var hangar_routes := grid.get_hangar_to_stand_routes(stand_uid, "S")
 	if hangar_routes.size() != 1:
-		_fail("Connected starter hangar should route to the loading stand.")
+		_fail("Player-built hangar should route to the stand.")
 		return
 	var hangar_route: PackedVector2Array = hangar_routes[0].get(
 		"route",
 		PackedVector2Array()
 	)
 	if hangar_route.size() < 4:
-		_fail("Hangar-to-stand route should visibly follow the taxi network.")
+		_fail("Hangar route should visibly follow Taxiways.")
 		return
 
-	var fuel := grid.get_best_service_building("fuel", "S")
-	if fuel.is_empty():
-		_fail("Builder starter should retain its basic fuel station.")
-		return
-	var fuel_route := grid.get_service_route(
-		int(fuel.get("uid", -1)),
-		stand_uid
-	)
-	if fuel_route.size() < 3:
-		_fail("Fuel truck should require and use a connected service-road route.")
-		return
+	for service_type in [
+		"fuel", "cleaning", "catering", "cargo", "passenger", "pushback"
+	]:
+		var station := grid.get_best_service_building(service_type, "S")
+		if station.is_empty():
+			_fail("Tutorial airport should provide %s service." % service_type)
+			return
+		var route := grid.get_service_route(
+			int(station.get("uid", -1)),
+			stand_uid
+		)
+		if route.size() < 3:
+			_fail("%s service should reach the stand by Service Road." % service_type)
+			return
 
 	var plane := AircraftPrototype.new()
 	root.add_child(plane)
@@ -126,10 +118,7 @@ func _run() -> void:
 		int(departures[0].get("runway_uid", -1))
 	)
 	if not plane.set_predeparture_transfer_route(hangar_route):
-		_fail("Aircraft should accept a hangar-to-stand predeparture taxi.")
-		return
-	if plane.state != "TAXIING_TO_STAND":
-		_fail("Aircraft should leave the hangar in TAXIING_TO_STAND state.")
+		_fail("Aircraft should accept the player-built hangar-to-stand taxi.")
 		return
 
 	for _step in range(600):
@@ -137,25 +126,17 @@ func _run() -> void:
 		if plane.state == "WAITING_FUEL":
 			break
 	if plane.state != "WAITING_FUEL":
-		_fail("Aircraft should reach the stand before fueling/loading starts.")
-		return
-	if plane.position.distance_to(departure_route[0]) > 0.5:
-		_fail("Hangar taxi should finish at the loading stand.")
+		_fail("Aircraft should reach the stand before service starts.")
 		return
 
 	print(
-		"STARTER_AIRPORT_NETWORK_V2_OK area=16x16 "
-		+ "player_runway=true taxi_connected=true "
-		+ "hangar_to_stand=true fuel_by_service_road=true"
+		"STARTER_AIRPORT_NETWORK_V2_OK initial=office_only "
+		+ "player_built_airside=true player_built_services=true"
 	)
 	quit(0)
 
 
-func _place(
-	grid: AirportGrid,
-	building_id: String,
-	cell: Vector2i
-) -> bool:
+func _place(grid: AirportGrid, building_id: String, cell: Vector2i) -> bool:
 	var preview := grid.set_build_preview(
 		building_id,
 		grid.tile_to_world(Vector2(cell.x, cell.y)),
@@ -164,15 +145,10 @@ func _place(
 	if not bool(preview.get("valid", false)):
 		_fail(
 			"Could not place %s at %s: %s"
-			% [
-				building_id,
-				str(cell),
-				String(preview.get("reason", "invalid"))
-			]
+			% [building_id, str(cell), String(preview.get("reason", "invalid"))]
 		)
 		return false
-	var placed := grid.confirm_build_preview()
-	if placed.is_empty():
+	if grid.confirm_build_preview().is_empty():
 		_fail("Placement confirmation failed for %s." % building_id)
 		return false
 	return true

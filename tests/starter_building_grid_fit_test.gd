@@ -22,6 +22,7 @@ func _run() -> void:
 		return
 
 	var expected_footprints := {
+		"airport_office": Vector2i(2, 2),
 		"short_runway": Vector2i(8, 2),
 		"small_stand": Vector2i(2, 2),
 		"small_terminal": Vector2i(3, 2),
@@ -56,6 +57,11 @@ func _run() -> void:
 	if String(unit_contract.get("projection", "")) != "skyrama_isometric_2_to_1":
 		_fail("Grid contract should explicitly expose the Skyrama-style projection.")
 		return
+
+	for menu_definition in BuildingCatalog.get_menu_definitions():
+		if String(menu_definition.get("id", "")) == "airport_office":
+			_fail("Fixed Airport Office must not be purchasable.")
+			return
 
 	var terminal := BuildingCatalog.get_definition("small_terminal")
 	var terminal_contract := grid.get_grid_visual_contract_for_definition(

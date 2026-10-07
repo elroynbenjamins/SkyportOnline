@@ -30,6 +30,7 @@ So a tile **looks** like a 64×32 diamond on screen, but it **is** still one squ
 
 The logical sizes currently locked for the starter airport are:
 
+- Fixed Airport Office: **2×2** — the only structure present on a brand-new airport
 - Short Runway: **8×2**
 - Small Aircraft Stand: **2×2**
 - Small Terminal: **3×2**
@@ -99,3 +100,14 @@ The contract exposes both logical and visual geometry:
 - `runtime_scale = (1, 1)`.
 
 Future airport art should be generated specifically for this contract.
+
+
+## New-player construction flow
+
+A brand-new airport begins with only the fixed **Airport Office**. It is hidden from the construction catalog and cannot be moved.
+
+The tutorial forces the player through eight free construction grants in order: **Short Runway → Small Hangar → Small Stand → Taxiways → Basic Fuel Station → Ground Operations Depot → Service Roads → Small Terminal**.
+
+Only the exact active tutorial target is free and exempt from its normal level requirement. Normal catalog prices remain unchanged. The first aircraft is spawned only after the construction sequence is complete; the tutorial then teaches taxi, service, destination selection, loading, pushback/send and takeoff.
+
+Tutorial completion is persisted so an interrupted tutorial resumes, while legacy airports with an existing layout are treated as already onboarded.

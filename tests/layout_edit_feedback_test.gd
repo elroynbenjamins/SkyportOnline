@@ -17,6 +17,9 @@ func _run() -> void:
 		return
 
 	var fuel_uid := int(fuel.get("uid", -1))
+	if not grid.purchase_parcel("west"):
+		_fail("West parcel should unlock the starter fuel plot for edit testing.")
+		return
 	if not grid.purchase_parcel("north"):
 		_fail("North parcel should unlock for edit-feedback testing.")
 		return
@@ -29,7 +32,7 @@ func _run() -> void:
 		_fail("Active move preview should enable edit-focus dimming.")
 		return
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(13, 0)
 	var target_world := grid.tile_to_world(
 		Vector2(target.x, target.y)
 	)
@@ -74,7 +77,7 @@ func _run() -> void:
 	if not bool(start.get("valid", false)):
 		_fail("Moved building should remain movable.")
 		return
-	var second_target := Vector2i(12, 3)
+	var second_target := Vector2i(13, 2)
 	status = grid.set_move_preview(
 		grid.tile_to_world(
 			Vector2(second_target.x, second_target.y)

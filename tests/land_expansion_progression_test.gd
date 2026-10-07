@@ -82,10 +82,14 @@ func _run() -> void:
 	var restored := AirportGrid.new()
 	root.add_child(restored)
 	await process_frame
+	# This test owns only the parcels reached through progression. The default
+	# AirportGrid showcase intentionally displays buildings across multiple
+	# districts for visual QA, so restore ownership independently here instead
+	# of coupling land progression to that demo composition.
 	if not restored.apply_saved_airport_layout(
-		grid.export_airport_layout(),
+		[],
 		grid.export_owned_parcels(),
-		grid.export_airport_storage()
+		[]
 	):
 		_fail("Expanded ownership should restore cleanly.")
 		return

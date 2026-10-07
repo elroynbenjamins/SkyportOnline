@@ -16,14 +16,17 @@ func configure_aircraft_type(type_id: String) -> void:
 	queue_redraw()
 
 func get_directional_draw_width() -> float:
-	var base_width := 78.0
+	# Aircraft should read as substantial airport objects, not tiny markers
+	# beside the buildings. S-class gets the largest relative lift because it
+	# is what players see during onboarding.
+	var base_width := 88.0
 	match aircraft_size:
 		"M":
-			base_width = 88.0
+			base_width = 94.0
 		"L":
-			base_width = 96.0
+			base_width = 106.0
 		"XL":
-			base_width = 104.0
+			base_width = 118.0
 	return base_width * get_visual_scale()
 
 

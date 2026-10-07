@@ -299,33 +299,54 @@ func _initialize_parcels() -> void:
 
 
 func _initialize_starter_airport() -> void:
-	_place_building_internal("short_runway", Vector2i(8, 8), 0)
-	_place_building_internal("taxiway", Vector2i(11, 10), 0)
-	_place_building_internal("taxiway", Vector2i(12, 10), 0)
-	_place_building_internal("taxiway", Vector2i(13, 10), 0)
-	_place_building_internal("small_stand", Vector2i(11, 11), 0)
-	_place_building_internal("small_stand", Vector2i(13, 11), 0)
-	_place_building_internal("small_terminal", Vector2i(8, 14), 0)
-	_place_building_internal("travel_office", Vector2i(9, 10), 0)
-	_place_building_internal("ground_ops_depot", Vector2i(11, 14), 0)
-	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
-	_place_building_internal("service_road", Vector2i(11, 13), 0)
-	_place_building_internal("service_road", Vector2i(12, 13), 0)
-	_place_building_internal("service_road", Vector2i(15, 12), 0)
-	_place_building_internal("service_road", Vector2i(15, 13), 0)
-	_place_building_internal("service_road", Vector2i(12, 14), 0)
-	_place_building_internal("service_road", Vector2i(12, 15), 0)
-	_place_building_internal("service_road", Vector2i(13, 15), 0)
-	_place_building_internal("service_road", Vector2i(14, 15), 0)
-	_place_building_internal("service_road", Vector2i(15, 15), 0)
-	_place_building_internal("service_road", Vector2i(15, 14), 0)
+	# Legacy/demo layout uses the same larger visual grammar as the real
+	# builder: long runway, roomier stands and generous service clearances.
+	_place_building_internal("short_runway", Vector2i(4, 0), 0)
+
+	_place_building_internal("taxiway", Vector2i(8, 2), 0)
+	for x in range(6, 13):
+		_place_building_internal(
+			"taxiway",
+			Vector2i(x, 3),
+			0
+		)
+
+	_place_building_internal("small_stand", Vector2i(6, 4), 0)
+	_place_building_internal("small_stand", Vector2i(10, 4), 0)
+
+	_place_building_internal("basic_fuel", Vector2i(4, 12), 0)
+	_place_building_internal("travel_office", Vector2i(7, 12), 0)
+	_place_building_internal("ground_ops_depot", Vector2i(9, 10), 0)
+	_place_building_internal("small_terminal", Vector2i(11, 12), 0)
+
+	# A proper ground-service loop leaves visible breathing room around stands.
+	for x in range(4, 15):
+		_place_building_internal(
+			"service_road",
+			Vector2i(x, 11),
+			0
+		)
+	for y in range(6, 11):
+		_place_building_internal(
+			"service_road",
+			Vector2i(5, y),
+			0
+		)
+	for x in range(6, 13):
+		_place_building_internal(
+			"service_road",
+			Vector2i(x, 6),
+			0
+		)
+
 	_rebuild_occupied_cells()
 
 
 func prepare_new_airport_builder_layout() -> Dictionary:
-	# New airports begin with a roomy 16x16 owned construction zone. The
-	# player places the runway, stands and taxiways themselves; only the
-	# landside/service core and a starter hangar are pre-positioned.
+	# New airports begin with a 16x16 construction zone, but the usable scale
+	# is now closer to classic airport builders: the hangar and landside core
+	# occupy believable multi-tile plots while the upper half remains open for
+	# the player's runway, stands and taxi network.
 	for parcel_id in BUILDER_STARTER_PARCELS:
 		if parcels.has(parcel_id):
 			parcels[parcel_id]["owned"] = true
@@ -334,27 +355,26 @@ func prepare_new_airport_builder_layout() -> Dictionary:
 	stored_buildings.clear()
 	next_building_uid = 1
 
-	_place_building_internal("small_hangar", Vector2i(1, 8), 0)
-	_place_building_internal("basic_fuel", Vector2i(5, 8), 0)
-	_place_building_internal("travel_office", Vector2i(5, 11), 0)
-	_place_building_internal("small_terminal", Vector2i(9, 13), 0)
-	_place_building_internal("ground_ops_depot", Vector2i(12, 13), 0)
+	_place_building_internal("small_hangar", Vector2i(0, 4), 0)
+	_place_building_internal("basic_fuel", Vector2i(4, 12), 0)
+	_place_building_internal("travel_office", Vector2i(7, 12), 0)
+	_place_building_internal("ground_ops_depot", Vector2i(9, 10), 0)
+	_place_building_internal("small_terminal", Vector2i(11, 12), 0)
 
-	# A starter service-road spine gives fuel/ops vehicles a sensible base;
-	# the player extends it toward whichever stands they choose to build.
-	for cell in [
-		Vector2i(7, 8),
-		Vector2i(7, 9),
-		Vector2i(7, 10),
-		Vector2i(7, 11),
-		Vector2i(7, 12),
-		Vector2i(8, 12),
-		Vector2i(9, 12),
-		Vector2i(10, 12),
-		Vector2i(11, 12),
-		Vector2i(12, 12)
-	]:
-		_place_building_internal("service_road", cell, 0)
+	# Starter service spine. The tutorial extends the final three road cells
+	# toward the stand after the player decides where the airside should sit.
+	for x in range(4, 15):
+		_place_building_internal(
+			"service_road",
+			Vector2i(x, 11),
+			0
+		)
+	for y in range(6, 11):
+		_place_building_internal(
+			"service_road",
+			Vector2i(5, y),
+			0
+		)
 
 	selected_id = ""
 	_rebuild_occupied_cells()

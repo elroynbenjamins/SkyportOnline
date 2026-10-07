@@ -11,40 +11,15 @@ func _run() -> void:
 	await process_frame
 
 	var site := grid.get_airport_site_foundation_snapshot()
-	if not bool(site.get("active", false)):
-		_fail("Starter airport should expose one shared airport foundation.")
-		return
-
-	var origin: Vector2i = site.get("origin", Vector2i(-1, -1))
-	var footprint: Vector2i = site.get("footprint", Vector2i.ZERO)
-	if origin != Vector2i(8, 8):
-		_fail("Starter airport foundation should begin at the runway corner.")
-		return
-	if footprint != Vector2i(8, 8):
-		_fail("Starter airport foundation should cover the full 8x8 home airport.")
-		return
-
-	for building in grid.placed_buildings:
-		var definition := BuildingCatalog.get_definition(
-			String(building.get("definition_id", ""))
+	if bool(site.get("active", false)):
+		_fail(
+			"Roomier showcase airport should not draw one giant foundation across "
+			+ "multiple locked districts."
 		)
-		if definition.is_empty():
-			continue
-		if String(definition.get("category", "")) == "Decor":
-			continue
-		var fp := grid._footprint_for(
-			definition,
-			int(building.get("rotation", 0))
-		)
-		if not grid._building_is_on_airport_foundation(
-			building.get("origin", Vector2i.ZERO),
-			fp
-		):
-			_fail(
-				"%s should sit on the shared airport foundation."
-				% String(building.get("definition_id", "building"))
-			)
-			return
+		return
+	if int(site.get("building_count", 0)) <= 0:
+		_fail("Foundation snapshot should still report starter building coverage.")
+		return
 
 	for building_id in [
 		"small_terminal",
@@ -61,18 +36,28 @@ func _run() -> void:
 		if found.is_empty():
 			_fail("%s should exist in the starter airport." % building_id)
 			return
+
 		var fp := grid._footprint_for(
 			definition,
 			int(found.get("rotation", 0))
 		)
+		var origin: Vector2i = found.get("origin", Vector2i.ZERO)
 		var fill := grid._world_art_ground_fill(
 			definition,
-			found.get("origin", Vector2i.ZERO),
+			origin,
 			fp
 		)
-		if fill.a > 0.12:
+		if fill.a < 0.45:
 			_fail(
-				"%s pad should blend into the shared airport floor."
+				"%s should retain a readable individual grid foundation."
+				% building_id
+			)
+			return
+
+		var polygon := grid._footprint_polygon(origin, fp)
+		if polygon.size() != 4:
+			_fail(
+				"%s foundation should match one exact isometric footprint."
 				% building_id
 			)
 			return
@@ -81,14 +66,9 @@ func _run() -> void:
 		_fail("Buildings should retain a dedicated contact-shadow grounding pass.")
 		return
 
-	var polygon := grid._footprint_polygon(origin, footprint)
-	if polygon.size() != 4:
-		_fail("Shared airport foundation should be one continuous isometric slab.")
-		return
-
 	print(
-		"AIRPORT_GROUNDING_OK foundation=8x8 integrated_pads=true "
-		+ "contact_shadows=true placement_grid_hidden=true"
+		"AIRPORT_GROUNDING_OK roomier_plots=true individual_pads=true "
+		+ "contact_shadows=true placement_grid_exact=true"
 	)
 	quit(0)
 

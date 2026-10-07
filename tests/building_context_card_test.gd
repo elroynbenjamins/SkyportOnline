@@ -17,7 +17,20 @@ func _run() -> void:
 
 	grid.building_selected_world.connect(_on_building_selected)
 
-	var fuel_world := grid.tile_to_world(Vector2(13, 13))
+	var fuel_building: Dictionary = {}
+	for uid in range(1, 40):
+		var candidate := grid.get_building(uid)
+		if String(candidate.get("definition_id", "")) == "basic_fuel":
+			fuel_building = candidate
+			break
+	if fuel_building.is_empty():
+		_fail("Starter airport should contain a Basic Fuel Station.")
+		return
+	var fuel_origin: Vector2i = fuel_building.get(
+		"origin",
+		Vector2i(-1, -1)
+	)
+	var fuel_world := grid.tile_to_world(Vector2(fuel_origin))
 	grid.select_world_position(fuel_world)
 
 	if selected_building.is_empty():
@@ -194,7 +207,7 @@ func _run() -> void:
 			"status": "Connected to taxiway network",
 			"tone": "success",
 			"stat_one": "AIRCRAFT\nS",
-			"stat_two": "FOOTPRINT\n2x2",
+			"stat_two": "FOOTPRINT\n3x2",
 			"primary_label": ""
 		}
 	)

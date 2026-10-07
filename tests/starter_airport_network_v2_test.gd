@@ -40,20 +40,27 @@ func _run() -> void:
 
 	# Build a simple physical network:
 	# runway -> taxi spine -> stand + hangar.
-	if not _place(grid, "short_runway", Vector2i(0, 0)):
+	if not _place(grid, "short_runway", Vector2i(4, 0)):
 		return
-	for y in range(2, 8):
-		if not _place(grid, "taxiway", Vector2i(3, y)):
+	for cell in [
+		Vector2i(8, 2),
+		Vector2i(4, 3),
+		Vector2i(5, 3),
+		Vector2i(6, 3),
+		Vector2i(7, 3),
+		Vector2i(8, 3)
+	]:
+		if not _place(grid, "taxiway", cell):
 			return
-	if not _place(grid, "small_stand", Vector2i(4, 5)):
+	if not _place(grid, "small_stand", Vector2i(6, 4)):
 		return
 
 	# Extend the starter service-road spine to the chosen stand so the fuel
 	# truck can actually reach it.
 	for cell in [
-		Vector2i(7, 7),
+		Vector2i(6, 6),
 		Vector2i(7, 6),
-		Vector2i(6, 6)
+		Vector2i(8, 6)
 	]:
 		if not _place(grid, "service_road", cell):
 			return

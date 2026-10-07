@@ -284,10 +284,14 @@ func _run() -> void:
 		_fail("Parked aircraft should be visible at the airport.")
 		return
 
-	grid.select_parcel("east")
+	# Use the newly roomier north-east apron to verify a stand can remain
+	# disconnected and then join the live taxi network through several cells.
+	grid.select_parcel("north")
+	grid.purchase_selected()
+	grid.select_parcel("north_east")
 	grid.purchase_selected()
 
-	var disconnected_position := grid.tile_to_world(Vector2(15, 10))
+	var disconnected_position := grid.tile_to_world(Vector2(16, 4))
 	var preview := grid.set_build_preview("small_stand", disconnected_position, 0)
 	if not bool(preview.get("valid", false)):
 		_fail("Disconnected stand test placement should be buildable.")
@@ -305,13 +309,26 @@ func _run() -> void:
 		_fail("Third stand should remain disconnected before adding taxiway.")
 		return
 
-	var connector_position := grid.tile_to_world(Vector2(14, 10))
-	var connector_preview := grid.set_build_preview("taxiway", connector_position, 0)
-	if not bool(connector_preview.get("valid", false)):
-		_fail("Connector taxiway test placement should be valid.")
-		return
+	for connector_cell in [
+		Vector2i(13, 3),
+		Vector2i(14, 3),
+		Vector2i(15, 3),
+		Vector2i(16, 3)
+	]:
+		var connector_position := grid.tile_to_world(Vector2(connector_cell))
+		var connector_preview := grid.set_build_preview(
+			"taxiway",
+			connector_position,
+			0
+		)
+		if not bool(connector_preview.get("valid", false)):
+			_fail(
+				"Connector taxiway test placement should be valid at %s."
+				% str(connector_cell)
+			)
+			return
+		grid.confirm_build_preview()
 
-	grid.confirm_build_preview()
 	var connected := grid.get_airside_status()
 	if int(connected.get("stands_connected", 0)) != 3:
 		_fail("All three stands should connect after extending the taxiway.")
@@ -323,7 +340,24 @@ func _run() -> void:
 	rapid_grid.select_parcel("east")
 	rapid_grid.purchase_selected()
 
-	var rapid_position := rapid_grid.tile_to_world(Vector2(16, 13))
+	for road_cell in [
+		Vector2i(15, 11),
+		Vector2i(15, 12)
+	]:
+		var road_preview := rapid_grid.set_build_preview(
+			"service_road",
+			rapid_grid.tile_to_world(Vector2(road_cell)),
+			0
+		)
+		if not bool(road_preview.get("valid", false)):
+			_fail(
+				"Rapid fuel service-road extension should be valid at %s."
+				% str(road_cell)
+			)
+			return
+		rapid_grid.confirm_build_preview()
+
+	var rapid_position := rapid_grid.tile_to_world(Vector2(16, 12))
 	var rapid_preview := rapid_grid.set_build_preview("rapid_small_fuel", rapid_position, 0)
 	if not bool(rapid_preview.get("valid", false)):
 		_fail("Rapid fuel station test placement should be valid on expanded land.")

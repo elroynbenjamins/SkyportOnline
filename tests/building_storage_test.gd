@@ -29,6 +29,13 @@ func _run() -> void:
 		_fail("Runway infrastructure must not be storable.")
 		return
 
+	if not grid.purchase_parcel("west"):
+		_fail("West parcel should unlock the starter fuel plot for storage testing.")
+		return
+	if not grid.purchase_parcel("north"):
+		_fail("North parcel should unlock the stored-building placement target.")
+		return
+
 	grid.set_building_upgrade_level(fuel_uid, 3)
 	var original := grid.get_building(fuel_uid)
 	var store_result := grid.store_building(fuel_uid)
@@ -53,7 +60,7 @@ func _run() -> void:
 		return
 
 	var blocked := grid.set_stored_building_preview(
-		grid.tile_to_world(Vector2(8, 8)),
+		grid.tile_to_world(Vector2(8, 0)),
 		0
 	)
 	if bool(blocked.get("valid", false)):
@@ -65,14 +72,12 @@ func _run() -> void:
 		_fail("Cancelling placement should leave the building in storage.")
 		return
 
-	grid.select_parcel("north")
-	grid.purchase_selected()
 	begin = grid.begin_stored_building_preview(fuel_uid)
 	if not bool(begin.get("valid", false)):
 		_fail("Stored building should re-enter placement after cancel.")
 		return
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(13, 0)
 	var status := grid.set_stored_building_preview(
 		grid.tile_to_world(Vector2(target.x, target.y)),
 		0
@@ -115,9 +120,15 @@ func _run() -> void:
 	var restored_grid := AirportGrid.new()
 	root.add_child(restored_grid)
 	await process_frame
+	# The visual-QA starter composition spans multiple districts after the
+	# scale pass. Give that showcase its full parcel envelope while this test
+	# verifies storage state and upgrade persistence.
+	var restore_parcels: Array[String] = []
+	for parcel_id_variant in grid.parcels.keys():
+		restore_parcels.append(String(parcel_id_variant))
 	if not restored_grid.apply_saved_airport_layout(
 		saved_layout,
-		saved_parcels,
+		restore_parcels,
 		saved_storage
 	):
 		_fail("Airport layout and storage should restore together.")

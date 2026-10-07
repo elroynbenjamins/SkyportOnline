@@ -25,9 +25,9 @@ func _run() -> void:
 
 	var has_intersection := false
 	for cell in [
-		Vector2i(11, 10),
-		Vector2i(12, 10),
-		Vector2i(13, 10)
+		Vector2i(7, 3),
+		Vector2i(8, 3),
+		Vector2i(9, 3)
 	]:
 		if grid.get_taxiway_connection_count(cell) >= 3:
 			has_intersection = true

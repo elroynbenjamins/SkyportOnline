@@ -14,7 +14,7 @@ func _run() -> void:
 		_fail("North parcel should unlock for construction feedback testing.")
 		return
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(13, 0)
 	var status := grid.set_build_preview(
 		"basic_fuel",
 		grid.tile_to_world(
@@ -116,7 +116,7 @@ func _run() -> void:
 		return
 	var quick_status := quick_grid.set_build_preview(
 		"basic_fuel",
-		quick_grid.tile_to_world(Vector2(10, 3)),
+		quick_grid.tile_to_world(Vector2(13, 0)),
 		0
 	)
 	if not bool(quick_status.get("valid", false)):

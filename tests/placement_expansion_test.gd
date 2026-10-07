@@ -10,7 +10,7 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(13, 0)
 	var status := grid.set_build_preview(
 		"basic_fuel",
 		grid.tile_to_world(
@@ -100,9 +100,9 @@ func _run() -> void:
 		_fail("Future-only parcel should not report owned adjacency.")
 		return
 
-	var multi_target := Vector2i(5, 6)
+	var multi_target := Vector2i(13, 4)
 	var multi_status := multi_grid.set_build_preview(
-		"short_runway",
+		"small_hangar",
 		multi_grid.tile_to_world(
 			Vector2(multi_target.x, multi_target.y)
 		),

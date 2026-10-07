@@ -42,8 +42,8 @@ func _run() -> void:
 	if not bool(shuttle.get("passenger_generator", false)):
 		_fail("Shuttle Station should generate passengers.")
 		return
-	if Vector2i(shuttle.get("footprint", Vector2i.ZERO)) != Vector2i(3, 2):
-		_fail("Shuttle Station should use a distinct 3x2 footprint.")
+	if Vector2i(shuttle.get("footprint", Vector2i.ZERO)) != Vector2i(4, 3):
+		_fail("Shuttle Station should use the roomier 4x3 footprint.")
 		return
 
 	var shuttle_stats := PassengerUpgradeCatalog.passenger_stats(

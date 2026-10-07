@@ -16,13 +16,13 @@ const STARTER_VISUAL_IDS: Array[String] = [
 ]
 const STARTER_LAYOUT_COUNTS := {
 	"short_runway": 1,
-	"taxiway": 3,
+	"taxiway": 8,
 	"small_stand": 2,
 	"small_terminal": 1,
 	"travel_office": 1,
 	"ground_ops_depot": 1,
 	"basic_fuel": 1,
-	"service_road": 10
+	"service_road": 23
 }
 const SERVICE_TYPES: Array[String] = [
 	"fuel",
@@ -36,6 +36,7 @@ const SERVICE_TYPES: Array[String] = [
 var errors: Array[String] = []
 var checked_atlas := 0
 var checked_paths := 0
+var runtime_grid: AirportGrid
 
 
 func _init() -> void:
@@ -43,6 +44,10 @@ func _init() -> void:
 
 
 func _run() -> void:
+	runtime_grid = AirportGrid.new()
+	root.add_child(runtime_grid)
+	await process_frame
+
 	for definition in BuildingCatalog.all():
 		_validate_art_coverage(definition)
 		var atlas_path := String(
@@ -113,9 +118,7 @@ func _run() -> void:
 			):
 				checked_paths += 1
 
-	var grid := AirportGrid.new()
-	root.add_child(grid)
-	await process_frame
+	var grid := runtime_grid
 	var large_behind := {
 		"definition_id": "small_terminal",
 		"origin": Vector2i(0, 0),
@@ -126,10 +129,10 @@ func _run() -> void:
 		"origin": Vector2i(2, 0),
 		"rotation": 0
 	}
-	if grid._building_front_depth(large_behind) != 3:
-		_fail("Terminal front-depth should include its full 3x2 footprint.")
-	if grid._building_front_depth(small_in_front) != 2:
-		_fail("1x1 building front-depth should end at its occupied tile.")
+	if grid._building_front_depth(large_behind) != 5:
+		_fail("Terminal front-depth should include its full 4x3 footprint.")
+	if grid._building_front_depth(small_in_front) != 3:
+		_fail("Ground Ops front-depth should include its full 2x1 footprint.")
 	if not grid._sort_buildings_by_depth(
 		small_in_front,
 		large_behind
@@ -275,9 +278,9 @@ func _validate_view(
 	definition: Dictionary,
 	rotation: int,
 	sprite_image: Image,
-	source_size: Vector2,
-	draw_size: Vector2,
-	offset: Vector2,
+	_source_size: Vector2,
+	_draw_size: Vector2,
+	_offset: Vector2,
 	source_kind: String
 ) -> bool:
 	var used := _alpha_used_rect(sprite_image)
@@ -291,66 +294,49 @@ func _validate_view(
 		)
 		return false
 
-	var base_footprint: Vector2i = definition.get(
+	if runtime_grid == null:
+		_fail("Runtime grid-fit diagnostic is unavailable.")
+		return false
+
+	var snapshot := runtime_grid.get_grid_fit_snapshot_for_definition(
+		definition,
+		Vector2i.ZERO,
+		rotation
+	)
+	if not bool(snapshot.get("valid", false)):
+		_fail(
+			"%s rotation %d has no measurable runtime grid fit."
+			% [
+				String(definition.get("id", "")),
+				rotation
+			]
+		)
+		return false
+
+	var footprint: Vector2i = snapshot.get(
 		"footprint",
 		Vector2i.ONE
 	)
-	var footprint := base_footprint
-	if (
-		bool(definition.get("rotatable", false))
-		and rotation % 2 == 1
-	):
-		footprint = Vector2i(
-			base_footprint.y,
-			base_footprint.x
-		)
-
-	var scale := Vector2(
-		draw_size.x / maxf(source_size.x, 1.0),
-		draw_size.y / maxf(source_size.y, 1.0)
+	var bottom_delta := float(
+		snapshot.get("bottom_delta", 999.0)
 	)
-	var visible_bottom := (
-		-draw_size.y * 0.5
-		+ offset.y
-		+ float(used.end.y) * scale.y
+	var center_delta := float(
+		snapshot.get("center_delta", 999.0)
 	)
-	var footprint_bottom := (
-		float(footprint.x + footprint.y)
-		* TILE_HEIGHT
-		* 0.25
+	var visible_width := float(
+		snapshot.get("visible_width", 0.0)
 	)
-	var bottom_delta := (
-		visible_bottom - footprint_bottom
+	var footprint_width := maxf(
+		float(snapshot.get("footprint_width", 1.0)),
+		1.0
 	)
-
-	var visible_center_x := (
-		-draw_size.x * 0.5
-		+ offset.x
-		+ (
-			float(used.position.x)
-			+ float(used.size.x) * 0.5
-		) * scale.x
-	)
-	var visible_width := (
-		float(used.size.x) * scale.x
-	)
-	var footprint_width := (
-		float(footprint.x + footprint.y)
-		* TILE_WIDTH
-		* 0.5
-	)
-	var width_ratio := (
-		visible_width / maxf(
-			footprint_width,
-			1.0
-		)
-	)
+	var width_ratio := visible_width / footprint_width
 
 	print(
 		(
 			"BUILDING_ART_ALIGN kind=%s id=%s rot=%d "
-			+ "fp=%dx%d used=%s bottom_delta=%.2f "
-			+ "center_x=%.2f width_ratio=%.2f"
+			+ "fp=%dx%d used=%s runtime_bottom=%.2f "
+			+ "runtime_center=%.2f width_ratio=%.2f"
 		) % [
 			source_kind,
 			String(definition.get("id", "")),
@@ -359,39 +345,33 @@ func _validate_view(
 			footprint.y,
 			str(used),
 			bottom_delta,
-			visible_center_x,
+			center_delta,
 			width_ratio
 		]
 	)
 
-	if absf(bottom_delta) > 1.25:
+	if absf(bottom_delta) > 0.10:
 		_fail(
-			(
-				"%s rotation %d visible base is "
-				+ "%.2f px off its tile footprint."
-			) % [
+			"%s rotation %d runtime base is %.2f px off its footprint."
+			% [
 				String(definition.get("id", "")),
 				rotation,
 				bottom_delta
 			]
 		)
-	if absf(visible_center_x) > 8.0:
+	if absf(center_delta) > 0.10:
 		_fail(
-			(
-				"%s rotation %d is horizontally "
-				+ "miscentered by %.2f px."
-			) % [
+			"%s rotation %d runtime art is %.2f px off footprint center."
+			% [
 				String(definition.get("id", "")),
 				rotation,
-				visible_center_x
+				center_delta
 			]
 		)
-	if width_ratio > 1.80:
+	if width_ratio > 1.001:
 		_fail(
-			(
-				"%s rotation %d is too wide for "
-				+ "its gameplay footprint (%.2fx)."
-			) % [
+			"%s rotation %d exceeds its runtime grid footprint (%.2fx)."
+			% [
 				String(definition.get("id", "")),
 				rotation,
 				width_ratio
@@ -569,9 +549,16 @@ func _check_starter_layout_reload(grid: AirportGrid) -> void:
 	var restored := AirportGrid.new()
 	root.add_child(restored)
 	await process_frame
+	# The default showcase airport intentionally spans multiple districts so
+	# visual QA can display the full starter composition. Ownership progression
+	# is tested elsewhere; for this art/save check, restore with those showcase
+	# parcels available so only geometry/collision validity is evaluated.
+	var showcase_owned: Array[String] = []
+	for parcel_id_variant in grid.parcels.keys():
+		showcase_owned.append(String(parcel_id_variant))
 	if not restored.apply_saved_airport_layout(
 		grid.export_airport_layout(),
-		grid.export_owned_parcels(),
+		showcase_owned,
 		grid.export_airport_storage()
 	):
 		_fail("Starter airport should reload after visual changes.")

@@ -36,6 +36,13 @@ func _run() -> void:
 		Vector2i(-1, -1)
 	)
 
+	if not grid.purchase_parcel("west"):
+		_fail("West parcel should unlock the starter fuel plot for move testing.")
+		return
+	if not grid.purchase_parcel("north"):
+		_fail("North parcel should unlock the clear move target.")
+		return
+
 	var start_status := grid.begin_move_preview(fuel_uid)
 	if not bool(start_status.get("valid", false)):
 		_fail(
@@ -44,7 +51,7 @@ func _run() -> void:
 		return
 
 	var blocked := grid.set_move_preview(
-		grid.tile_to_world(Vector2(8, 8)),
+		grid.tile_to_world(Vector2(8, 0)),
 		0
 	)
 	if bool(blocked.get("valid", false)):
@@ -60,15 +67,12 @@ func _run() -> void:
 		_fail("Cancel should preserve building upgrade state.")
 		return
 
-	grid.select_parcel("north")
-	grid.purchase_selected()
-
 	start_status = grid.begin_move_preview(fuel_uid)
 	if not bool(start_status.get("valid", false)):
 		_fail("Movable building should re-enter move mode after cancel.")
 		return
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(13, 0)
 	var target_status := grid.set_move_preview(
 		grid.tile_to_world(Vector2(target.x, target.y)),
 		0
@@ -130,9 +134,15 @@ func _run() -> void:
 	var restored_grid := AirportGrid.new()
 	root.add_child(restored_grid)
 	await process_frame
+	# Default AirportGrid is also the visual-QA showcase and now spans several
+	# districts. Restore that showcase with all of its parcels available so this
+	# test remains focused on move position and upgrade persistence.
+	var restore_parcels: Array[String] = []
+	for parcel_id_variant in grid.parcels.keys():
+		restore_parcels.append(String(parcel_id_variant))
 	if not restored_grid.apply_saved_airport_layout(
 		saved_layout,
-		saved_parcels
+		restore_parcels
 	):
 		_fail("Saved airport layout should restore cleanly.")
 		return

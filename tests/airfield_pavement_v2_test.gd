@@ -52,6 +52,10 @@ func _run() -> void:
 			return
 		definitions.append(definition)
 
+		if building_id == "apron_tile" and bool(definition.get("movable", true)):
+			_fail("Apron Concrete should behave as fixed pavement after placement.")
+			return
+
 		if String(definition.get("art_tier", "")) != "surface_v2":
 			_fail("%s should use the surface_v2 art tier." % building_id)
 			return

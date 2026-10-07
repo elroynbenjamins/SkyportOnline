@@ -108,6 +108,22 @@ func _run() -> void:
 			_fail("Stand route metadata should use the same parking center.")
 			return
 
+	var terminal_definition := BuildingCatalog.get_definition(
+		"small_terminal"
+	)
+	var hangar_definition := BuildingCatalog.get_definition(
+		"small_hangar"
+	)
+	if stand_definition.get("footprint", Vector2i.ZERO) != Vector2i(3, 2):
+		_fail("Small Stand should use the roomier 3x2 footprint.")
+		return
+	if terminal_definition.get("footprint", Vector2i.ZERO) != Vector2i(4, 3):
+		_fail("Small Terminal should use the roomier 4x3 footprint.")
+		return
+	if hangar_definition.get("footprint", Vector2i.ZERO) != Vector2i(5, 4):
+		_fail("Small Hangar should use the roomier 5x4 footprint.")
+		return
+
 	var ids := [
 		"pico_p8",
 		"swift_s14",
@@ -156,6 +172,33 @@ func _run() -> void:
 		return
 	if float(widths["nimbus_n40"]) <= float(widths["voyager_v32"]):
 		_fail("First M aircraft should render larger than the largest S aircraft.")
+		return
+
+	var terminal_fit := grid.get_grid_fit_snapshot_for_definition(
+		terminal_definition,
+		Vector2i.ZERO,
+		0
+	)
+	var hangar_fit := grid.get_grid_fit_snapshot_for_definition(
+		hangar_definition,
+		Vector2i.ZERO,
+		0
+	)
+	var terminal_width := float(
+		terminal_fit.get("visible_width", 0.0)
+	)
+	var hangar_width := float(
+		hangar_fit.get("visible_width", 0.0)
+	)
+	if float(widths["pico_p8"]) < terminal_width * 0.58:
+		_fail(
+			"Pico should no longer look tiny beside the starter terminal."
+		)
+		return
+	if float(widths["pico_p8"]) < hangar_width * 0.48:
+		_fail(
+			"Pico should retain believable presence beside the starter hangar."
+		)
 		return
 
 	if not (

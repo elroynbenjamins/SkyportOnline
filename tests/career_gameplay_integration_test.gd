@@ -143,6 +143,15 @@ func _run() -> void:
 						plane,
 						handling_action
 					)
+				if (
+					plane.state == "READY_FOR_DESTINATION"
+					and not plane.has_flight_plan()
+					and not plane.is_social_visitor()
+				):
+					main._on_world_map_flight_assignment_requested(
+						plane,
+						"brussels"
+					)
 				plane._process(0.10)
 		for vehicle in main.ground_services.get_children():
 			if is_instance_valid(vehicle) and not vehicle.is_queued_for_deletion() and vehicle.has_method("_process"):

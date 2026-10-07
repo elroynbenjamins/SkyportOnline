@@ -117,10 +117,10 @@ static func _raw_definitions() -> Array[Dictionary]:
 		},
 		{
 			"id": "airport_office",
-			"name": "Airport Office",
-			"menu_name": "AIRPORT OFFICE",
+			"name": "Main Airport Building",
+			"menu_name": "MAIN BUILDING",
 			"category": "Administration",
-			"footprint": Vector2i(2, 2),
+			"footprint": Vector2i(3, 2),
 			"cost": 0,
 			"level": 1,
 			"color": Color("d9c48a"),
@@ -128,7 +128,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"movable": false,
 			"hidden_from_catalog": true,
 			"sizes": PackedStringArray([]),
-			"description": "The fixed administration building and identity anchor for your airport."
+			"description": "The fixed administration and identity anchor of your airport. Operational facilities are built around it during the tutorial."
 		},
 		{
 			"id": "small_terminal",

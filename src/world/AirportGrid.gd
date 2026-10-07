@@ -336,9 +336,9 @@ func _initialize_starter_airport() -> void:
 
 
 func prepare_new_airport_builder_layout() -> Dictionary:
-	# A brand-new airport starts deliberately almost empty. The fixed Airport
-	# Office is the identity anchor; every operational system is taught and
-	# placed by the player through the starter tutorial.
+	# A brand-new airport starts deliberately almost empty. The fixed Main
+	# Airport Building is the identity anchor; every operational system is
+	# taught and placed by the player through the starter tutorial.
 	for parcel_id in BUILDER_STARTER_PARCELS:
 		if parcels.has(parcel_id):
 			parcels[parcel_id]["owned"] = true
@@ -373,9 +373,10 @@ func prepare_new_airport_builder_layout() -> Dictionary:
 		]),
 		"next_steps": PackedStringArray([
 			"Place a Short Runway",
-			"Place a Small Hangar",
 			"Place a Small Stand",
-			"Connect them with Taxiways",
+			"Connect Stand → Runway with Taxiways",
+			"Place a Small Hangar",
+			"Connect Hangar → Stand with Taxiways",
 			"Place Fuel + Ground Ops",
 			"Connect Service Roads",
 			"Place the Small Terminal"

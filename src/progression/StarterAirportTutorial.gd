@@ -4,123 +4,25 @@ extends Node
 signal changed(snapshot: Dictionary)
 signal coin_reward_earned(amount: int, reason: String)
 
-const TOTAL_STEPS := 14
+const TOTAL_STEPS := 15
 
 const STEPS := [
-	{
-		"id": "runway",
-		"title": "Place your first runway",
-		"guidance": "Your Airport Office is ready. Place the free tutorial Short Runway on the open airside land.",
-		"action": "build",
-		"target": "short_runway",
-		"reward": 0
-	},
-	{
-		"id": "hangar",
-		"title": "Build the aircraft hangar",
-		"guidance": "Place the free Small Hangar. Your first aircraft will start here before taxiing to a stand.",
-		"action": "build",
-		"target": "small_hangar",
-		"reward": 0
-	},
-	{
-		"id": "stand",
-		"title": "Add a Small Stand",
-		"guidance": "Place the free Small Stand. Aircraft stop here for fuel, handling and loading.",
-		"action": "build",
-		"target": "small_stand",
-		"reward": 0
-	},
-	{
-		"id": "taxi_network",
-		"title": "Connect the airside",
-		"guidance": "Lay free Taxiway tiles until Hangar → Stand → Runway is one continuous aircraft route.",
-		"action": "build",
-		"target": "taxiway",
-		"reward": 0
-	},
-	{
-		"id": "fuel_station",
-		"title": "Add fuel service",
-		"guidance": "Place the free Basic Fuel Station. Its truck needs a Service Road to reach your stand.",
-		"action": "build",
-		"target": "basic_fuel",
-		"reward": 0
-	},
-	{
-		"id": "ground_ops",
-		"title": "Add Ground Operations",
-		"guidance": "Place the free Ground Operations Depot for cleaning, catering, baggage, passenger vehicles and pushback.",
-		"action": "build",
-		"target": "ground_ops_depot",
-		"reward": 0
-	},
-	{
-		"id": "service_road",
-		"title": "Connect ground service",
-		"guidance": "Lay free Service Road tiles so both Fuel and Ground Ops can drive to the stand. Aircraft use Taxiways; vehicles use Service Roads.",
-		"action": "build",
-		"target": "service_road",
-		"reward": 0
-	},
-	{
-		"id": "terminal",
-		"title": "Place the terminal",
-		"guidance": "Place the free Small Terminal to establish the passenger side of your new airport.",
-		"action": "build",
-		"target": "small_terminal",
-		"reward": 0
-	},
-	{
-		"id": "hangar_taxi",
-		"title": "Watch the first taxi",
-		"guidance": "Your Pico is ready. Watch it leave the hangar and follow the taxiway you built to the stand.",
-		"action": "aircraft",
-		"target": "",
-		"reward": 250
-	},
-	{
-		"id": "service",
-		"title": "Start ground service",
-		"guidance": "When the plane shows SERVICE, tap it. Fuel and service vehicles will use the road network you built.",
-		"action": "aircraft",
-		"target": "",
-		"reward": 250
-	},
-	{
-		"id": "destination",
-		"title": "Choose the first route",
-		"guidance": "Open the World Map and choose a nearby unlocked destination. Routes decide passengers, fuel, time and country resources.",
-		"action": "world",
-		"target": "",
-		"reward": 250
-	},
-	{
-		"id": "load",
-		"title": "Load the aircraft",
-		"guidance": "When LOAD appears, tap it. Passenger stock is moved onto the aircraft before departure.",
-		"action": "aircraft",
-		"target": "",
-		"reward": 250
-	},
-	{
-		"id": "send",
-		"title": "Send the aircraft",
-		"guidance": "When SEND appears, tap it. The tug pushes the plane back and it taxis toward your runway.",
-		"action": "aircraft",
-		"target": "",
-		"reward": 250
-	},
-	{
-		"id": "takeoff",
-		"title": "First takeoff",
-		"guidance": "Watch the Pico taxi to the runway and depart. You built and operated your first complete airport flow.",
-		"action": "aircraft",
-		"target": "",
-		"reward": 1000
-	}
+	{"id":"runway","title":"Place your first runway","guidance":"Your Main Airport Building is ready. Place the free Short Runway on the open airside land.","action":"build","target":"short_runway","recommended_origin":Vector2i(0,0),"reward":0},
+	{"id":"stand","title":"Add a Small Stand","guidance":"Place the free Small Stand. Aircraft stop here for fuel, handling and loading.","action":"build","target":"small_stand","recommended_origin":Vector2i(4,6),"reward":0},
+	{"id":"runway_taxi","title":"Connect Stand to Runway","guidance":"Lay free Taxiway tiles from the stand to the runway. Aircraft can only move through connected Taxiways.","action":"build","target":"taxiway","recommended_origin":Vector2i(3,2),"reward":0},
+	{"id":"hangar","title":"Build the aircraft hangar","guidance":"Place the free Small Hangar. Your first aircraft starts here before taxiing to the stand.","action":"build","target":"small_hangar","recommended_origin":Vector2i(0,10),"reward":0},
+	{"id":"hangar_taxi_network","title":"Connect Hangar to Stand","guidance":"Extend the free Taxiway network from the stand to the hangar. The full aircraft route is Hangar → Stand → Runway.","action":"build","target":"taxiway","recommended_origin":Vector2i(3,7),"reward":0},
+	{"id":"fuel_station","title":"Add fuel service","guidance":"Place the free Basic Fuel Station. Its fuel truck will need a Service Road to reach the stand.","action":"build","target":"basic_fuel","recommended_origin":Vector2i(8,5),"reward":0},
+	{"id":"ground_ops","title":"Add Ground Operations","guidance":"Place the free Ground Operations Depot for cleaning, catering, baggage, passenger vehicles and pushback.","action":"build","target":"ground_ops_depot","recommended_origin":Vector2i(5,10),"reward":0},
+	{"id":"service_road","title":"Connect ground service","guidance":"Lay free Service Road tiles so Fuel and Ground Ops can drive to the stand. Aircraft use Taxiways; vehicles use Service Roads.","action":"build","target":"service_road","recommended_origin":Vector2i(7,6),"reward":0},
+	{"id":"terminal","title":"Place the terminal","guidance":"Place the free Small Terminal to establish the passenger side of your airport.","action":"build","target":"small_terminal","recommended_origin":Vector2i(9,11),"reward":0},
+	{"id":"hangar_taxi","title":"Watch the first taxi","guidance":"Your Pico is ready. Watch it leave the hangar and follow the Taxiways you built to the stand.","action":"aircraft","target":"","reward":250},
+	{"id":"service","title":"Start ground service","guidance":"When the plane shows SERVICE, tap it. Fuel and service vehicles will use the Service Roads you built.","action":"aircraft","target":"","reward":250},
+	{"id":"destination","title":"Choose the first route","guidance":"Open the World Map and choose a nearby unlocked destination.","action":"world","target":"","reward":250},
+	{"id":"load","title":"Load the aircraft","guidance":"When LOAD appears, tap it. Passenger stock is moved onto the aircraft before departure.","action":"aircraft","target":"","reward":250},
+	{"id":"send","title":"Send the aircraft","guidance":"When SEND appears, tap it. The tug pushes the plane back and it taxis toward your runway.","action":"aircraft","target":"","reward":250},
+	{"id":"takeoff","title":"First takeoff","guidance":"Watch the Pico depart. You built and operated your first complete airport flow.","action":"aircraft","target":"","reward":1000}
 ]
-
 
 var airport_grid
 var active := false
@@ -218,7 +120,8 @@ func _snapshot() -> Dictionary:
 			String(step.get("action", "")) == "build"
 			and not String(step.get("target", "")).is_empty()
 		),
-		"reward": int(step.get("reward", 0))
+		"reward": int(step.get("reward", 0)),
+		"recommended_origin": step.get("recommended_origin", Vector2i(-1, -1))
 	}
 
 
@@ -231,37 +134,22 @@ func _emit_if_changed(snapshot: Dictionary) -> void:
 
 func _step_complete(index: int) -> bool:
 	match index:
-		0:
-			return _has_building("short_runway")
-		1:
-			return _has_building("small_hangar")
-		2:
-			return _has_building("small_stand")
-		3:
-			return _airside_taxi_network_ready()
-		4:
-			return _has_building("basic_fuel")
-		5:
-			return _has_building("ground_ops_depot")
-		6:
-			return _service_road_ready()
-		7:
-			return _has_building("small_terminal")
-		8:
-			return bool(completed_events.get("hangar_taxi_complete", false))
-		9:
-			return bool(completed_events.get("service_started", false))
-		10:
-			return bool(completed_events.get("destination_selected", false))
-		11:
-			return bool(completed_events.get("load_started", false))
-		12:
-			return bool(completed_events.get("send_started", false))
-		13:
-			return bool(completed_events.get("first_departure", false))
-		_:
-			return false
-
+		0: return _has_building("short_runway")
+		1: return _has_building("small_stand")
+		2: return _stand_to_runway_ready()
+		3: return _has_building("small_hangar")
+		4: return _full_airside_taxi_network_ready()
+		5: return _has_building("basic_fuel")
+		6: return _has_building("ground_ops_depot")
+		7: return _service_road_ready()
+		8: return _has_building("small_terminal")
+		9: return bool(completed_events.get("hangar_taxi_complete", false))
+		10: return bool(completed_events.get("service_started", false))
+		11: return bool(completed_events.get("destination_selected", false))
+		12: return bool(completed_events.get("load_started", false))
+		13: return bool(completed_events.get("send_started", false))
+		14: return bool(completed_events.get("first_departure", false))
+		_: return false
 
 func _has_building(building_id: String) -> bool:
 	for building_variant in airport_grid.export_airport_layout():
@@ -283,11 +171,16 @@ func _first_stand_uid() -> int:
 	return -1
 
 
-func _airside_taxi_network_ready() -> bool:
+func _stand_to_runway_ready() -> bool:
 	var stand_uid := _first_stand_uid()
 	if stand_uid < 0:
 		return false
-	if airport_grid.get_departure_routes("S").is_empty():
+	return not airport_grid.get_departure_routes("S").is_empty()
+
+
+func _full_airside_taxi_network_ready() -> bool:
+	var stand_uid := _first_stand_uid()
+	if stand_uid < 0 or not _stand_to_runway_ready():
 		return false
 	return not airport_grid.get_hangar_to_stand_routes(
 		stand_uid,

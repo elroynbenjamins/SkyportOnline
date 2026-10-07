@@ -28,14 +28,14 @@ func _place_for_career(
 
 
 func _build_required_starter_airside(main) -> bool:
-	# Career integration now mirrors the real new-player requirement:
-	# construct runway, two stands, taxiways and service-road access before
-	# the two starter Picos can leave the hangar.
-	if not _place_for_career(
-		main,
-		"short_runway",
-		Vector2i(0, 0)
-	):
+	# This test covers post-onboarding career gameplay. Build the same minimal
+	# operational airport that the guided tutorial leaves behind, while the
+	# dedicated starter tests validate the forced tutorial itself.
+	if not _place_for_career(main, "short_runway", Vector2i(0, 0)):
+		return false
+	if not _place_for_career(main, "small_hangar", Vector2i(0, 6)):
+		return false
+	if not _place_for_career(main, "small_stand", Vector2i(4, 6)):
 		return false
 
 	for y in range(2, 8):
@@ -46,17 +46,15 @@ func _build_required_starter_airside(main) -> bool:
 		):
 			return false
 
-	if not _place_for_career(
-		main,
-		"small_stand",
-		Vector2i(4, 5)
-	):
+	if not _place_for_career(main, "basic_fuel", Vector2i(8, 6)):
+		return false
+	if not _place_for_career(main, "ground_ops_depot", Vector2i(8, 8)):
 		return false
 
 	for cell in [
+		Vector2i(6, 7),
 		Vector2i(7, 7),
-		Vector2i(7, 6),
-		Vector2i(6, 6)
+		Vector2i(7, 8)
 	]:
 		if not _place_for_career(
 			main,
@@ -64,6 +62,9 @@ func _build_required_starter_airside(main) -> bool:
 			cell
 		):
 			return false
+
+	if not _place_for_career(main, "small_terminal", Vector2i(10, 10)):
+		return false
 	return true
 
 
@@ -82,6 +83,9 @@ func _run() -> void:
 		quit(1)
 		return
 	var profile := ProfileStore.create_guest_airport("Career Test", "CAR", "NL")
+	# This integration test is intentionally post-onboarding. New-player
+	# construction is covered separately by starter_airport_tutorial_test.gd.
+	profile = ProfileStore.set_starter_tutorial_complete(true)
 	airport_id = String(profile.get("airport_id", ""))
 	print("Starting actual airport gameplay integration")
 	main._on_airport_created(profile)
@@ -93,6 +97,7 @@ func _run() -> void:
 		_build_required_starter_airside(main),
 		"Fresh career test should be able to construct the required starter airside network."
 	)
+	main._persist_airport_layout()
 	main._refresh_layout_dependent_systems()
 	await process_frame
 	check(

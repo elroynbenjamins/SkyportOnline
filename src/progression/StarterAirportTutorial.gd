@@ -10,7 +10,7 @@ const STEPS := [
 	{
 		"id": "runway",
 		"title": "Build your runway",
-		"guidance": "Tap SHOW ME, place the Short Runway on open land, then confirm it. Every flight starts and ends here.",
+		"guidance": "Tap this tutorial objective to select the Short Runway, place it on open land, then confirm it. Every flight starts and ends here.",
 		"action": "build",
 		"target": "short_runway",
 		"reward": 1500

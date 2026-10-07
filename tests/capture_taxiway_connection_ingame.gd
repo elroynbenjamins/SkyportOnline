@@ -56,10 +56,15 @@ func _run() -> void:
 		return
 
 	for cell in [
+		# Runway entry + straight segment.
 		Vector2i(4, 4),
 		Vector2i(4, 5),
 		Vector2i(4, 6),
-		Vector2i(5, 6)
+		# Cross / branch examples generated from the same 1x1 tool.
+		Vector2i(3, 6),
+		Vector2i(5, 6),
+		Vector2i(4, 7),
+		Vector2i(5, 7)
 	]:
 		if not _place(grid, "taxiway", cell):
 			quit(1)
@@ -67,9 +72,9 @@ func _run() -> void:
 
 	var camera := Camera2D.new()
 	camera.position = grid.tile_to_world(
-		Vector2(4.0, 3.8)
+		Vector2(4.0, 4.4)
 	)
-	camera.zoom = Vector2(1.78, 1.78)
+	camera.zoom = Vector2(1.70, 1.70)
 	camera.position_smoothing_enabled = false
 	camera.enabled = true
 	world.add_child(camera)

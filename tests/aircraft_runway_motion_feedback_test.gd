@@ -13,8 +13,37 @@ func _run() -> void:
 	await process_frame
 	plane.configure_aircraft_type("pico_p8")
 
+	var art_check := AircraftMotionArt.validate_catalog()
+	if not bool(art_check.get("valid", false)):
+		_fail(
+			"Production aircraft motion art should load: %s"
+			% str(art_check.get("errors", []))
+		)
+		return
+	if AircraftMotionArt.frame_count() != 8:
+		_fail("Aircraft motion art should expose all 8 production FX frames.")
+		return
+	for frame_name in [
+		"taxi_puff_a",
+		"touchdown_a",
+		"touchdown_b",
+		"touchdown_c",
+		"takeoff_wake",
+		"stand_stop",
+		"pushback_roll",
+	]:
+		if AircraftMotionArt.texture(frame_name) == null:
+			_fail("Missing production motion frame: %s" % frame_name)
+			return
+
 	plane._set_state("TAXIING_OUT")
 	var snapshot := plane.get_motion_feedback_snapshot()
+	if not bool(snapshot.get("production_motion_art", false)):
+		_fail("Aircraft motion feedback should report production-art rendering.")
+		return
+	if int(snapshot.get("motion_art_frames", 0)) != 8:
+		_fail("Aircraft motion snapshot should expose all production FX frames.")
+		return
 	if String(snapshot.get("kind", "")) != "taxi_start":
 		_fail("Taxi-out should trigger a short movement-start cue.")
 		return
@@ -126,7 +155,8 @@ func _run() -> void:
 
 	print(
 		"AIRCRAFT_RUNWAY_MOTION_FEEDBACK_OK "
-		+ "taxi=true takeoff=true touchdown=true pushback=true runway_lights=true"
+		+ "production_art=true taxi=true takeoff=true touchdown=true "
+		+ "pushback=true runway_lights=true"
 	)
 	quit(0)
 

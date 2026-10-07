@@ -17,7 +17,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"name": "Short Runway",
 			"menu_name": "SHORT RUNWAY",
 			"category": "Infrastructure",
-			"footprint": Vector2i(8, 2),
+			"footprint": Vector2i(5, 2),
 			"cost": 7500,
 			"level": 1,
 			"color": Color("343c42"),
@@ -26,13 +26,13 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"description": "Handles small aircraft.",
 			"icon_path": "res://assets/production/airfield_v2/runway_icon_v2.svg",
 			"art_tier": "grid_native_v3",
-			"surface_art": "short_runway_s_v3",
+			"surface_art": "short_runway_s_5x2_v3",
 			"visual_contract": "square_grid_iso_v1",
 			"grid_native_surface_paths": PackedStringArray([
 				"res://assets/production/airfield_v3/short_runway_s_0.svg",
 				"res://assets/production/airfield_v3/short_runway_s_90.svg"
 			]),
-			"grid_native_surface_size": Vector2i(320, 160),
+			"grid_native_surface_size": Vector2i(224, 112),
 			"grid_native_surface_runtime_scale": Vector2.ONE
 		},
 		{

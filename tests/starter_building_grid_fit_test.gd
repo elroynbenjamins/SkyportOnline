@@ -39,6 +39,25 @@ func _run() -> void:
 		_fail("Decorations should not receive a hard airport foundation.")
 		return
 
+	var terminal_scale := grid.get_building_presentation_scale(
+		BuildingCatalog.get_definition("small_terminal")
+	)
+	if terminal_scale >= 0.90:
+		_fail("Terminal body should leave visible breathing room inside its footprint.")
+		return
+	var hangar_scale := grid.get_building_presentation_scale(
+		BuildingCatalog.get_definition("small_hangar")
+	)
+	if hangar_scale >= terminal_scale:
+		_fail("Hangar body should be visually tighter than the terminal footprint.")
+		return
+	var stand_scale := grid.get_building_presentation_scale(
+		BuildingCatalog.get_definition("small_stand")
+	)
+	if not is_equal_approx(stand_scale, 1.0):
+		_fail("Aircraft stands should keep full footprint presentation scale.")
+		return
+
 	var normal_checked := 0
 	for definition in BuildingCatalog.all():
 		if not grid._definition_has_world_sprite(definition):

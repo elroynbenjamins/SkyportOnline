@@ -127,3 +127,19 @@ Expansion parcels are gameplay data, not permanent scenery.
 - after purchase or cancel, the expansion overlay disappears and the clean landscape returns.
 
 Do not reintroduce a permanent expansion-slot board around the airport.
+
+
+## Short Runway production surface
+
+The small-aircraft **Short Runway** is the first placeable surface promoted from reset geometry to grid-native production art.
+
+- logical footprint: **8×2** cells;
+- rotated footprint: **2×8** cells;
+- authored image size: **320×160 px** in either orientation;
+- runtime scale: **1:1**;
+- no horizontal overhang;
+- bottom-center asset anchor maps to the projected front footprint corner;
+- two production orientations are supplied under `assets/production/airfield_v3/`;
+- the visible runway shoulder, asphalt, markings and edge lights all stay inside the exact projected footprint.
+
+This asset is allowed to render during `GRID_FIRST_VISUAL_RESET` because its artwork is authored directly against `square_grid_iso_v1`. Other placeable art remains blocked until it meets the same contract.

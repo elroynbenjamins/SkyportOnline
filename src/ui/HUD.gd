@@ -730,11 +730,12 @@ func _show_operation_toast(text: String, tone: String) -> void:
 
 func _build_context_panel(root: Control) -> void:
 	parcel_panel = PanelContainer.new()
-	parcel_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	parcel_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	parcel_panel.offset_left = 10
 	parcel_panel.offset_top = -130
-	parcel_panel.offset_right = -382
+	parcel_panel.offset_right = 650
 	parcel_panel.offset_bottom = -62
+	parcel_panel.visible = false
 	root.add_child(parcel_panel)
 	GameUIStyle.apply_panel(parcel_panel, "hud_context")
 
@@ -987,6 +988,7 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_panel.offset_top = 108
 	catalog_panel.offset_right = -8
 	catalog_panel.offset_bottom = -62
+	catalog_panel.visible = false
 	root.add_child(catalog_panel)
 	GameUIStyle.apply_panel(catalog_panel, "hud_drawer")
 	catalog_panel.visible = false
@@ -1528,16 +1530,17 @@ func show_parcel(parcel: Dictionary, player_level: int, player_coins: int) -> vo
 	):
 		return
 
-	parcel_panel.visible = true
 	build_action_panel.visible = false
 
 	if parcel.is_empty():
+		parcel_panel.visible = false
 		parcel_title.text = "EXPAND AIRPORT"
 		parcel_requirements.text = "Select a connected expansion district."
 		purchase_button.text = "SELECT LAND"
 		purchase_button.disabled = true
 		return
 
+	parcel_panel.visible = true
 	var zone_name := String(
 		parcel.get(
 			"name",
@@ -2011,7 +2014,7 @@ func show_airport_edit_mode(
 	if storage_panel != null:
 		storage_panel.visible = false
 	if catalog_panel != null:
-		catalog_panel.visible = not active
+		catalog_panel.visible = false
 
 	if active:
 		parcel_panel.visible = false
@@ -2032,7 +2035,6 @@ func show_airport_edit_mode(
 			"Tap a movable building • changes save when confirmed"
 		)
 		undo_airport_edit_button.disabled = true
-		parcel_panel.visible = true
 		show_parcel(
 			current_parcel,
 			current_level,
@@ -2775,9 +2777,8 @@ func exit_building_mode() -> void:
 	if storage_panel != null:
 		storage_panel.visible = false
 	if catalog_panel != null:
-		catalog_panel.visible = true
+		catalog_panel.visible = false
 	build_hint.text = "AIRPORT VIEW  •  Tap aircraft/buildings for actions  •  BUILD opens construction"
-	parcel_panel.visible = true
 	show_parcel(current_parcel, current_level, current_coins)
 
 
@@ -2981,14 +2982,19 @@ func _format_number(value: int) -> String:
 
 
 func _on_build_navigation_pressed() -> void:
+	var should_open := true
 	if catalog_panel != null:
-		catalog_panel.visible = true
+		should_open = not catalog_panel.visible
+		catalog_panel.visible = should_open
 	if storage_panel != null:
 		storage_panel.visible = false
 	if status_detail_panel != null:
 		_close_status_detail()
-	build_hint.text = "BUILD AIRPORT  •  Choose a building from the drawer"
-	set_operation_status("Construction drawer opened • choose a building to place.")
+	if should_open:
+		build_hint.text = "BUILD AIRPORT  •  Choose a building from the drawer"
+		set_operation_status("Construction drawer opened • choose a building to place.")
+	else:
+		build_hint.text = "AIRPORT VIEW  •  BUILD reopens construction"
 
 func _on_navigation_pressed(tab: String) -> void:
 	navigation_requested.emit(tab)

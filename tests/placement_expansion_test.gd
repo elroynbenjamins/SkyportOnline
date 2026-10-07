@@ -10,7 +10,7 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 
-	var target := Vector2i(10, 3)
+	var target := Vector2i(13, 0)
 	var status := grid.set_build_preview(
 		"basic_fuel",
 		grid.tile_to_world(

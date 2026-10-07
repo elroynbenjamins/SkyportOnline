@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1600" viewBox="0 0 2200 1600">
+  <defs>
+    <linearGradient id="grassBase" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5f8c4e"/>
+      <stop offset="0.52" stop-color="#4f7c46"/>
+      <stop offset="1" stop-color="#3f6940"/>
+    </linearGradient>
+    <linearGradient id="fieldWarm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#91ad60"/>
+      <stop offset="1" stop-color="#718f4d"/>
+    </linearGradient>
+    <linearGradient id="fieldCool" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#648f51"/>
+      <stop offset="1" stop-color="#487443"/>
+    </linearGradient>
+    <linearGradient id="treeLight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ea650"/>
+      <stop offset="1" stop-color="#3f773f"/>
+    </linearGradient>
+    <linearGradient id="treeDark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f8846"/>
+      <stop offset="1" stop-color="#2e5f39"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="2200" height="1600" fill="url(#grassBase)"/>
+
+  <!-- Broad authored field shapes. Their diagonals follow the airport's 2:1 presentation. -->
+  <polygon points="0,0 690,0 460,330 0,520" fill="url(#fieldWarm)"/>
+  <polygon points="1510,0 2200,0 2200,510 1715,325" fill="url(#fieldCool)"/>
+  <polygon points="0,1110 495,925 845,1210 455,1600 0,1600" fill="#4a7542"/>
+  <polygon points="1390,1215 1730,940 2200,1125 2200,1600 1710,1600" fill="#527c45"/>
+
+  <!-- Field striping: visible enough to feel authored, quiet enough not to fight the build grid. -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M-40 135 L560 -65" stroke="#c0cf87" stroke-opacity=".12" stroke-width="20"/>
+    <path d="M-20 205 L610 -5" stroke="#4f793f" stroke-opacity=".13" stroke-width="20"/>
+    <path d="M5 282 L642 70" stroke="#d7d998" stroke-opacity=".09" stroke-width="18"/>
+    <path d="M1595 70 L2240 285" stroke="#94b36f" stroke-opacity=".11" stroke-width="22"/>
+    <path d="M1558 148 L2225 370" stroke="#315f3d" stroke-opacity=".12" stroke-width="22"/>
+    <path d="M1518 226 L2210 455" stroke="#aec182" stroke-opacity=".08" stroke-width="18"/>
+    <path d="M-15 1250 L560 1050" stroke="#85a45d" stroke-opacity=".10" stroke-width="22"/>
+    <path d="M20 1345 L650 1125" stroke="#2e5f38" stroke-opacity=".11" stroke-width="24"/>
+    <path d="M1570 1135 L2225 1360" stroke="#779b59" stroke-opacity=".11" stroke-width="22"/>
+    <path d="M1528 1215 L2210 1450" stroke="#315f39" stroke-opacity=".10" stroke-width="24"/>
+  </g>
+
+  <!-- Soft grass islands create material depth without a noisy tile texture. -->
+  <g opacity=".15">
+    <ellipse cx="430" cy="625" rx="355" ry="125" fill="#a0bd72"/>
+    <ellipse cx="1760" cy="625" rx="390" ry="130" fill="#2d6039"/>
+    <ellipse cx="630" cy="1330" rx="420" ry="135" fill="#789a59"/>
+    <ellipse cx="1565" cy="1370" rx="410" ry="130" fill="#315f39"/>
+  </g>
+
+  <!-- Access road system, with shoulder, asphalt, highlight and dashed center marks. -->
+  <g fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M70 1210 C410 1140 635 1260 900 1320 C1160 1380 1450 1280 1700 1180 C1890 1100 2050 1090 2200 1110"
+          stroke="#181d1d" stroke-opacity=".20" stroke-width="72"/>
+    <path d="M70 1198 C410 1128 635 1248 900 1308 C1160 1368 1450 1268 1700 1168 C1890 1088 2050 1078 2200 1098"
+          stroke="#a99f8d" stroke-width="66"/>
+    <path d="M70 1198 C410 1128 635 1248 900 1308 C1160 1368 1450 1268 1700 1168 C1890 1088 2050 1078 2200 1098"
+          stroke="#5a605d" stroke-width="50"/>
+    <path d="M70 1190 C410 1120 635 1240 900 1300 C1160 1360 1450 1260 1700 1160 C1890 1080 2050 1070 2200 1090"
+          stroke="#e7e2d5" stroke-opacity=".30" stroke-width="3"/>
+    <path d="M95 1192 C420 1128 642 1247 905 1304 C1165 1360 1445 1260 1690 1162 C1890 1084 2052 1076 2180 1095"
+          stroke="#dfc967" stroke-opacity=".70" stroke-width="3" stroke-dasharray="28 22"/>
+
+    <path d="M265 1180 C210 1010 205 860 250 720 C290 590 360 500 460 430"
+          stroke="#191e1e" stroke-opacity=".18" stroke-width="62"/>
+    <path d="M255 1170 C202 1005 198 862 242 724 C282 598 350 510 448 442"
+          stroke="#a69d8c" stroke-width="56"/>
+    <path d="M255 1170 C202 1005 198 862 242 724 C282 598 350 510 448 442"
+          stroke="#5c615e" stroke-width="42"/>
+    <path d="M255 1155 C204 1002 203 866 245 733 C283 610 348 527 438 461"
+          stroke="#dfc967" stroke-opacity=".68" stroke-width="3" stroke-dasharray="24 20"/>
+  </g>
+
+  <!-- Parking / airport approach pocket. -->
+  <g transform="translate(245 945)">
+    <polygon points="0,75 235,0 390,78 155,155" fill="#202526" opacity=".20" transform="translate(8 10)"/>
+    <polygon points="0,64 235,-10 390,68 155,144" fill="#8f948d"/>
+    <polygon points="14,61 235,0 374,68 155,133" fill="#666d6a"/>
+    <g stroke="#dfe3dc" stroke-width="4" opacity=".76">
+      <line x1="70" y1="46" x2="102" y2="106"/>
+      <line x1="115" y1="32" x2="147" y2="92"/>
+      <line x1="160" y1="18" x2="192" y2="78"/>
+      <line x1="205" y1="6" x2="236" y2="65"/>
+      <line x1="253" y1="10" x2="284" y2="70"/>
+      <line x1="300" y1="25" x2="330" y2="84"/>
+    </g>
+    <g>
+      <rect x="99" y="67" width="28" height="12" rx="4" fill="#d9e6e9" transform="rotate(27 113 73)"/>
+      <rect x="188" y="43" width="29" height="12" rx="4" fill="#e0be66" transform="rotate(27 203 49)"/>
+      <rect x="273" y="49" width="29" height="12" rx="4" fill="#9bc0d2" transform="rotate(27 288 55)"/>
+    </g>
+  </g>
+
+  <!-- Tree belts: upper-left light catches, lower-right contact shadows. -->
+  <g>
+    <g opacity=".24" fill="#183b2d">
+      <ellipse cx="350" cy="425" rx="190" ry="54"/>
+      <ellipse cx="1850" cy="400" rx="205" ry="58"/>
+      <ellipse cx="455" cy="930" rx="185" ry="52"/>
+      <ellipse cx="1750" cy="900" rx="205" ry="58"/>
+      <ellipse cx="865" cy="220" rx="145" ry="42"/>
+      <ellipse cx="1340" cy="220" rx="145" ry="42"/>
+    </g>
+
+    <g fill="url(#treeLight)">
+      <circle cx="250" cy="378" r="47"/><circle cx="305" cy="360" r="53"/><circle cx="365" cy="380" r="50"/>
+      <circle cx="420" cy="355" r="54"/><circle cx="475" cy="386" r="46"/>
+      <circle cx="1715" cy="355" r="50"/><circle cx="1775" cy="338" r="55"/><circle cx="1835" cy="365" r="52"/>
+      <circle cx="1890" cy="342" r="56"/><circle cx="1948" cy="374" r="48"/>
+      <circle cx="345" cy="888" r="48"/><circle cx="405" cy="868" r="55"/><circle cx="465" cy="894" r="50"/>
+      <circle cx="525" cy="874" r="54"/><circle cx="575" cy="902" r="46"/>
+      <circle cx="1630" cy="858" r="48"/><circle cx="1690" cy="838" r="56"/><circle cx="1755" cy="865" r="52"/>
+      <circle cx="1818" cy="842" r="57"/><circle cx="1880" cy="875" r="49"/>
+    </g>
+
+    <g fill="url(#treeDark)">
+      <circle cx="770" cy="190" r="43"/><circle cx="825" cy="174" r="49"/><circle cx="885" cy="198" r="46"/><circle cx="940" cy="178" r="51"/>
+      <circle cx="1250" cy="180" r="45"/><circle cx="1305" cy="164" r="50"/><circle cx="1365" cy="190" r="47"/><circle cx="1420" cy="170" r="51"/>
+    </g>
+
+    <g fill="#92be68" opacity=".44">
+      <ellipse cx="287" cy="345" rx="27" ry="13"/><ellipse cx="393" cy="326" rx="30" ry="14"/>
+      <ellipse cx="1752" cy="321" rx="29" ry="13"/><ellipse cx="1868" cy="309" rx="31" ry="14"/>
+      <ellipse cx="384" cy="846" rx="28" ry="13"/><ellipse cx="501" cy="838" rx="30" ry="14"/>
+      <ellipse cx="1673" cy="813" rx="29" ry="13"/><ellipse cx="1795" cy="807" rx="31" ry="14"/>
+    </g>
+  </g>
+
+  <!-- Hedges / drainage framing near the foreground. -->
+  <g opacity=".86">
+    <path d="M620 1425 L935 1328" stroke="#2f6039" stroke-width="28" stroke-linecap="round"/>
+    <path d="M1265 1330 L1585 1436" stroke="#2f6039" stroke-width="28" stroke-linecap="round"/>
+    <path d="M625 1418 L938 1322" stroke="#5f994d" stroke-width="13" stroke-linecap="round"/>
+    <path d="M1262 1324 L1580 1429" stroke="#5f994d" stroke-width="13" stroke-linecap="round"/>
+  </g>
+
+  <!-- Small approach sign anchors the scene as an airport rather than generic countryside. -->
+  <g transform="translate(510 1150)">
+    <ellipse cx="82" cy="78" rx="78" ry="24" fill="#1b3027" opacity=".24"/>
+    <polygon points="25,58 92,35 152,63 84,86" fill="#d8ddd5"/>
+    <polygon points="30,54 91,34 147,59 85,79" fill="#2f6680"/>
+    <path d="M59 56 L93 45 L120 57 L87 68 Z" fill="#eef5f5" opacity=".92"/>
+    <rect x="50" y="68" width="6" height="27" fill="#4f5653"/>
+    <rect x="123" y="65" width="6" height="27" fill="#4f5653"/>
+  </g>
+
+  <!-- Sparse micro accents, deliberately outside the playable center. -->
+  <g fill="#d8d2b9" opacity=".30">
+    <circle cx="125" cy="740" r="5"/><circle cx="155" cy="785" r="4"/><circle cx="2025" cy="720" r="5"/>
+    <circle cx="1980" cy="765" r="4"/><circle cx="980" cy="1510" r="4"/><circle cx="1210" cy="1505" r="4"/>
+  </g>
+</svg>

@@ -27,6 +27,7 @@ const MOTION_FX_DURATION := 0.72
 const TOUCHDOWN_FX_DURATION := 0.96
 const EXTERNAL_PUSHBACK_MIN_DISTANCE := 0.35
 const NO_HEADING_OVERRIDE := 999999.0
+const AIRCRAFT_PRESENTATION_SCALE := 1.15
 
 
 var departure_route := PackedVector2Array()
@@ -375,32 +376,48 @@ func get_interaction_radius() -> float:
 
 
 func get_visual_scale() -> float:
+	if aircraft_type_id.is_empty():
+		return 1.0
+
 	var passengers := int(
 		aircraft_profile.get("passengers", 0)
 	)
+	var base_scale := 1.0
 	match aircraft_size:
 		"M":
 			if passengers <= 0:
-				return 1.34
-			var medium_progress := clampf(
-				(float(passengers) - 40.0) / 48.0,
-				0.0,
-				1.0
-			)
-			return lerpf(1.26, 1.46, medium_progress)
+				base_scale = 1.34
+			else:
+				var medium_progress := clampf(
+					(float(passengers) - 40.0) / 48.0,
+					0.0,
+					1.0
+				)
+				base_scale = lerpf(
+					1.26,
+					1.46,
+					medium_progress
+				)
 		"L":
-			return 1.62
+			base_scale = 1.62
 		"XL":
-			return 1.82
+			base_scale = 1.82
 		_:
 			if passengers <= 0:
-				return 1.0
-			var small_progress := clampf(
-				(float(passengers) - 8.0) / 24.0,
-				0.0,
-				1.0
-			)
-			return lerpf(0.96, 1.12, small_progress)
+				base_scale = 1.0
+			else:
+				var small_progress := clampf(
+					(float(passengers) - 8.0) / 24.0,
+					0.0,
+					1.0
+				)
+				base_scale = lerpf(
+					0.96,
+					1.12,
+					small_progress
+				)
+
+	return base_scale * AIRCRAFT_PRESENTATION_SCALE
 
 
 func get_visual_half_length() -> float:

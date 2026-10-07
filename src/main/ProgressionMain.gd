@@ -271,38 +271,41 @@ func _notification(what: int) -> void:
 			_save_checkpoint()
 
 func _install_career_pin() -> void:
-	# Replace the static objective with compact career + mission actions.
-	for child in hud.interface_root.get_children():
-		if not child is PanelContainer:
-			continue
-		for label in child.get_children():
-			if label is Label and label.text.begins_with("BUILD YOUR AIRPORT"):
-				child.remove_child(label)
-				label.queue_free()
-				child.offset_left = -304
-				var actions := HBoxContainer.new()
-				actions.add_theme_constant_override("separation", 4)
-				child.add_child(actions)
+	# Tutorial guidance now owns the top-right objective slot. Keep career and
+	# mission actions as a second compact strip directly below it instead of
+	# replacing the tutorial objective.
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	panel.offset_left = -304
+	panel.offset_top = 119
+	panel.offset_right = -10
+	panel.offset_bottom = 154
+	GameUIStyle.apply_panel(panel, "hud_task")
+	hud.interface_root.add_child(panel)
 
-				career_pin = Button.new()
-				career_pin.clip_text = true
-				career_pin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				career_pin.custom_minimum_size = Vector2(166, 30)
-				career_pin.add_theme_font_size_override("font_size", 10)
-				GameUIStyle.apply_button(career_pin, "nav", true)
-				career_pin.pressed.connect(_open_career)
-				actions.add_child(career_pin)
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 4)
+	panel.add_child(actions)
 
-				mission_pin = Button.new()
-				mission_pin.clip_text = true
-				mission_pin.custom_minimum_size = Vector2(118, 30)
-				mission_pin.add_theme_font_size_override("font_size", 10)
-				GameUIStyle.apply_button(mission_pin, "nav", true)
-				mission_pin.pressed.connect(
-					_request_activity_entry.bind("missions")
-				)
-				actions.add_child(mission_pin)
-				return
+	career_pin = Button.new()
+	career_pin.clip_text = true
+	career_pin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	career_pin.custom_minimum_size = Vector2(166, 30)
+	career_pin.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.apply_button(career_pin, "nav", true)
+	career_pin.pressed.connect(_open_career)
+	actions.add_child(career_pin)
+
+	mission_pin = Button.new()
+	mission_pin.clip_text = true
+	mission_pin.custom_minimum_size = Vector2(118, 30)
+	mission_pin.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.apply_button(mission_pin, "nav", true)
+	mission_pin.pressed.connect(
+		_request_activity_entry.bind("missions")
+	)
+	actions.add_child(mission_pin)
+
 
 func _spawn_aircraft_demos() -> void:
 	_deploy_reserve_aircraft()

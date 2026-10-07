@@ -19,15 +19,17 @@ signal building_selected_world(data: Dictionary)
 
 const TILE_WIDTH := PlacementGridV2.TILE_WIDTH
 const TILE_HEIGHT := PlacementGridV2.TILE_HEIGHT
+const PROJECTED_TILE_WIDTH := PlacementGridV2.PROJECTED_TILE_WIDTH
+const PROJECTED_TILE_HEIGHT := PlacementGridV2.PROJECTED_TILE_HEIGHT
 const WORLD_SPRITE_MAX_FOOTPRINT_OVERHANG := 1.0
 const DEFAULT_WORLD_SPRITE_VISIBLE_WIDTH_SCALE := 0.92
 const GRID_FIRST_VISUAL_RESET := true
-const GRID_RESET_BACKGROUND := Color("182229")
-const GRID_RESET_OWNED := Color("3d604e")
-const GRID_RESET_AVAILABLE := Color("5a5b43")
-const GRID_RESET_LOCKED := Color("2b3935")
-const GRID_RESET_LINE := Color("b9d2c3", 0.34)
-const GRID_RESET_CELL_LINE := Color("e7f0eb", 0.18)
+const GRID_RESET_BACKGROUND := Color("4b8438")
+const GRID_RESET_OWNED := Color("69a84f")
+const GRID_RESET_AVAILABLE := Color("5c9147")
+const GRID_RESET_LOCKED := Color("426840")
+const GRID_RESET_LINE := Color("d9edcf", 0.34)
+const GRID_RESET_CELL_LINE := Color("eef7e9", 0.22)
 const GRID_RESET_OUTLINE := Color("eaf4f0", 0.72)
 const GRID_RESET_PREVIEW_VALID := Color("65d68a", 0.44)
 const GRID_RESET_PREVIEW_INVALID := Color("ef6f6c", 0.52)
@@ -5366,7 +5368,7 @@ func _grid_fitted_world_sprite_size(
 	# isometric footprint.
 	var footprint_width := (
 		float(footprint.x + footprint.y)
-		* TILE_WIDTH
+		* PROJECTED_TILE_WIDTH
 		* 0.5
 	)
 	var visible_scale := clampf(
@@ -5932,8 +5934,8 @@ func _draw_airside_surface_tile(
 		Vector2(origin.x, origin.y)
 	)
 	var tile_size := Vector2(
-		TILE_WIDTH,
-		TILE_HEIGHT
+		PROJECTED_TILE_WIDTH,
+		PROJECTED_TILE_HEIGHT
 	)
 	draw_texture_rect(
 		texture,
@@ -6071,8 +6073,8 @@ func _draw_airside_surface_preview(
 		Vector2(origin.x, origin.y)
 	)
 	var tile_size := Vector2(
-		TILE_WIDTH,
-		TILE_HEIGHT
+		PROJECTED_TILE_WIDTH,
+		PROJECTED_TILE_HEIGHT
 	)
 	draw_texture_rect(
 		texture,
@@ -6712,8 +6714,8 @@ func _draw_runway_hold_short_markings() -> void:
 			)
 			if hold_texture != null:
 				var hold_tile_size := Vector2(
-					TILE_WIDTH,
-					TILE_HEIGHT
+					PROJECTED_TILE_WIDTH,
+					PROJECTED_TILE_HEIGHT
 				)
 				draw_texture_rect(
 					hold_texture,
@@ -7732,15 +7734,11 @@ func _draw_selected_outline() -> void:
 
 
 func _tile_points(center: Vector2) -> PackedVector2Array:
-	var half := Vector2(
-		TILE_WIDTH * 0.5,
-		TILE_HEIGHT * 0.5
-	)
 	return PackedVector2Array([
-		center + Vector2(-half.x, -half.y),
-		center + Vector2(half.x, -half.y),
-		center + Vector2(half.x, half.y),
-		center + Vector2(-half.x, half.y)
+		center + Vector2(0, -PROJECTED_TILE_HEIGHT * 0.5),
+		center + Vector2(PROJECTED_TILE_WIDTH * 0.5, 0),
+		center + Vector2(0, PROJECTED_TILE_HEIGHT * 0.5),
+		center + Vector2(-PROJECTED_TILE_WIDTH * 0.5, 0)
 	])
 
 

@@ -1,14 +1,19 @@
 class_name BuildingPlacementGrid
 extends RefCounted
 
-const TILE_WIDTH := 64.0
-const TILE_HEIGHT := 64.0
+# Gameplay cells are always true squares. The projected dimensions only
+# describe how those squares are drawn in the fixed Skyrama-style view.
+const LOGICAL_TILE_SIZE := 64.0
+const TILE_WIDTH := LOGICAL_TILE_SIZE
+const TILE_HEIGHT := LOGICAL_TILE_SIZE
+const PROJECTED_TILE_WIDTH := 64.0
+const PROJECTED_TILE_HEIGHT := 32.0
 
 
 static func tile_to_world(tile: Vector2) -> Vector2:
 	return Vector2(
-		tile.x * TILE_WIDTH,
-		tile.y * TILE_HEIGHT
+		(tile.x - tile.y) * PROJECTED_TILE_WIDTH * 0.5,
+		(tile.x + tile.y) * PROJECTED_TILE_HEIGHT * 0.5
 	)
 
 
@@ -19,8 +24,10 @@ static func world_to_tile(world_position: Vector2) -> Vector2i:
 
 static func world_to_tile_float(world_position: Vector2) -> Vector2:
 	return Vector2(
-		world_position.x / TILE_WIDTH,
-		world_position.y / TILE_HEIGHT
+		world_position.x / PROJECTED_TILE_WIDTH
+			+ world_position.y / PROJECTED_TILE_HEIGHT,
+		world_position.y / PROJECTED_TILE_HEIGHT
+			- world_position.x / PROJECTED_TILE_WIDTH
 	)
 
 
@@ -73,39 +80,35 @@ static func footprint_polygon(
 	if footprint.x <= 0 or footprint.y <= 0:
 		return PackedVector2Array()
 
-	var first_center := tile_to_world(
-		Vector2(origin.x, origin.y)
+	var a := tile_to_world(Vector2(origin.x, origin.y))
+	var b := tile_to_world(
+		Vector2(origin.x + footprint.x - 1, origin.y)
 	)
-	var last_center := tile_to_world(
+	var c := tile_to_world(
 		Vector2(
 			origin.x + footprint.x - 1,
 			origin.y + footprint.y - 1
 		)
 	)
-	var left := first_center.x - TILE_WIDTH * 0.5
-	var top := first_center.y - TILE_HEIGHT * 0.5
-	var right := last_center.x + TILE_WIDTH * 0.5
-	var bottom := last_center.y + TILE_HEIGHT * 0.5
+	var d := tile_to_world(
+		Vector2(origin.x, origin.y + footprint.y - 1)
+	)
 
 	return PackedVector2Array([
-		Vector2(left, top),
-		Vector2(right, top),
-		Vector2(right, bottom),
-		Vector2(left, bottom)
+		a + Vector2(0, -PROJECTED_TILE_HEIGHT * 0.5),
+		b + Vector2(PROJECTED_TILE_WIDTH * 0.5, 0),
+		c + Vector2(0, PROJECTED_TILE_HEIGHT * 0.5),
+		d + Vector2(-PROJECTED_TILE_WIDTH * 0.5, 0)
 	])
 
 
 static func tile_polygon(tile: Vector2i) -> PackedVector2Array:
 	var center := tile_to_world(Vector2(tile.x, tile.y))
-	var half := Vector2(
-		TILE_WIDTH * 0.5,
-		TILE_HEIGHT * 0.5
-	)
 	return PackedVector2Array([
-		center + Vector2(-half.x, -half.y),
-		center + Vector2(half.x, -half.y),
-		center + Vector2(half.x, half.y),
-		center + Vector2(-half.x, half.y)
+		center + Vector2(0, -PROJECTED_TILE_HEIGHT * 0.5),
+		center + Vector2(PROJECTED_TILE_WIDTH * 0.5, 0),
+		center + Vector2(0, PROJECTED_TILE_HEIGHT * 0.5),
+		center + Vector2(-PROJECTED_TILE_WIDTH * 0.5, 0)
 	])
 
 
@@ -138,13 +141,10 @@ static func footprint_front_anchor_world(
 	origin: Vector2i,
 	footprint: Vector2i
 ) -> Vector2:
-	var bounds := footprint_bounds(origin, footprint)
-	if bounds.size.x <= 0.0 or bounds.size.y <= 0.0:
+	var polygon := footprint_polygon(origin, footprint)
+	if polygon.size() < 4:
 		return Vector2.ZERO
-	return Vector2(
-		bounds.position.x + bounds.size.x * 0.5,
-		bounds.position.y + bounds.size.y
-	)
+	return polygon[2]
 
 
 static func validate_asset_dimensions(
@@ -228,40 +228,50 @@ static func visual_contract(
 	if footprint.x <= 0 or footprint.y <= 0:
 		return {"valid": false}
 
+	var polygon := footprint_polygon(
+		Vector2i.ZERO,
+		footprint
+	)
 	var bounds := footprint_bounds(
 		Vector2i.ZERO,
 		footprint
 	)
 	var base_width := bounds.size.x
 	var base_depth := bounds.size.y
+	var anchor_world := polygon[2]
+	var base_polygon_from_anchor := PackedVector2Array()
+	for point in polygon:
+		base_polygon_from_anchor.append(
+			point - anchor_world
+		)
 	var anchor_local := Vector2(
-		base_width * 0.5,
-		base_depth
+		anchor_world.x - bounds.position.x,
+		anchor_world.y - bounds.position.y
 	)
-	var base_polygon_from_anchor := PackedVector2Array([
-		Vector2(-base_width * 0.5, -base_depth),
-		Vector2(base_width * 0.5, -base_depth),
-		Vector2(base_width * 0.5, 0),
-		Vector2(-base_width * 0.5, 0)
-	])
 	return {
 		"valid": true,
-		"contract_version": "square_grid_v1",
-		"projection": "square_cartesian",
+		"contract_version": "square_grid_iso_v1",
+		"projection": "skyrama_isometric_2_to_1",
+		"logical_tile_size": Vector2(
+			LOGICAL_TILE_SIZE,
+			LOGICAL_TILE_SIZE
+		),
 		"tile_width": TILE_WIDTH,
 		"tile_height": TILE_HEIGHT,
+		"projected_tile_width": PROJECTED_TILE_WIDTH,
+		"projected_tile_height": PROJECTED_TILE_HEIGHT,
 		"footprint": footprint,
 		"base_bounds": bounds,
 		"base_size": bounds.size,
 		"authoring_width_px": roundi(base_width),
 		"base_depth_px": roundi(base_depth),
-		"anchor_rule": "front_center",
+		"anchor_rule": "projected_front_corner",
 		"anchor_local": anchor_local,
 		"base_polygon_from_anchor": base_polygon_from_anchor,
 		"asset_pixels_per_world_pixel": 1.0,
 		"runtime_scale": Vector2.ONE,
-		"draw_rect_rule": "asset_bottom_center_to_front_anchor",
-		"horizontal_extent_rule": "inside_footprint_width",
+		"draw_rect_rule": "asset_bottom_center_to_projected_front_anchor",
+		"horizontal_extent_rule": "inside_projected_footprint_width",
 		"vertical_extent_rule": "body_may_extend_up_only",
 		"transparent_padding_rule": "top_only",
 		"max_horizontal_overhang_px": 0.0,

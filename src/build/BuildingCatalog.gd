@@ -781,7 +781,7 @@ static func all() -> Array[Dictionary]:
 		var definition: Dictionary = raw_definition.duplicate(true)
 		for key in GRID_RESET_VISUAL_KEYS:
 			definition.erase(key)
-		definition["visual_contract"] = "square_grid_v1"
+		definition["visual_contract"] = "square_grid_iso_v1"
 		result.append(definition)
 	return result
 

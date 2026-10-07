@@ -80,22 +80,24 @@ func _run() -> void:
 
 	if not _expect_step(tutorial, "fuel_station", "basic_fuel"):
 		return
-	if not _place(grid, "basic_fuel", Vector2i(8, 6)):
+	if not _place(grid, "basic_fuel", Vector2i(8, 5)):
 		return
 	tutorial.refresh()
 
 	if not _expect_step(tutorial, "ground_ops", "ground_ops_depot"):
 		return
-	if not _place(grid, "ground_ops_depot", Vector2i(8, 8)):
+	if not _place(grid, "ground_ops_depot", Vector2i(5, 9)):
 		return
 	tutorial.refresh()
 
 	if not _expect_step(tutorial, "service_road", "service_road"):
 		return
 	for cell in [
-		Vector2i(6, 7),
-		Vector2i(7, 7),
-		Vector2i(7, 8)
+		# Fuel approach from the right side of the stand.
+		Vector2i(7, 6),
+		Vector2i(6, 6),
+		# Ground Ops approach from below the stand.
+		Vector2i(5, 8)
 	]:
 		if not _place(grid, "service_road", cell):
 			return

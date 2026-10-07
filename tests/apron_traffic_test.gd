@@ -60,6 +60,98 @@ func _run() -> void:
 		_fail("Depot-exit staggering should also be capped.")
 		return
 
+	if (
+		ApronTrafficRules.right_of_way_priority("pushback")
+		<= ApronTrafficRules.right_of_way_priority("passenger")
+	):
+		_fail("Pushback must have highest apron traffic priority.")
+		return
+	if (
+		ApronTrafficRules.right_of_way_priority("passenger")
+		<= ApronTrafficRules.right_of_way_priority("cleaning")
+	):
+		_fail("Large passenger vehicles should outrank compact cleaning vans.")
+		return
+
+	var follower_snapshot := {
+		"instance_id": 10,
+		"position": Vector2(0, 0),
+		"heading": 0.0,
+		"phase": "OUTBOUND",
+		"service_type": "cargo",
+		"traffic_sequence": 2,
+	}
+	var leader_snapshot := {
+		"instance_id": 11,
+		"position": Vector2(15, 0),
+		"heading": 0.0,
+		"phase": "OUTBOUND",
+		"service_type": "cargo",
+		"traffic_sequence": 1,
+	}
+	var following_decision := ApronTrafficRules.traffic_decision(
+		follower_snapshot,
+		[leader_snapshot]
+	)
+	if not bool(following_decision.get("yielding", false)):
+		_fail("Following service vehicle should yield inside the safe road gap.")
+		return
+	if float(following_decision.get("factor", 1.0)) >= 1.0:
+		_fail("Following vehicle should reduce visual route progress.")
+		return
+	if String(following_decision.get("reason", "")) != "vehicle ahead":
+		_fail("Following traffic should report the vehicle-ahead reason.")
+		return
+
+	var cargo_oncoming := follower_snapshot.duplicate(true)
+	cargo_oncoming["instance_id"] = 20
+	cargo_oncoming["position"] = Vector2(0, 0)
+	cargo_oncoming["heading"] = 0.0
+	cargo_oncoming["service_type"] = "cargo"
+	cargo_oncoming["traffic_sequence"] = 4
+	var pushback_oncoming := {
+		"instance_id": 21,
+		"position": Vector2(22, 0),
+		"heading": PI,
+		"phase": "OUTBOUND",
+		"service_type": "pushback",
+		"traffic_sequence": 5,
+	}
+	var oncoming_decision := ApronTrafficRules.traffic_decision(
+		cargo_oncoming,
+		[pushback_oncoming]
+	)
+	if float(oncoming_decision.get("factor", 1.0)) > 0.001:
+		_fail("Cargo vehicle should fully yield to an oncoming pushback tug.")
+		return
+	if String(oncoming_decision.get("reason", "")) != "oncoming vehicle":
+		_fail("Oncoming conflict should expose a deterministic hold reason.")
+		return
+
+	var tie_late := {
+		"instance_id": 31,
+		"position": Vector2(0, 0),
+		"heading": 0.0,
+		"phase": "OUTBOUND",
+		"service_type": "cargo",
+		"traffic_sequence": 8,
+	}
+	var tie_early := {
+		"instance_id": 30,
+		"position": Vector2(15, 15),
+		"heading": -PI * 0.5,
+		"phase": "OUTBOUND",
+		"service_type": "cargo",
+		"traffic_sequence": 7,
+	}
+	var tie_decision := ApronTrafficRules.traffic_decision(
+		tie_late,
+		[tie_early]
+	)
+	if not bool(tie_decision.get("yielding", false)):
+		_fail("Later equal-priority dispatch should yield at a crossing.")
+		return
+
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame
@@ -117,6 +209,25 @@ func _run() -> void:
 
 	if fuel_truck == null or cleaning_van == null or catering_truck == null:
 		_fail("Starter service stage should dispatch fuel, cleaning, and catering vehicles.")
+		return
+
+	var fuel_traffic := fuel_truck.get_apron_traffic_snapshot()
+	var cleaning_traffic := cleaning_van.get_apron_traffic_snapshot()
+	var catering_traffic := catering_truck.get_apron_traffic_snapshot()
+	if (
+		int(fuel_traffic.get("stand_uid", -1)) != stand_uid
+		or int(cleaning_traffic.get("stand_uid", -1)) != stand_uid
+		or int(catering_traffic.get("stand_uid", -1)) != stand_uid
+	):
+		_fail("All dispatched service vehicles should carry their stand traffic identity.")
+		return
+	var sequences := [
+		int(fuel_traffic.get("traffic_sequence", -1)),
+		int(cleaning_traffic.get("traffic_sequence", -1)),
+		int(catering_traffic.get("traffic_sequence", -1)),
+	]
+	if sequences[0] <= 0 or sequences[1] <= sequences[0] or sequences[2] <= sequences[1]:
+		_fail("Service vehicle traffic sequence should be deterministic and increasing.")
 		return
 
 	if fuel_truck.phase != "OUTBOUND":
@@ -191,8 +302,8 @@ func _run() -> void:
 		return
 
 	print(
-		"Apron traffic passed: lane separation, approach staging, "
-		+ "and staggered service launches."
+		"Apron traffic passed: lanes, staging, staggered launches, "
+		+ "live yielding, priority, and deterministic traffic identity."
 	)
 	quit(0)
 

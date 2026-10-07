@@ -26,6 +26,7 @@ var active_jobs := 0
 var service_analytics: Dictionary = {}
 var dispatch_retry_accumulator := 0.0
 var global_service_speed_multiplier := 1.0
+var traffic_sequence_counter := 0
 
 const DISPATCH_RETRY_INTERVAL := 0.25
 const ANALYTICS_SERVICE_TYPES: Array[String] = [
@@ -44,6 +45,11 @@ func configure(grid: AirportGrid) -> void:
 
 func configure_fuel_economy(economy: FuelEconomy) -> void:
 	fuel_economy = economy
+
+
+func _next_apron_traffic_sequence() -> int:
+	traffic_sequence_counter += 1
+	return traffic_sequence_counter
 
 
 func set_global_service_speed_multiplier(value: float) -> void:
@@ -1041,6 +1047,10 @@ func _dispatch_service(
 			)
 		)
 		truck.set_launch_delay(launch_delay)
+		truck.configure_apron_traffic(
+			stand_uid,
+			_next_apron_traffic_sequence()
+		)
 		truck.set_service_pose_rotation(
 			docking_rotation
 		)
@@ -1078,6 +1088,10 @@ func _dispatch_service(
 			)
 		)
 		vehicle.set_launch_delay(launch_delay)
+		vehicle.configure_apron_traffic(
+			stand_uid,
+			_next_apron_traffic_sequence()
+		)
 		vehicle.set_service_pose_rotation(
 			docking_rotation
 		)

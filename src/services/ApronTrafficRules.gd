@@ -103,6 +103,8 @@ const FOLLOW_LATERAL_TOLERANCE := 13.0
 const CROSSING_CAUTION_RADIUS := 30.0
 const ONCOMING_CAUTION_RADIUS := 34.0
 const MIN_TRAFFIC_FACTOR := 0.18
+const STAND_ENTRY_PROGRESS := 0.78
+const STAND_EXIT_CLEAR_PROGRESS := 0.28
 
 
 static func right_of_way_priority(
@@ -117,6 +119,79 @@ static func right_of_way_priority(
 	elif phase == "RETURNING":
 		priority -= 4
 	return priority
+
+
+static func stand_throat_state(
+	snapshot: Dictionary
+) -> String:
+	var stand_uid := int(snapshot.get("stand_uid", -1))
+	if stand_uid < 0:
+		return "road"
+	var phase := String(snapshot.get("phase", ""))
+	var progress := clampf(
+		float(snapshot.get("route_progress", 0.0)),
+		0.0,
+		1.0
+	)
+	if phase == "OUTBOUND" and progress >= STAND_ENTRY_PROGRESS:
+		return "entering"
+	if phase == "RETURNING" and progress <= STAND_EXIT_CLEAR_PROGRESS:
+		return "exiting"
+	return "road"
+
+
+static func _stand_throat_yield(
+	self_snapshot: Dictionary,
+	other_snapshot: Dictionary
+) -> Dictionary:
+	var self_stand := int(self_snapshot.get("stand_uid", -1))
+	var other_stand := int(other_snapshot.get("stand_uid", -1))
+	if self_stand < 0 or self_stand != other_stand:
+		return {}
+
+	var self_state := stand_throat_state(self_snapshot)
+	var other_state := stand_throat_state(other_snapshot)
+	if self_state == "road" or other_state == "road":
+		return {}
+
+	var self_id := int(self_snapshot.get("instance_id", -1))
+	var other_id := int(other_snapshot.get("instance_id", -1))
+	var self_sequence := int(
+		self_snapshot.get("traffic_sequence", 999999)
+	)
+	var other_sequence := int(
+		other_snapshot.get("traffic_sequence", 999999)
+	)
+
+	# A vehicle already leaving the stand clears the narrow apron throat first.
+	if self_state == "entering" and other_state == "exiting":
+		return {
+			"yielding": true,
+			"reason": "stand exit clearing",
+			"blocker_id": other_id,
+		}
+	if self_state == "exiting" and other_state == "entering":
+		return {}
+
+	# Same-direction stand merges use stable dispatch order. This avoids two
+	# vehicles visually entering/leaving the throat side-by-side.
+	var self_yields := false
+	if self_sequence != other_sequence:
+		self_yields = self_sequence > other_sequence
+	else:
+		self_yields = self_id > other_id
+	if not self_yields:
+		return {}
+
+	return {
+		"yielding": true,
+		"reason": (
+			"stand approach queue"
+			if self_state == "entering"
+			else "stand exit queue"
+		),
+		"blocker_id": other_id,
+	}
 
 
 static func traffic_decision(
@@ -174,6 +249,19 @@ static func traffic_decision(
 			other.get("phase", "")
 		)
 		if other_phase not in ["OUTBOUND", "RETURNING"]:
+			continue
+
+		var stand_yield := _stand_throat_yield(
+			self_snapshot,
+			other
+		)
+		if bool(stand_yield.get("yielding", false)):
+			_apply_stronger_yield(
+				result,
+				0.0,
+				String(stand_yield.get("reason", "stand queue")),
+				int(stand_yield.get("blocker_id", other_id))
+			)
 			continue
 
 		var other_position: Vector2 = other.get(

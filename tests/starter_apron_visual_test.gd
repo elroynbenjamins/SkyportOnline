@@ -11,102 +11,71 @@ func _run() -> void:
 	await process_frame
 
 	var snapshot := grid.get_starter_apron_visual_snapshot()
-	if not bool(snapshot.get("active", false)):
-		_fail("Default starter airport should render the unified apron.")
-		return
-	if int(snapshot.get("stand_count", 0)) != 2:
-		_fail("Starter apron should include both default Small Stands.")
-		return
-	if int(snapshot.get("terminal_uid", -1)) <= 0:
-		_fail("Starter apron should identify the Small Terminal.")
-		return
-	if int(snapshot.get("floodlights", 0)) != 4:
-		_fail("Starter apron should expose four perimeter floodlights.")
-		return
-	if int(snapshot.get("service_bays", 0)) != 4:
-		_fail("Two starter stands should expose four service staging bays.")
+	if bool(snapshot.get("active", false)):
+		_fail(
+			"Roomier starter layout should not stretch one giant apron between "
+			+ "the terminal and separated stands."
+		)
 		return
 
-	var origin: Vector2i = snapshot.get("origin", Vector2i(-1, -1))
-	var footprint: Vector2i = snapshot.get("footprint", Vector2i.ZERO)
-	if origin != Vector2i(8, 10):
-		_fail("Starter apron should stop at the western owned-land boundary.")
-		return
-	if footprint != Vector2i(8, 6):
-		_fail("Starter apron should form one compact 8x6 visual slab.")
-		return
-
-	for y in range(origin.y, origin.y + footprint.y):
-		for x in range(origin.x, origin.x + footprint.x):
-			var parcel := grid._parcel_for_tile(Vector2i(x, y))
-			if parcel.is_empty() or not bool(parcel.get("owned", false)):
-				_fail("Decorative starter apron must never spill onto unowned land.")
-				return
-
-	var starter_stand: Dictionary = {}
+	var starter_stands: Array[Dictionary] = []
 	var starter_terminal: Dictionary = {}
 	for building in grid.placed_buildings:
 		var id := String(building.get("definition_id", ""))
-		if id == "small_stand" and starter_stand.is_empty():
-			starter_stand = building
+		if id == "small_stand":
+			starter_stands.append(building)
 		elif id == "small_terminal":
 			starter_terminal = building
 
-	var stand_definition := BuildingCatalog.get_definition("small_stand")
-	var stand_footprint: Vector2i = stand_definition.get(
-		"footprint",
-		Vector2i.ONE
-	)
-	var stand_pad := grid._world_art_ground_fill(
-		stand_definition,
-		starter_stand.get("origin", Vector2i.ZERO),
-		stand_footprint
-	)
-	if stand_pad.a >= 0.40:
-		_fail("Starter Small Stand pad should blend into the unified apron.")
+	if starter_stands.size() != 2:
+		_fail("Starter airport should still contain both Small Stands.")
 		return
-	if grid._building_ground_color(stand_definition).a < 0.60:
-		_fail("Standalone stands should retain their strong readable concrete base.")
+	if starter_terminal.is_empty():
+		_fail("Starter airport should still contain the Small Terminal.")
 		return
 
+	var stand_definition := BuildingCatalog.get_definition("small_stand")
+	for stand in starter_stands:
+		var stand_footprint := grid._footprint_for(
+			stand_definition,
+			int(stand.get("rotation", 0))
+		)
+		var stand_pad := grid._world_art_ground_fill(
+			stand_definition,
+			stand.get("origin", Vector2i.ZERO),
+			stand_footprint
+		)
+		if stand_pad.a < 0.40:
+			_fail(
+				"Separated Small Stands should retain a strong readable concrete pad."
+			)
+			return
+
 	var terminal_definition := BuildingCatalog.get_definition("small_terminal")
-	var terminal_footprint: Vector2i = terminal_definition.get(
-		"footprint",
-		Vector2i.ONE
+	var terminal_footprint := grid._footprint_for(
+		terminal_definition,
+		int(starter_terminal.get("rotation", 0))
 	)
 	var terminal_pad := grid._world_art_ground_fill(
 		terminal_definition,
 		starter_terminal.get("origin", Vector2i.ZERO),
 		terminal_footprint
 	)
-	if terminal_pad.a >= 0.30:
-		_fail("Starter Terminal pad should not look like a separate concrete island.")
+	if terminal_pad.a < 0.40:
+		_fail(
+			"Roomier Small Terminal should retain its own readable grid foundation."
+		)
 		return
 
 	var runway_definition := BuildingCatalog.get_definition("short_runway")
 	var runway_pad := grid._building_ground_color(runway_definition)
 	if runway_pad.a < 0.70:
-		_fail("Runway surface must remain visually distinct from apron concrete.")
-		return
-
-	# Moving the two stands away from the terminal should disable the starter
-	# campus slab rather than stretching a giant decorative apron across land.
-	for index in range(grid.placed_buildings.size()):
-		var building: Dictionary = grid.placed_buildings[index]
-		if String(building.get("definition_id", "")) != "small_stand":
-			continue
-		grid.placed_buildings[index]["origin"] = Vector2i(
-			0 + index,
-			0
-		)
-	var moved := grid.get_starter_apron_visual_snapshot()
-	if bool(moved.get("active", true)):
-		_fail("Separated stands should not stretch the starter apron across the map.")
+		_fail("Runway surface must remain visually distinct from building pads.")
 		return
 
 	print(
-		"Starter apron visuals passed: unified owned-land slab, subtle building pads, "
-		+ "service staging and non-stretching layout behavior."
+		"Starter apron visuals passed: roomier separated stands, exact grid pads, "
+		+ "terminal grounding and no stretched decorative apron."
 	)
 	quit(0)
 

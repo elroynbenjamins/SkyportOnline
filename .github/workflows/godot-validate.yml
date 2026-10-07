@@ -76,6 +76,7 @@ jobs:
             tests/event_framework_test.gd
             tests/winter_launch_event_test.gd
             tests/ui_modernization_test.gd
+            tests/airport_background_layer_test.gd
             tests/production_ui_skin_test.gd
             tests/aircraft_context_card_test.gd
             tests/building_context_card_test.gd

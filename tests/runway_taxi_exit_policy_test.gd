@@ -70,6 +70,22 @@ func _run() -> void:
 		) != "rollout_end_four":
 			_fail("Every runway must use rollout_end_four taxi exits.")
 			return
+		if int(
+			definition.get(
+				"runway_max_active_taxi_connections",
+				0
+			)
+		) != 2:
+			_fail("Every runway should allow at most two active taxi exits.")
+			return
+		if int(
+			definition.get(
+				"runway_max_active_taxi_connections_per_lane",
+				0
+			)
+		) != 1:
+			_fail("Each outer runway lane should allow only one active exit.")
+			return
 
 	var grid := AirportGrid.new()
 	root.add_child(grid)
@@ -120,6 +136,28 @@ func _run() -> void:
 	)
 	if nodes.size() != 4:
 		_fail("Short Runway should expose exactly four rollout-end exit nodes.")
+		return
+	var lane_counts := {
+		"outer_a": 0,
+		"outer_b": 0
+	}
+	for node_variant in nodes:
+		var node: Dictionary = node_variant
+		var lane := String(
+			node.get(
+				"lane",
+				""
+			)
+		)
+		if lane_counts.has(lane):
+			lane_counts[lane] = int(
+				lane_counts[lane]
+			) + 1
+	if int(lane_counts["outer_a"]) != 2:
+		_fail("Outer lane A should expose exactly two alternative sockets.")
+		return
+	if int(lane_counts["outer_b"]) != 2:
+		_fail("Outer lane B should expose exactly two alternative sockets.")
 		return
 
 	var expected_horizontal := [
@@ -186,6 +224,89 @@ func _run() -> void:
 				]
 			)
 			return
+
+	# Four sockets are possible, but only one may be used per outer lane.
+	var lane_a_forward := _place(
+		grid,
+		"taxiway",
+		Vector2i(9, 4)
+	)
+	if not bool(lane_a_forward.get("placed", false)):
+		_fail("Could not place first outer-lane runway exit.")
+		return
+
+	var lane_a_side_status := _preview(
+		grid,
+		"taxiway",
+		Vector2i(8, 3)
+	)
+	if bool(lane_a_side_status.get("valid", true)):
+		_fail("Using lane A forward exit must block lane A side exit.")
+		return
+	if String(
+		lane_a_side_status.get(
+			"runway_connection_limit",
+			""
+		)
+	) != "one_per_outer_lane":
+		_fail("Paired exit rejection should report one_per_outer_lane.")
+		return
+
+	var lane_b_side := _place(
+		grid,
+		"taxiway",
+		Vector2i(8, 6)
+	)
+	if not bool(lane_b_side.get("placed", false)):
+		_fail("Could not place second runway exit on outer lane B.")
+		return
+
+	var lane_b_forward_status := _preview(
+		grid,
+		"taxiway",
+		Vector2i(9, 5)
+	)
+	if bool(lane_b_forward_status.get("valid", true)):
+		_fail("Using lane B side exit must block lane B forward exit.")
+		return
+	if String(
+		lane_b_forward_status.get(
+			"runway_connection_limit",
+			""
+		)
+	) != "one_per_outer_lane":
+		_fail("Second paired exit rejection should report one_per_outer_lane.")
+		return
+
+	snapshot = grid.get_runway_exit_policy_snapshot(
+		runway_uid
+	)
+	if int(
+		snapshot.get(
+			"active_exit_count",
+			-1
+		)
+	) != 2:
+		_fail("Runway should report exactly two active taxi exits.")
+		return
+	if int(
+		snapshot.get(
+			"max_active_exit_count",
+			0
+		)
+	) != 2:
+		_fail("Runway snapshot should expose a maximum of two active exits.")
+		return
+	var active_lane_counts: Dictionary = snapshot.get(
+		"active_lane_counts",
+		{}
+	)
+	if int(active_lane_counts.get("outer_a", 0)) != 1:
+		_fail("Outer lane A should have exactly one active taxi exit.")
+		return
+	if int(active_lane_counts.get("outer_b", 0)) != 1:
+		_fail("Outer lane B should have exactly one active taxi exit.")
+		return
 
 	# Verify rotation keeps START at the origin side and moves END to +Y.
 	var rotated := AirportGrid.new()
@@ -265,8 +386,8 @@ func _run() -> void:
 			return
 
 	print(
-		"RUNWAY_TAXI_EXIT_POLICY_OK start_closed=true end_nodes=4 "
-		+ "rotation=true short_runway=true regional_rule=true"
+		"RUNWAY_TAXI_EXIT_POLICY_OK start_closed=true sockets=4 active_max=2 "
+		+ "one_per_outer_lane=true rotation=true regional_rule=true"
 	)
 	quit(0)
 

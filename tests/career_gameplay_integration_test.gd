@@ -28,28 +28,42 @@ func _place_for_career(
 
 
 func _build_required_starter_airside(main) -> bool:
-	# This test covers post-onboarding career gameplay. Build the same minimal
-	# operational airport that the guided tutorial leaves behind, while the
-	# dedicated starter tests validate the forced tutorial itself.
+	# Own aircraft use the V1 Skyrama handling loop and need only runway,
+	# hangar, fuel and cargo handling. This integration also keeps an optional
+	# stand/network alive so the legacy NPC visitor path remains exercised.
 	if not _place_for_career(main, "short_runway", Vector2i(0, 0)):
 		return false
-	if not _place_for_career(main, "small_hangar", Vector2i(0, 6)):
+	if not _place_for_career(main, "small_hangar", Vector2i(0, 10)):
 		return false
+	if not _place_for_career(main, "basic_fuel", Vector2i(8, 5)):
+		return false
+	if not _place_for_career(main, "ground_ops_depot", Vector2i(5, 9)):
+		return false
+
 	if not _place_for_career(main, "small_stand", Vector2i(4, 6)):
 		return false
 
-	for y in range(2, 8):
+	# Optional NPC taxi path enters only through the runway rollout-end socket.
+	for y in range(2, 6):
+		if not _place_for_career(
+			main,
+			"taxiway",
+			Vector2i(4, y)
+		):
+			return false
+	if not _place_for_career(
+		main,
+		"taxiway",
+		Vector2i(3, 5)
+	):
+		return false
+	for y in range(6, 11):
 		if not _place_for_career(
 			main,
 			"taxiway",
 			Vector2i(3, y)
 		):
 			return false
-
-	if not _place_for_career(main, "basic_fuel", Vector2i(8, 5)):
-		return false
-	if not _place_for_career(main, "ground_ops_depot", Vector2i(5, 9)):
-		return false
 
 	for cell in [
 		# Fuel approach from the right side of the stand.
@@ -97,14 +111,14 @@ func _run() -> void:
 	check(main.player_level == 1, "A new airport starts career progression at level one.")
 	check(
 		_build_required_starter_airside(main),
-		"Fresh career test should be able to construct the required starter airside network."
+		"Fresh career test should construct simple handling plus the optional NPC network."
 	)
 	main._persist_airport_layout()
 	main._refresh_layout_dependent_systems()
 	await process_frame
 	check(
 		main.aircraft_demos.size() == 1,
-		"One connected starter stand should deploy one Pico; the second waits for another stand."
+		"V1 should deploy one owned Pico from hangar inventory."
 	)
 	check(
 		(main.progression.get("owned_aircraft", []) as Array).size() == 2,

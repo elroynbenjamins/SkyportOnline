@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="132" viewBox="0 0 180 132">
+  <defs>
+    <linearGradient id="tank" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1cf71"/>
+      <stop offset=".48" stop-color="#d3a73c"/>
+      <stop offset="1" stop-color="#9f7523"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#87a5b2"/>
+      <stop offset=".55" stop-color="#536d78"/>
+      <stop offset="1" stop-color="#344c57"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8edf3"/>
+      <stop offset="1" stop-color="#7fa8b9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- soft contact shadow -->
+  <ellipse cx="92" cy="111" rx="59" ry="13" fill="#17242a" opacity=".20"/>
+
+  <!-- rear tank bank -->
+  <g>
+    <ellipse cx="53" cy="56" rx="19" ry="8" fill="#825f1d" opacity=".45"/>
+    <rect x="34" y="33" width="38" height="24" rx="8" fill="url(#tank)"/>
+    <ellipse cx="53" cy="33" rx="19" ry="8" fill="#f4d884"/>
+    <ellipse cx="53" cy="57" rx="19" ry="8" fill="#b88b2d"/>
+    <path d="M42 34v23M64 34v23" stroke="#fff2b8" stroke-opacity=".32" stroke-width="2"/>
+    <rect x="49" y="23" width="8" height="10" rx="2" fill="#667985"/>
+    <ellipse cx="53" cy="23" rx="4" ry="2" fill="#a8bdc7"/>
+  </g>
+
+  <g>
+    <ellipse cx="92" cy="70" rx="18" ry="7.5" fill="#825f1d" opacity=".42"/>
+    <rect x="74" y="48" width="36" height="22" rx="8" fill="url(#tank)"/>
+    <ellipse cx="92" cy="48" rx="18" ry="7.5" fill="#edcf74"/>
+    <ellipse cx="92" cy="70" rx="18" ry="7.5" fill="#ad8129"/>
+    <path d="M82 49v20M103 49v20" stroke="#fff2b8" stroke-opacity=".28" stroke-width="2"/>
+  </g>
+
+  <!-- pump/control kiosk -->
+  <polygon points="104,58 139,41 158,50 123,68" fill="url(#roof)"/>
+  <polygon points="123,68 158,50 158,82 123,101" fill="#3c5c68"/>
+  <polygon points="104,58 123,68 123,101 104,91" fill="#557684"/>
+  <rect x="129" y="61" width="18" height="20" rx="2" fill="#163947"/>
+  <rect x="132" y="64" width="12" height="5" rx="1" fill="#6fe2ff"/>
+  <circle cx="135" cy="75" r="2" fill="#f7ce55"/>
+  <circle cx="142" cy="75" r="2" fill="#7ee0a7"/>
+  <path d="M108 69 C92 73 89 87 81 96" fill="none" stroke="#27383f" stroke-width="3" stroke-linecap="round"/>
+  <path d="M110 70 C95 75 92 88 84 98" fill="none" stroke="#7ea0aa" stroke-width="1.1" stroke-linecap="round"/>
+
+  <!-- safety rail / bollards -->
+  <path d="M29 76 L103 113" stroke="#d8b349" stroke-width="2.4"/>
+  <g fill="#f5f1e7" stroke="#d75c55" stroke-width="2">
+    <rect x="37" y="77" width="4" height="13" rx="1"/>
+    <rect x="59" y="88" width="4" height="13" rx="1"/>
+    <rect x="82" y="99" width="4" height="13" rx="1"/>
+  </g>
+
+  <!-- amber beacon -->
+  <circle cx="148" cy="43" r="4.3" fill="#ffcc45" opacity=".35"/>
+  <circle cx="148" cy="43" r="2.1" fill="#fff0a1"/>
+</svg>

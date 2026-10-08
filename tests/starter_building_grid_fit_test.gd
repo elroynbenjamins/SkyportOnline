@@ -22,7 +22,7 @@ func _run() -> void:
 		return
 
 	var expected_footprints := {
-		"airport_office": Vector2i(2, 2),
+		"airport_office": Vector2i(3, 2),
 		"short_runway": Vector2i(5, 2),
 		"small_stand": Vector2i(2, 2),
 		"small_terminal": Vector2i(3, 2),
@@ -104,14 +104,21 @@ func _run() -> void:
 	if terminal_draw_rect.size != Vector2(160, 180):
 		_fail("Grid-native asset draw rect must preserve exact source dimensions.")
 		return
+	var terminal_anchor_local: Vector2 = terminal_contract.get(
+		"anchor_local",
+		Vector2.ZERO
+	)
+	var terminal_asset_anchor := Vector2(
+		terminal_anchor_local.x,
+		terminal_draw_rect.size.y
+	)
 	if (
 		terminal_draw_rect.position
-		+ Vector2(
-			terminal_draw_rect.size.x * 0.5,
-			terminal_draw_rect.size.y
-		)
+		+ terminal_asset_anchor
 	).distance_to(terminal_anchor) > 0.01:
-		_fail("Asset bottom-center must land exactly on the grid front anchor.")
+		_fail(
+			"Asset contract anchor must land exactly on the grid front anchor."
+		)
 		return
 
 	print(
@@ -119,7 +126,7 @@ func _run() -> void:
 		+ "nearest_cell_snap=true grid_owns_footprint=true "
 		+ "grid_owns_anchor=true grid_owns_scale=true "
 		+ "authoring_1_to_1=true padding=top_only "
-		+ "draw=bottom_center_to_front_anchor"
+		+ "draw=contract_anchor_to_front_anchor"
 	)
 	quit(0)
 

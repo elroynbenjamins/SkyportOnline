@@ -164,6 +164,14 @@ func set_handling_action(
 	_apply_handling_action_style(
 		pending_handling_action
 	)
+
+	# Skyrama-style state language: a plane either shows service progress or
+	# one clear action bubble. Never stack a status card under a ready action.
+	if skyrama_handling_enabled and turnaround_panel != null:
+		turnaround_panel.visible = false
+	if skyrama_handling_enabled and turnaround_progress != null:
+		turnaround_progress.visible = false
+
 	handling_action_button.visible = visible
 	if handling_action_tail != null:
 		handling_action_tail.visible = visible
@@ -344,6 +352,10 @@ func _build_handling_action_button() -> void:
 
 	handling_action_button = Button.new()
 	handling_action_button.custom_minimum_size = Vector2(
+		108,
+		38
+	)
+	handling_action_button.size = Vector2(
 		108,
 		38
 	)

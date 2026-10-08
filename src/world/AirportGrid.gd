@@ -463,6 +463,9 @@ func _draw_grid_first_scene() -> void:
 	# authored landscape and make the airport look like a floating green slab.
 	_draw_grid_first_parcels()
 	_draw_grid_first_buildings()
+	# Runway activity belongs to the live gameplay layer, not the removed
+	# legacy terrain stack. Keep it visible during the grid-first rebuild.
+	_draw_runway_operational_indicators()
 	_draw_hovered_building_outline()
 	_draw_selected_building_outline()
 	_draw_grid_first_preview()
@@ -7736,6 +7739,122 @@ func _stop_bar_color_for_state(
 			return STOP_BAR_OFF
 
 
+func _runway_slot_world_position(
+	building: Dictionary,
+	definition: Dictionary,
+	footprint: Vector2i,
+	slot: String
+) -> Vector2:
+	var origin: Vector2i = building.get(
+		"origin",
+		Vector2i.ZERO
+	)
+	var cell := origin
+	if footprint.x >= footprint.y:
+		var mid_y := origin.y + int(
+			floor(float(footprint.y - 1) * 0.5)
+		)
+		cell = Vector2i(
+			origin.x if slot == "start" else origin.x + footprint.x - 1,
+			mid_y
+		)
+	else:
+		var mid_x := origin.x + int(
+			floor(float(footprint.x - 1) * 0.5)
+		)
+		cell = Vector2i(
+			mid_x,
+			origin.y if slot == "start" else origin.y + footprint.y - 1
+		)
+
+	return tile_to_world(
+		Vector2(cell.x, cell.y)
+	)
+
+
+func _draw_grid_first_runway_slot_feedback(
+	building: Dictionary,
+	definition: Dictionary,
+	footprint: Vector2i,
+	state: Dictionary
+) -> void:
+	if not bool(
+		state.get(
+			"slot_occupied",
+			false
+		)
+	):
+		return
+
+	var slot := String(
+		state.get(
+			"slot",
+			""
+		)
+	)
+	if slot not in ["start", "end"]:
+		return
+
+	var center := _runway_slot_world_position(
+		building,
+		definition,
+		footprint,
+		slot
+	)
+	var pulse := (
+		0.72
+		+ 0.28
+		* sin(
+			runway_feedback_elapsed * 5.8
+		)
+	)
+	var operation := String(
+		state.get(
+			"active_operation",
+			""
+		)
+	)
+	var color := RUNWAY_OCCUPIED
+	if operation == "departure":
+		color = RUNWAY_EDGE_LIGHT_PRIORITY
+
+	# Soft diamond glow sits on the actual logical runway cell. It communicates
+	# the single V1 runway slot without adding a floating status badge.
+	var glow := PackedVector2Array([
+		center + Vector2(0, -10),
+		center + Vector2(20, 0),
+		center + Vector2(0, 10),
+		center + Vector2(-20, 0)
+	])
+	draw_colored_polygon(
+		glow,
+		Color(
+			color.r,
+			color.g,
+			color.b,
+			0.08 + 0.08 * pulse
+		)
+	)
+	draw_polyline(
+		PackedVector2Array([
+			glow[0],
+			glow[1],
+			glow[2],
+			glow[3],
+			glow[0]
+		]),
+		Color(
+			color.r,
+			color.g,
+			color.b,
+			0.46 + 0.30 * pulse
+		),
+		1.5,
+		true
+	)
+
+
+
 func _draw_runway_operational_indicators() -> void:
 	for building in placed_buildings:
 		var definition := BuildingCatalog.get_definition(
@@ -7752,10 +7871,6 @@ func _draw_runway_operational_indicators() -> void:
 			definition,
 			int(building.get("rotation", 0))
 		)
-		var center := _footprint_center_world(
-			building["origin"],
-			footprint
-		)
 		var polygon := _footprint_polygon(
 			building["origin"],
 			footprint
@@ -7763,6 +7878,20 @@ func _draw_runway_operational_indicators() -> void:
 		_draw_runway_activity_edge_lights(
 			polygon,
 			state
+		)
+
+		if GRID_FIRST_VISUAL_RESET:
+			_draw_grid_first_runway_slot_feedback(
+				building,
+				definition,
+				footprint,
+				state
+			)
+			continue
+
+		var center := _footprint_center_world(
+			building["origin"],
+			footprint
 		)
 		var indicator := center + Vector2(0, -34)
 		var color := RUNWAY_CLEAR
@@ -7804,7 +7933,6 @@ func _draw_runway_operational_indicators() -> void:
 				RUNWAY_PRIORITY,
 				1.5
 			)
-
 
 func _draw_runway_activity_edge_lights(
 	polygon: PackedVector2Array,

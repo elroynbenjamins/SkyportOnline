@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80" viewBox="0 0 160 80">
+  <defs>
+    <clipPath id="footprint"><polygon points="96,0 160,32 64,80 0,48"/></clipPath>
+    <linearGradient id="concrete" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8d5ca"/>
+      <stop offset=".55" stop-color="#bdb9ae"/>
+      <stop offset="1" stop-color="#90918c"/>
+    </linearGradient>
+    <linearGradient id="apron" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#606a70"/>
+      <stop offset="1" stop-color="#3c464c"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#footprint)">
+    <polygon points="96,0 160,32 64,80 0,48" fill="url(#concrete)"/>
+    <polygon points="94,5 150,33 66,75 10,47" fill="#7e7c76" opacity=".24"/>
+    <polygon points="115,24 26,68.5 64,80 142,41" fill="url(#apron)"/>
+    <path d="M132 40 L64 74" stroke="#f0c94c" stroke-width="1.9" stroke-linecap="round"/>
+    <path d="M118 33 L34 75" stroke="#d8d5ca" stroke-width="1.2" opacity=".42"/>
+    <path d="M112 25 L78 42" stroke="#f0c94c" stroke-width="2.1" stroke-dasharray="4 3"/>
+    <path d="M105 21 L71 38" stroke="#f0c94c" stroke-width="2.1" stroke-dasharray="4 3"/>
+    <path d="M99 17 L65 34" stroke="#f0c94c" stroke-width="2.1" stroke-dasharray="4 3"/>
+    <path d="M93 13 L59 30" stroke="#f0c94c" stroke-width="2.1" stroke-dasharray="4 3"/>
+    <g fill="#64dcff" stroke="#efffff" stroke-width=".4">
+      <circle cx="139" cy="40.5" r="1.4"/>
+      <circle cx="113" cy="53.5" r="1.4"/>
+      <circle cx="87" cy="66.5" r="1.4"/>
+      <circle cx="60" cy="72" r="1.4"/>
+      <circle cx="34" cy="59" r="1.4"/>
+    </g>
+  </g>
+</svg>

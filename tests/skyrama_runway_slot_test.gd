@@ -85,8 +85,8 @@ func _run() -> void:
 	if not arrival_a.stage_for_manual_arrival():
 		_fail("Inbound aircraft should expose RECEIVE/LAND.")
 		return
-	if arrival_a.get_handling_action() != "LAND":
-		_fail("Inbound aircraft should internally expose the LAND/RECEIVE action.")
+	if arrival_a.get_handling_action() != "RECEIVE":
+		_fail("Inbound Skyrama aircraft should expose RECEIVE.")
 		return
 
 	arrival_dispatcher.request_arrival(

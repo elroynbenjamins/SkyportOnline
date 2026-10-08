@@ -42,14 +42,22 @@ func _run() -> void:
 		return
 	if not _place(grid, "small_stand", Vector2i(4, 6)):
 		return
-	for y in range(2, 7):
+
+	# Enter through the only practical starter socket: the lower side of the
+	# runway's rollout-end cell. Continue as real 1x1 Taxiway blocks.
+	for y in range(2, 6):
+		if not _place(grid, "taxiway", Vector2i(4, y)):
+			return
+
+	# Branch beside the stand, then continue down to the hangar.
+	if not _place(grid, "taxiway", Vector2i(3, 5)):
+		return
+	for y in range(6, 11):
 		if not _place(grid, "taxiway", Vector2i(3, y)):
 			return
+
 	if not _place(grid, "small_hangar", Vector2i(0, 10)):
 		return
-	for y in range(7, 11):
-		if not _place(grid, "taxiway", Vector2i(3, y)):
-			return
 
 	if not _place(grid, "basic_fuel", Vector2i(8, 5)):
 		return

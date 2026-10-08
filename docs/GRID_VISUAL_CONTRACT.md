@@ -181,8 +181,39 @@ Players never select these pieces manually. They place one **Taxiway** item and 
 Taxiway visual connectivity uses the same adjacency rule as routing. A taxiway automatically opens toward neighboring:
 
 - taxiways;
-- runways;
+- an approved **rollout-end runway exit**;
 - aircraft stands;
 - hangars.
 
-Taxiway-to-taxiway openings are baked into the selected standalone variant. When a taxiway touches a runway, stand or hangar, a late seam pass opens that larger asset's curb/foundation too. For the **5×2 Small Runway**, the asphalt throat crosses the shared grid edge and covers the beige curb only at the connected side cell, while a small hold-short accent remains visible. This makes the network read as one continuous paved system without requiring a separate connector item.
+Runway adjacency alone is not enough: START and middle runway edges remain closed.
+
+Taxiway-to-taxiway openings are baked into the selected standalone variant. When a taxiway touches an approved runway exit, stand or hangar, a late seam pass opens that larger asset's curb/foundation too. For the **5×2 Small Runway**, the asphalt throat crosses the shared grid edge and covers the beige curb only at one of the four rollout-end nodes, while a small hold-short accent remains visible. This makes the network read as one continuous paved system without requiring a separate connector item.
+
+
+## Directional runway connection rule
+
+Every runway is directional for both gameplay and art.
+
+- the runway **START** is the threshold on the origin side of its long axis;
+- the runway **END** is the final rollout column/row on the positive long-axis side;
+- landing animation should approach START, cross the threshold, touch down and roll toward END;
+- taxiways may never attach to the START threshold or the middle runway body;
+- taxiways may attach only through the **four rollout-end exit nodes**.
+
+For a horizontal runway, the four allowed taxiway cells are:
+
+1. directly beyond the upper cell of the final runway column;
+2. directly beyond the lower cell of the final runway column;
+3. outside the upper side of the upper cell in the final runway column;
+4. outside the lower side of the lower cell in the final runway column.
+
+For a rotated runway the same rule rotates with it: two forward cells beyond the final runway row plus one outer-side exit at each edge of that final row.
+
+This policy is identified as:
+
+- `runway_direction_policy = "origin_to_long_axis_end"`
+- `runway_taxi_exit_policy = "rollout_end_four"`
+
+The rule applies to the **5×2 Short Runway** and all later runway sizes, including the **12×3 Regional Runway**. Wider future runways still expose only the two outer lanes at the rollout end, not every cell across their width.
+
+Placement, routing and visual seams all use the same rule. A Taxiway touching any other runway edge is invalid rather than merely disconnected.

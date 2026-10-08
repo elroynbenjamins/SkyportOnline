@@ -178,6 +178,27 @@ func request_departure(
 	)
 
 
+func request_direct_departure(
+	aircraft: AircraftPrototype,
+	label: String
+) -> void:
+	if aircraft == null or not is_instance_valid(aircraft):
+		return
+	if aircraft.runway_uid < 0:
+		status_changed.emit(
+			"%s has no compatible runway." % label,
+			"warning"
+		)
+		return
+
+	release_departure_assignment(aircraft)
+	_request_operation(
+		aircraft,
+		label,
+		"departure"
+	)
+
+
 func request_arrival(
 	aircraft: AircraftPrototype,
 	label: String

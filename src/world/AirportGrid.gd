@@ -667,9 +667,13 @@ func _draw_grid_first_buildings() -> void:
 		elif id == "service_road":
 			service_road_origins.append(origin)
 
+	# Runway connector art is composed from the real placed 1x1 taxiway
+	# sockets. The 5x2 runway remains a fixed grid-native base asset.
+	_draw_grid_native_runway_exit_overlays()
+
 	# Base taxiway-to-taxiway joins are baked into the selected autotile.
-	# These late seams are only for entering larger assets such as a runway,
-	# stand or hangar, so their curb/foundation is visibly opened too.
+	# These late seams are only for stands/hangars; runway seams are now owned
+	# by the modular runway connector pass above.
 	for taxiway_origin in taxiway_origins:
 		_draw_grid_native_taxiway_connections(
 			taxiway_origin
@@ -932,6 +936,254 @@ func _airside_visual_connection_kind_at(
 
 
 
+func _quadratic_curve_points(
+	start: Vector2,
+	control: Vector2,
+	end: Vector2,
+	segments: int = 12
+) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	var safe_segments := maxi(2, segments)
+	for index in range(safe_segments + 1):
+		var t := float(index) / float(safe_segments)
+		var inv := 1.0 - t
+		points.append(
+			start * inv * inv
+			+ control * 2.0 * inv * t
+			+ end * t * t
+		)
+	return points
+
+
+func _runway_forward_world_vector(
+	runway: Dictionary,
+	definition: Dictionary
+) -> Vector2:
+	var footprint := _footprint_for(
+		definition,
+		int(runway.get("rotation", 0))
+	)
+	var forward_grid := (
+		Vector2i(1, 0)
+		if footprint.x >= footprint.y
+		else Vector2i(0, 1)
+	)
+	var from_world := tile_to_world(Vector2.ZERO)
+	var to_world := tile_to_world(
+		Vector2(
+			forward_grid.x,
+			forward_grid.y
+		)
+	)
+	return (to_world - from_world).normalized()
+
+
+func _draw_grid_native_runway_exit_overlay(
+	runway: Dictionary,
+	node: Dictionary
+) -> void:
+	var definition := BuildingCatalog.get_definition(
+		String(runway.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return
+
+	var runway_cell: Vector2i = node.get(
+		"runway_cell",
+		Vector2i(-999, -999)
+	)
+	var taxiway_cell: Vector2i = node.get(
+		"taxiway_cell",
+		Vector2i(-999, -999)
+	)
+	if (
+		runway_cell.x < -900
+		or taxiway_cell.x < -900
+	):
+		return
+
+	var runway_center := tile_to_world(
+		Vector2(runway_cell.x, runway_cell.y)
+	)
+	var taxiway_center := tile_to_world(
+		Vector2(taxiway_cell.x, taxiway_cell.y)
+	)
+	var shared_edge := runway_center.lerp(
+		taxiway_center,
+		0.50
+	)
+	var outside_join := runway_center.lerp(
+		taxiway_center,
+		0.72
+	)
+
+	var forward := _runway_forward_world_vector(
+		runway,
+		definition
+	)
+	var node_type := String(
+		node.get("type", "")
+	)
+	var is_forward := node_type.begins_with(
+		"forward_"
+	)
+
+	# The runway-side taxi centerline begins inside only the final rollout
+	# cell. Side exits get a smooth bend; forward exits remain nearly straight.
+	var start := runway_center - forward * (
+		15.0 if is_forward else 18.0
+	)
+	var control := runway_center + forward * (
+		3.0 if is_forward else 7.5
+	)
+	var path_end := outside_join
+	if is_forward:
+		control = shared_edge
+
+	var curve := _quadratic_curve_points(
+		start,
+		control,
+		path_end,
+		14
+	)
+
+	# The dark undercut hides the original beige curb exactly at the active
+	# socket. The two inner layers match the runway/taxiway asphalt palette.
+	draw_polyline(
+		curve,
+		Color("242c31"),
+		16.5,
+		true
+	)
+	draw_polyline(
+		curve,
+		Color("3b454c"),
+		12.5,
+		true
+	)
+	draw_polyline(
+		curve,
+		Color("4a545b"),
+		9.5,
+		true
+	)
+	draw_polyline(
+		curve,
+		Color("f2c84b"),
+		1.8,
+		true
+	)
+
+	# Clean the shared mouth so the curb is visibly open for exactly one
+	# 1x1 taxiway cell rather than looking like two sprites overlap.
+	var outward := (
+		taxiway_center - runway_center
+	).normalized()
+	var tangent := Vector2(
+		-outward.y,
+		outward.x
+	)
+	draw_line(
+		shared_edge - tangent * 5.5,
+		shared_edge + tangent * 5.5,
+		Color("3b454c"),
+		9.5,
+		true
+	)
+
+	# Repaint the yellow guide across the mouth after the asphalt cutout.
+	var guide_a := shared_edge - outward * 4.5
+	var guide_b := shared_edge + outward * 7.5
+	draw_line(
+		guide_a,
+		guide_b,
+		Color("f2c84b"),
+		1.8,
+		true
+	)
+
+
+func _draw_grid_native_runway_exit_overlays() -> void:
+	for runway_variant in placed_buildings:
+		var runway: Dictionary = runway_variant
+		var definition := BuildingCatalog.get_definition(
+			String(runway.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not _is_runway_definition(definition)
+			or not bool(
+				definition.get(
+					"grid_native_modular_runway_exits",
+					false
+				)
+			)
+		):
+			continue
+
+		var snapshot := _runway_active_taxi_connection_snapshot(
+			int(runway.get("uid", -1))
+		)
+		for node_variant in snapshot.get(
+			"active_nodes",
+			[]
+		):
+			var node: Dictionary = node_variant
+			_draw_grid_native_runway_exit_overlay(
+				runway,
+				node
+			)
+
+
+func get_runway_modular_visual_state(
+	runway_uid: int
+) -> Dictionary:
+	var runway := _building_by_uid(runway_uid)
+	if runway.is_empty():
+		return {}
+	var definition := BuildingCatalog.get_definition(
+		String(runway.get("definition_id", ""))
+	)
+	if definition.is_empty():
+		return {}
+
+	var snapshot := _runway_active_taxi_connection_snapshot(
+		runway_uid
+	)
+	var types: Array[String] = []
+	for node_variant in snapshot.get(
+		"active_nodes",
+		[]
+	):
+		var node: Dictionary = node_variant
+		types.append(
+			String(node.get("type", ""))
+		)
+	types.sort()
+
+	return {
+		"runway_uid": runway_uid,
+		"modular": bool(
+			definition.get(
+				"grid_native_modular_runway_exits",
+				false
+			)
+		),
+		"base_footprint": _footprint_for(
+			definition,
+			int(runway.get("rotation", 0))
+		),
+		"active_exit_count": types.size(),
+		"active_exit_types": types,
+		"visual_state_key": (
+			"none"
+			if types.is_empty()
+			else "+".join(types)
+		)
+	}
+
+
+
 func _draw_grid_native_taxiway_connections(
 	origin: Vector2i,
 	alpha: float = 1.0
@@ -954,10 +1206,12 @@ func _draw_grid_native_taxiway_connections(
 		if connection_kind.is_empty():
 			continue
 
-		# Taxiway-to-taxiway openings already exist in the selected 16-state
-		# atlas variant. Only larger neighboring assets need a seam punched
-		# through their own curb/foundation.
-		if connection_kind == "taxiway":
+		# Taxiway-to-taxiway openings are baked into the selected autotile.
+		# Runway openings are owned by the modular runway overlay pass.
+		if (
+			connection_kind == "taxiway"
+			or connection_kind == "runway"
+		):
 			continue
 
 		var neighbor_center := tile_to_world(
@@ -972,8 +1226,6 @@ func _draw_grid_native_taxiway_connections(
 			0.62
 		)
 
-		# Dark undercut + asphalt fully covers the closed curb at the shared
-		# edge. This is the runway-side opening requested by the art system.
 		draw_line(
 			seam_start,
 			seam_end,
@@ -992,25 +1244,6 @@ func _draw_grid_native_taxiway_connections(
 			Color("efc84e", 0.98 * alpha),
 			1.7
 		)
-
-		if connection_kind == "runway":
-			# A tiny hold-short accent keeps the seam readable as runway entry
-			# while still looking like one continuous paved network.
-			var hold_center := center.lerp(
-				neighbor_center,
-				0.42
-			)
-			var tangent := Vector2(
-				-(neighbor_center - center).y,
-				(neighbor_center - center).x
-			).normalized()
-			draw_line(
-				hold_center - tangent * 4.5,
-				hold_center + tangent * 4.5,
-				Color("f4efe0", 0.92 * alpha),
-				1.4
-			)
-
 
 func get_taxiway_visual_connection_snapshot(
 	origin: Vector2i

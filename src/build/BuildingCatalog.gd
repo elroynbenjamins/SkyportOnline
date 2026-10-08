@@ -34,6 +34,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			]),
 			"grid_native_surface_size": Vector2i(224, 112),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"grid_native_modular_runway_exits": true,
 			"runway_direction_policy": "origin_to_long_axis_end",
 			"runway_taxi_exit_policy": "rollout_end_four",
 			"runway_taxi_lane_count": 2,

@@ -520,6 +520,15 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
+			"art_tier": "canonical_v2",
+			"grid_first_service_visual": true,
+			"grid_first_world_sprite": true,
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v3/service/small_hangar_pad_3x2.svg",
+				"res://assets/production/airfield_v3/service/small_hangar_pad_2x3.svg"
+			]),
+			"grid_native_surface_size": Vector2i(160, 80),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
 			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
 			"world_sprite_regions": [
 				Rect2(0, 448, 448, 448),

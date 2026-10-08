@@ -724,7 +724,8 @@ func _taxiway_connection_mask(
 	]:
 		var direction: Vector2i = item[0]
 		var bit: int = int(item[1])
-		if not _airside_visual_connection_kind_at(
+		if not _airside_visual_connection_kind_between(
+			origin,
 			origin + direction
 		).is_empty():
 			mask |= bit
@@ -946,7 +947,8 @@ func _draw_grid_native_taxiway_connections(
 		Vector2i(0, -1)
 	]:
 		var neighbor := origin + direction
-		var connection_kind := _airside_visual_connection_kind_at(
+		var connection_kind := _airside_visual_connection_kind_between(
+			origin,
 			neighbor
 		)
 		if connection_kind.is_empty():
@@ -1021,7 +1023,8 @@ func get_taxiway_visual_connection_snapshot(
 		Vector2i(0, 1),
 		Vector2i(0, -1)
 	]:
-		var kind := _airside_visual_connection_kind_at(
+		var kind := _airside_visual_connection_kind_between(
+			origin,
 			origin + direction
 		)
 		if kind.is_empty():
@@ -1067,7 +1070,7 @@ func _draw_grid_first_network_links(
 	for direction: Vector2i in directions:
 		var neighbor: Vector2i = origin + direction
 		var connected := (
-			_taxiway_visually_connects_to(neighbor)
+			_taxiway_visually_connects_to(origin, neighbor)
 			if kind == "taxiway"
 			else _service_road_visually_connects_to(neighbor)
 		)
@@ -6322,9 +6325,7 @@ func get_airfield_detail_snapshot() -> Dictionary:
 		if id == "taxiway":
 			taxiway_tiles += 1
 			for direction in directions:
-				if not _taxiway_visually_connects_to(
-					origin + direction
-				):
+				if not _taxiway_visually_connects_to(origin, origin + direction):
 					taxiway_open_edges += 1
 			continue
 
@@ -6423,9 +6424,7 @@ func _airside_connection_mask(
 		var entry: Array = entry_variant
 		var direction: Vector2i = entry[0]
 		var connected := (
-			_taxiway_visually_connects_to(
-				origin + direction
-			)
+			_taxiway_visually_connects_to(origin, origin + direction)
 			if kind == "taxiway"
 			else _service_road_visually_connects_to(
 				origin + direction
@@ -6555,14 +6554,20 @@ func _draw_airside_surface_preview(
 	)
 
 
+
 func _adjacent_runway_direction(
 	origin: Vector2i
 ) -> Vector2i:
-	for neighbor in _orthogonal_neighbors(origin):
-		if _runway_uid_for_cell(neighbor) >= 0:
-			return neighbor - origin
-	return Vector2i.ZERO
-
+	var exit_node := _runway_exit_node_for_taxiway(
+		origin
+	)
+	if exit_node.is_empty():
+		return Vector2i.ZERO
+	var runway_cell: Vector2i = exit_node.get(
+		"runway_cell",
+		origin
+	)
+	return runway_cell - origin
 
 func _draw_generated_stand_pad(
 	definition: Dictionary,
@@ -6810,7 +6815,7 @@ func _draw_pavement_edge_detail(
 		var neighbor := origin + direction
 		var connected := false
 		if kind == "taxiway":
-			connected = _taxiway_visually_connects_to(neighbor)
+			connected = _taxiway_visually_connects_to(origin, neighbor)
 		else:
 			connected = _service_road_visually_connects_to(neighbor)
 		if connected:
@@ -6939,7 +6944,7 @@ func _draw_taxiway_detail(origin: Vector2i) -> void:
 	]
 	for direction: Vector2i in directions:
 		var neighbor: Vector2i = origin + direction
-		if not _taxiway_visually_connects_to(neighbor):
+		if not _taxiway_visually_connects_to(origin, neighbor):
 			continue
 		var edge_tile := (
 			Vector2(origin.x, origin.y)
@@ -7558,30 +7563,46 @@ func get_taxiway_connection_count(
 		Vector2i(0, 1),
 		Vector2i(0, -1)
 	]:
-		if _taxiway_visually_connects_to(
-			origin + direction
-		):
+		if _taxiway_visually_connects_to(origin, origin + direction):
 			count += 1
 	return count
 
 
-func _taxiway_visually_connects_to(cell: Vector2i) -> bool:
+
+func _taxiway_visually_connects_to(
+	origin: Vector2i,
+	cell: Vector2i
+) -> bool:
 	var key := _cell_key(cell)
 	if not occupied_cells.has(key):
 		return false
 
-	var building := _building_by_uid(int(occupied_cells[key]))
+	var building := _building_by_uid(
+		int(occupied_cells[key])
+	)
 	if building.is_empty():
 		return false
 
-	var id := String(building["definition_id"])
-	return (
-		id == "taxiway"
-		or id.contains("runway")
-		or id.contains("stand")
-		or id.contains("hangar")
+	var id := String(
+		building.get("definition_id", "")
 	)
-
+	if id == "taxiway":
+		return true
+	if id.contains("stand") or id.contains("hangar"):
+		return true
+	if id.contains("runway"):
+		var node := _runway_exit_node_for_taxiway(
+			origin,
+			int(building.get("uid", -1))
+		)
+		return (
+			not node.is_empty()
+			and node.get(
+				"runway_cell",
+				Vector2i(-1, -1)
+			) == cell
+		)
+	return false
 
 func _get_building_texture(path: String) -> Texture2D:
 	if CharterVisualPack.is_uri(path):
@@ -9063,6 +9084,41 @@ func _get_placement_status(
 					false
 				)
 			)
+		}
+
+	if (
+		building_id == "taxiway"
+		and _taxiway_has_invalid_runway_adjacency(
+			origin
+		)
+	):
+		return {
+			"valid": false,
+			"reason": (
+				"Taxiways may connect to a runway only at its rollout-end exits."
+			),
+			"origin": origin,
+			"footprint": footprint,
+			"runway_exit_rule": "rollout_end_four"
+		}
+
+	if (
+		_is_runway_definition(definition)
+		and _runway_candidate_has_invalid_taxiway_adjacency(
+			definition,
+			origin,
+			rotation,
+			ignore_uid
+		)
+	):
+		return {
+			"valid": false,
+			"reason": (
+				"Runway taxi connections are allowed only at the rollout end."
+			),
+			"origin": origin,
+			"footprint": footprint,
+			"runway_exit_rule": "rollout_end_four"
 		}
 
 	var result := {
@@ -10898,60 +10954,40 @@ func _reconstruct_legacy_taxi_path(
 	return reversed
 
 
+
 func _adjacent_runway_cell_for_uid(
 	taxiway: Vector2i,
 	runway_uid: int,
 	aircraft_size: String = ""
 ) -> Vector2i:
-	var runway := _building_by_uid(runway_uid)
-	if runway.is_empty():
-		return Vector2i(-1, -1)
-
-	var definition := BuildingCatalog.get_definition(
-		String(runway.get("definition_id", ""))
+	var exit_node := _runway_exit_node_for_taxiway(
+		taxiway,
+		runway_uid,
+		aircraft_size
 	)
-	if (
-		definition.is_empty()
-		or not _is_runway_definition(definition)
-	):
+	if exit_node.is_empty():
 		return Vector2i(-1, -1)
-	if (
-		not aircraft_size.is_empty()
-		and not _definition_supports_size(
-			definition,
-			aircraft_size
-		)
-	):
+	return exit_node.get(
+		"runway_cell",
+		Vector2i(-1, -1)
+	)
+
+
+func _adjacent_runway_cell(
+	taxiway: Vector2i,
+	aircraft_size: String = ""
+) -> Vector2i:
+	var exit_node := _runway_exit_node_for_taxiway(
+		taxiway,
+		-1,
+		aircraft_size
+	)
+	if exit_node.is_empty():
 		return Vector2i(-1, -1)
-
-	var footprint := _footprint_for(
-		definition,
-		int(runway.get("rotation", 0))
+	return exit_node.get(
+		"runway_cell",
+		Vector2i(-1, -1)
 	)
-	var runway_cells := _cells_for(
-		runway["origin"],
-		footprint
-	)
-	for neighbor in _orthogonal_neighbors(taxiway):
-		if runway_cells.has(neighbor):
-			return neighbor
-	return Vector2i(-1, -1)
-
-
-func _adjacent_runway_cell(taxiway: Vector2i, aircraft_size: String = "") -> Vector2i:
-	for neighbor in _orthogonal_neighbors(taxiway):
-		for building in placed_buildings:
-			var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
-			if definition.is_empty() or not _is_runway_definition(definition):
-				continue
-			if not aircraft_size.is_empty() and not _definition_supports_size(definition, aircraft_size):
-				continue
-			var footprint := _footprint_for(definition, int(building["rotation"]))
-			for runway_cell in _cells_for(building["origin"], footprint):
-				if runway_cell == neighbor:
-					return runway_cell
-	return Vector2i(-1, -1)
-
 
 func _runway_uid_for_cell(cell: Vector2i, aircraft_size: String = "") -> int:
 	for building in placed_buildings:
@@ -11043,6 +11079,337 @@ func _farthest_cell_on_same_runway(entry: Vector2i, aircraft_size: String = "") 
 
 
 
+func _runway_exit_nodes(
+	definition: Dictionary,
+	origin: Vector2i,
+	rotation: int
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if (
+		definition.is_empty()
+		or not _is_runway_definition(definition)
+	):
+		return result
+
+	if String(
+		definition.get(
+			"runway_taxi_exit_policy",
+			""
+		)
+	) != "rollout_end_four":
+		return result
+
+	var footprint := _footprint_for(
+		definition,
+		rotation
+	)
+	var seen: Dictionary = {}
+
+	if footprint.x >= footprint.y:
+		var end_x := origin.x + footprint.x - 1
+		var upper_y := origin.y
+		var lower_y := origin.y + footprint.y - 1
+		for node_variant in [
+			{
+				"type": "forward_upper",
+				"taxiway_cell": Vector2i(end_x + 1, upper_y),
+				"runway_cell": Vector2i(end_x, upper_y)
+			},
+			{
+				"type": "forward_lower",
+				"taxiway_cell": Vector2i(end_x + 1, lower_y),
+				"runway_cell": Vector2i(end_x, lower_y)
+			},
+			{
+				"type": "side_upper",
+				"taxiway_cell": Vector2i(end_x, upper_y - 1),
+				"runway_cell": Vector2i(end_x, upper_y)
+			},
+			{
+				"type": "side_lower",
+				"taxiway_cell": Vector2i(end_x, lower_y + 1),
+				"runway_cell": Vector2i(end_x, lower_y)
+			}
+		]:
+			var node: Dictionary = node_variant
+			var taxiway_cell: Vector2i = node.get(
+				"taxiway_cell",
+				Vector2i(-999, -999)
+			)
+			var key := _cell_key(taxiway_cell)
+			if seen.has(key):
+				continue
+			seen[key] = true
+			result.append(node)
+	else:
+		var end_y := origin.y + footprint.y - 1
+		var left_x := origin.x
+		var right_x := origin.x + footprint.x - 1
+		for node_variant in [
+			{
+				"type": "forward_left",
+				"taxiway_cell": Vector2i(left_x, end_y + 1),
+				"runway_cell": Vector2i(left_x, end_y)
+			},
+			{
+				"type": "forward_right",
+				"taxiway_cell": Vector2i(right_x, end_y + 1),
+				"runway_cell": Vector2i(right_x, end_y)
+			},
+			{
+				"type": "side_left",
+				"taxiway_cell": Vector2i(left_x - 1, end_y),
+				"runway_cell": Vector2i(left_x, end_y)
+			},
+			{
+				"type": "side_right",
+				"taxiway_cell": Vector2i(right_x + 1, end_y),
+				"runway_cell": Vector2i(right_x, end_y)
+			}
+		]:
+			var node: Dictionary = node_variant
+			var taxiway_cell: Vector2i = node.get(
+				"taxiway_cell",
+				Vector2i(-999, -999)
+			)
+			var key := _cell_key(taxiway_cell)
+			if seen.has(key):
+				continue
+			seen[key] = true
+			result.append(node)
+
+	return result
+
+
+func _runway_exit_nodes_for_building(
+	runway: Dictionary
+) -> Array[Dictionary]:
+	if runway.is_empty():
+		return []
+	var definition := BuildingCatalog.get_definition(
+		String(runway.get("definition_id", ""))
+	)
+	return _runway_exit_nodes(
+		definition,
+		runway.get("origin", Vector2i.ZERO),
+		int(runway.get("rotation", 0))
+	)
+
+
+func _runway_exit_node_for_taxiway(
+	taxiway: Vector2i,
+	runway_uid: int = -1,
+	aircraft_size: String = ""
+) -> Dictionary:
+	for runway in placed_buildings:
+		var uid := int(runway.get("uid", -1))
+		if runway_uid >= 0 and uid != runway_uid:
+			continue
+
+		var definition := BuildingCatalog.get_definition(
+			String(runway.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not _is_runway_definition(definition)
+		):
+			continue
+		if (
+			not aircraft_size.is_empty()
+			and not _definition_supports_size(
+				definition,
+				aircraft_size
+			)
+		):
+			continue
+
+		for node_variant in _runway_exit_nodes_for_building(
+			runway
+		):
+			var node: Dictionary = node_variant
+			if node.get(
+				"taxiway_cell",
+				Vector2i(-999, -999)
+			) == taxiway:
+				var result := node.duplicate(true)
+				result["runway_uid"] = uid
+				result["runway_id"] = String(
+					runway.get("definition_id", "")
+				)
+				return result
+
+	return {}
+
+
+func _airside_visual_connection_kind_between(
+	origin: Vector2i,
+	cell: Vector2i
+) -> String:
+	var key := _cell_key(cell)
+	if not occupied_cells.has(key):
+		return ""
+
+	var building := _building_by_uid(
+		int(occupied_cells[key])
+	)
+	if building.is_empty():
+		return ""
+
+	var id := String(
+		building.get("definition_id", "")
+	)
+	if id == "taxiway":
+		return "taxiway"
+	if id.contains("stand"):
+		return "stand"
+	if id.contains("hangar"):
+		return "hangar"
+	if id.contains("runway"):
+		var node := _runway_exit_node_for_taxiway(
+			origin,
+			int(building.get("uid", -1))
+		)
+		if (
+			not node.is_empty()
+			and node.get(
+				"runway_cell",
+				Vector2i(-1, -1)
+			) == cell
+		):
+			return "runway"
+	return ""
+
+
+func _taxiway_has_invalid_runway_adjacency(
+	origin: Vector2i
+) -> bool:
+	for neighbor in _orthogonal_neighbors(origin):
+		var runway_uid := _runway_uid_for_cell(
+			neighbor
+		)
+		if runway_uid < 0:
+			continue
+		var node := _runway_exit_node_for_taxiway(
+			origin,
+			runway_uid
+		)
+		if (
+			node.is_empty()
+			or node.get(
+				"runway_cell",
+				Vector2i(-1, -1)
+			) != neighbor
+		):
+			return true
+	return false
+
+
+func _runway_candidate_has_invalid_taxiway_adjacency(
+	definition: Dictionary,
+	origin: Vector2i,
+	rotation: int,
+	ignore_uid: int = -1
+) -> bool:
+	var allowed: Dictionary = {}
+	for node_variant in _runway_exit_nodes(
+		definition,
+		origin,
+		rotation
+	):
+		var node: Dictionary = node_variant
+		allowed[_cell_key(
+			node.get(
+				"taxiway_cell",
+				Vector2i(-999, -999)
+			)
+		)] = true
+
+	var footprint := _footprint_for(
+		definition,
+		rotation
+	)
+	for runway_cell in _cells_for(
+		origin,
+		footprint
+	):
+		for neighbor in _orthogonal_neighbors(
+			runway_cell
+		):
+			var key := _cell_key(neighbor)
+			if not occupied_cells.has(key):
+				continue
+			var uid := int(occupied_cells[key])
+			if uid == ignore_uid:
+				continue
+			var building := _building_by_uid(uid)
+			if (
+				not building.is_empty()
+				and String(
+					building.get(
+						"definition_id",
+						""
+					)
+				) == "taxiway"
+				and not allowed.has(key)
+			):
+				return true
+	return false
+
+
+func get_runway_exit_policy_snapshot(
+	runway_uid: int
+) -> Dictionary:
+	var runway := _building_by_uid(runway_uid)
+	if runway.is_empty():
+		return {}
+	var definition := BuildingCatalog.get_definition(
+		String(runway.get("definition_id", ""))
+	)
+	if (
+		definition.is_empty()
+		or not _is_runway_definition(definition)
+	):
+		return {}
+	var footprint := _footprint_for(
+		definition,
+		int(runway.get("rotation", 0))
+	)
+	return {
+		"runway_uid": runway_uid,
+		"definition_id": String(
+			runway.get("definition_id", "")
+		),
+		"direction_policy": String(
+			definition.get(
+				"runway_direction_policy",
+				""
+			)
+		),
+		"taxi_exit_policy": String(
+			definition.get(
+				"runway_taxi_exit_policy",
+				""
+			)
+		),
+		"origin": runway.get(
+			"origin",
+			Vector2i.ZERO
+		),
+		"rotation": int(
+			runway.get("rotation", 0)
+		),
+		"footprint": footprint,
+		"long_axis": (
+			"x"
+			if footprint.x >= footprint.y
+			else "y"
+		),
+		"exit_nodes": _runway_exit_nodes_for_building(
+			runway
+		)
+	}
+
+
 func _needs_airside_connection(definition: Dictionary) -> bool:
 	var id := String(definition.get("id", ""))
 	return id.contains("stand") or id.contains("hangar")
@@ -11132,13 +11499,19 @@ func _recalculate_airside_network() -> void:
 	queue_redraw()
 
 
-func _reachable_taxiway_cells(taxiway_cells: Dictionary, runway_cells: Dictionary) -> Dictionary:
+
+func _reachable_taxiway_cells(
+	taxiway_cells: Dictionary,
+	_runway_cells: Dictionary
+) -> Dictionary:
 	var reachable: Dictionary = {}
 	var queue: Array[Vector2i] = []
 
 	for taxiway_variant in taxiway_cells.values():
 		var taxiway: Vector2i = taxiway_variant
-		if _cell_touches_cell_set(taxiway, runway_cells):
+		if not _runway_exit_node_for_taxiway(
+			taxiway
+		).is_empty():
 			reachable[_cell_key(taxiway)] = taxiway
 			queue.append(taxiway)
 
@@ -11149,12 +11522,14 @@ func _reachable_taxiway_cells(taxiway_cells: Dictionary, runway_cells: Dictionar
 
 		for neighbor in _orthogonal_neighbors(current):
 			var key := _cell_key(neighbor)
-			if taxiway_cells.has(key) and not reachable.has(key):
+			if (
+				taxiway_cells.has(key)
+				and not reachable.has(key)
+			):
 				reachable[key] = neighbor
 				queue.append(neighbor)
 
 	return reachable
-
 
 func _cells_touch_reachable_taxiway(cells: Array[Vector2i]) -> bool:
 	var reachable_keys: Array = airside_status.get("reachable_taxiway_cells", [])

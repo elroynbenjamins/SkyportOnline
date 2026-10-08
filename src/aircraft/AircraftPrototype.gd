@@ -77,6 +77,12 @@ var external_motion_speed := 0.0
 var visual_clock := 0.0
 var visual_redraw_accumulator := 0.0
 var landing_roll_target_speed := 0.0
+var skyrama_handling_enabled := false
+var simple_stage_total := 0.0
+var simple_stage_remaining := 0.0
+var simple_stage_label := ""
+var simple_stage_completion_action := ""
+var simple_stage_completion_state := ""
 
 
 func _ready() -> void:
@@ -164,7 +170,8 @@ func get_handling_action_snapshot() -> Dictionary:
 func stage_for_manual_arrival() -> bool:
 	if not manual_handling_enabled:
 		return false
-	if arrival_route.size() < 4:
+	var minimum_route_points := 2 if skyrama_handling_enabled else 4
+	if arrival_route.size() < minimum_route_points:
 		return false
 
 	var runway_start := arrival_route[0]
@@ -227,6 +234,8 @@ func _handling_action_label(
 			return "↑  LOAD"
 		"SEND":
 			return "✈  SEND"
+		"HANGAR":
+			return "⌂  HANGAR"
 		_:
 			return action
 
@@ -846,6 +855,185 @@ func _sync_turnaround_status_transform() -> void:
 	_sync_handling_action_transform()
 
 
+func configure_skyrama_handling(
+	enabled: bool
+) -> void:
+	skyrama_handling_enabled = enabled
+	if enabled:
+		configure_handling_mode(true, false)
+
+
+func uses_skyrama_handling() -> bool:
+	return skyrama_handling_enabled
+
+
+func set_simple_runway_route(
+	start_point: Vector2,
+	end_point: Vector2,
+	assigned_runway_uid: int
+) -> void:
+	runway_uid = assigned_runway_uid
+	departure_route = PackedVector2Array([
+		start_point,
+		end_point
+	])
+	arrival_route = PackedVector2Array([
+		start_point,
+		end_point
+	])
+	departure_hold_short_index = 0
+
+
+func stage_simple_hangar_inventory() -> void:
+	clear_handling_action()
+	clear_turnaround_status()
+	flight_plan.clear()
+	simple_stage_total = 0.0
+	simple_stage_remaining = 0.0
+	simple_stage_label = ""
+	simple_stage_completion_action = ""
+	simple_stage_completion_state = ""
+	visible = false
+	_set_state("READY_FOR_DESTINATION")
+
+
+func start_simple_fueling(
+	world_position: Vector2,
+	duration_seconds: float
+) -> void:
+	_start_simple_ground_stage(
+		"SIMPLE_FUELING",
+		world_position,
+		maxf(duration_seconds, 0.5),
+		"Fueling",
+		"LOAD",
+		"SIMPLE_WAITING_LOAD"
+	)
+
+
+func start_simple_loading(
+	world_position: Vector2,
+	duration_seconds: float
+) -> void:
+	_start_simple_ground_stage(
+		"SIMPLE_LOADING",
+		world_position,
+		maxf(duration_seconds, 0.5),
+		"Loading cargo",
+		"SEND",
+		"SIMPLE_WAITING_SEND"
+	)
+
+
+func start_simple_unloading(
+	world_position: Vector2,
+	duration_seconds: float
+) -> void:
+	if not arrival_runway_cleared:
+		arrival_runway_cleared = true
+		runway_cleared.emit()
+	_start_simple_ground_stage(
+		"SIMPLE_UNLOADING",
+		world_position,
+		maxf(duration_seconds, 0.5),
+		"Unloading cargo",
+		"HANGAR",
+		"SIMPLE_WAITING_HANGAR"
+	)
+
+
+func _start_simple_ground_stage(
+	stage_state: String,
+	world_position: Vector2,
+	duration_seconds: float,
+	label: String,
+	completion_action: String,
+	completion_state: String
+) -> void:
+	clear_handling_action()
+	visible = true
+	position = world_position
+	rotation = 0.0
+	taxi_current_speed = 0.0
+	simple_stage_total = maxf(duration_seconds, 0.5)
+	simple_stage_remaining = simple_stage_total
+	simple_stage_label = label
+	simple_stage_completion_action = completion_action
+	simple_stage_completion_state = completion_state
+	_set_state(stage_state)
+	_update_simple_stage_status()
+
+
+func _process_simple_stage(delta: float) -> void:
+	if simple_stage_remaining <= 0.0:
+		return
+	simple_stage_remaining = maxf(
+		simple_stage_remaining - delta,
+		0.0
+	)
+	_update_simple_stage_status()
+	if simple_stage_remaining > 0.0:
+		return
+
+	var completed_state := simple_stage_completion_state
+	var completed_action := simple_stage_completion_action
+	simple_stage_completion_state = ""
+	simple_stage_completion_action = ""
+	if not completed_state.is_empty():
+		_set_state(completed_state)
+
+	if completed_action == "LOAD":
+		set_turnaround_status(
+			"Fuel ready • Tap LOAD",
+			"success"
+		)
+	elif completed_action == "SEND":
+		set_turnaround_status(
+			"Cargo ready • Tap SEND",
+			"success"
+		)
+	elif completed_action == "HANGAR":
+		set_turnaround_status(
+			"Unloaded • Tap HANGAR",
+			"success"
+		)
+		arrival_completed.emit()
+
+	if not completed_action.is_empty():
+		set_handling_action(completed_action)
+
+
+func _update_simple_stage_status() -> void:
+	if simple_stage_total <= 0.0:
+		return
+	var progress := clampf(
+		1.0
+		- simple_stage_remaining
+		/ simple_stage_total,
+		0.0,
+		1.0
+	)
+	set_turnaround_status(
+		"%s • %d%%" % [
+			simple_stage_label,
+			roundi(progress * 100.0)
+		]
+	)
+
+
+func get_simple_handling_snapshot() -> Dictionary:
+	return {
+		"enabled": skyrama_handling_enabled,
+		"state": state,
+		"visible": visible,
+		"stage_label": simple_stage_label,
+		"remaining": simple_stage_remaining,
+		"total": simple_stage_total,
+		"action": pending_handling_action,
+		"runway_uid": runway_uid
+	}
+
+
 func can_change_flight_plan() -> bool:
 	return state in [
 		"PARKED",
@@ -1023,7 +1211,30 @@ func begin_taxi_to_hold_short() -> void:
 
 
 func begin_departure_after_clearance() -> void:
-	if departure_route.size() < 5 or flight_plan.is_empty():
+	if flight_plan.is_empty():
+		return
+
+	if skyrama_handling_enabled:
+		if departure_route.size() < 2:
+			return
+		clear_handling_action()
+		clear_turnaround_status()
+		visible = true
+		route_index = 0
+		position = departure_route[0]
+		var runway_direction := (
+			departure_route[1]
+			- departure_route[0]
+		).normalized()
+		if runway_direction != Vector2.ZERO:
+			rotation = runway_direction.angle()
+		delay_remaining = lineup_delay
+		takeoff_velocity = taxi_speed
+		taxi_current_speed = 0.0
+		_set_state("LINE_UP")
+		return
+
+	if departure_route.size() < 5:
 		return
 
 	# Compatibility for direct/internal callers that invoke runway
@@ -1039,7 +1250,8 @@ func begin_departure_after_clearance() -> void:
 
 
 func begin_arrival_after_clearance() -> void:
-	if arrival_route.size() < 4:
+	var minimum_route_points := 2 if skyrama_handling_enabled else 4
+	if arrival_route.size() < minimum_route_points:
 		return
 
 	clear_handling_action()
@@ -1084,6 +1296,12 @@ func _process(delta: float) -> void:
 
 	_sync_turnaround_status_transform()
 	_sync_handling_action_transform()
+	if state in [
+		"SIMPLE_FUELING",
+		"SIMPLE_LOADING",
+		"SIMPLE_UNLOADING"
+	]:
+		_process_simple_stage(delta)
 	match state:
 		"TAXIING_TO_STAND":
 			_process_predeparture_transfer(delta)
@@ -1372,6 +1590,18 @@ func _process_landing_roll(delta: float) -> void:
 		190.0
 	):
 		route_index = runway_exit_index
+		if skyrama_handling_enabled:
+			# Keep the runway occupied until the player taps UNLOAD. This is
+			# the Skyrama-style one-aircraft-at-a-time runway interaction.
+			taxi_current_speed = 0.0
+			_set_state("SIMPLE_WAITING_UNLOAD")
+			set_turnaround_status(
+				"Landed • Tap UNLOAD",
+				"warning"
+			)
+			set_handling_action("UNLOAD")
+			return
+
 		if not arrival_runway_cleared:
 			arrival_runway_cleared = true
 			runway_cleared.emit()

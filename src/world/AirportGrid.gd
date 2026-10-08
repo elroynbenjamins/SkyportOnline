@@ -632,6 +632,32 @@ func _draw_grid_first_buildings() -> void:
 				rotation,
 				Color.WHITE
 			)
+
+			# Selected service structures keep an exact grid-authored pad while
+			# their canonical building sprite provides the vertical detail.
+			if (
+				bool(
+					definition.get(
+						"grid_first_world_sprite",
+						false
+					)
+				)
+				and _definition_has_world_sprite(definition)
+			):
+				_draw_building_contact_shadow(
+					definition,
+					origin,
+					footprint,
+					1.0
+				)
+				_draw_building_sprite(
+					definition,
+					origin,
+					footprint,
+					rotation,
+					Color.WHITE
+				)
+
 			if id == "service_road":
 				service_road_origins.append(origin)
 			continue
@@ -10257,9 +10283,15 @@ func get_compatible_service_buildings(
 			"uid": int(building["uid"]),
 			"definition_id": building_id,
 			"upgrade_level": level,
-			"world_position": _footprint_center_world(
-				building["origin"],
-				footprint
+			"world_position": (
+				_footprint_center_world(
+					building["origin"],
+					footprint
+				)
+				+ definition.get(
+					"service_aircraft_slot_world_offset",
+					Vector2.ZERO
+				)
 			),
 			"service_type": service_type,
 			"service_speed": maxf(service_speed, 0.1),

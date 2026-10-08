@@ -557,6 +557,24 @@ func _on_fuel_order_pressed() -> void:
 
 
 
+func _handling_attention_icon_path(
+	action: String
+) -> String:
+	match action.to_upper():
+		"RECEIVE", "LAND":
+			return "res://assets/production/ui_v3/handling/receive.svg"
+		"UNLOAD":
+			return "res://assets/production/ui_v3/handling/unload.svg"
+		"LOAD":
+			return "res://assets/production/ui_v3/handling/load.svg"
+		"SEND":
+			return "res://assets/production/ui_v3/handling/send.svg"
+		"HANGAR":
+			return "res://assets/production/ui_v3/handling/hangar.svg"
+		_:
+			return ""
+
+
 func set_handling_attention(
 	aircraft_label: String,
 	action: String,
@@ -568,7 +586,25 @@ func set_handling_attention(
 	var normalized_action := action.to_upper()
 	if normalized_action.is_empty():
 		handling_attention_button.visible = false
+		handling_attention_button.icon = null
 		return
+
+	var icon_path := _handling_attention_icon_path(
+		normalized_action
+	)
+	if (
+		not icon_path.is_empty()
+		and ResourceLoader.exists(icon_path)
+	):
+		var icon_resource = load(icon_path)
+		handling_attention_button.icon = (
+			icon_resource as Texture2D
+			if icon_resource is Texture2D
+			else null
+		)
+	else:
+		handling_attention_button.icon = null
+	handling_attention_button.expand_icon = false
 
 	var suffix := ""
 	if pending_count > 1:

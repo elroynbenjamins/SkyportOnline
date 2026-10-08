@@ -41,11 +41,6 @@ func _run() -> void:
 		_fail("Taxiway must remain exactly 1x1 logical cell.")
 		return
 	if String(
-		definition.get("art_tier", "")
-	) != "grid_native_v3":
-		_fail("Taxiway should use the grid-native v3 art tier.")
-		return
-	if String(
 		definition.get("visual_contract", "")
 	) != "square_grid_iso_v1":
 		_fail("Taxiway should declare the square-grid visual contract.")

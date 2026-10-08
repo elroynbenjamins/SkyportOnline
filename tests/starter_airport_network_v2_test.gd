@@ -27,142 +27,103 @@ func _run() -> void:
 		_fail("Fixed Main Airport Building should be the only initial structure.")
 		return
 
+	# V1 owned-aircraft handling is deliberately Skyrama-like: the player
+	# places the handling structures, but aircraft teleport between them.
+	# Taxiway/service-road routing remains a later/advanced subsystem.
+	for item in [
+		["short_runway", Vector2i(0, 0)],
+		["small_hangar", Vector2i(0, 10)],
+		["basic_fuel", Vector2i(8, 5)],
+		["ground_ops_depot", Vector2i(5, 10)]
+	]:
+		if not _place(
+			grid,
+			String(item[0]),
+			item[1]
+		):
+			return
+
+	var runway := grid.get_simple_runway_animation_route("S")
+	if runway.is_empty():
+		_fail("Starter runway should expose a direct landing/takeoff animation route.")
+		return
+	if int(runway.get("runway_uid", -1)) < 0:
+		_fail("Simple runway route should expose a real runway UID.")
+		return
+	if (
+		runway.get("start_world", Vector2.ZERO)
+		== runway.get("end_world", Vector2.ZERO)
+	):
+		_fail("Simple runway route needs distinct start/end animation points.")
+		return
+
+	var hangar := grid.get_simple_hangar("S")
+	if hangar.is_empty():
+		_fail("Starter hangar should be available as aircraft inventory.")
+		return
+
+	var fuel := grid.get_best_service_building("fuel", "S")
+	if fuel.is_empty():
+		_fail("Starter fuel structure should be available without road routing.")
+		return
+
+	var cargo := grid.get_best_service_building("cargo", "S")
+	if cargo.is_empty():
+		_fail("Ground Ops should provide starter cargo/de-cargo handling.")
+		return
+
+	for station in [fuel, cargo]:
+		if station.get("world_position", Vector2.ZERO) == Vector2.ZERO:
+			_fail("Handling structures should expose teleport target positions.")
+			return
+
 	var airside := grid.get_airside_status()
-	if int(airside.get("runways", -1)) != 0:
-		_fail("Player should place the starter runway.")
-		return
-	if int(airside.get("stands_total", -1)) != 0:
-		_fail("Player should place the starter stand.")
-		return
-	if int(airside.get("hangars_total", -1)) != 0:
-		_fail("Player should place the starter hangar.")
-		return
-
-	if not _place(grid, "short_runway", Vector2i(0, 0)):
-		return
-	if not _place(grid, "small_stand", Vector2i(4, 6)):
-		return
-
-	# Enter through the only practical starter socket: the lower side of the
-	# runway's rollout-end cell. Continue as real 1x1 Taxiway blocks.
-	for y in range(2, 6):
-		if not _place(grid, "taxiway", Vector2i(4, y)):
-			return
-
-	# Branch beside the stand, then continue down to the hangar.
-	if not _place(grid, "taxiway", Vector2i(3, 5)):
-		return
-	for y in range(6, 11):
-		if not _place(grid, "taxiway", Vector2i(3, y)):
-			return
-
-	if not _place(grid, "small_hangar", Vector2i(0, 10)):
-		return
-
-	if not _place(grid, "basic_fuel", Vector2i(8, 5)):
-		return
-	if not _place(grid, "ground_ops_depot", Vector2i(5, 10)):
-		return
-	for cell in [
-		# Fuel approach from the right side of the stand.
-		Vector2i(7, 6),
-		Vector2i(6, 6),
-		# Ground Ops approach from below the stand.
-		Vector2i(5, 9)
-	]:
-		if not _place(grid, "service_road", cell):
-			return
-
-	airside = grid.get_airside_status()
 	if int(airside.get("runways", 0)) != 1:
-		_fail("Placed runway should become operational.")
+		_fail("Placed Short Runway should remain a real operational runway.")
 		return
-	if int(airside.get("stands_connected", 0)) != 1:
-		_fail("Placed stand should connect through Taxiways.")
-		return
-	if int(airside.get("hangars_connected", 0)) != 1:
-		_fail("Player-built hangar should connect through Taxiways.")
-		return
-
-	var departures := grid.get_departure_routes("S")
-	if departures.size() != 1:
-		_fail("One connected stand should create one departure route.")
-		return
-	var stand_uid := int(departures[0].get("stand_uid", -1))
-
-	var hangar_routes := grid.get_hangar_to_stand_routes(stand_uid, "S")
-	if hangar_routes.size() != 1:
-		_fail("Player-built hangar should route to the stand.")
-		return
-	var hangar_route: PackedVector2Array = hangar_routes[0].get(
-		"route",
-		PackedVector2Array()
-	)
-	if hangar_route.size() < 3:
-		_fail("Hangar route should visibly follow Taxiways.")
-		return
-
-	for service_type in [
-		"fuel", "cleaning", "catering", "cargo", "passenger", "pushback"
-	]:
-		var station := grid.get_best_service_building(service_type, "S")
-		if station.is_empty():
-			_fail("Tutorial airport should provide %s service." % service_type)
-			return
-		var route := grid.get_service_route(
-			int(station.get("uid", -1)),
-			stand_uid
-		)
-		if route.size() < 3:
-			_fail("%s service should reach the stand by Service Road." % service_type)
-			return
-
-	var plane := AircraftPrototype.new()
-	root.add_child(plane)
-	plane.configure_aircraft_type("pico_p8")
-	var departure_route: PackedVector2Array = departures[0].get(
-		"route",
-		PackedVector2Array()
-	)
-	plane.set_departure_route(
-		departure_route,
-		"S",
-		stand_uid,
-		int(departures[0].get("runway_uid", -1))
-	)
-	if not plane.set_predeparture_transfer_route(hangar_route):
-		_fail("Aircraft should accept the player-built hangar-to-stand taxi.")
-		return
-
-	for _step in range(600):
-		plane._process(0.1)
-		if plane.state == "WAITING_FUEL":
-			break
-	if plane.state != "WAITING_FUEL":
-		_fail("Aircraft should reach the stand before service starts.")
+	if int(airside.get("hangars_total", 0)) != 1:
+		_fail("Placed Small Hangar should remain part of airport state.")
 		return
 
 	print(
 		"STARTER_AIRPORT_NETWORK_V2_OK initial=office_only "
-		+ "player_built_airside=true player_built_services=true"
+		+ "simple_handling=true runway=true hangar=true fuel=true cargo=true"
 	)
 	quit(0)
 
 
-func _place(grid: AirportGrid, building_id: String, cell: Vector2i) -> bool:
+func _place(
+	grid: AirportGrid,
+	building_id: String,
+	cell: Vector2i
+) -> bool:
 	var preview := grid.set_build_preview(
 		building_id,
-		grid.tile_to_world(Vector2(cell.x, cell.y)),
+		grid.tile_to_world(
+			Vector2(cell.x, cell.y)
+		),
 		0
 	)
 	if not bool(preview.get("valid", false)):
 		_fail(
 			"Could not place %s at %s: %s"
-			% [building_id, str(cell), String(preview.get("reason", "invalid"))]
+			% [
+				building_id,
+				str(cell),
+				String(
+					preview.get(
+						"reason",
+						"invalid"
+					)
+				)
+			]
 		)
 		return false
 	if grid.confirm_build_preview().is_empty():
-		_fail("Placement confirmation failed for %s." % building_id)
+		_fail(
+			"Placement confirmation failed for %s."
+			% building_id
+		)
 		return false
 	return true
 

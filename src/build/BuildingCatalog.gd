@@ -292,6 +292,14 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"local_service_radius_tiles": 5.0,
 			"icon_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
 			"art_tier": "canonical_v2",
+			"grid_first_service_visual": true,
+			"grid_first_world_sprite": true,
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v3/service/ground_ops_pad_1x1.svg"
+			]),
+			"grid_native_surface_size": Vector2i(64, 32),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"service_aircraft_slot_world_offset": Vector2(0, 10),
 			"world_art_has_integrated_base": true,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,
@@ -545,6 +553,14 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"fuel_delivery_per_minute": 1.0,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
 			"art_tier": "canonical_v2",
+			"grid_first_service_visual": true,
+			"grid_first_world_sprite": true,
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v3/service/basic_fuel_pad_2x2.svg"
+			]),
+			"grid_native_surface_size": Vector2i(128, 64),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"service_aircraft_slot_world_offset": Vector2(0, 16),
 			"world_art_has_integrated_base": true,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,

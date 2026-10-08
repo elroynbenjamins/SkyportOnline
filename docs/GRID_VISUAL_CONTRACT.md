@@ -198,9 +198,13 @@ Every runway is directional for both gameplay and art.
 - the runway **END** is the final rollout column/row on the positive long-axis side;
 - landing animation should approach START, cross the threshold, touch down and roll toward END;
 - taxiways may never attach to the START threshold or the middle runway body;
-- taxiways may attach only through the **four rollout-end exit nodes**.
+- taxiways may attach only through the **four rollout-end exit sockets**;
+- those four sockets are grouped into **two outer runway lanes**;
+- each outer lane exposes two alternatives: one forward exit and one side exit;
+- only **one** of those two alternatives may be active on a lane;
+- therefore a runway may have at most **two active taxiway connections** at once.
 
-For a horizontal runway, the four allowed taxiway cells are:
+For a horizontal runway, the four potential taxiway cells are:
 
 1. directly beyond the upper cell of the final runway column;
 2. directly beyond the lower cell of the final runway column;
@@ -215,5 +219,13 @@ This policy is identified as:
 - `runway_taxi_exit_policy = "rollout_end_four"`
 
 The rule applies to the **5×2 Short Runway** and all later runway sizes, including the **12×3 Regional Runway**. Wider future runways still expose only the two outer lanes at the rollout end, not every cell across their width.
+
+The connection limits are part of the runway definition:
+
+- `runway_taxi_lane_count = 2`
+- `runway_max_active_taxi_connections = 2`
+- `runway_max_active_taxi_connections_per_lane = 1`
+
+Example: if outer lane A uses its forward socket, lane A's side socket becomes unavailable. Outer lane B may still choose either its own forward or side socket. Once both lanes have one active exit, the runway has reached its two-connection maximum.
 
 Placement, routing and visual seams all use the same rule. A Taxiway touching any other runway edge is invalid rather than merely disconnected.

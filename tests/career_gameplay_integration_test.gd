@@ -121,6 +121,10 @@ func _run() -> void:
 		"V1 should deploy one owned Pico from hangar inventory."
 	)
 	check(
+		main.aircraft_demos[0].uses_skyrama_handling(),
+		"Owned V1 aircraft must use the Skyrama handling loop."
+	)
+	check(
 		(main.progression.get("owned_aircraft", []) as Array).size() == 2,
 		"Both starter Picos should remain owned even when only one is deployed."
 	)

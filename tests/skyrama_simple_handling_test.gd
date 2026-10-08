@@ -30,15 +30,21 @@ func _run() -> void:
 		7
 	)
 
-	var runway_clear_count := 0
-	var arrival_complete_count := 0
+	var counters := {
+		"runway_clear": 0,
+		"arrival_complete": 0
+	}
 	aircraft.runway_cleared.connect(
 		func():
-			runway_clear_count += 1
+			counters["runway_clear"] = int(
+				counters["runway_clear"]
+			) + 1
 	)
 	aircraft.arrival_completed.connect(
 		func():
-			arrival_complete_count += 1
+			counters["arrival_complete"] = int(
+				counters["arrival_complete"]
+			) + 1
 	)
 
 	# Receiving: LAND animates to the runway end, then waits on the runway.
@@ -58,7 +64,7 @@ func _run() -> void:
 	if aircraft.state != "SIMPLE_WAITING_UNLOAD":
 		_fail("Landing should stop at runway end waiting for UNLOAD.")
 		return
-	if runway_clear_count != 0:
+	if int(counters["runway_clear"]) != 0:
 		_fail("Runway must remain occupied until UNLOAD is pressed.")
 		return
 	if aircraft.get_handling_action() != "UNLOAD":
@@ -69,7 +75,7 @@ func _run() -> void:
 		Vector2(360, 140),
 		0.5
 	)
-	if runway_clear_count != 1:
+	if int(counters["runway_clear"]) != 1:
 		_fail("Leaving runway for cargo should release runway exactly once.")
 		return
 	if aircraft.position != Vector2(360, 140):
@@ -83,7 +89,7 @@ func _run() -> void:
 	if aircraft.get_handling_action() != "HANGAR":
 		_fail("Unload completion should show HANGAR.")
 		return
-	if arrival_complete_count != 1:
+	if int(counters["arrival_complete"]) != 1:
 		_fail("Flight completion should be emitted after unloading.")
 		return
 

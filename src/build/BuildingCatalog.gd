@@ -35,7 +35,10 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"grid_native_surface_size": Vector2i(224, 112),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
 			"runway_direction_policy": "origin_to_long_axis_end",
-			"runway_taxi_exit_policy": "rollout_end_four"
+			"runway_taxi_exit_policy": "rollout_end_four",
+			"runway_taxi_lane_count": 2,
+			"runway_max_active_taxi_connections": 2,
+			"runway_max_active_taxi_connections_per_lane": 1
 		},
 		{
 			"id": "small_stand",
@@ -668,7 +671,10 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"art_tier": "surface_v2",
 			"surface_art": "runway_v2",
 			"runway_direction_policy": "origin_to_long_axis_end",
-			"runway_taxi_exit_policy": "rollout_end_four"
+			"runway_taxi_exit_policy": "rollout_end_four",
+			"runway_taxi_lane_count": 2,
+			"runway_max_active_taxi_connections": 2,
+			"runway_max_active_taxi_connections_per_lane": 1
 		},
 		{
 			"id": "autumn_event_flag",

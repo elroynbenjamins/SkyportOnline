@@ -748,6 +748,30 @@ func _simple_handling_missing_text(
 
 func _spawn_skyrama_owned_aircraft() -> void:
 	if not aircraft_demos.is_empty():
+		for existing in aircraft_demos:
+			if (
+				existing == null
+				or not is_instance_valid(existing)
+				or existing.is_social_visitor()
+			):
+				continue
+			if not existing.uses_skyrama_handling():
+				existing.configure_skyrama_handling(true)
+				if existing.state in [
+					"PARKED",
+					"WAITING_UNLOAD",
+					"WAITING_SERVICE",
+					"SERVICING",
+					"LOADING",
+					"PUSHBACK_PREP",
+					"READY_FOR_DEPARTURE",
+					"WAITING_FUEL",
+					"WAITING_PASSENGERS",
+					"TAXIING_TO_STAND",
+					"TAXIING_OUT",
+					"HOLD_SHORT"
+				]:
+					existing.stage_simple_hangar_inventory()
 		return
 
 	var infrastructure := _simple_handling_infrastructure(
@@ -825,6 +849,17 @@ func _spawn_skyrama_owned_aircraft() -> void:
 	hud.set_operation_status(
 		"SO-001 stored in hangar • open Fleet and choose a destination",
 		"success"
+	)
+
+
+func _is_skyrama_owned_aircraft(
+	aircraft: AircraftPrototype
+) -> bool:
+	return (
+		SKYRAMA_SIMPLE_HANDLING
+		and aircraft != null
+		and is_instance_valid(aircraft)
+		and not aircraft.is_social_visitor()
 	)
 
 
@@ -1193,12 +1228,11 @@ func _on_aircraft_handling_action_requested(
 	var normalized := action.to_upper()
 	var label := String(aircraft.name)
 
-	if (
-		SKYRAMA_SIMPLE_HANDLING
-		and aircraft.uses_skyrama_handling()
-	):
+	if _is_skyrama_owned_aircraft(aircraft):
+		if not aircraft.uses_skyrama_handling():
+			aircraft.configure_skyrama_handling(true)
 		match normalized:
-			"LAND":
+			"RECEIVE", "LAND":
 				if aircraft.state != "HOLDING_FOR_ARRIVAL":
 					return
 				aircraft.clear_handling_action()
@@ -1918,11 +1952,9 @@ func _assign_arrival_if_possible(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> bool:
-	if (
-		SKYRAMA_SIMPLE_HANDLING
-		and aircraft.uses_skyrama_handling()
-		and not aircraft.is_social_visitor()
-	):
+	if _is_skyrama_owned_aircraft(aircraft):
+		if not aircraft.uses_skyrama_handling():
+			aircraft.configure_skyrama_handling(true)
 		var runway := airport_grid.get_simple_runway_animation_route(
 			aircraft.aircraft_size
 		)
@@ -1966,7 +1998,7 @@ func _assign_arrival_if_possible(
 		)
 		aircraft.stage_for_manual_arrival()
 		hud.set_operation_status(
-			"%s ready to receive • tap LAND"
+			"%s ready to receive • tap RECEIVE"
 			% label,
 			"warning"
 		)
@@ -2096,10 +2128,7 @@ func _on_demo_arrival_completed(
 ) -> void:
 	_apply_completed_flight_reward(aircraft, label)
 
-	if (
-		SKYRAMA_SIMPLE_HANDLING
-		and aircraft.uses_skyrama_handling()
-	):
+	if _is_skyrama_owned_aircraft(aircraft):
 		hud.set_operation_status(
 			"%s unloaded • tap HANGAR to store it"
 			% label,
@@ -3051,10 +3080,11 @@ func _on_world_map_flight_assignment_requested(
 	)
 
 	if (
-		SKYRAMA_SIMPLE_HANDLING
-		and aircraft.uses_skyrama_handling()
+		_is_skyrama_owned_aircraft(aircraft)
 		and previous_state == "READY_FOR_DESTINATION"
 	):
+		if not aircraft.uses_skyrama_handling():
+			aircraft.configure_skyrama_handling(true)
 		_begin_skyrama_departure_prep(
 			aircraft
 		)
@@ -3193,12 +3223,14 @@ func _on_world_hovered(world_position: Vector2) -> void:
 
 func _next_handling_aircraft() -> AircraftPrototype:
 	var priorities := [
+		"RECEIVE",
+		"UNLOAD",
+		"HANGAR",
+		"LOAD",
+		"SEND",
 		"LAND",
 		"TAXI",
-		"UNLOAD",
-		"SERVICE",
-		"LOAD",
-		"SEND"
+		"SERVICE"
 	]
 	for action_variant in priorities:
 		var action := String(action_variant)

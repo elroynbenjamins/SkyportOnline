@@ -147,6 +147,20 @@ func set_handling_action(
 	handling_action_button.text = _handling_action_label(
 		pending_handling_action
 	)
+	var icon_path := _handling_action_icon_path(
+		pending_handling_action
+	)
+	if (
+		not icon_path.is_empty()
+		and ResourceLoader.exists(icon_path)
+	):
+		var icon_resource = load(icon_path)
+		if icon_resource is Texture2D:
+			handling_action_button.icon = icon_resource as Texture2D
+		else:
+			handling_action_button.icon = null
+	else:
+		handling_action_button.icon = null
 	_apply_handling_action_style(
 		pending_handling_action
 	)
@@ -162,6 +176,24 @@ func clear_handling_action() -> void:
 		handling_action_button.visible = false
 	if handling_action_tail != null:
 		handling_action_tail.visible = false
+
+func _handling_action_icon_path(
+	action: String
+) -> String:
+	match action:
+		"RECEIVE", "LAND":
+			return "res://assets/production/ui_v3/handling/receive.svg"
+		"UNLOAD":
+			return "res://assets/production/ui_v3/handling/unload.svg"
+		"LOAD":
+			return "res://assets/production/ui_v3/handling/load.svg"
+		"SEND":
+			return "res://assets/production/ui_v3/handling/send.svg"
+		"HANGAR":
+			return "res://assets/production/ui_v3/handling/hangar.svg"
+		_:
+			return ""
+
 
 func _apply_handling_action_style(
 	action: String
@@ -279,20 +311,20 @@ func _handling_action_label(
 	action: String
 ) -> String:
 	match action:
-		"LAND":
-			return "✈  RECEIVE"
+		"LAND", "RECEIVE":
+			return "RECEIVE"
 		"TAXI":
-			return "↗  TAXI"
+			return "TAXI"
 		"UNLOAD":
-			return "↓  UNLOAD"
+			return "UNLOAD"
 		"SERVICE":
-			return "⚙  SERVICE"
+			return "SERVICE"
 		"LOAD":
-			return "↑  LOAD"
+			return "LOAD"
 		"SEND":
-			return "✈  SEND"
+			return "SEND"
 		"HANGAR":
-			return "⌂  HANGAR"
+			return "HANGAR"
 		_:
 			return action
 
@@ -374,6 +406,9 @@ func _build_handling_action_button() -> void:
 		"font_size",
 		11
 	)
+	handling_action_button.icon_max_width = 21
+	handling_action_button.expand_icon = true
+	handling_action_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	handling_action_button.pressed.connect(
 		_on_handling_action_pressed
 	)

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="96" viewBox="0 0 120 96">
+  <defs>
+    <linearGradient id="shed" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7ba0ad"/>
+      <stop offset="1" stop-color="#3f606c"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dbe9ea"/>
+      <stop offset="1" stop-color="#8aa7ae"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="61" cy="79" rx="43" ry="10" fill="#18252b" opacity=".18"/>
+
+  <!-- compact operations shed -->
+  <polygon points="48,31 78,16 101,27 70,43" fill="url(#roof)"/>
+  <polygon points="70,43 101,27 101,60 70,76" fill="#355562"/>
+  <polygon points="48,31 70,43 70,76 48,64" fill="url(#shed)"/>
+  <rect x="76" y="42" width="17" height="16" rx="2" fill="#173844"/>
+  <rect x="79" y="45" width="11" height="4" rx="1" fill="#75ddff"/>
+  <path d="M52 38h14M52 44h14" stroke="#b5d1d8" stroke-width="1.2" opacity=".65"/>
+
+  <!-- conveyor -->
+  <polygon points="17,54 52,36 59,40 24,58" fill="#8c969a"/>
+  <polygon points="24,58 59,40 59,46 24,64" fill="#4d5a60"/>
+  <g stroke="#d7dadd" stroke-width="1">
+    <path d="M25 54l6 3M32 50l6 3M39 47l6 3M46 43l6 3"/>
+  </g>
+  <circle cx="29" cy="64" r="4" fill="#26343b"/>
+  <circle cx="51" cy="53" r="4" fill="#26343b"/>
+
+  <!-- crates / baggage -->
+  <g>
+    <polygon points="15,39 29,32 39,37 25,44" fill="#d5a35d"/>
+    <polygon points="25,44 39,37 39,50 25,57" fill="#a87138"/>
+    <polygon points="15,39 25,44 25,57 15,52" fill="#be8644"/>
+    <path d="M18 40l18 9M25 34v21" stroke="#7c5329" stroke-width="1"/>
+  </g>
+
+  <g>
+    <polygon points="34,28 45,22 54,27 43,33" fill="#d1a05c"/>
+    <polygon points="43,33 54,27 54,37 43,43" fill="#9b6a38"/>
+    <polygon points="34,28 43,33 43,43 34,38" fill="#b87f43"/>
+  </g>
+
+  <circle cx="91" cy="23" r="4" fill="#ffca48" opacity=".35"/>
+  <circle cx="91" cy="23" r="2" fill="#fff0a1"/>
+</svg>

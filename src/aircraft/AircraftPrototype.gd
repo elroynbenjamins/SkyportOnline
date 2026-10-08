@@ -889,9 +889,28 @@ func set_turnaround_status(
 		return
 	var compact_text := text.replace("\n", " • ").strip_edges()
 	if compact_text.length() > 30:
+		var priority_suffix := ""
+		for segment_variant in compact_text.split(" • "):
+			var segment := String(segment_variant)
+			if segment.contains("WAIT"):
+				priority_suffix = " • " + segment
+				break
+		if priority_suffix.is_empty():
+			for keyword in ["READY", "RUNWAY"]:
+				if compact_text.contains(keyword):
+					priority_suffix = " • " + keyword
+					break
+		var prefix_limit := maxi(
+			29 - priority_suffix.length(),
+			12
+		)
 		compact_text = (
-			compact_text.substr(0, 29).strip_edges()
+			compact_text.substr(
+				0,
+				prefix_limit
+			).strip_edges()
 			+ "…"
+			+ priority_suffix
 		)
 	turnaround_label.text = compact_text
 	turnaround_panel.visible = not compact_text.is_empty()

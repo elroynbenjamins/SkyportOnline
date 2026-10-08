@@ -2074,7 +2074,7 @@ func _assign_arrival_if_possible(
 	):
 		aircraft.stage_for_manual_arrival()
 		hud.set_operation_status(
-			"%s inbound • tap LAND" % label,
+			"%s inbound • tap RECEIVE" % label,
 			"warning"
 		)
 	else:

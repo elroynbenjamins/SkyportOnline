@@ -299,7 +299,11 @@ func stage_for_manual_arrival() -> bool:
 		"Arrival ready\nTap RECEIVE",
 		"warning"
 	)
-	set_handling_action("LAND")
+	set_handling_action(
+		"RECEIVE"
+		if skyrama_handling_enabled
+		else "LAND"
+	)
 	return true
 
 
@@ -418,8 +422,7 @@ func _build_handling_action_button() -> void:
 		"font_size",
 		11
 	)
-	handling_action_button.icon_max_width = 21
-	handling_action_button.expand_icon = true
+	handling_action_button.expand_icon = false
 	handling_action_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	handling_action_button.pressed.connect(
 		_on_handling_action_pressed

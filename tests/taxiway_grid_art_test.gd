@@ -121,12 +121,12 @@ func _run() -> void:
 	if not _place(
 		grid,
 		"taxiway",
-		Vector2i(4, 4)
+		Vector2i(6, 4)
 	):
 		return
 
 	var runway_join := grid.get_taxiway_visual_connection_snapshot(
-		Vector2i(4, 4)
+		Vector2i(6, 4)
 	)
 	if not bool(runway_join.get("runway_connected", false)):
 		_fail("Taxiway touching the runway should auto-detect the runway seam.")
@@ -144,11 +144,11 @@ func _run() -> void:
 	if not _place(
 		grid,
 		"taxiway",
-		Vector2i(4, 5)
+		Vector2i(6, 5)
 	):
 		return
 	runway_join = grid.get_taxiway_visual_connection_snapshot(
-		Vector2i(4, 4)
+		Vector2i(6, 4)
 	)
 	if int(runway_join.get("connection_count", 0)) != 2:
 		_fail("Runway taxiway should connect to both runway and next taxiway.")
@@ -161,22 +161,22 @@ func _run() -> void:
 		return
 
 	var next_join := grid.get_taxiway_visual_connection_snapshot(
-		Vector2i(4, 5)
+		Vector2i(6, 5)
 	)
 	var kinds: Dictionary = next_join.get("kinds", {})
 	if not kinds.values().has("taxiway"):
 		_fail("Adjacent taxiway tiles should visually join automatically.")
 		return
 
-	if not _place(grid, "taxiway", Vector2i(3, 5)):
-		return
 	if not _place(grid, "taxiway", Vector2i(5, 5)):
 		return
-	if not _place(grid, "taxiway", Vector2i(4, 6)):
+	if not _place(grid, "taxiway", Vector2i(7, 5)):
+		return
+	if not _place(grid, "taxiway", Vector2i(6, 6)):
 		return
 
 	var cross_join := grid.get_taxiway_visual_connection_snapshot(
-		Vector2i(4, 5)
+		Vector2i(6, 5)
 	)
 	if int(cross_join.get("mask", -1)) != 15:
 		_fail("Four connected directions should resolve to cross mask 15.")

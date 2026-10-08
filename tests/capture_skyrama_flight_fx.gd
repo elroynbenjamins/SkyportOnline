@@ -82,6 +82,13 @@ func _run() -> void:
 		quit(1)
 		return
 
+	var runway_uid := int(
+		runway.get(
+			"runway_uid",
+			-1
+		)
+	)
+
 	var plane := CareerAircraft.new()
 	plane.name = "SO-001"
 	plane.configure_aircraft_type("pico_p8")
@@ -121,6 +128,17 @@ func _run() -> void:
 	plane.rotation = (end - start).angle()
 	plane._set_state("LANDING_ROLL")
 	plane._process(0.18)
+	grid.set_runway_visual_state(
+		runway_uid,
+		{
+			"status": "occupied_arrival",
+			"active_operation": "arrival",
+			"slot_occupied": true,
+			"slot": "end",
+			"slot_phase": "landing_roll",
+			"arrival_priority": false
+		}
+	)
 	hud.set_operation_status(
 		"SO-001 touchdown • rollout to runway end"
 	)
@@ -136,6 +154,17 @@ func _run() -> void:
 	plane.takeoff_velocity = plane.takeoff_speed * 0.88
 	plane._set_state("TAKEOFF_ROLL")
 	plane._process(0.12)
+	grid.set_runway_visual_state(
+		runway_uid,
+		{
+			"status": "occupied_departure",
+			"active_operation": "departure",
+			"slot_occupied": true,
+			"slot": "start",
+			"slot_phase": "takeoff_roll",
+			"arrival_priority": false
+		}
+	)
 	hud.set_operation_status(
 		"SO-001 takeoff roll • accelerating"
 	)

@@ -866,6 +866,9 @@ func set_turnaround_status(
 func clear_turnaround_status() -> void:
 	if turnaround_panel != null:
 		turnaround_panel.visible = false
+	if turnaround_progress != null:
+		turnaround_progress.visible = false
+		turnaround_progress.value = 0.0
 
 
 
@@ -1160,6 +1163,39 @@ func _update_simple_stage_status() -> void:
 			turnaround_progress_fill.bg_color = Color("70e0bd")
 		else:
 			turnaround_progress_fill.bg_color = Color("5dd6ff")
+
+func get_handling_visual_snapshot() -> Dictionary:
+	return {
+		"action": pending_handling_action,
+		"action_visible": (
+			handling_action_button != null
+			and handling_action_button.visible
+		),
+		"action_text": (
+			handling_action_button.text
+			if handling_action_button != null
+			else ""
+		),
+		"progress_visible": (
+			turnaround_progress != null
+			and turnaround_progress.visible
+		),
+		"progress_value": (
+			turnaround_progress.value
+			if turnaround_progress != null
+			else 0.0
+		),
+		"status_visible": (
+			turnaround_panel != null
+			and turnaround_panel.visible
+		),
+		"status_text": (
+			turnaround_label.text
+			if turnaround_label != null
+			else ""
+		)
+	}
+
 
 func get_simple_handling_snapshot() -> Dictionary:
 	return {

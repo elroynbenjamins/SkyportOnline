@@ -61,7 +61,11 @@ var departure_hold_short_index := -1
 var arrival_runway_cleared := false
 var turnaround_panel: PanelContainer
 var turnaround_label: Label
+var turnaround_progress: ProgressBar
+var turnaround_progress_fill: StyleBoxFlat
+var turnaround_progress_bg: StyleBoxFlat
 var handling_action_button: Button
+var handling_action_tail: Polygon2D
 var manual_handling_enabled := false
 var handling_automation_enabled := false
 var pending_handling_action := ""
@@ -126,6 +130,7 @@ func set_handling_automation_enabled(
 	)
 
 
+
 func set_handling_action(
 	action: String
 ) -> void:
@@ -135,12 +140,19 @@ func set_handling_action(
 
 	if pending_handling_action.is_empty():
 		handling_action_button.visible = false
+		if handling_action_tail != null:
+			handling_action_tail.visible = false
 		return
 
 	handling_action_button.text = _handling_action_label(
 		pending_handling_action
 	)
+	_apply_handling_action_style(
+		pending_handling_action
+	)
 	handling_action_button.visible = visible
+	if handling_action_tail != null:
+		handling_action_tail.visible = visible
 	_sync_handling_action_transform()
 
 
@@ -148,6 +160,51 @@ func clear_handling_action() -> void:
 	pending_handling_action = ""
 	if handling_action_button != null:
 		handling_action_button.visible = false
+	if handling_action_tail != null:
+		handling_action_tail.visible = false
+
+func _apply_handling_action_style(
+	action: String
+) -> void:
+	if handling_action_button == null:
+		return
+
+	var fill := Color("0b3e5a")
+	var border := Color("72dcff")
+	match action:
+		"RECEIVE", "LAND":
+			fill = Color("0c4965")
+			border = Color("79e3ff")
+		"UNLOAD":
+			fill = Color("15545b")
+			border = Color("7be9d1")
+		"LOAD":
+			fill = Color("6b4c12")
+			border = Color("ffd86f")
+		"SEND":
+			fill = Color("235d35")
+			border = Color("9df3a5")
+		"HANGAR":
+			fill = Color("354554")
+			border = Color("b8d7ed")
+
+	for state_name in ["normal", "hover", "pressed"]:
+		var style_box = handling_action_button.get_theme_stylebox(
+			state_name
+		)
+		if style_box is StyleBoxFlat:
+			var box := style_box as StyleBoxFlat
+			box.bg_color = fill.lightened(
+				0.10 if state_name == "hover" else 0.0
+			)
+			box.border_color = (
+				Color.WHITE
+				if state_name == "pressed"
+				else border
+			)
+
+	if handling_action_tail != null:
+		handling_action_tail.color = fill
 
 
 func get_handling_action() -> String:
@@ -240,11 +297,23 @@ func _handling_action_label(
 			return action
 
 
+
 func _build_handling_action_button() -> void:
+	handling_action_tail = Polygon2D.new()
+	handling_action_tail.polygon = PackedVector2Array([
+		Vector2(-8, -2),
+		Vector2(8, -2),
+		Vector2(0, 10)
+	])
+	handling_action_tail.color = Color("0b3e5a")
+	handling_action_tail.z_index = 169
+	add_child(handling_action_tail)
+	handling_action_tail.visible = false
+
 	handling_action_button = Button.new()
 	handling_action_button.custom_minimum_size = Vector2(
-		92,
-		34
+		108,
+		38
 	)
 	handling_action_button.mouse_filter = (
 		Control.MOUSE_FILTER_STOP
@@ -255,30 +324,31 @@ func _build_handling_action_button() -> void:
 	handling_action_button.z_index = 170
 
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("0b3e5a", 0.96)
-	normal.border_color = Color("67d7ff")
-	normal.border_width_left = 1
-	normal.border_width_top = 1
-	normal.border_width_right = 1
-	normal.border_width_bottom = 1
-	normal.corner_radius_top_left = 10
-	normal.corner_radius_top_right = 10
-	normal.corner_radius_bottom_left = 10
-	normal.corner_radius_bottom_right = 10
-	normal.content_margin_left = 9.0
-	normal.content_margin_right = 9.0
-	normal.content_margin_top = 5.0
-	normal.content_margin_bottom = 5.0
-	normal.shadow_color = Color(0, 0, 0, 0.32)
-	normal.shadow_size = 5
-	normal.shadow_offset = Vector2(0, 2)
+	normal.bg_color = Color("0b3e5a", 0.98)
+	normal.border_color = Color("72dcff")
+	normal.border_width_left = 2
+	normal.border_width_top = 2
+	normal.border_width_right = 2
+	normal.border_width_bottom = 2
+	normal.corner_radius_top_left = 14
+	normal.corner_radius_top_right = 14
+	normal.corner_radius_bottom_left = 14
+	normal.corner_radius_bottom_right = 14
+	normal.content_margin_left = 12.0
+	normal.content_margin_right = 12.0
+	normal.content_margin_top = 6.0
+	normal.content_margin_bottom = 6.0
+	normal.shadow_color = Color(0, 0, 0, 0.40)
+	normal.shadow_size = 7
+	normal.shadow_offset = Vector2(0, 3)
 
 	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color("14618a", 0.98)
-	hover.border_color = Color("a6ecff")
+	hover.bg_color = Color("135d83", 0.99)
+	hover.border_color = Color("c6f3ff")
 
 	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color("082b40", 0.98)
+	pressed.bg_color = Color("082a3d", 0.99)
+	pressed.border_color = Color("ffffff")
 
 	handling_action_button.add_theme_stylebox_override(
 		"normal",
@@ -294,7 +364,11 @@ func _build_handling_action_button() -> void:
 	)
 	handling_action_button.add_theme_color_override(
 		"font_color",
-		Color("f7fcff")
+		Color("f8fdff")
+	)
+	handling_action_button.add_theme_color_override(
+		"font_hover_color",
+		Color("ffffff")
 	)
 	handling_action_button.add_theme_font_size_override(
 		"font_size",
@@ -307,7 +381,6 @@ func _build_handling_action_button() -> void:
 	handling_action_button.visible = false
 	_sync_handling_action_transform()
 
-
 func _on_handling_action_pressed() -> void:
 	if pending_handling_action.is_empty():
 		return
@@ -315,6 +388,7 @@ func _on_handling_action_pressed() -> void:
 		self,
 		pending_handling_action
 	)
+
 
 
 func _sync_handling_action_transform() -> void:
@@ -327,8 +401,8 @@ func _sync_handling_action_transform() -> void:
 	) * 34.0
 	var airborne_extra := get_airborne_visual_lift()
 	var anchor := Vector2(
-		-46,
-		-100
+		-54,
+		-106
 		- vertical_clearance
 		- airborne_extra
 	).rotated(
@@ -336,11 +410,24 @@ func _sync_handling_action_transform() -> void:
 	)
 	handling_action_button.position = anchor
 	handling_action_button.rotation = -rotation
+
+	if handling_action_tail != null:
+		var tail_anchor := Vector2(
+			0,
+			-68
+			- vertical_clearance
+			- airborne_extra
+		).rotated(
+			-rotation
+		)
+		handling_action_tail.position = tail_anchor
+		handling_action_tail.rotation = -rotation
+
 	var pulse := (
-		0.90
-		+ 0.10
+		0.94
+		+ 0.06
 		* sin(
-			visual_clock * 4.8
+			visual_clock * 5.4
 		)
 	)
 	handling_action_button.modulate = Color(
@@ -349,11 +436,21 @@ func _sync_handling_action_transform() -> void:
 		1.0,
 		pulse
 	)
-	handling_action_button.visible = (
+	if handling_action_tail != null:
+		handling_action_tail.modulate = Color(
+			1.0,
+			1.0,
+			1.0,
+			pulse
+		)
+
+	var should_show := (
 		visible
 		and not pending_handling_action.is_empty()
 	)
-
+	handling_action_button.visible = should_show
+	if handling_action_tail != null:
+		handling_action_tail.visible = should_show
 
 func configure_taxi_traffic(
 	controller: TaxiTrafficController
@@ -733,6 +830,7 @@ func begin_ground_service(stage: String) -> void:
 		_set_state(stage)
 
 
+
 func set_turnaround_status(
 	text: String,
 	tone: String = "normal"
@@ -740,26 +838,10 @@ func set_turnaround_status(
 	if turnaround_panel == null:
 		return
 	var compact_text := text.replace("\n", " • ").strip_edges()
-	if compact_text.length() > 28:
-		var priority_suffix := ""
-		for segment_variant in compact_text.split(" • "):
-			var segment := String(segment_variant)
-			if segment.contains("WAIT"):
-				priority_suffix = " • " + segment
-				break
-		if priority_suffix.is_empty():
-			for keyword in ["READY", "RUNWAY"]:
-				if compact_text.contains(keyword):
-					priority_suffix = " • " + keyword
-					break
-		var prefix_limit := maxi(
-			27 - priority_suffix.length(),
-			12
-		)
+	if compact_text.length() > 30:
 		compact_text = (
-			compact_text.substr(0, prefix_limit).strip_edges()
+			compact_text.substr(0, 29).strip_edges()
 			+ "…"
-			+ priority_suffix
 		)
 	turnaround_label.text = compact_text
 	turnaround_panel.visible = not compact_text.is_empty()
@@ -767,54 +849,62 @@ func set_turnaround_status(
 		"warning":
 			turnaround_label.add_theme_color_override(
 				"font_color",
-				Color("ffd27a")
+				Color("ffd878")
 			)
 		"success":
 			turnaround_label.add_theme_color_override(
 				"font_color",
-				Color("a8efbf")
+				Color("a7efb9")
 			)
 		_:
 			turnaround_label.add_theme_color_override(
 				"font_color",
-				Color("f4f7f7")
+				Color("f4f8fb")
 			)
 	_sync_turnaround_status_transform()
-
 
 func clear_turnaround_status() -> void:
 	if turnaround_panel != null:
 		turnaround_panel.visible = false
 
 
+
 func _build_turnaround_status() -> void:
 	turnaround_panel = PanelContainer.new()
-	turnaround_panel.custom_minimum_size = Vector2(118, 30)
+	turnaround_panel.custom_minimum_size = Vector2(126, 40)
 	turnaround_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	turnaround_panel.z_index = 160
+
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("062a40", 0.94)
-	style.border_color = Color("27b8e5")
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.corner_radius_top_left = 9
-	style.corner_radius_top_right = 9
-	style.corner_radius_bottom_left = 9
-	style.corner_radius_bottom_right = 9
+	style.bg_color = Color("0a2635", 0.97)
+	style.border_color = Color("63d7ff")
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 12
+	style.corner_radius_top_right = 12
+	style.corner_radius_bottom_left = 12
+	style.corner_radius_bottom_right = 12
 	style.content_margin_left = 8.0
 	style.content_margin_right = 8.0
-	style.content_margin_top = 4.0
-	style.content_margin_bottom = 4.0
-	style.shadow_color = Color(0, 0, 0, 0.30)
-	style.shadow_size = 5
-	style.shadow_offset = Vector2(0, 2)
+	style.content_margin_top = 5.0
+	style.content_margin_bottom = 5.0
+	style.shadow_color = Color(0, 0, 0, 0.38)
+	style.shadow_size = 6
+	style.shadow_offset = Vector2(0, 3)
 	turnaround_panel.add_theme_stylebox_override(
 		"panel",
 		style
 	)
 	add_child(turnaround_panel)
+
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override(
+		"separation",
+		3
+	)
+	turnaround_panel.add_child(stack)
 
 	turnaround_label = Label.new()
 	turnaround_label.horizontal_alignment = (
@@ -831,9 +921,43 @@ func _build_turnaround_status() -> void:
 	)
 	turnaround_label.add_theme_color_override(
 		"font_color",
-		Color("f4f7f7")
+		Color("f4f8fb")
 	)
-	turnaround_panel.add_child(turnaround_label)
+	stack.add_child(turnaround_label)
+
+	turnaround_progress = ProgressBar.new()
+	turnaround_progress.custom_minimum_size = Vector2(108, 7)
+	turnaround_progress.min_value = 0.0
+	turnaround_progress.max_value = 100.0
+	turnaround_progress.value = 0.0
+	turnaround_progress.show_percentage = false
+	turnaround_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	turnaround_progress_bg = StyleBoxFlat.new()
+	turnaround_progress_bg.bg_color = Color("071923", 0.94)
+	turnaround_progress_bg.corner_radius_top_left = 4
+	turnaround_progress_bg.corner_radius_top_right = 4
+	turnaround_progress_bg.corner_radius_bottom_left = 4
+	turnaround_progress_bg.corner_radius_bottom_right = 4
+
+	turnaround_progress_fill = StyleBoxFlat.new()
+	turnaround_progress_fill.bg_color = Color("45d6ff")
+	turnaround_progress_fill.corner_radius_top_left = 4
+	turnaround_progress_fill.corner_radius_top_right = 4
+	turnaround_progress_fill.corner_radius_bottom_left = 4
+	turnaround_progress_fill.corner_radius_bottom_right = 4
+
+	turnaround_progress.add_theme_stylebox_override(
+		"background",
+		turnaround_progress_bg
+	)
+	turnaround_progress.add_theme_stylebox_override(
+		"fill",
+		turnaround_progress_fill
+	)
+	stack.add_child(turnaround_progress)
+	turnaround_progress.visible = false
+
 	turnaround_panel.visible = false
 	_sync_turnaround_status_transform()
 
@@ -847,13 +971,12 @@ func _sync_turnaround_status_transform() -> void:
 		0.0
 	) * 34.0
 	var anchor := Vector2(
-		-59,
-		-58 - vertical_clearance
+		-63,
+		-64 - vertical_clearance
 	).rotated(-rotation)
 	turnaround_panel.position = anchor
 	turnaround_panel.rotation = -rotation
 	_sync_handling_action_transform()
-
 
 func configure_skyrama_handling(
 	enabled: bool
@@ -981,6 +1104,9 @@ func _process_simple_stage(delta: float) -> void:
 	simple_stage_completion_action = ""
 	if not completed_state.is_empty():
 		_set_state(completed_state)
+	if turnaround_progress != null:
+		turnaround_progress.visible = false
+		turnaround_progress.value = 0.0
 
 	if completed_action == "LOAD":
 		set_turnaround_status(
@@ -1003,6 +1129,7 @@ func _process_simple_stage(delta: float) -> void:
 		set_handling_action(completed_action)
 
 
+
 func _update_simple_stage_status() -> void:
 	if simple_stage_total <= 0.0:
 		return
@@ -1013,13 +1140,26 @@ func _update_simple_stage_status() -> void:
 		0.0,
 		1.0
 	)
+	var percent := roundi(progress * 100.0)
+	var short_label := simple_stage_label.to_upper()
 	set_turnaround_status(
-		"%s • %d%%" % [
-			simple_stage_label,
-			roundi(progress * 100.0)
+		"%s  %d%%" % [
+			short_label,
+			percent
 		]
 	)
-
+	if turnaround_progress != null:
+		turnaround_progress.visible = true
+		turnaround_progress.value = float(percent)
+	if turnaround_progress_fill != null:
+		if state == "SIMPLE_FUELING":
+			turnaround_progress_fill.bg_color = Color("ffc94a")
+		elif state == "SIMPLE_LOADING":
+			turnaround_progress_fill.bg_color = Color("5dd6ff")
+		elif state == "SIMPLE_UNLOADING":
+			turnaround_progress_fill.bg_color = Color("70e0bd")
+		else:
+			turnaround_progress_fill.bg_color = Color("5dd6ff")
 
 func get_simple_handling_snapshot() -> Dictionary:
 	return {

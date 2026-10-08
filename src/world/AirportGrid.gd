@@ -1178,7 +1178,9 @@ func get_runway_modular_visual_state(
 		"visual_state_key": (
 			"none"
 			if types.is_empty()
-			else "+".join(types)
+			else "+".join(
+				PackedStringArray(types)
+			)
 		)
 	}
 

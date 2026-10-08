@@ -886,6 +886,9 @@ func _begin_skyrama_departure_prep(
 			fuel_required
 		)
 	):
+		# The plane remains an inventory/hangar aircraft. Do not leave a
+		# committed flight plan behind when the fueling stage never began.
+		aircraft.stage_simple_hangar_inventory()
 		hud.set_operation_status(
 			"Not enough airport fuel for this flight • need %d"
 			% fuel_required,

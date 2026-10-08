@@ -58,6 +58,10 @@ var starter_tutorial
 var starter_tutorial_enabled := false
 var last_starter_tutorial_step := ""
 
+# V1 owned-aircraft handling follows the Skyrama interaction loop:
+# runway animations are real; transfers between handling structures teleport.
+const SKYRAMA_SIMPLE_HANDLING := true
+
 
 func _process(delta: float) -> void:
 	if not gameplay_started or delta <= 0.0:
@@ -686,7 +690,244 @@ func _setup_runway_strategy_panel() -> void:
 	add_child(runway_strategy_panel)
 
 
+func _simple_handling_infrastructure(
+	aircraft_size: String = "S"
+) -> Dictionary:
+	return {
+		"runway": airport_grid.get_simple_runway_animation_route(
+			aircraft_size
+		),
+		"hangar": airport_grid.get_simple_hangar(
+			aircraft_size
+		),
+		"fuel": airport_grid.get_best_service_building(
+			"fuel",
+			aircraft_size
+		),
+		"cargo": airport_grid.get_best_service_building(
+			"cargo",
+			aircraft_size
+		)
+	}
+
+
+func _simple_handling_missing_text(
+	infrastructure: Dictionary
+) -> String:
+	var missing: Array[String] = []
+	if (
+		infrastructure.get(
+			"runway",
+			{}
+		) as Dictionary
+	).is_empty():
+		missing.append("runway")
+	if (
+		infrastructure.get(
+			"hangar",
+			{}
+		) as Dictionary
+	).is_empty():
+		missing.append("hangar")
+	if (
+		infrastructure.get(
+			"fuel",
+			{}
+		) as Dictionary
+	).is_empty():
+		missing.append("fuel station")
+	if (
+		infrastructure.get(
+			"cargo",
+			{}
+		) as Dictionary
+	).is_empty():
+		missing.append("cargo / ground ops")
+	return ", ".join(PackedStringArray(missing))
+
+
+func _spawn_skyrama_owned_aircraft() -> void:
+	if not aircraft_demos.is_empty():
+		return
+
+	var infrastructure := _simple_handling_infrastructure(
+		"S"
+	)
+	var missing := _simple_handling_missing_text(
+		infrastructure
+	)
+	if not missing.is_empty():
+		if not starter_tutorial_enabled:
+			hud.set_operation_status(
+				"Build handling structures first • missing %s"
+				% missing,
+				"warning"
+			)
+		return
+
+	var runway: Dictionary = infrastructure.get(
+		"runway",
+		{}
+	)
+	var aircraft := CareerAircraft.new()
+	aircraft.configure_aircraft_type("pico_p8")
+	aircraft.configure_skyrama_handling(true)
+	aircraft.name = "SO-001"
+	aircraft.z_index = 80
+	aircraft.state_changed.connect(
+		_on_demo_aircraft_state_changed.bind(
+			aircraft,
+			"SO-001"
+		)
+	)
+	aircraft.departed.connect(
+		_on_demo_aircraft_departed.bind(
+			aircraft,
+			"SO-001"
+		)
+	)
+	aircraft.arrival_requested.connect(
+		_on_demo_arrival_requested.bind(
+			aircraft,
+			"SO-001"
+		)
+	)
+	aircraft.arrival_completed.connect(
+		_on_demo_arrival_completed.bind(
+			aircraft,
+			"SO-001"
+		)
+	)
+	aircraft.handling_action_requested.connect(
+		_on_aircraft_handling_action_requested
+	)
+	add_child(aircraft)
+
+	aircraft.set_simple_runway_route(
+		runway.get(
+			"start_world",
+			Vector2.ZERO
+		),
+		runway.get(
+			"end_world",
+			Vector2.ZERO
+		),
+		int(
+			runway.get(
+				"runway_uid",
+				-1
+			)
+		)
+	)
+	aircraft.stage_simple_hangar_inventory()
+	aircraft_demos.append(aircraft)
+
+	hud.set_operation_status(
+		"SO-001 stored in hangar • open Fleet and choose a destination",
+		"success"
+	)
+
+
+func _begin_skyrama_departure_prep(
+	aircraft: AircraftPrototype
+) -> bool:
+	if (
+		aircraft == null
+		or not is_instance_valid(aircraft)
+	):
+		return false
+
+	var infrastructure := _simple_handling_infrastructure(
+		aircraft.aircraft_size
+	)
+	var missing := _simple_handling_missing_text(
+		infrastructure
+	)
+	if not missing.is_empty():
+		hud.set_operation_status(
+			"Cannot prepare flight • missing %s"
+			% missing,
+			"warning"
+		)
+		return false
+
+	var runway: Dictionary = infrastructure["runway"]
+	var fuel_station: Dictionary = infrastructure["fuel"]
+	aircraft.set_simple_runway_route(
+		runway.get(
+			"start_world",
+			Vector2.ZERO
+		),
+		runway.get(
+			"end_world",
+			Vector2.ZERO
+		),
+		int(
+			runway.get(
+				"runway_uid",
+				-1
+			)
+		)
+	)
+
+	var plan := aircraft.get_flight_plan()
+	var fuel_required := maxi(
+		int(
+			plan.get(
+				"fuel_required",
+				0
+			)
+		),
+		0
+	)
+	if (
+		fuel_economy != null
+		and not fuel_economy.spend_fuel(
+			fuel_required
+		)
+	):
+		hud.set_operation_status(
+			"Not enough airport fuel for this flight • need %d"
+			% fuel_required,
+			"warning"
+		)
+		return false
+
+	var fuel_speed := maxf(
+		float(
+			fuel_station.get(
+				"service_speed",
+				1.0
+			)
+		),
+		0.1
+	)
+	var fuel_seconds := maxf(
+		TurnaroundRules.fuel_seconds(
+			aircraft.get_aircraft_profile(),
+			fuel_speed
+		),
+		0.5
+	)
+	aircraft.start_simple_fueling(
+		fuel_station.get(
+			"world_position",
+			Vector2.ZERO
+		),
+		fuel_seconds
+	)
+	hud.set_operation_status(
+		"%s moved to fuel station • fueling started"
+		% String(aircraft.name)
+	)
+	return true
+
+
 func _spawn_aircraft_demos() -> void:
+	if SKYRAMA_SIMPLE_HANDLING:
+		_spawn_skyrama_owned_aircraft()
+		return
+
 	if (
 		starter_tutorial_enabled
 		and String(
@@ -948,6 +1189,113 @@ func _on_aircraft_handling_action_requested(
 
 	var normalized := action.to_upper()
 	var label := String(aircraft.name)
+
+	if (
+		SKYRAMA_SIMPLE_HANDLING
+		and aircraft.uses_skyrama_handling()
+	):
+		match normalized:
+			"LAND":
+				if aircraft.state != "HOLDING_FOR_ARRIVAL":
+					return
+				aircraft.clear_handling_action()
+				runway_dispatcher.request_arrival(
+					aircraft,
+					label
+				)
+				hud.set_operation_status(
+					"%s landing" % label
+				)
+			"UNLOAD":
+				if aircraft.state != "SIMPLE_WAITING_UNLOAD":
+					return
+				var cargo_station := airport_grid.get_best_service_building(
+					"cargo",
+					aircraft.aircraft_size
+				)
+				if cargo_station.is_empty():
+					hud.set_operation_status(
+						"Build Cargo / Ground Ops before unloading.",
+						"warning"
+					)
+					return
+				aircraft.start_simple_unloading(
+					cargo_station.get(
+						"world_position",
+						Vector2.ZERO
+					),
+					maxf(
+						TurnaroundRules.arrival_block_seconds(
+							aircraft.get_aircraft_profile()
+						),
+						0.5
+					)
+				)
+				hud.set_operation_status(
+					"%s moved to cargo handling • unloading"
+					% label
+				)
+			"LOAD":
+				if aircraft.state != "SIMPLE_WAITING_LOAD":
+					return
+				var cargo_station := airport_grid.get_best_service_building(
+					"cargo",
+					aircraft.aircraft_size
+				)
+				if cargo_station.is_empty():
+					hud.set_operation_status(
+						"Build Cargo / Ground Ops before loading.",
+						"warning"
+					)
+					return
+				aircraft.start_simple_loading(
+					cargo_station.get(
+						"world_position",
+						Vector2.ZERO
+					),
+					maxf(
+						TurnaroundRules.loading_block_seconds(
+							aircraft.get_aircraft_profile()
+						),
+						0.5
+					)
+				)
+				_notify_starter_tutorial(
+					"load_started"
+				)
+				hud.set_operation_status(
+					"%s moved to cargo handling • loading"
+					% label
+				)
+			"SEND":
+				if aircraft.state != "SIMPLE_WAITING_SEND":
+					return
+				aircraft.clear_handling_action()
+				_notify_starter_tutorial(
+					"send_started"
+				)
+				runway_dispatcher.request_direct_departure(
+					aircraft,
+					label
+				)
+				hud.set_operation_status(
+					"%s waiting for runway • takeoff next"
+					% label,
+					"warning"
+				)
+			"HANGAR":
+				if aircraft.state != "SIMPLE_WAITING_HANGAR":
+					return
+				aircraft.stage_simple_hangar_inventory()
+				hud.set_operation_status(
+					"%s stored in hangar • ready for another route"
+					% label,
+					"success"
+				)
+			_:
+				pass
+		return
+
 	match normalized:
 		"LAND":
 			if aircraft.state != "HOLDING_FOR_ARRIVAL":
@@ -1491,6 +1839,32 @@ func _on_demo_aircraft_state_changed(
 				)
 		"WAITING_FUEL":
 			hud.set_operation_status("%s parked • fuel required" % label)
+		"SIMPLE_FUELING":
+			hud.set_operation_status("%s fueling" % label)
+		"SIMPLE_WAITING_LOAD":
+			hud.set_operation_status(
+				"%s fuel complete • tap LOAD" % label,
+				"warning"
+			)
+		"SIMPLE_LOADING":
+			hud.set_operation_status("%s loading cargo" % label)
+		"SIMPLE_WAITING_SEND":
+			hud.set_operation_status(
+				"%s cargo loaded • tap SEND" % label,
+				"warning"
+			)
+		"SIMPLE_WAITING_UNLOAD":
+			hud.set_operation_status(
+				"%s landed • tap UNLOAD" % label,
+				"warning"
+			)
+		"SIMPLE_UNLOADING":
+			hud.set_operation_status("%s unloading cargo" % label)
+		"SIMPLE_WAITING_HANGAR":
+			hud.set_operation_status(
+				"%s unloaded • tap HANGAR" % label,
+				"warning"
+			)
 
 
 func _on_demo_aircraft_departed(
@@ -1532,6 +1906,59 @@ func _assign_arrival_if_possible(
 	aircraft: AircraftPrototype,
 	label: String
 ) -> bool:
+	if (
+		SKYRAMA_SIMPLE_HANDLING
+		and aircraft.uses_skyrama_handling()
+		and not aircraft.is_social_visitor()
+	):
+		var runway := airport_grid.get_simple_runway_animation_route(
+			aircraft.aircraft_size
+		)
+		if runway.is_empty():
+			return false
+
+		aircraft.set_simple_runway_route(
+			runway.get(
+				"start_world",
+				Vector2.ZERO
+			),
+			runway.get(
+				"end_world",
+				Vector2.ZERO
+			),
+			int(
+				runway.get(
+					"runway_uid",
+					-1
+				)
+			)
+		)
+		aircraft.set_arrival_route(
+			PackedVector2Array([
+				runway.get(
+					"start_world",
+					Vector2.ZERO
+				),
+				runway.get(
+					"end_world",
+					Vector2.ZERO
+				)
+			]),
+			-1,
+			int(
+				runway.get(
+					"runway_uid",
+					-1
+				)
+			)
+		)
+		aircraft.stage_for_manual_arrival()
+		hud.set_operation_status(
+			"%s ready to receive • tap LAND"
+			% label,
+			"warning"
+		)
+		return true
 	var candidates: Array[Dictionary] = []
 	for route_info in airport_grid.get_arrival_route_options(
 		aircraft.aircraft_size
@@ -1656,6 +2083,17 @@ func _on_demo_arrival_completed(
 	label: String
 ) -> void:
 	_apply_completed_flight_reward(aircraft, label)
+
+	if (
+		SKYRAMA_SIMPLE_HANDLING
+		and aircraft.uses_skyrama_handling()
+	):
+		hud.set_operation_status(
+			"%s unloaded • tap HANGAR to store it"
+			% label,
+			"warning"
+		)
+		return
 
 	var route_info: Dictionary = airport_grid.get_departure_route_for_stand(
 		aircraft.stand_uid,
@@ -2600,7 +3038,15 @@ func _on_world_map_flight_assignment_requested(
 		]
 	)
 
-	if previous_state == "READY_FOR_DESTINATION":
+	if (
+		SKYRAMA_SIMPLE_HANDLING
+		and aircraft.uses_skyrama_handling()
+		and previous_state == "READY_FOR_DESTINATION"
+	):
+		_begin_skyrama_departure_prep(
+			aircraft
+		)
+	elif previous_state == "READY_FOR_DESTINATION":
 		ground_services.resume_after_destination(aircraft)
 	elif previous_state == "WAITING_PASSENGERS":
 		_attempt_boarding_and_departure(

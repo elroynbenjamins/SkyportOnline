@@ -2343,6 +2343,7 @@ func get_motion_feedback_snapshot() -> Dictionary:
 			1.0
 		),
 		"production_motion_art": true,
+		"skyrama_v1_landing_takeoff_fx": true,
 		"motion_art_frames": AircraftMotionArt.frame_count()
 	}
 
@@ -2605,22 +2606,50 @@ func _draw_motion_feedback() -> void:
 
 		"touchdown":
 			var smoke := AircraftMotionArt.touchdown_texture(progress)
-			if smoke != null:
-				_draw_motion_texture(
-					smoke,
+			for side in [-1.0, 1.0]:
+				var gear_y := gear_span * 0.66 * float(side)
+				if smoke != null:
+					_draw_motion_texture(
+						smoke,
+						Vector2(
+							main_gear_x
+							- 9.0 * progress * visual_scale,
+							gear_y
+						),
+						Vector2(39, 28) * visual_scale,
+						0.82 * fade
+					)
+				else:
+					_draw_motion_fallback_puff(
+						Vector2(main_gear_x, gear_y),
+						7.0 * visual_scale,
+						0.24 * fade
+					)
+
+				# Short skid streak at each main gear makes the exact moment
+				# of runway contact readable even on a small phone screen.
+				draw_line(
 					Vector2(
-						main_gear_x - 8.0 * progress * visual_scale,
-						0
+						main_gear_x - 2.0 * visual_scale,
+						gear_y
 					),
-					Vector2(58, 42) * visual_scale,
-					0.92 * fade
+					Vector2(
+						main_gear_x
+						- (15.0 + 8.0 * progress) * visual_scale,
+						gear_y
+					),
+					Color(0.12, 0.16, 0.18, 0.34 * fade),
+					1.4 * visual_scale,
+					true
 				)
-			else:
-				_draw_motion_fallback_puff(
-					Vector2(main_gear_x, 0),
-					10.0 * visual_scale,
-					0.28 * fade
-				)
+
+			# A subtle bright compression flash replaces an exaggerated
+			# explosion-like touchdown effect.
+			draw_circle(
+				Vector2(main_gear_x, 0),
+				(3.8 + progress * 3.5) * visual_scale,
+				Color(0.88, 0.96, 1.0, 0.16 * fade)
+			)
 
 		"runway_exit":
 			var exit_puff := AircraftMotionArt.taxi_texture(progress)
@@ -2678,6 +2707,52 @@ func _draw_motion_feedback() -> void:
 					),
 					wake_size,
 					0.28 + 0.32 * speed_ratio
+				)
+
+			# Compact runway-speed streaks increase the sense of acceleration
+			# without requiring a camera shake or full-screen particle system.
+			for side in [-1.0, 1.0]:
+				var streak_y := (
+					12.0
+					+ 5.0 * speed_ratio
+				) * visual_scale * float(side)
+				var streak_start := Vector2(
+					tail_x
+					- 3.0 * visual_scale,
+					streak_y
+				)
+				var streak_end := Vector2(
+					tail_x
+					- (18.0 + 28.0 * speed_ratio)
+					* visual_scale,
+					streak_y
+				)
+				draw_line(
+					streak_start,
+					streak_end,
+					Color(
+						0.78,
+						0.92,
+						0.98,
+						0.10 + 0.18 * speed_ratio
+					),
+					1.1 * visual_scale,
+					true
+				)
+
+			if speed_ratio > 0.78:
+				var lift_pulse := (
+					speed_ratio - 0.78
+				) / 0.22
+				draw_circle(
+					Vector2(4, 0) * visual_scale,
+					(4.0 + 3.0 * lift_pulse) * visual_scale,
+					Color(
+						0.86,
+						0.96,
+						1.0,
+						0.08 + 0.10 * lift_pulse
+					)
 				)
 
 	if state == "PUSHBACK_PREP" and externally_moving:

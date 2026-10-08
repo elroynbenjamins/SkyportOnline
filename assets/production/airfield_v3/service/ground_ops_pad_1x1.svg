@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" viewBox="0 0 64 32">
+  <defs>
+    <clipPath id="footprint"><polygon points="32,0 64,16 32,32 0,16"/></clipPath>
+    <linearGradient id="concrete" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ddd9ce"/>
+      <stop offset=".55" stop-color="#bcb8ad"/>
+      <stop offset="1" stop-color="#8f918d"/>
+    </linearGradient>
+    <linearGradient id="service" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5a666c"/>
+      <stop offset="1" stop-color="#384248"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#footprint)">
+    <polygon points="32,0 64,16 32,32 0,16" fill="url(#concrete)"/>
+    <polygon points="32,4 56,16 32,28 8,16" fill="url(#service)"/>
+    <path d="M13 16 L32 6.5 L51 16 L32 25.5 Z" fill="none" stroke="#f2c84b" stroke-width="1.35"/>
+    <path d="M32 8 L32 24" stroke="#f2c84b" stroke-width="1.25"/>
+    <path d="M27 11 L32 8 L37 11" fill="none" stroke="#f7e9aa" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M27 21 L32 24 L37 21" fill="none" stroke="#f7e9aa" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- baggage/cargo cue tucked to rear edge -->
+    <rect x="18" y="9.3" width="7" height="4.3" rx="1" fill="#cb8f4c"/>
+    <rect x="20" y="7.4" width="5" height="3.2" rx=".8" fill="#dda766"/>
+    <path d="M17 14 L27 19" stroke="#252d32" stroke-width="1.2"/>
+    <circle cx="18.5" cy="15.2" r="1.1" fill="#1f282e"/>
+    <circle cx="25.3" cy="18.6" r="1.1" fill="#1f282e"/>
+
+    <g fill="#65dcff" stroke="#efffff" stroke-width=".35">
+      <circle cx="9.5" cy="16" r="1.15"/>
+      <circle cx="32" cy="27" r="1.15"/>
+      <circle cx="54.5" cy="16" r="1.15"/>
+    </g>
+  </g>
+</svg>

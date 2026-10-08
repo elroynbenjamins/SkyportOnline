@@ -9102,6 +9102,41 @@ func _get_placement_status(
 			"runway_exit_rule": "rollout_end_four"
 		}
 
+	if building_id == "taxiway":
+		var runway_limit := _taxiway_runway_connection_limit_status(
+			origin
+		)
+		if not bool(
+			runway_limit.get(
+				"valid",
+				true
+			)
+		):
+			return {
+				"valid": false,
+				"reason": String(
+					runway_limit.get(
+						"reason",
+						"Runway taxiway limit reached."
+					)
+				),
+				"origin": origin,
+				"footprint": footprint,
+				"runway_exit_rule": "rollout_end_four",
+				"runway_connection_limit": String(
+					runway_limit.get(
+						"limit",
+						""
+					)
+				),
+				"runway_exit_lane": String(
+					runway_limit.get(
+						"lane",
+						""
+					)
+				)
+			}
+
 	if (
 		_is_runway_definition(definition)
 		and _runway_candidate_has_invalid_taxiway_adjacency(
@@ -11079,6 +11114,7 @@ func _farthest_cell_on_same_runway(entry: Vector2i, aircraft_size: String = "") 
 
 
 
+
 func _runway_exit_nodes(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -11112,21 +11148,25 @@ func _runway_exit_nodes(
 		for node_variant in [
 			{
 				"type": "forward_upper",
+				"lane": "outer_a",
 				"taxiway_cell": Vector2i(end_x + 1, upper_y),
 				"runway_cell": Vector2i(end_x, upper_y)
 			},
 			{
 				"type": "forward_lower",
+				"lane": "outer_b",
 				"taxiway_cell": Vector2i(end_x + 1, lower_y),
 				"runway_cell": Vector2i(end_x, lower_y)
 			},
 			{
 				"type": "side_upper",
+				"lane": "outer_a",
 				"taxiway_cell": Vector2i(end_x, upper_y - 1),
 				"runway_cell": Vector2i(end_x, upper_y)
 			},
 			{
 				"type": "side_lower",
+				"lane": "outer_b",
 				"taxiway_cell": Vector2i(end_x, lower_y + 1),
 				"runway_cell": Vector2i(end_x, lower_y)
 			}
@@ -11148,21 +11188,25 @@ func _runway_exit_nodes(
 		for node_variant in [
 			{
 				"type": "forward_left",
+				"lane": "outer_a",
 				"taxiway_cell": Vector2i(left_x, end_y + 1),
 				"runway_cell": Vector2i(left_x, end_y)
 			},
 			{
 				"type": "forward_right",
+				"lane": "outer_b",
 				"taxiway_cell": Vector2i(right_x, end_y + 1),
 				"runway_cell": Vector2i(right_x, end_y)
 			},
 			{
 				"type": "side_left",
+				"lane": "outer_a",
 				"taxiway_cell": Vector2i(left_x - 1, end_y),
 				"runway_cell": Vector2i(left_x, end_y)
 			},
 			{
 				"type": "side_right",
+				"lane": "outer_b",
 				"taxiway_cell": Vector2i(right_x + 1, end_y),
 				"runway_cell": Vector2i(right_x, end_y)
 			}
@@ -11179,7 +11223,6 @@ func _runway_exit_nodes(
 			result.append(node)
 
 	return result
-
 
 func _runway_exit_nodes_for_building(
 	runway: Dictionary
@@ -11280,6 +11323,172 @@ func _airside_visual_connection_kind_between(
 	return ""
 
 
+func _runway_active_taxi_connection_snapshot(
+	runway_uid: int
+) -> Dictionary:
+	var runway := _building_by_uid(runway_uid)
+	if runway.is_empty():
+		return {}
+
+	var definition := BuildingCatalog.get_definition(
+		String(runway.get("definition_id", ""))
+	)
+	if (
+		definition.is_empty()
+		or not _is_runway_definition(definition)
+	):
+		return {}
+
+	var active_nodes: Array[Dictionary] = []
+	var lane_counts := {
+		"outer_a": 0,
+		"outer_b": 0
+	}
+
+	for node_variant in _runway_exit_nodes_for_building(
+		runway
+	):
+		var node: Dictionary = node_variant
+		var taxiway_cell: Vector2i = node.get(
+			"taxiway_cell",
+			Vector2i(-999, -999)
+		)
+		var key := _cell_key(taxiway_cell)
+		if not occupied_cells.has(key):
+			continue
+		var building := _building_by_uid(
+			int(occupied_cells[key])
+		)
+		if (
+			building.is_empty()
+			or String(
+				building.get(
+					"definition_id",
+					""
+				)
+			) != "taxiway"
+		):
+			continue
+
+		var lane := String(
+			node.get(
+				"lane",
+				""
+			)
+		)
+		if lane_counts.has(lane):
+			lane_counts[lane] = int(
+				lane_counts[lane]
+			) + 1
+		var active := node.duplicate(true)
+		active["taxiway_uid"] = int(
+			building.get("uid", -1)
+		)
+		active_nodes.append(active)
+
+	return {
+		"runway_uid": runway_uid,
+		"active_count": active_nodes.size(),
+		"max_active": int(
+			definition.get(
+				"runway_max_active_taxi_connections",
+				2
+			)
+		),
+		"max_per_lane": int(
+			definition.get(
+				"runway_max_active_taxi_connections_per_lane",
+				1
+			)
+		),
+		"lane_counts": lane_counts,
+		"active_nodes": active_nodes
+	}
+
+
+func _taxiway_runway_connection_limit_status(
+	origin: Vector2i
+) -> Dictionary:
+	var node := _runway_exit_node_for_taxiway(
+		origin
+	)
+	if node.is_empty():
+		return {
+			"valid": true
+		}
+
+	var runway_uid := int(
+		node.get(
+			"runway_uid",
+			-1
+		)
+	)
+	var snapshot := _runway_active_taxi_connection_snapshot(
+		runway_uid
+	)
+	if snapshot.is_empty():
+		return {
+			"valid": true
+		}
+
+	var lane := String(
+		node.get(
+			"lane",
+			""
+		)
+	)
+	var lane_counts: Dictionary = snapshot.get(
+		"lane_counts",
+		{}
+	)
+	var max_per_lane := int(
+		snapshot.get(
+			"max_per_lane",
+			1
+		)
+	)
+	if (
+		lane_counts.has(lane)
+		and int(lane_counts[lane]) >= max_per_lane
+	):
+		return {
+			"valid": false,
+			"reason": (
+				"This runway lane already has a taxiway exit."
+			),
+			"runway_uid": runway_uid,
+			"lane": lane,
+			"limit": "one_per_outer_lane"
+		}
+
+	if int(
+		snapshot.get(
+			"active_count",
+			0
+		)
+	) >= int(
+		snapshot.get(
+			"max_active",
+			2
+		)
+	):
+		return {
+			"valid": false,
+			"reason": (
+				"This runway already has the maximum of two taxiway exits."
+			),
+			"runway_uid": runway_uid,
+			"lane": lane,
+			"limit": "max_two"
+		}
+
+	return {
+		"valid": true,
+		"runway_uid": runway_uid,
+		"lane": lane
+	}
+
+
 func _taxiway_has_invalid_runway_adjacency(
 	origin: Vector2i
 ) -> bool:
@@ -11304,6 +11513,7 @@ func _taxiway_has_invalid_runway_adjacency(
 	return false
 
 
+
 func _runway_candidate_has_invalid_taxiway_adjacency(
 	definition: Dictionary,
 	origin: Vector2i,
@@ -11311,18 +11521,27 @@ func _runway_candidate_has_invalid_taxiway_adjacency(
 	ignore_uid: int = -1
 ) -> bool:
 	var allowed: Dictionary = {}
+	var node_by_cell: Dictionary = {}
 	for node_variant in _runway_exit_nodes(
 		definition,
 		origin,
 		rotation
 	):
 		var node: Dictionary = node_variant
-		allowed[_cell_key(
+		var key := _cell_key(
 			node.get(
 				"taxiway_cell",
 				Vector2i(-999, -999)
 			)
-		)] = true
+		)
+		allowed[key] = true
+		node_by_cell[key] = node
+
+	var lane_counts := {
+		"outer_a": 0,
+		"outer_b": 0
+	}
+	var active_total := 0
 
 	var footprint := _footprint_for(
 		definition,
@@ -11343,16 +11562,54 @@ func _runway_candidate_has_invalid_taxiway_adjacency(
 				continue
 			var building := _building_by_uid(uid)
 			if (
-				not building.is_empty()
-				and String(
+				building.is_empty()
+				or String(
 					building.get(
 						"definition_id",
 						""
 					)
-				) == "taxiway"
-				and not allowed.has(key)
+				) != "taxiway"
 			):
+				continue
+			if not allowed.has(key):
 				return true
+
+			var node: Dictionary = node_by_cell.get(
+				key,
+				{}
+			)
+			var lane := String(
+				node.get(
+					"lane",
+					""
+				)
+			)
+			active_total += 1
+			if lane_counts.has(lane):
+				lane_counts[lane] = int(
+					lane_counts[lane]
+				) + 1
+
+	var max_active := int(
+		definition.get(
+			"runway_max_active_taxi_connections",
+			2
+		)
+	)
+	var max_per_lane := int(
+		definition.get(
+			"runway_max_active_taxi_connections_per_lane",
+			1
+		)
+	)
+	if active_total > max_active:
+		return true
+	for lane_variant in lane_counts.keys():
+		if int(
+			lane_counts[lane_variant]
+		) > max_per_lane:
+			return true
+
 	return false
 
 
@@ -11373,6 +11630,9 @@ func get_runway_exit_policy_snapshot(
 	var footprint := _footprint_for(
 		definition,
 		int(runway.get("rotation", 0))
+	)
+	var connection_snapshot := _runway_active_taxi_connection_snapshot(
+		runway_uid
 	)
 	return {
 		"runway_uid": runway_uid,
@@ -11406,9 +11666,34 @@ func get_runway_exit_policy_snapshot(
 		),
 		"exit_nodes": _runway_exit_nodes_for_building(
 			runway
+		),
+		"active_exit_count": int(
+			connection_snapshot.get(
+				"active_count",
+				0
+			)
+		),
+		"max_active_exit_count": int(
+			definition.get(
+				"runway_max_active_taxi_connections",
+				2
+			)
+		),
+		"max_active_per_lane": int(
+			definition.get(
+				"runway_max_active_taxi_connections_per_lane",
+				1
+			)
+		),
+		"active_lane_counts": connection_snapshot.get(
+			"lane_counts",
+			{}
+		),
+		"active_exit_nodes": connection_snapshot.get(
+			"active_nodes",
+			[]
 		)
 	}
-
 
 func _needs_airside_connection(definition: Dictionary) -> bool:
 	var id := String(definition.get("id", ""))

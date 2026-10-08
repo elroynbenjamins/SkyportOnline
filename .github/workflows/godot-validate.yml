@@ -84,6 +84,19 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture Skyrama flight FX
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_skyrama_flight_fx.gd
+
+      - name: Upload Skyrama flight FX
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyrama-flight-fx
+          path: |
+            artifacts/skyrama_landing_fx.png
+            artifacts/skyrama_takeoff_fx.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Validate grid and gameplay systems
         shell: bash
         run: |

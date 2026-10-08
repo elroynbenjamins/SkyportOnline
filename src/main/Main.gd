@@ -1287,6 +1287,9 @@ func _on_aircraft_handling_action_requested(
 				if aircraft.state != "SIMPLE_WAITING_HANGAR":
 					return
 				aircraft.stage_simple_hangar_inventory()
+				_notify_starter_tutorial(
+					"hangar_returned"
+				)
 				hud.set_operation_status(
 					"%s stored in hangar • ready for another route"
 					% label,
@@ -1738,6 +1741,12 @@ func _on_demo_aircraft_state_changed(
 		_notify_starter_tutorial("load_started")
 	elif state == "PUSHBACK_PREP":
 		_notify_starter_tutorial("send_started")
+	elif state == "SIMPLE_WAITING_LOAD":
+		_notify_starter_tutorial("fuel_complete")
+	elif state == "SIMPLE_WAITING_UNLOAD":
+		_notify_starter_tutorial("first_landing")
+	elif state == "SIMPLE_WAITING_HANGAR":
+		_notify_starter_tutorial("unload_complete")
 
 	match state:
 		"TAXIING_TO_STAND":
@@ -5593,12 +5602,17 @@ func _refresh_layout_dependent_systems() -> void:
 		)
 	if ground_services != null:
 		ground_services.refresh_after_layout_change()
-	if (
-		gameplay_started
-		and aircraft_demos.size() < 2
-		and not airport_grid.get_departure_routes("S").is_empty()
-	):
-		_spawn_aircraft_demos()
+	if gameplay_started:
+		if SKYRAMA_SIMPLE_HANDLING:
+			if aircraft_demos.is_empty():
+				_spawn_aircraft_demos()
+		elif (
+			aircraft_demos.size() < 2
+			and not airport_grid.get_departure_routes(
+				"S"
+			).is_empty()
+		):
+			_spawn_aircraft_demos()
 	_refresh_operations_analytics()
 	_refresh_starter_tutorial()
 

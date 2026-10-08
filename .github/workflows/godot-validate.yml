@@ -84,6 +84,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture handling structures
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_handling_structures_ingame.gd
+
+      - name: Upload handling structures
+        uses: actions/upload-artifact@v4
+        with:
+          name: handling-structures-ingame
+          path: artifacts/handling_structures_ingame.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Capture Skyrama flight FX
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_skyrama_flight_fx.gd
 

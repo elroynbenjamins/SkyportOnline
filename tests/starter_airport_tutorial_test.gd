@@ -67,8 +67,8 @@ func _run() -> void:
 
 	if not _expect_step(tutorial, "runway_taxi", "taxiway"):
 		return
-	for y in range(2, 7):
-		if not _place(grid, "taxiway", Vector2i(3, y)):
+	for y in range(2, 6):
+		if not _place(grid, "taxiway", Vector2i(4, y)):
 			return
 	tutorial.refresh()
 
@@ -80,7 +80,7 @@ func _run() -> void:
 
 	if not _expect_step(tutorial, "hangar_taxi_network", "taxiway"):
 		return
-	for y in range(7, 11):
+	for y in range(5, 11):
 		if not _place(grid, "taxiway", Vector2i(3, y)):
 			return
 	tutorial.refresh()

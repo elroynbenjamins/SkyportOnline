@@ -291,7 +291,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"local_service_bonus": 0.05,
 			"local_service_radius_tiles": 5.0,
 			"icon_path": "res://assets/pixel/airport_v1/ground_ops_depot.svg",
-			"art_tier": "canonical_v2",
+			"art_tier": "handling_v3",
 			"grid_first_service_visual": true,
 			"grid_first_world_sprite": true,
 			"grid_native_surface_paths": PackedStringArray([
@@ -300,24 +300,16 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"grid_native_surface_size": Vector2i(64, 32),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
 			"service_aircraft_slot_world_offset": Vector2(0, 10),
-			"world_art_has_integrated_base": true,
+			"world_art_has_integrated_base": false,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,
-			"world_sprite_visible_width_scale": 0.82,
-			"world_sprite_max_width_scale": 1.25,
+			"world_sprite_visible_width_scale": 0.70,
+			"world_sprite_max_width_scale": 1.0,
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
-			"world_sprite_regions": [
-				Rect2(0, 896, 448, 448),
-				Rect2(448, 896, 448, 448)
-			],
-			"world_sprite_size": Vector2(116, 116),
-			"world_sprite_offsets": [
-				Vector2(0, -31),
-				Vector2(0, -29)
-			],
-			"world_sprite_offset": Vector2(0, -31),
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_v3/ground_ops_structure.svg"
+			]),
 			"services": {
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},
@@ -520,7 +512,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
-			"art_tier": "canonical_v2",
+			"art_tier": "handling_v3",
 			"grid_first_service_visual": true,
 			"grid_first_world_sprite": true,
 			"grid_native_surface_paths": PackedStringArray([
@@ -529,17 +521,17 @@ static func _raw_definitions() -> Array[Dictionary]:
 			]),
 			"grid_native_surface_size": Vector2i(160, 80),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
-			"world_sprite_regions": [
-				Rect2(0, 448, 448, 448),
-				Rect2(448, 448, 448, 448)
-			],
-			"world_sprite_size": Vector2(292, 292),
-			"world_sprite_offsets": [
-				Vector2(0, -66),
-				Vector2(0, -71)
-			],
-			"world_sprite_offset": Vector2(0, -66)
+			"world_art_has_integrated_base": false,
+			"world_sprite_grid_fit": true,
+			"world_sprite_auto_ground": true,
+			"world_sprite_visible_width_scale": 0.88,
+			"world_sprite_max_width_scale": 1.0,
+			"world_sprite_ground_align": true,
+			"world_ground_pad": false,
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_v3/small_hangar_0.svg",
+				"res://assets/production/airport_buildings_v3/small_hangar_90.svg"
+			])
 		},
 		{
 			"id": "basic_fuel",
@@ -561,7 +553,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"fuel_storage": 240,
 			"fuel_delivery_per_minute": 1.0,
 			"icon_path": "res://assets/pixel/airport_v1/fuel_basic.svg",
-			"art_tier": "canonical_v2",
+			"art_tier": "handling_v3",
 			"grid_first_service_visual": true,
 			"grid_first_world_sprite": true,
 			"grid_native_surface_paths": PackedStringArray([
@@ -570,24 +562,16 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"grid_native_surface_size": Vector2i(128, 64),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
 			"service_aircraft_slot_world_offset": Vector2(0, 16),
-			"world_art_has_integrated_base": true,
+			"world_art_has_integrated_base": false,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,
-			"world_sprite_visible_width_scale": 0.90,
-			"world_sprite_max_width_scale": 1.10,
+			"world_sprite_visible_width_scale": 0.78,
+			"world_sprite_max_width_scale": 1.0,
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
-			"world_sprite_atlas_path": PRODUCTION_BUILDING_ATLAS,
-			"world_sprite_regions": [
-				Rect2(896, 448, 448, 448),
-				Rect2(1344, 448, 448, 448)
-			],
-			"world_sprite_size": Vector2(188, 188),
-			"world_sprite_offsets": [
-				Vector2(0, -35),
-				Vector2(0, -45)
-			],
-			"world_sprite_offset": Vector2(0, -35)
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_v3/basic_fuel_structure.svg"
+			])
 		},
 		{
 			"id": "rapid_small_fuel",

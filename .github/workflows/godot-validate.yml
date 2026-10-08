@@ -137,6 +137,7 @@ jobs:
             tests/taxi_traffic_test.gd
             tests/airport_ground_movement_safety_test.gd
             tests/airport_operations_cycle_test.gd
+            tests/skyrama_simple_handling_test.gd
             tests/runway_hold_short_test.gd
             tests/runway_pacing_test.gd
             tests/atc_tower_upgrade_test.gd

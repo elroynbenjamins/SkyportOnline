@@ -634,28 +634,18 @@ func _draw_grid_first_buildings() -> void:
 			)
 
 			# Selected service structures keep an exact grid-authored pad while
-			# their canonical building sprite provides the vertical detail.
-			if (
-				bool(
-					definition.get(
-						"grid_first_world_sprite",
-						false
-					)
+			# a deterministic V3 overlay supplies the vertical building art.
+			if bool(
+				definition.get(
+					"grid_first_world_sprite",
+					false
 				)
-				and _definition_has_world_sprite(definition)
 			):
-				_draw_building_contact_shadow(
+				_draw_grid_first_structure_overlay(
 					definition,
 					origin,
 					footprint,
-					1.0
-				)
-				_draw_building_sprite(
-					definition,
-					origin,
-					footprint,
-					rotation,
-					Color.WHITE
+					rotation
 				)
 
 			if id == "service_road":
@@ -1126,6 +1116,125 @@ func _draw_grid_native_runway_exit_overlay(
 		Color("f2c84b"),
 		1.8,
 		true
+	)
+
+
+func _draw_grid_first_structure_overlay(
+	definition: Dictionary,
+	origin: Vector2i,
+	footprint: Vector2i,
+	rotation: int
+) -> void:
+	var paths: PackedStringArray = definition.get(
+		"grid_first_structure_paths",
+		PackedStringArray()
+	)
+	if paths.is_empty():
+		return
+
+	var path := paths[
+		rotation % paths.size()
+	]
+	var texture := _get_building_texture(path)
+	if texture == null:
+		return
+
+	var polygon := _footprint_polygon(
+		origin,
+		footprint
+	)
+	if polygon.size() < 4:
+		return
+
+	var min_x := polygon[0].x
+	var max_x := polygon[0].x
+	var front_y := polygon[0].y
+	for point_variant in polygon:
+		var point: Vector2 = point_variant
+		min_x = minf(min_x, point.x)
+		max_x = maxf(max_x, point.x)
+		front_y = maxf(front_y, point.y)
+
+	var footprint_width := maxf(
+		max_x - min_x,
+		1.0
+	)
+	var width_scale := clampf(
+		float(
+			definition.get(
+				"grid_first_structure_width_scale",
+				0.82
+			)
+		),
+		0.30,
+		1.0
+	)
+	var desired_width := footprint_width * width_scale
+	var source_size := texture.get_size()
+	if source_size.x <= 0.0 or source_size.y <= 0.0:
+		return
+
+	var scale := desired_width / source_size.x
+	var draw_size := source_size * scale
+	var center_x := (min_x + max_x) * 0.5
+	var ground_offset_y := float(
+		definition.get(
+			"grid_first_structure_ground_offset_y",
+			0.0
+		)
+	)
+	var rect := Rect2(
+		Vector2(
+			center_x - draw_size.x * 0.5,
+			front_y - draw_size.y + ground_offset_y
+		),
+		draw_size
+	)
+
+	# Small dedicated contact shadow keeps the structure seated on its pad
+	# without depending on the legacy world-sprite placement stack.
+	draw_ellipse(
+		Vector2(
+			center_x,
+			front_y - 2.0
+		),
+		Vector2(
+			desired_width * 0.34,
+			maxf(
+				desired_width * 0.075,
+				3.0
+			)
+		),
+		Color(0.02, 0.04, 0.05, 0.16)
+	)
+	draw_texture_rect(
+		texture,
+		rect,
+		false,
+		Color.WHITE
+	)
+
+
+func draw_ellipse(
+	center: Vector2,
+	radii: Vector2,
+	color: Color,
+	segments: int = 28
+) -> void:
+	var points := PackedVector2Array()
+	var safe_segments := maxi(12, segments)
+	for index in range(safe_segments):
+		var angle := TAU * float(index) / float(safe_segments)
+		points.append(
+			center
+			+ Vector2(
+				cos(angle) * radii.x,
+				sin(angle) * radii.y
+			)
+		)
+	draw_colored_polygon(
+		points,
+		color
 	)
 
 

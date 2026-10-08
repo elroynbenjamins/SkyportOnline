@@ -1207,7 +1207,7 @@ func _on_aircraft_handling_action_requested(
 					label
 				)
 				hud.set_operation_status(
-					"%s landing" % label
+					"%s received • landing" % label
 				)
 			"UNLOAD":
 				if aircraft.state != "SIMPLE_WAITING_UNLOAD":
@@ -1784,7 +1784,7 @@ func _on_demo_aircraft_state_changed(
 		"EN_ROUTE":
 			hud.set_operation_status("%s en route" % label, "success")
 		"HOLDING_FOR_ARRIVAL":
-			hud.set_operation_status("%s inbound • awaiting stand/runway" % label)
+			hud.set_operation_status("%s inbound • tap RECEIVE when runway is free" % label)
 		"APPROACH":
 			hud.set_operation_status("%s on approach" % label)
 		"LANDING_ROLL":

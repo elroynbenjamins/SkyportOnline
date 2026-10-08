@@ -5996,7 +5996,15 @@ func _draw_winter_snow_globe_garden(
 
 
 func _definition_has_world_sprite(definition: Dictionary) -> bool:
-	if GRID_FIRST_VISUAL_RESET:
+	if (
+		GRID_FIRST_VISUAL_RESET
+		and not bool(
+			definition.get(
+				"grid_first_world_sprite",
+				false
+			)
+		)
+	):
 		return false
 	var atlas_path := String(
 		definition.get("world_sprite_atlas_path", "")
@@ -9761,6 +9769,18 @@ func _world_building_warning_text(
 	building: Dictionary,
 	definition: Dictionary
 ) -> String:
+	# V1 owned-aircraft handling deliberately teleports between service
+	# structures. Approved Skyrama-style handling buildings therefore do not
+	# require a physical Taxiway connection and must not show the legacy
+	# TAXIWAY warning.
+	if bool(
+		definition.get(
+			"grid_first_service_visual",
+			false
+		)
+	):
+		return ""
+
 	var id := String(definition.get("id", ""))
 	if (
 		id.contains("stand")

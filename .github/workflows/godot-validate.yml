@@ -89,6 +89,8 @@ jobs:
             tests/taxiway_grid_art_test.gd
             tests/airside_connectivity_test.gd
             tests/flight_rules_test.gd
+            tests/skyrama_simple_handling_test.gd
+            tests/skyrama_runway_slot_test.gd
             tests/resource_drop_rules_test.gd
             tests/passenger_economy_test.gd
             tests/fuel_economy_test.gd
@@ -137,7 +139,6 @@ jobs:
             tests/taxi_traffic_test.gd
             tests/airport_ground_movement_safety_test.gd
             tests/airport_operations_cycle_test.gd
-            tests/skyrama_simple_handling_test.gd
             tests/runway_hold_short_test.gd
             tests/runway_pacing_test.gd
             tests/atc_tower_upgrade_test.gd

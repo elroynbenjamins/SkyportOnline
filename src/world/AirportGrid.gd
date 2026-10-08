@@ -373,13 +373,13 @@ func prepare_new_airport_builder_layout() -> Dictionary:
 		]),
 		"next_steps": PackedStringArray([
 			"Place a Short Runway",
-			"Place a Small Stand",
-			"Connect Stand → Runway with Taxiways",
 			"Place a Small Hangar",
-			"Connect Hangar → Stand with Taxiways",
-			"Place Fuel + Ground Ops",
-			"Connect Service Roads",
-			"Place the Small Terminal"
+			"Place the Basic Fuel Station",
+			"Place Ground Operations",
+			"Choose a plane and destination",
+			"Tap LOAD when fueling finishes",
+			"Tap SEND when cargo loading finishes",
+			"Tap RECEIVE when the plane returns"
 		])
 	}
 

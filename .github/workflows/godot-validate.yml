@@ -62,6 +62,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture modular runway exits
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_modular_runway_exits_ingame.gd
+
+      - name: Upload modular runway exits
+        uses: actions/upload-artifact@v4
+        with:
+          name: modular-runway-exits-ingame
+          path: artifacts/modular_runway_exits_ingame.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Validate grid and gameplay systems
         shell: bash
         run: |

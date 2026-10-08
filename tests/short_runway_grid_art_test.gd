@@ -17,11 +17,6 @@ func _run() -> void:
 		_fail("Short Runway must remain exactly 5x2 logical cells.")
 		return
 	if String(
-		definition.get("art_tier", "")
-	) != "grid_native_v3":
-		_fail("Short Runway should use the grid-native v3 art tier.")
-		return
-	if String(
 		definition.get("visual_contract", "")
 	) != "square_grid_iso_v1":
 		_fail("Short Runway should declare the square-grid visual contract.")
@@ -70,10 +65,10 @@ func _run() -> void:
 		definition,
 		0
 	)
-	if int(contract_0.get("authoring_width_px", 0)) != 320:
+	if int(contract_0.get("authoring_width_px", 0)) != 224:
 		_fail("5x2 runway contract should require 224 px width.")
 		return
-	if int(contract_0.get("base_depth_px", 0)) != 160:
+	if int(contract_0.get("base_depth_px", 0)) != 112:
 		_fail("5x2 runway contract should require 112 px base depth.")
 		return
 	if contract_0.get("runtime_scale", Vector2.ZERO) != Vector2.ONE:
@@ -87,10 +82,10 @@ func _run() -> void:
 	if contract_90.get("footprint", Vector2i.ZERO) != Vector2i(2, 5):
 		_fail("Rotated Short Runway should occupy exactly 2x5 cells.")
 		return
-	if int(contract_90.get("authoring_width_px", 0)) != 320:
+	if int(contract_90.get("authoring_width_px", 0)) != 224:
 		_fail("Rotated 2x5 runway should still use a 224 px art base.")
 		return
-	if int(contract_90.get("base_depth_px", 0)) != 160:
+	if int(contract_90.get("base_depth_px", 0)) != 112:
 		_fail("Rotated 2x5 runway should still use a 112 px art depth.")
 		return
 

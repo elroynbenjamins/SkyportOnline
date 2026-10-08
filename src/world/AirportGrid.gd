@@ -10296,6 +10296,136 @@ func get_compatible_service_buildings(
 	return results
 
 
+func get_simple_runway_animation_route(
+	aircraft_size: String = "S"
+) -> Dictionary:
+	for building_variant in placed_buildings:
+		var building: Dictionary = building_variant
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not _is_runway_definition(definition)
+			or not _definition_supports_size(
+				definition,
+				aircraft_size
+			)
+		):
+			continue
+
+		var origin: Vector2i = building.get(
+			"origin",
+			Vector2i.ZERO
+		)
+		var rotation := int(
+			building.get("rotation", 0)
+		)
+		var footprint := _footprint_for(
+			definition,
+			rotation
+		)
+
+		var start_tile := Vector2.ZERO
+		var end_tile := Vector2.ZERO
+		if footprint.x >= footprint.y:
+			var center_y := (
+				float(origin.y)
+				+ float(footprint.y - 1) * 0.5
+			)
+			start_tile = Vector2(
+				float(origin.x),
+				center_y
+			)
+			end_tile = Vector2(
+				float(origin.x + footprint.x - 1),
+				center_y
+			)
+		else:
+			var center_x := (
+				float(origin.x)
+				+ float(footprint.x - 1) * 0.5
+			)
+			start_tile = Vector2(
+				center_x,
+				float(origin.y)
+			)
+			end_tile = Vector2(
+				center_x,
+				float(origin.y + footprint.y - 1)
+			)
+
+		var start_world := tile_to_world(start_tile)
+		var end_world := tile_to_world(end_tile)
+		return {
+			"runway_uid": int(
+				building.get("uid", -1)
+			),
+			"definition_id": String(
+				building.get("definition_id", "")
+			),
+			"start_world": start_world,
+			"end_world": end_world,
+			"footprint": footprint,
+			"rotation": rotation,
+			"direction": (
+				end_world - start_world
+			).normalized()
+		}
+
+	return {}
+
+
+func get_simple_hangar(
+	aircraft_size: String = "S"
+) -> Dictionary:
+	for building_variant in placed_buildings:
+		var building: Dictionary = building_variant
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			definition.is_empty()
+			or not String(
+				definition.get("id", "")
+			).contains("hangar")
+			or not _definition_supports_size(
+				definition,
+				aircraft_size
+			)
+		):
+			continue
+
+		var footprint := _footprint_for(
+			definition,
+			int(building.get("rotation", 0))
+		)
+		return {
+			"uid": int(
+				building.get("uid", -1)
+			),
+			"definition_id": String(
+				building.get(
+					"definition_id",
+					""
+				)
+			),
+			"world_position": _footprint_center_world(
+				building.get(
+					"origin",
+					Vector2i.ZERO
+				),
+				footprint
+			),
+			"sizes": definition.get(
+				"sizes",
+				PackedStringArray()
+			)
+		}
+
+	return {}
+
+
 func get_best_service_building(service_type: String, aircraft_size: String) -> Dictionary:
 	var compatible := get_compatible_service_buildings(service_type, aircraft_size)
 	if compatible.is_empty():

@@ -199,7 +199,7 @@ func stage_for_manual_arrival() -> bool:
 	motion_sample_initialized = true
 	_set_state("HOLDING_FOR_ARRIVAL")
 	set_turnaround_status(
-		"Arrival ready\nTap LAND",
+		"Arrival ready\nTap RECEIVE",
 		"warning"
 	)
 	set_handling_action("LAND")
@@ -223,7 +223,7 @@ func _handling_action_label(
 ) -> String:
 	match action:
 		"LAND":
-			return "✈  LAND"
+			return "✈  RECEIVE"
 		"TAXI":
 			return "↗  TAXI"
 		"UNLOAD":

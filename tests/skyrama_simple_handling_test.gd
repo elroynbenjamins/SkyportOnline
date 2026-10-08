@@ -47,13 +47,13 @@ func _run() -> void:
 			) + 1
 	)
 
-	# Receiving: LAND animates to the runway end, then waits on the runway.
+	# Receiving: RECEIVE animates to the runway end, then waits on the runway.
 	aircraft.stage_for_manual_arrival()
 	if aircraft.state != "HOLDING_FOR_ARRIVAL":
-		_fail("Simple arrival should stage with a LAND action.")
+		_fail("Simple arrival should stage with a RECEIVE action.")
 		return
-	if aircraft.get_handling_action() != "LAND":
-		_fail("Simple arrival should show LAND.")
+	if aircraft.get_handling_action() != "RECEIVE":
+		_fail("Simple arrival should show RECEIVE.")
 		return
 
 	aircraft.begin_arrival_after_clearance()

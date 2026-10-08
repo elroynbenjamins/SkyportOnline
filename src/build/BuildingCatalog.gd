@@ -33,7 +33,9 @@ static func _raw_definitions() -> Array[Dictionary]:
 				"res://assets/production/airfield_v3/short_runway_s_90.svg"
 			]),
 			"grid_native_surface_size": Vector2i(224, 112),
-			"grid_native_surface_runtime_scale": Vector2.ONE
+			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"runway_direction_policy": "origin_to_long_axis_end",
+			"runway_taxi_exit_policy": "rollout_end_four"
 		},
 		{
 			"id": "small_stand",
@@ -664,7 +666,9 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"description": "Longer runway for small and medium aircraft.",
 			"icon_path": "res://assets/production/airfield_v2/runway_icon_v2.svg",
 			"art_tier": "surface_v2",
-			"surface_art": "runway_v2"
+			"surface_art": "runway_v2",
+			"runway_direction_policy": "origin_to_long_axis_end",
+			"runway_taxi_exit_policy": "rollout_end_four"
 		},
 		{
 			"id": "autumn_event_flag",

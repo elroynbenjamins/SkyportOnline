@@ -292,10 +292,22 @@ func _request_operation(
 			"warning"
 		)
 	else:
+		var occupied_text := ""
+		if active_by_runway.has(runway_uid):
+			var slot := get_runway_slot_snapshot(
+				runway_uid
+			)
+			occupied_text = " • runway occupied by %s" % String(
+				slot.get(
+					"aircraft_label",
+					"aircraft"
+				)
+			)
 		status_changed.emit(
-			"%s waiting for %s clearance" % [
+			"%s waiting for %s clearance%s" % [
 				label,
-				action_text
+				action_text,
+				occupied_text
 			],
 			"warning"
 		)
@@ -758,6 +770,87 @@ func get_runway_analytics_snapshot() -> Dictionary:
 		RunwayAnalyticsRules.recommendation(summary)
 	)
 	return summary
+
+
+func get_runway_slot_snapshot(
+	runway_uid: int
+) -> Dictionary:
+	var occupied := active_by_runway.has(
+		runway_uid
+	)
+	if not occupied:
+		return {
+			"runway_uid": runway_uid,
+			"occupied": false,
+			"slot": "clear",
+			"phase": "clear",
+			"operation": "",
+			"aircraft_label": ""
+		}
+
+	var active: Dictionary = active_by_runway[
+		runway_uid
+	]
+	var aircraft := active.get(
+		"aircraft"
+	) as AircraftPrototype
+	var operation := String(
+		active.get(
+			"operation",
+			""
+		)
+	)
+	var label := String(
+		active.get(
+			"label",
+			"Aircraft"
+		)
+	)
+	var state := ""
+	if (
+		aircraft != null
+		and is_instance_valid(aircraft)
+	):
+		state = aircraft.state
+
+	var slot := "runway"
+	var phase := operation
+	if operation == "arrival":
+		slot = "end"
+		if state == "SIMPLE_WAITING_UNLOAD":
+			phase = "arrival_end_waiting"
+		elif state == "LANDING_ROLL":
+			phase = "landing_roll"
+		elif state == "APPROACH":
+			phase = "approach"
+	elif operation == "departure":
+		slot = "start"
+		if state == "LINE_UP":
+			phase = "departure_start_waiting"
+		elif state == "TAKEOFF_ROLL":
+			phase = "takeoff_roll"
+		elif state == "CLIMBING":
+			phase = "climb_out"
+
+	return {
+		"runway_uid": runway_uid,
+		"occupied": true,
+		"slot": slot,
+		"phase": phase,
+		"operation": operation,
+		"aircraft_label": label,
+		"aircraft_state": state,
+		"blocks_arrival": true,
+		"blocks_departure": true
+	}
+
+
+func is_runway_slot_occupied(
+	runway_uid: int
+) -> bool:
+	return active_by_runway.has(
+		runway_uid
+	)
 
 
 func get_runway_visual_state(
@@ -1253,11 +1346,38 @@ func _build_runway_visual_state(
 		status = "departure_approaching"
 		stop_bar = "amber"
 
+	var slot_snapshot := get_runway_slot_snapshot(
+		runway_uid
+	)
 	return {
 		"runway_uid": runway_uid,
 		"status": status,
 		"stop_bar": stop_bar,
 		"active_operation": active_operation,
+		"slot_occupied": bool(
+			slot_snapshot.get(
+				"occupied",
+				false
+			)
+		),
+		"slot": String(
+			slot_snapshot.get(
+				"slot",
+				"clear"
+			)
+		),
+		"slot_phase": String(
+			slot_snapshot.get(
+				"phase",
+				"clear"
+			)
+		),
+		"occupied_aircraft_label": String(
+			slot_snapshot.get(
+				"aircraft_label",
+				""
+			)
+		),
 		"waiting_arrivals": waiting_arrivals,
 		"waiting_departures": waiting_departures,
 		"planned_departures": planned_departures_count,

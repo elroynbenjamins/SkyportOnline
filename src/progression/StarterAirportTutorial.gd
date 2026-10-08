@@ -88,7 +88,7 @@ const STEPS := [
 	{
 		"id":"receive",
 		"title":"Receive your returning plane",
-		"guidance":"When the flight returns, tap LAND. It will land and stop at the runway end. Only one aircraft may occupy a runway at a time.",
+		"guidance":"When the flight returns, tap RECEIVE. It will land and stop at the runway end. Only one aircraft may occupy a runway at a time.",
 		"action":"aircraft",
 		"target":"",
 		"reward":250

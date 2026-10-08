@@ -3991,13 +3991,23 @@ func _building_context_summary(
 		or building_id.contains("hangar")
 	):
 		var uid := int(building.get("uid", -1))
-		var connected := connected_uids.has(uid)
-		summary["status"] = (
-			"Connected to taxiway network"
-			if connected
-			else "Needs taxiway connection"
+		var simple_v1 := bool(
+			definition.get(
+				"grid_first_service_visual",
+				false
+			)
 		)
-		summary["tone"] = "success" if connected else "warning"
+		var connected := connected_uids.has(uid)
+		if simple_v1 and building_id.contains("hangar"):
+			summary["status"] = "Aircraft storage • instant handling transfer"
+			summary["tone"] = "success"
+		else:
+			summary["status"] = (
+				"Connected to taxiway network"
+				if connected
+				else "Needs taxiway connection"
+			)
+			summary["tone"] = "success" if connected else "warning"
 		summary["stat_one"] = "AIRCRAFT\n%s" % (
 			_context_size_text(definition)
 		)

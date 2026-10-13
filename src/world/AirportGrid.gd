@@ -1677,16 +1677,6 @@ func _draw_grid_first_preview() -> void:
 			preview_rotation,
 			preview_modulate
 		)
-		# Show the actual placeable building during editing. The preview
-		# footprint still controls validity, collision and snap highlights.
-		if bool(definition.get("grid_first_world_sprite", false)):
-			_draw_grid_first_structure_overlay(
-				definition,
-				preview_origin,
-				footprint,
-				preview_rotation,
-				preview_modulate
-			)
 	else:
 		var fill := (
 			GRID_RESET_PREVIEW_VALID
@@ -1717,8 +1707,28 @@ func _draw_grid_first_preview() -> void:
 				outline[3],
 				outline[0]
 			]),
-			Color("ffffff", 0.92),
-			3.0
+			(
+				Color("7ff0a1", 0.90)
+				if valid else Color("ff968e", 0.90)
+			),
+			1.7
+		)
+
+	# Draw the building ABOVE its ground-level placement frame. Previously
+	# the late outline cut across the roof and made the sprite look unsnapped.
+	if (
+		_definition_has_grid_native_surface(definition)
+		and bool(definition.get("grid_first_world_sprite", false))
+	):
+		_draw_grid_first_structure_overlay(
+			definition,
+			preview_origin,
+			footprint,
+			preview_rotation,
+			(
+				Color(0.82, 1.0, 0.86, 0.88)
+				if valid else Color(1.0, 0.68, 0.68, 0.84)
+			)
 		)
 
 func is_grid_first_visual_reset_enabled() -> bool:

@@ -46,4 +46,33 @@
 
   <circle cx="91" cy="23" r="4" fill="#ffca48" opacity=".35"/>
   <circle cx="91" cy="23" r="2" fill="#fff0a1"/>
+<g id="cargo-detail-v4" stroke-linejoin="round">
+<!-- Glazed roof-light, roof ribbing and air handlers -->
+<path d="M48 31l30-15 23 11" fill="none" stroke="#effbfc" stroke-width="1.5"/>
+<path d="M56 27l24 13m-17-17l24 13m-17-17l24 13" stroke="#d2eaf0" stroke-width="1" opacity=".82"/>
+<path d="M82 19l10-5 9 4-10 5z" fill="#a8c1c9" stroke="#eefbff" stroke-width=".75"/>
+<path d="M92 23l9-5v5l-9 5z" fill="#375c6c"/>
+<path d="M82 19l10 4v5l-10-5z" fill="#6894a2"/>
+<path d="M87 20l8 4" stroke="#e7faff" stroke-width="1.2"/>
+<!-- Roll-up freight shutter and luminous fascia -->
+<path d="M70 43l31-16v6L70 49z" fill="#174762"/>
+<path d="M74 52l23-12v17L74 70z" fill="#3d5865" stroke="#b0d2da" stroke-width=".85"/>
+<path d="M77 52l18-9m-18 13l18-9m-18 13l18-9m-18 13l18-9" stroke="#8faab2" stroke-width="1"/>
+<path d="M76 43l19-10" stroke="#9df0ff" stroke-width="1.8"/>
+<path d="M54 46l12 6m-12-1l12 6m-12-1l12 6" stroke="#dbeef3" stroke-width=".85" opacity=".7"/>
+<!-- Floodlights, conveyor rollers and freestanding container -->
+<path d="M59 39v-8m25 11v-7" stroke="#e9c25a" stroke-width="1.4"/>
+<circle cx="59" cy="31" r="2" fill="#fff1a2"/><circle cx="83" cy="36" r="1.8" fill="#fff1a2"/>
+<path d="M26 58l29-15M26 62l29-15" stroke="#c4d6d9" stroke-width=".8"/>
+<circle cx="31" cy="64" r="2" fill="#8aa8b3"/><circle cx="52" cy="53" r="2" fill="#8aa8b3"/>
+<polygon points="8,65 21,58 32,63 19,70" fill="#f6d39c"/>
+<polygon points="19,70 32,63 32,73 19,80" fill="#916342"/>
+<polygon points="8,65 19,70 19,80 8,74" fill="#c58a51"/>
+<path d="M12 66l12 6m-10-8l12 6" stroke="#895d39" stroke-width="1"/>
+<path d="M21 72l7-3" stroke="#fde7bb" stroke-width="2"/>
+<!-- Bay markings and high visibility detail -->
+<path d="M14 84l20-10" stroke="#f5ce62" stroke-width="2.3" stroke-dasharray="4 2"/>
+<path d="M34 74l-5-1 2 5" fill="none" stroke="#f5ce62" stroke-width="1.7"/>
+<circle cx="97" cy="31" r="1.7" fill="#76e9ff"/>
+</g>
 </svg>

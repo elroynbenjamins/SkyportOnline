@@ -516,7 +516,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
-			"art_tier": "rendered_hangar_v4",
+			"art_tier": "grid_authored_hangar_v5",
 			"grid_first_service_visual": true,
 			"grid_first_world_sprite": true,
 			"grid_native_surface_paths": PackedStringArray([
@@ -525,28 +525,26 @@ static func _raw_definitions() -> Array[Dictionary]:
 			]),
 			"grid_native_surface_size": Vector2i(160, 80),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
-			"world_art_has_integrated_base": true,
+			"world_art_has_integrated_base": false,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,
-			"world_sprite_visible_width_scale": 0.94,
+			"world_sprite_visible_width_scale": 1.0,
 			"world_sprite_max_width_scale": 1.0,
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v4/small_hangar_render.webp",
-				"res://assets/production/airport_buildings_v4/small_hangar_render.webp"
+				"res://assets/production/airport_buildings_v5/small_hangar_3x2.webp",
+				"res://assets/production/airport_buildings_v5/small_hangar_2x3.webp"
 			]),
 			"grid_first_structure_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v4/small_hangar_render.webp",
-				"res://assets/production/airport_buildings_v4/small_hangar_render.webp"
+				"res://assets/production/airport_buildings_v5/small_hangar_3x2.webp",
+				"res://assets/production/airport_buildings_v5/small_hangar_2x3.webp"
 			]),
-			"grid_first_structure_width_scale": 0.94,
-			"grid_first_structure_flip_odd_rotations": true,
-			"grid_first_structure_art_size": Vector2i(160, 119),
+			"grid_first_structure_width_scale": 1.0,
+			"grid_first_structure_flip_odd_rotations": false,
+			"grid_first_structure_art_size": Vector2i(160, 150),
 			"grid_first_structure_footprint": Vector2i(3, 2),
-			"grid_first_structure_clip_base_to_footprint": true,
-			"grid_first_structure_remove_integrated_apron": true,
-			"grid_first_structure_shadow_offset_y": -29.0
+			"grid_first_structure_shadow_offset_y": -21.0
 		},
 		{
 			"id": "basic_fuel",

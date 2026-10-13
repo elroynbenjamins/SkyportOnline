@@ -303,7 +303,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"world_art_has_integrated_base": false,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,
-			"world_sprite_visible_width_scale": 0.70,
+			"world_sprite_visible_width_scale": 0.88,
 			"world_sprite_max_width_scale": 1.0,
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
@@ -313,7 +313,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"grid_first_structure_paths": PackedStringArray([
 				"res://assets/production/airport_buildings_v3/ground_ops_structure.svg"
 			]),
-			"grid_first_structure_width_scale": 0.70,
+			"grid_first_structure_width_scale": 0.88,
 			"services": {
 				"passenger": {"service_speed": 1.0, "vehicle_capacity": 1},
 				"cargo": {"service_speed": 1.0, "vehicle_capacity": 1},
@@ -528,7 +528,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"world_art_has_integrated_base": false,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,
-			"world_sprite_visible_width_scale": 0.88,
+			"world_sprite_visible_width_scale": 0.94,
 			"world_sprite_max_width_scale": 1.0,
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
@@ -540,7 +540,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 				"res://assets/production/airport_buildings_v3/small_hangar_0.svg",
 				"res://assets/production/airport_buildings_v3/small_hangar_90.svg"
 			]),
-			"grid_first_structure_width_scale": 0.88
+			"grid_first_structure_width_scale": 0.94
 		},
 		{
 			"id": "basic_fuel",
@@ -574,7 +574,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"world_art_has_integrated_base": false,
 			"world_sprite_grid_fit": true,
 			"world_sprite_auto_ground": true,
-			"world_sprite_visible_width_scale": 0.78,
+			"world_sprite_visible_width_scale": 0.86,
 			"world_sprite_max_width_scale": 1.0,
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
@@ -584,7 +584,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"grid_first_structure_paths": PackedStringArray([
 				"res://assets/production/airport_buildings_v3/basic_fuel_structure.svg"
 			]),
-			"grid_first_structure_width_scale": 0.78
+			"grid_first_structure_width_scale": 0.86
 		},
 		{
 			"id": "rapid_small_fuel",

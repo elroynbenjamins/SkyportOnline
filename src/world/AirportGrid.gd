@@ -1195,25 +1195,23 @@ func _draw_grid_first_structure_overlay(
 		draw_size
 	)
 
-	# Place the contact shadow under the actual building footprint, not
-	# at the front corner of its service apron (which looked like hovering).
-	var shadow_offset_y := float(definition.get(
-		"grid_first_structure_shadow_offset_y", -2.0
+	# Ground-authored sprites have their own fitted shadows; prevent
+	# a second floating ellipse outside their isometric footprints.
+	var contact_shadow_alpha := float(definition.get(
+		"grid_first_structure_shadow_opacity", 0.16
 	))
-	draw_ellipse(
-		Vector2(
-			center_x,
-			front_y + shadow_offset_y
-		),
-		Vector2(
-			desired_width * 0.34,
-			maxf(
-				desired_width * 0.075,
-				3.0
-			)
-		),
-		Color(0.02, 0.04, 0.05, 0.16)
-	)
+	if contact_shadow_alpha > 0.0:
+		var shadow_offset_y := float(definition.get(
+			"grid_first_structure_shadow_offset_y", -2.0
+		))
+		draw_ellipse(
+			Vector2(center_x, front_y + shadow_offset_y),
+			Vector2(
+				desired_width * 0.34,
+				maxf(desired_width * 0.075, 3.0)
+			),
+			Color(0.02, 0.04, 0.05, contact_shadow_alpha)
+		)
 	# Place each preauthored view against the footprint's front anchor.
 	# A generated building sprite includes NO painted ground; the grid
 	# already owns the 3x2/2x3 surface, snap and collision boundaries.

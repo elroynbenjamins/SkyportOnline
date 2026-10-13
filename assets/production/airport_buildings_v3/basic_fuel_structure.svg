@@ -61,4 +61,33 @@
   <!-- amber beacon -->
   <circle cx="148" cy="43" r="4.3" fill="#ffcc45" opacity=".35"/>
   <circle cx="148" cy="43" r="2.1" fill="#fff0a1"/>
+<g id="fuel-detail-v4" stroke-linejoin="round">
+<!-- Ribbed inspection hatches, bands and access ladder -->
+<path d="M34 42q19 8 38 0M74 57q18 8 36 0" fill="none" stroke="#765728" stroke-width="2.5" opacity=".52"/>
+<path d="M34 40q19 8 38 0M74 55q18 8 36 0" fill="none" stroke="#ffedb0" stroke-width=".8"/>
+<ellipse cx="53" cy="33" rx="11" ry="4.4" fill="none" stroke="#fff0b7" stroke-width=".9"/>
+<ellipse cx="53" cy="33" rx="4.3" ry="1.8" fill="#99712e" stroke="#fff2c6" stroke-width=".8"/>
+<path d="M37 34v24m5-24v24m-6-19h8m-8 5h8m-8 5h8m-8 5h8" stroke="#e4eff3" stroke-width="1.1" fill="none" opacity=".86"/>
+<!-- Visible steel piping, flanges, gauge and hose reel -->
+<path d="M59 62v5q0 5 7 5h22q5 0 5 6v7" stroke="#263b44" stroke-width="5" fill="none"/>
+<path d="M59 62v5q0 5 7 5h22q5 0 5 6v7" stroke="#a3bdc5" stroke-width="2" fill="none"/>
+<path d="M55 68h9M82 72h12" stroke="#ecf5f5" stroke-width="2.4"/>
+<rect x="77" y="79" width="17" height="14" rx="2.7" fill="#234657" stroke="#b5d4dd" stroke-width="1.1"/>
+<circle cx="85" cy="85" r="4" fill="#e3ebe4" stroke="#597787" stroke-width="1.1"/>
+<path d="M85 85l2-2" stroke="#ba6c2b" stroke-width="1.2"/>
+<circle cx="91" cy="90" r="1.3" fill="#84f3b2"/>
+<circle cx="110" cy="91" r="6.3" fill="#1e3949" stroke="#d4e9eb" stroke-width="1.2"/>
+<circle cx="110" cy="91" r="3.8" fill="none" stroke="#132e3b" stroke-width="2.2"/>
+<path d="M116 90q8 3 5 13" fill="none" stroke="#304c58" stroke-width="2"/>
+<!-- Control kiosk: roof fascia, glazing, console -->
+<path d="M104 58l35-17 19 9-35 18z" fill="none" stroke="#ecfbff" stroke-width="1.25"/>
+<path d="M123 68l35-18v6l-35 18z" fill="#184c65"/>
+<path d="M130 75l20-11v16l-20 11z" fill="#214b5e" stroke="#88bacc" stroke-width=".8"/>
+<path d="M133 77l12-7v8l-12 7z" fill="#2a7797" stroke="#aaf4ff" stroke-width=".7"/>
+<path d="M113 67l6 3m-6 4l6 3m-6 4l6 3" stroke="#b8d2d9" stroke-width="1.25"/>
+<path d="M119 53l12-6m-8 9l12-6" stroke="#f4ffff" stroke-width="1.2" opacity=".7"/>
+<!-- Safety bollards and apron worklights -->
+<path d="M25 77l5 3m20 6l5 3m20 6l5 3" stroke="#fbe2a1" stroke-width="2.2"/>
+<path d="M105 103l7 3m-4-7l7 3" stroke="#ffd15a" stroke-width="1.3"/>
+</g>
 </svg>

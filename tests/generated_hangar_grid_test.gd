@@ -44,6 +44,10 @@ func _run() -> void:
 		if image.get_pixel(70, 145).a < 0.60:
 			_fail("Closed hangar door/base did not render: %s" % asset_path)
 			return
+		var gable_x := 51 if asset_path == NORMAL else 109
+		if image.get_pixel(gable_x, 85).a < 0.65:
+			_fail("Curved roof gable must be solid, not expose terrain.")
+			return
 		if image.get_pixel(10, 185).a > 0.05:
 			_fail("Ground art overhangs the bottom-left tile: %s" % asset_path)
 			return

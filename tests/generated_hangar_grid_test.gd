@@ -53,6 +53,14 @@ func _run() -> void:
 		if int(contract.get("authoring_width_px", 0)) != 160 or int(contract.get("base_depth_px", 0)) != 80:
 			_fail("Hangar projected base width changed.")
 			return
+		var preview := grid.set_build_preview(
+			"small_hangar",
+			grid.tile_to_world(Vector2(8, 6)),
+			rotation
+		)
+		if not bool(preview.get("valid", false)):
+			_fail("Hangar must snap onto a free 3x2/2x3 grid area.")
+			return
 		var draw_rect := grid.get_grid_visual_draw_rect_for_definition(
 			building, Vector2i(4, 4), rotation, Vector2i(160, 180)
 		)

@@ -166,6 +166,7 @@ var occupied_cells: Dictionary = {}
 var next_building_uid := 1
 var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
+var grid_first_masked_structure_textures: Dictionary = {}
 var building_texture_images: Dictionary = {}
 var building_sprite_visible_bounds: Dictionary = {}
 var airside_status: Dictionary = {}
@@ -1173,6 +1174,13 @@ func _draw_grid_first_structure_overlay(
 		0.30,
 		1.0
 	)
+	if bool(definition.get("grid_first_structure_clip_base_to_footprint", false)):
+		texture = _get_grid_first_masked_structure_texture(
+			path,
+			texture,
+			definition,
+			width_scale
+		)
 	var desired_width := footprint_width * width_scale
 	var source_size := texture.get_size()
 	if source_size.x <= 0.0 or source_size.y <= 0.0:
@@ -1245,6 +1253,71 @@ func _draw_grid_first_structure_overlay(
 			modulate
 		)
 
+
+
+# The illustrated hangar already contains its apron, so rasterize its
+# transparent base once against the exact (3x2) projected diamond. The
+# upper building remains uncut; ground-level art cannot spill into
+# neighbouring editable cells. Mirroring this cached result also gives a
+# correct 2x3 footprint without regenerating a second illustration.
+func _get_grid_first_masked_structure_texture(
+	path: String,
+	source: Texture2D,
+	definition: Dictionary,
+	width_scale: float
+) -> Texture2D:
+	if grid_first_masked_structure_textures.has(path):
+		return grid_first_masked_structure_textures[path] as Texture2D
+	var image := source.get_image()
+	if image == null or image.is_empty():
+		return source
+	if image.is_compressed():
+		image.decompress()
+
+	var author_footprint: Vector2i = definition.get(
+		"grid_first_structure_footprint",
+		Vector2i(3, 2)
+	)
+	var base_bounds := PlacementGridV2.footprint_bounds(
+		Vector2i.ZERO,
+		author_footprint
+	)
+	var polygon := PlacementGridV2.footprint_polygon(
+		Vector2i.ZERO,
+		author_footprint
+	)
+	var local_polygon := PackedVector2Array()
+	for vertex in polygon:
+		local_polygon.append(vertex - base_bounds.position)
+
+	var drawn_width := float(image.get_width()) * width_scale
+	var drawn_height := float(image.get_height()) * width_scale
+	var pad_offset := Vector2(
+		(base_bounds.size.x - drawn_width) * 0.5,
+		base_bounds.size.y - drawn_height
+	)
+	var clip_start := float(
+		definition.get("grid_first_structure_clip_start_y", 35.0)
+	)
+	for y in range(image.get_height()):
+		var projected_y := pad_offset.y + (float(y) + 0.5) * width_scale
+		if projected_y < clip_start:
+			continue
+		for x in range(image.get_width()):
+			var projected := Vector2(
+				pad_offset.x + (float(x) + 0.5) * width_scale,
+				projected_y
+			)
+			if Geometry2D.is_point_in_polygon(projected, local_polygon):
+				continue
+			var pixel := image.get_pixel(x, y)
+			if pixel.a > 0.0:
+				pixel.a = 0.0
+				image.set_pixel(x, y, pixel)
+
+	var masked := ImageTexture.create_from_image(image)
+	grid_first_masked_structure_textures[path] = masked
+	return masked
 
 func draw_ellipse(
 	center: Vector2,

@@ -3,14 +3,14 @@ extends SceneTree
 # Grid-authored medium-hangar regression:
 # 4x3 occupancy, distinct 3x4 rotation, concrete pads, imported textures,
 # and a genuinely larger visual footprint than the 3x2 starter hangar.
-const ART_PATHS := PackedStringArray([
+const ART_PATHS := [
 	"res://assets/production/airport_buildings_v7/medium_hangar_4x3.svg",
 	"res://assets/production/airport_buildings_v7/medium_hangar_3x4.svg"
-])
-const PAD_PATHS := PackedStringArray([
+]
+const PAD_PATHS := [
 	"res://assets/production/airfield_v7/service/medium_hangar_pad_4x3.svg",
 	"res://assets/production/airfield_v7/service/medium_hangar_pad_3x4.svg"
-])
+]
 
 
 func _init() -> void:
@@ -35,10 +35,10 @@ func _run() -> void:
 	if medium.get("sizes", PackedStringArray()) != PackedStringArray(["S", "M"]):
 		_fail("Medium hangar must accept small and medium planes.")
 		return
-	if medium.get("grid_first_structure_paths", PackedStringArray()) != ART_PATHS:
+	if medium.get("grid_first_structure_paths", PackedStringArray()) != PackedStringArray(ART_PATHS):
 		_fail("The medium hangar must have separate 4x3 and 3x4 artwork.")
 		return
-	if medium.get("grid_native_surface_paths", PackedStringArray()) != PAD_PATHS:
+	if medium.get("grid_native_surface_paths", PackedStringArray()) != PackedStringArray(PAD_PATHS):
 		_fail("Both rotations must have grid-authored concrete pads.")
 		return
 	if not bool(medium.get("grid_first_world_sprite", false)):

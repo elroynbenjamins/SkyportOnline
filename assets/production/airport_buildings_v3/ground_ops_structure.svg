@@ -1,78 +1,49 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="96" viewBox="0 0 120 96">
-  <defs>
-    <linearGradient id="shed" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7ba0ad"/>
-      <stop offset="1" stop-color="#3f606c"/>
-    </linearGradient>
-    <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#dbe9ea"/>
-      <stop offset="1" stop-color="#8aa7ae"/>
-    </linearGradient>
-  </defs>
-
-  <ellipse cx="61" cy="79" rx="43" ry="10" fill="#18252b" opacity=".18"/>
-
-  <!-- compact operations shed -->
-  <polygon points="48,31 78,16 101,27 70,43" fill="url(#roof)"/>
-  <polygon points="70,43 101,27 101,60 70,76" fill="#355562"/>
-  <polygon points="48,31 70,43 70,76 48,64" fill="url(#shed)"/>
-  <rect x="76" y="42" width="17" height="16" rx="2" fill="#173844"/>
-  <rect x="79" y="45" width="11" height="4" rx="1" fill="#75ddff"/>
-  <path d="M52 38h14M52 44h14" stroke="#b5d1d8" stroke-width="1.2" opacity=".65"/>
-
-  <!-- conveyor -->
-  <polygon points="17,54 52,36 59,40 24,58" fill="#8c969a"/>
-  <polygon points="24,58 59,40 59,46 24,64" fill="#4d5a60"/>
-  <g stroke="#d7dadd" stroke-width="1">
-    <path d="M25 54l6 3M32 50l6 3M39 47l6 3M46 43l6 3"/>
-  </g>
-  <circle cx="29" cy="64" r="4" fill="#26343b"/>
-  <circle cx="51" cy="53" r="4" fill="#26343b"/>
-
-  <!-- crates / baggage -->
-  <g>
-    <polygon points="15,39 29,32 39,37 25,44" fill="#d5a35d"/>
-    <polygon points="25,44 39,37 39,50 25,57" fill="#a87138"/>
-    <polygon points="15,39 25,44 25,57 15,52" fill="#be8644"/>
-    <path d="M18 40l18 9M25 34v21" stroke="#7c5329" stroke-width="1"/>
-  </g>
-
-  <g>
-    <polygon points="34,28 45,22 54,27 43,33" fill="#d1a05c"/>
-    <polygon points="43,33 54,27 54,37 43,43" fill="#9b6a38"/>
-    <polygon points="34,28 43,33 43,43 34,38" fill="#b87f43"/>
-  </g>
-
-  <circle cx="91" cy="23" r="4" fill="#ffca48" opacity=".35"/>
-  <circle cx="91" cy="23" r="2" fill="#fff0a1"/>
-<g id="cargo-detail-v4" stroke-linejoin="round">
-<!-- Glazed roof-light, roof ribbing and air handlers -->
-<path d="M48 31l30-15 23 11" fill="none" stroke="#effbfc" stroke-width="1.5"/>
-<path d="M56 27l24 13m-17-17l24 13m-17-17l24 13" stroke="#d2eaf0" stroke-width="1" opacity=".82"/>
-<path d="M82 19l10-5 9 4-10 5z" fill="#a8c1c9" stroke="#eefbff" stroke-width=".75"/>
-<path d="M92 23l9-5v5l-9 5z" fill="#375c6c"/>
-<path d="M82 19l10 4v5l-10-5z" fill="#6894a2"/>
-<path d="M87 20l8 4" stroke="#e7faff" stroke-width="1.2"/>
-<!-- Roll-up freight shutter and luminous fascia -->
-<path d="M70 43l31-16v6L70 49z" fill="#174762"/>
-<path d="M74 52l23-12v17L74 70z" fill="#3d5865" stroke="#b0d2da" stroke-width=".85"/>
-<path d="M77 52l18-9m-18 13l18-9m-18 13l18-9m-18 13l18-9" stroke="#8faab2" stroke-width="1"/>
-<path d="M76 43l19-10" stroke="#9df0ff" stroke-width="1.8"/>
-<path d="M54 46l12 6m-12-1l12 6m-12-1l12 6" stroke="#dbeef3" stroke-width=".85" opacity=".7"/>
-<!-- Floodlights, conveyor rollers and freestanding container -->
-<path d="M59 39v-8m25 11v-7" stroke="#e9c25a" stroke-width="1.4"/>
-<circle cx="59" cy="31" r="2" fill="#fff1a2"/><circle cx="83" cy="36" r="1.8" fill="#fff1a2"/>
-<path d="M26 58l29-15M26 62l29-15" stroke="#c4d6d9" stroke-width=".8"/>
-<circle cx="31" cy="64" r="2" fill="#8aa8b3"/><circle cx="52" cy="53" r="2" fill="#8aa8b3"/>
-<polygon points="8,65 21,58 32,63 19,70" fill="#f6d39c"/>
-<polygon points="19,70 32,63 32,73 19,80" fill="#916342"/>
-<polygon points="8,65 19,70 19,80 8,74" fill="#c58a51"/>
-<path d="M12 66l12 6m-10-8l12 6" stroke="#895d39" stroke-width="1"/>
-<path d="M21 72l7-3" stroke="#fde7bb" stroke-width="2"/>
-<!-- Bay markings and high visibility detail -->
-<path d="M14 84l20-10" stroke="#f5ce62" stroke-width="2.3" stroke-dasharray="4 2"/>
-<path d="M34 74l-5-1 2 5" fill="none" stroke="#f5ce62" stroke-width="1.7"/>
-<circle cx="97" cy="31" r="1.7" fill="#76e9ff"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="141" viewBox="0 0 170 141">
+<defs>
+ <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a2e9ff"/><stop offset=".2" stop-color="#3ba9ed"/><stop offset=".72" stop-color="#2176c2"/><stop offset="1" stop-color="#155996"/></linearGradient>
+ <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffefa"/><stop offset=".6" stop-color="#f6f5e5"/><stop offset="1" stop-color="#b6d3d9"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f9ffff"/><stop offset="1" stop-color="#719ead"/></linearGradient>
+</defs>
+<ellipse cx="90" cy="121" rx="68" ry="12" fill="#183847" opacity=".14"/>
+<!-- White airport cargo office with blue pitched/rounded roof -->
+<polygon points="37,58 103,24 152,49 87,82" fill="url(#roof)" stroke="#1e618e" stroke-width="2.6" stroke-linejoin="round"/>
+<path d="M41 57l63-32 45 23" fill="none" stroke="#d1fbff" stroke-width="2.7"/>
+<path d="M56 50l48 25m-32-33l48 25m-31-33l45 25" stroke="#2079bd" stroke-width="1.4" opacity=".55"/>
+<polygon points="37,58 87,82 87,119 37,95" fill="url(#wall)" stroke="#668c9c" stroke-width="2.4"/>
+<polygon points="87,82 152,49 152,89 87,119" fill="#c8dce2" stroke="#64899d" stroke-width="2.4"/>
+<path d="M35 65l52 26 67-34" fill="none" stroke="#1e73ad" stroke-width="6"/>
+<path d="M35 65l52 26 67-34" fill="none" stroke="#9de8fc" stroke-width="1.2"/>
+<!-- Glazed office and bay door -->
+<polygon points="44,75 66,85 66,100 44,89" fill="#3b9ccf" stroke="#c5faff" stroke-width="1.5"/>
+<path d="M46 77l18 9m-9-4v12" stroke="#ecffff" stroke-width="1.4"/>
+<polygon points="98,83 140,62 140,95 98,116" fill="#3d5d76" stroke="#36556b" stroke-width="1.6"/>
+<path d="M98 89l42-21m-42 28l42-21m-42 28l42-21m-42 28l42-21" stroke="#93b5c6" stroke-width="1.1"/>
+<path d="M98 84l42-21" stroke="#f7d46b" stroke-width="3"/>
+<!-- Fun roof details, stacklight -->
+<path d="M112 34l19-10 14 7-18 10z" fill="url(#metal)" stroke="#658ca1" stroke-width="1.5"/>
+<path d="M127 41l18-10v6l-18 10z" fill="#88a8b2"/>
+<path d="M112 34l15 7v6l-15-7z" fill="#d4e7e7"/>
+<path d="M121 36l11 5m-7-7l11 5" stroke="#4b8194" stroke-width="1.1"/>
+<path d="M144 31v-12" stroke="#6f869b" stroke-width="3"/>
+<circle cx="144" cy="18" r="4" fill="#ffbb4b" stroke="#b66c3e" stroke-width="1.2"/>
+<!-- Conveyor and compact baggage carrier -->
+<polygon points="14,103 62,79 72,84 22,109" fill="#e2edf0" stroke="#7093a2" stroke-width="1.4"/>
+<polygon points="22,109 72,84 72,92 22,117" fill="#536e80" stroke="#4a6779" stroke-width="1.3"/>
+<path d="M25 102l9 5m2-11l9 5m2-11l9 5m2-11l9 5" stroke="#7394a2" stroke-width="1.1"/>
+<path d="M30 115l31-16" stroke="#ffcc43" stroke-width="2"/>
+<circle cx="31" cy="117" r="4.3" fill="#273d4e" stroke="#dce6e8" stroke-width="1"/>
+<circle cx="63" cy="100" r="4.3" fill="#273d4e" stroke="#dce6e8" stroke-width="1"/>
+<!-- Candy-colored cargo boxes on pallet -->
+<polygon points="16,86 32,78 47,85 31,94" fill="#ffd685" stroke="#b88142" stroke-width="1.2"/>
+<polygon points="31,94 47,85 47,99 31,108" fill="#d49a58" stroke="#ae7043" stroke-width="1.2"/>
+<polygon points="16,86 31,94 31,108 16,99" fill="#e6b36c" stroke="#a16d3f" stroke-width="1.2"/>
+<path d="M23 82l16 8M31 94v13" stroke="#b67f4a" stroke-width="1"/>
+<polygon points="31,69 44,62 55,67 42,74" fill="#9ae8f2" stroke="#4486a0" stroke-width="1"/>
+<polygon points="42,74 55,67 55,80 42,87" fill="#2b9abb" stroke="#366d93" stroke-width="1"/>
+<polygon points="31,69 42,74 42,87 31,82" fill="#55c2da" stroke="#3987a6" stroke-width="1"/>
+<!-- Bright warning decals and tiny greenery -->
+<path d="M93 120l11-5m-7 9l11-5" stroke="#ffc844" stroke-width="2.1"/>
+<circle cx="149" cy="61" r="3" fill="#ffeb8b"/>
+<path d="M147 112q-8-14 1-21 12 3 7 18" fill="#62c85a" stroke="#398941" stroke-width="1.5"/>
+<path d="M147 112q5-14 14-12 4 9-4 14" fill="#8adc55" stroke="#579a49" stroke-width="1.3"/>
 </svg>

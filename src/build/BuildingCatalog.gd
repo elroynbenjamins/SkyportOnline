@@ -548,6 +548,49 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"grid_first_structure_shadow_opacity": 0.0
 		},
 		{
+			"id": "medium_hangar",
+			"name": "Medium Hangar",
+			"menu_name": "MEDIUM HANGAR",
+			"category": "Operations",
+			"footprint": Vector2i(4, 3),
+			"cost": 48000,
+			"level": 8,
+			"color": Color("439bdf"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["S", "M"]),
+			"description": "An upgraded hangar for small and medium aircraft, with a wider aircraft door and modern service rooms.",
+			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
+			"art_tier": "grid_authored_hangar_v7",
+			"grid_first_service_visual": true,
+			"grid_first_world_sprite": true,
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v7/service/medium_hangar_pad_4x3.svg",
+				"res://assets/production/airfield_v7/service/medium_hangar_pad_3x4.svg"
+			]),
+			"grid_native_surface_size": Vector2i(224, 112),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"world_art_has_integrated_base": false,
+			"world_sprite_grid_fit": true,
+			"world_sprite_auto_ground": true,
+			"world_sprite_visible_width_scale": 1.0,
+			"world_sprite_max_width_scale": 1.0,
+			"world_sprite_ground_align": true,
+			"world_ground_pad": false,
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_v7/medium_hangar_4x3.svg",
+				"res://assets/production/airport_buildings_v7/medium_hangar_3x4.svg"
+			]),
+			"grid_first_structure_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_v7/medium_hangar_4x3.svg",
+				"res://assets/production/airport_buildings_v7/medium_hangar_3x4.svg"
+			]),
+			"grid_first_structure_width_scale": 1.0,
+			"grid_first_structure_flip_odd_rotations": false,
+			"grid_first_structure_art_size": Vector2i(224, 260),
+			"grid_first_structure_footprint": Vector2i(4, 3),
+			"grid_first_structure_shadow_opacity": 0.0
+		},
+		{
 			"id": "basic_fuel",
 			"name": "Basic Fuel Station",
 			"menu_name": "FUEL STATION",

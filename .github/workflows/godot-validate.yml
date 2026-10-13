@@ -129,6 +129,7 @@ jobs:
             tests/skyrama_service_visual_test.gd
             tests/skyrama_handling_visual_test.gd
             tests/handling_art_v4_test.gd
+            tests/generated_hangar_grid_test.gd
             tests/resource_drop_rules_test.gd
             tests/passenger_economy_test.gd
             tests/fuel_economy_test.gd

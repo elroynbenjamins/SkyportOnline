@@ -26,7 +26,7 @@ func _run() -> void:
 	if bool(definition.get("grid_first_structure_flip_odd_rotations", true)):
 		_fail("V5 has two authored views and must not mirror one view.")
 		return
-	if bool(definition.get("world_art_has_integrated_base", true)):
+	if bool(definition.get("world_art_has_integrated_base", false)):
 		_fail("Illustrated apron must not be baked into the V5 sprites.")
 		return
 	if bool(definition.get("grid_first_structure_clip_base_to_footprint", false)):

@@ -543,7 +543,9 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"grid_first_structure_width_scale": 0.94,
 			"grid_first_structure_flip_odd_rotations": true,
 			"grid_first_structure_art_size": Vector2i(160, 119),
-			"grid_first_structure_footprint": Vector2i(3, 2)
+			"grid_first_structure_footprint": Vector2i(3, 2),
+			"grid_first_structure_clip_base_to_footprint": true,
+			"grid_first_structure_clip_start_y": 35.0
 		},
 		{
 			"id": "basic_fuel",

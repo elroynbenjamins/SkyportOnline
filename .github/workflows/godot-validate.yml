@@ -106,6 +106,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture small and medium hangars in Godot
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_small_medium_hangars_ingame.gd
+
+      - name: Upload small and medium hangars screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: small-medium-hangars-ingame
+          path: artifacts/small_medium_hangars_ingame.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Capture Skyrama flight FX
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_skyrama_flight_fx.gd
 
@@ -141,6 +152,7 @@ jobs:
             tests/skyrama_handling_visual_test.gd
             tests/handling_art_v4_test.gd
             tests/generated_hangar_grid_test.gd
+            tests/medium_hangar_grid_test.gd
             tests/resource_drop_rules_test.gd
             tests/passenger_economy_test.gd
             tests/fuel_economy_test.gd

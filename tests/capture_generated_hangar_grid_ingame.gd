@@ -46,17 +46,6 @@ func _run() -> void:
 	camera.enabled = true
 	world.add_child(camera)
 
-	var hud := preload("res://src/ui/HUD.gd").new()
-	root.add_child(hud)
-	await process_frame
-	hud.set_build_catalog(BuildingCatalog.get_menu_definitions())
-	hud.set_player_data(3, 18000, 35)
-	hud.set_airport_identity(
-		"Skyport", "AMS", "Netherlands", "guest"
-	)
-	hud.set_operation_status(
-		"Hangar grid fit • 3x2 placed / 2x3 preview"
-	)
 
 	for _frame in range(14):
 		await process_frame

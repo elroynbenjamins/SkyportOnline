@@ -1126,7 +1126,8 @@ func _draw_grid_first_structure_overlay(
 	definition: Dictionary,
 	origin: Vector2i,
 	footprint: Vector2i,
-	rotation: int
+	rotation: int,
+	modulate: Color = Color.WHITE
 ) -> void:
 	var paths: PackedStringArray = definition.get(
 		"grid_first_structure_paths",
@@ -1210,12 +1211,39 @@ func _draw_grid_first_structure_overlay(
 		),
 		Color(0.02, 0.04, 0.05, 0.16)
 	)
-	draw_texture_rect(
-		texture,
-		rect,
-		false,
-		Color.WHITE
-	)
+	# A single rendered sprite is intentionally reused for both hangar
+	# orientations. Its transparent base is width-fitted to the correct
+	# isometric 3x2/2x3 footprint; only the artwork is mirrored.
+	if (
+		bool(definition.get(
+			"grid_first_structure_flip_odd_rotations",
+			false
+		))
+		and rotation % 2 == 1
+	):
+		draw_set_transform(
+			Vector2(rect.end.x, rect.position.y),
+			0.0,
+			Vector2(-1.0, 1.0)
+		)
+		draw_texture_rect(
+			texture,
+			Rect2(Vector2.ZERO, rect.size),
+			false,
+			modulate
+		)
+		draw_set_transform(
+			Vector2.ZERO,
+			0.0,
+			Vector2.ONE
+		)
+	else:
+		draw_texture_rect(
+			texture,
+			rect,
+			false,
+			modulate
+		)
 
 
 func draw_ellipse(
@@ -1515,6 +1543,16 @@ func _draw_grid_first_preview() -> void:
 			preview_rotation,
 			preview_modulate
 		)
+		# Show the actual placeable building during editing. The preview
+		# footprint still controls validity, collision and snap highlights.
+		if bool(definition.get("grid_first_world_sprite", false)):
+			_draw_grid_first_structure_overlay(
+				definition,
+				preview_origin,
+				footprint,
+				preview_rotation,
+				preview_modulate
+			)
 	else:
 		var fill := (
 			GRID_RESET_PREVIEW_VALID

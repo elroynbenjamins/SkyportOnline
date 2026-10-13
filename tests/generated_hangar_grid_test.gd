@@ -50,7 +50,7 @@ func _run() -> void:
 		if contract.get("footprint", Vector2i.ZERO) != expected:
 			_fail("Hangar rotated footprint is incorrect.")
 			return
-		if contract.get("projected_width_px", 160) != 160:
+		if int(contract.get("authoring_width_px", 0)) != 160 or int(contract.get("base_depth_px", 0)) != 80:
 			_fail("Hangar projected base width changed.")
 			return
 		var draw_rect := grid.get_grid_visual_draw_rect_for_definition(

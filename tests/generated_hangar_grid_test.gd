@@ -51,7 +51,19 @@ func _run() -> void:
 	)
 	var clipped_image: Image = clipped.get_image()
 	if clipped_image.get_pixel(68, 112).a > 0.05:
-		_fail("Illustrated apron still spills beyond the 3x2 grid diamond.")
+		_fail("Original apron remains at the front of the hangar.")
+		return
+	if clipped_image.get_pixel(120, 90).a > 0.05:
+		_fail("Original apron remains to the right of the building.")
+		return
+	if clipped_image.get_pixel(70, 74).a < 0.65:
+		_fail("Apron trim accidentally removed the closed hangar door.")
+		return
+	if not bool(building.get("grid_first_structure_remove_integrated_apron", false)):
+		_fail("Hangar should be rendered over its own exact grid-native pad.")
+		return
+	if float(building.get("grid_first_structure_shadow_offset_y", 0.0)) > -20.0:
+		_fail("Hangar shadow belongs under the building, not apron front.")
 		return
 	if clipped_image.get_pixel(80, 18).a < 0.8:
 		_fail("Grid clipping must preserve the building's raised roof.")

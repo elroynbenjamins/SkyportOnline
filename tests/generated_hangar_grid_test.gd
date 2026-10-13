@@ -1,104 +1,101 @@
 extends SceneTree
 
-# Verifies that the rendered hangar is actually wired to the playable
-# square-grid isometric construction system, rather than a mock-up image.
-const SPRITE := "res://assets/production/airport_buildings_v4/small_hangar_render.webp"
+# Production checks for hand-aligned 3x2/2x3 sprite views.
+# The sprites contain only building art. The grid owns ground, collision,
+# placement outline, contact point and the 160x80 projected service pad.
+
+const NORMAL := "res://assets/production/airport_buildings_v5/small_hangar_3x2.webp"
+const ROTATED := "res://assets/production/airport_buildings_v5/small_hangar_2x3.webp"
+
 
 func _init() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
-	var building := BuildingCatalog.get_definition("small_hangar")
-	if building.is_empty():
+	var definition := BuildingCatalog.get_definition("small_hangar")
+	if definition.is_empty():
 		_fail("Small Hangar definition missing.")
 		return
-	if building.get("footprint", Vector2i.ZERO) != Vector2i(3, 2):
-		_fail("Small Hangar must remain 3x2 square cells.")
+	if definition.get("footprint", Vector2i.ZERO) != Vector2i(3, 2):
+		_fail("Small Hangar must occupy exactly 3x2 square grid cells.")
 		return
-	if not bool(building.get("grid_first_world_sprite", false)):
-		_fail("Rendered hangar must be visible during grid-first reset.")
+	if not bool(definition.get("grid_first_world_sprite", false)):
+		_fail("Small Hangar must render over the grid-native pad.")
 		return
-	if not bool(building.get("grid_first_structure_flip_odd_rotations", false)):
-		_fail("Rotated hangar must mirror the same production sprite.")
+	if bool(definition.get("grid_first_structure_flip_odd_rotations", true)):
+		_fail("V5 has two authored views and must not mirror one view.")
 		return
-	var paths: PackedStringArray = building.get(
+	if bool(definition.get("world_art_has_integrated_base", true)):
+		_fail("Illustrated apron must not be baked into the V5 sprites.")
+		return
+	if bool(definition.get("grid_first_structure_clip_base_to_footprint", false)):
+		_fail("V5 sprites must fit without runtime clipping hacks.")
+		return
+
+	var paths: PackedStringArray = definition.get(
 		"grid_first_structure_paths", PackedStringArray()
 	)
-	if paths.size() != 2 or paths[0] != SPRITE or paths[1] != SPRITE:
-		_fail("Both orientation slots must point at generated WebP.")
+	if paths != PackedStringArray([NORMAL, ROTATED]):
+		_fail("Hangar must use independent 3x2 and 2x3 WebP sprite views.")
 		return
-	var resource = load(SPRITE)
-	if not (resource is Texture2D):
-		_fail("Godot could not import the rendered hangar WebP.")
-		return
-	if resource.get_size() != Vector2(160, 119):
-		_fail("Rendered hangar source dimensions changed.")
-		return
+
+	for asset_path in paths:
+		var texture = load(asset_path)
+		if not (texture is Texture2D):
+			_fail("Godot could not import authored image: %s" % asset_path)
+			return
+		if texture.get_size() != Vector2(160, 150):
+			_fail("Hangar sprite canvas must be 160x150: %s" % asset_path)
+			return
+		var pixels: Image = texture.get_image()
+		if pixels.get_pixel(80, 100).a < 0.5:
+			_fail("Hangar building door/body unexpectedly cut: %s" % asset_path)
+			return
+		if pixels.get_pixel(80, 145).a > 0.05:
+			_fail("Hangar has extra apron beneath its grid footprint.")
+			return
 
 	var grid := AirportGrid.new()
 	root.add_child(grid)
 	await process_frame
 	grid.prepare_new_airport_builder_layout()
-	# The original illustration includes a baked apron. Verify the runtime
-	# masks its outside-ground pixels without trimming the raised roof.
-	var raw_image: Image = resource.get_image()
-	if raw_image.get_pixel(68, 112).a < 0.8:
-		_fail("Source should contain the apron pixel used for clipping QA.")
-		return
-	var clipped: Texture2D = grid._get_grid_first_masked_structure_texture(
-		SPRITE, resource, building, 0.94
-	)
-	var clipped_image: Image = clipped.get_image()
-	if clipped_image.get_pixel(68, 112).a > 0.05:
-		_fail("Original apron remains at the front of the hangar.")
-		return
-	if clipped_image.get_pixel(120, 90).a > 0.05:
-		_fail("Original apron remains to the right of the building.")
-		return
-	if clipped_image.get_pixel(70, 74).a < 0.65:
-		_fail("Apron trim accidentally removed the closed hangar door.")
-		return
-	if not bool(building.get("grid_first_structure_remove_integrated_apron", false)):
-		_fail("Hangar should be rendered over its own exact grid-native pad.")
-		return
-	if float(building.get("grid_first_structure_shadow_offset_y", 0.0)) > -20.0:
-		_fail("Hangar shadow belongs under the building, not apron front.")
-		return
-	if clipped_image.get_pixel(80, 18).a < 0.8:
-		_fail("Grid clipping must preserve the building's raised roof.")
-		return
+
 	for rotation in [0, 1]:
 		var contract := grid.get_grid_visual_contract_for_definition(
-			building, rotation
+			definition, rotation
 		)
 		var expected := (
 			Vector2i(3, 2) if rotation == 0 else Vector2i(2, 3)
 		)
 		if contract.get("footprint", Vector2i.ZERO) != expected:
-			_fail("Hangar rotated footprint is incorrect.")
+			_fail("Hangar rotation must change occupied cells 3x2 ↔ 2x3.")
 			return
-		if int(contract.get("authoring_width_px", 0)) != 160 or int(contract.get("base_depth_px", 0)) != 80:
-			_fail("Hangar projected base width changed.")
+		if (
+			int(contract.get("authoring_width_px", 0)) != 160
+			or int(contract.get("base_depth_px", 0)) != 80
+		):
+			_fail("Hangar projection must remain 160x80.")
 			return
-		var preview := grid.set_build_preview(
+		var placement := grid.set_build_preview(
 			"small_hangar",
 			grid.tile_to_world(Vector2(8, 6)),
 			rotation
 		)
-		if not bool(preview.get("valid", false)):
-			_fail("Hangar must snap onto a free 3x2/2x3 grid area.")
+		if not bool(placement.get("valid", false)):
+			_fail("Hangar should snap onto empty tiles in either rotation.")
 			return
 		var draw_rect := grid.get_grid_visual_draw_rect_for_definition(
-			building, Vector2i(4, 4), rotation, Vector2i(160, 180)
+			definition, Vector2i(4, 4), rotation, Vector2i(160, 150)
 		)
-		if draw_rect.size != Vector2(160, 180):
-			_fail("Hangar art must be sized from projected grid width.")
+		if draw_rect.size != Vector2(160, 150):
+			_fail("Grid-authored sprite draw rect should have native width.")
 			return
 
 	print(
-		"GENERATED_HANGAR_GRID_OK source=webp "
-		+ "footprint=3x2 rotated=2x3 base=160x80 mirror=true"
+		"GENERATED_HANGAR_GRID_OK views=2 "
+		+ "base=160x80 sprites=160x150 "
+		+ "footprints=3x2,2x3 runtime_clip=false"
 	)
 	quit(0)
 

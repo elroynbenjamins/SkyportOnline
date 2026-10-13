@@ -1,53 +1,26 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="64" viewBox="0 0 128 64">
-  <defs>
-    <clipPath id="footprint"><polygon points="64,0 128,32 64,64 0,32"/></clipPath>
-    <linearGradient id="concrete" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ddd7c8"/>
-      <stop offset=".55" stop-color="#c2b9a7"/>
-      <stop offset="1" stop-color="#9b9387"/>
-    </linearGradient>
-    <linearGradient id="service" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#58636a"/>
-      <stop offset=".55" stop-color="#424c52"/>
-      <stop offset="1" stop-color="#30393f"/>
-    </linearGradient>
-  </defs>
-  <g clip-path="url(#footprint)">
-    <polygon points="64,0 128,32 64,64 0,32" fill="url(#concrete)"/>
-    <polygon points="64,4 120,32 64,60 8,32" fill="#7f786f" opacity=".34"/>
-    <polygon points="64,8 111,31.5 64,55 17,31.5" fill="url(#service)"/>
-
-    <!-- grid-safe service bay -->
-    <path d="M26 32 L64 13 L102 32 L64 51 Z" fill="none" stroke="#d6c9a5" stroke-width="1.25" opacity=".55"/>
-    <path d="M35 32 L64 17.5 L93 32 L64 46.5 Z" fill="none" stroke="#f2c84b" stroke-width="1.7" stroke-dasharray="5 3"/>
-    <path d="M64 18 L64 46" stroke="#f2c84b" stroke-width="1.5" stroke-linecap="round"/>
-
-    <!-- compact fuel-island cues behind the aircraft slot -->
-    <ellipse cx="45" cy="21.5" rx="6.8" ry="3.4" fill="#30383d" opacity=".55"/>
-    <ellipse cx="45" cy="20" rx="5.6" ry="2.8" fill="#d6aa47"/>
-    <rect x="41.8" y="15.8" width="6.4" height="5.2" rx="1.3" fill="#e7c36d"/>
-    <path d="M49 17.5 C55 18 55 23 58 25" fill="none" stroke="#24323a" stroke-width="1.3"/>
-
-    <ellipse cx="83" cy="21.5" rx="6.8" ry="3.4" fill="#30383d" opacity=".55"/>
-    <ellipse cx="83" cy="20" rx="5.6" ry="2.8" fill="#d6aa47"/>
-    <rect x="79.8" y="15.8" width="6.4" height="5.2" rx="1.3" fill="#e7c36d"/>
-
-    <!-- blue bay lights -->
-    <g fill="#65dcff" stroke="#efffff" stroke-width=".45">
-      <circle cx="28" cy="32" r="1.5"/>
-      <circle cx="64" cy="50" r="1.5"/>
-      <circle cx="100" cy="32" r="1.5"/>
-      <circle cx="64" cy="14" r="1.5"/>
-    </g>
-  <g id="fuel-pad-v4">
-<!-- Grid-clipped inset construction joints and fueling safety box -->
-<path d="M17 31.5L64 8L111 31.5M17 32.5L64 56L111 32.5" stroke="#f9f3df" stroke-width=".8" opacity=".33" fill="none"/>
-<path d="M34 28l6-3m-2 9l6-3m42-3l-6-3m2 9l-6-3" stroke="#f5d45c" stroke-width="2" stroke-linecap="round"/>
-<path d="M56 44l8 4 8-4m-16-24l8-4 8 4" stroke="#fff1b9" stroke-width="1.1" fill="none"/>
-<path d="M18 32l11 5m71-5l10 5" stroke="#253943" stroke-width="2" opacity=".67"/>
-<path d="M64 2L125 32L64 62L3 32Z" stroke="#f5f6e9" stroke-width="1" opacity=".4" fill="none"/>
-<g fill="#7de5fa" stroke="#fff" stroke-width=".35"><circle cx="37" cy="22" r="1.4"/><circle cx="91" cy="22" r="1.4"/><circle cx="64" cy="52" r="1.4"/></g>
-</g>
-</g>
-</svg>
+ <defs>
+ <clipPath id="gridDiamond"><polygon points="64,0 128,32 64,64 0,32"/></clipPath>
+ <linearGradient id="ground" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#9ee16f"/><stop offset=".65" stop-color="#69ba53"/><stop offset="1" stop-color="#4d9346"/></linearGradient>
+ </defs>
+ <g clip-path="url(#gridDiamond)">
+ <polygon points="64,0 128,32 64,64 0,32" fill="url(#ground)"/>
+ <!-- Every paving tile derives from the square-grid projection; no overhang. -->
+ <polygon points="64,0 96,16 64,32 32,16" fill="#8b9ca4" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<path d="M55 18l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
+<polygon points="96,16 128,32 96,48 64,32" fill="#83929a" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<path d="M87 34l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
+<polygon points="32,16 64,32 32,48 0,32" fill="#83929a" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<path d="M23 34l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
+<polygon points="64,32 96,48 64,64 32,48" fill="#8b9ca4" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<path d="M55 50l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
+ <polygon points="64,0 128,32 64,64 0,32" fill="none" stroke="#f9fffa" stroke-width="2" opacity=".82"/>
+ <polygon points="64,0 128,32 64,64 0,32" fill="none" stroke="#476c67" stroke-width=".75" opacity=".6"/>
+ <path d="M64 11l40 20-40 20-40-20z" fill="none" stroke="#ffd44e" stroke-width="2.6" stroke-dasharray="7 3"/>
+ <path d="M64 17v27m-7-21l7-6 7 6" fill="none" stroke="#fff2b3" stroke-width="1.7"/>
+ <path d="M39 24l-9 5m60-5l9 5" stroke="#efbc38" stroke-width="2.4"/>
+ <path d="M33 33l12 6m38 0l12-6" stroke="#fff" stroke-width="1.5" opacity=".76"/>
+ <g fill="#fbca4e" stroke="#fff7cc" stroke-width=".6"><circle cx="20" cy="32" r="1.5"/><circle cx="108" cy="32" r="1.5"/></g>
+ <path d="M8 32l8-4m96 4l8-4" stroke="#70d5f4" stroke-width="2"/>
+ </g>
+ </svg>

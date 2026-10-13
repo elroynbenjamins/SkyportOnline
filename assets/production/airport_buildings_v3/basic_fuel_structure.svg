@@ -1,93 +1,53 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="180" height="132" viewBox="0 0 180 132">
-  <defs>
-    <linearGradient id="tank" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f1cf71"/>
-      <stop offset=".48" stop-color="#d3a73c"/>
-      <stop offset="1" stop-color="#9f7523"/>
-    </linearGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#87a5b2"/>
-      <stop offset=".55" stop-color="#536d78"/>
-      <stop offset="1" stop-color="#344c57"/>
-    </linearGradient>
-    <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#d8edf3"/>
-      <stop offset="1" stop-color="#7fa8b9"/>
-    </linearGradient>
-  </defs>
-
-  <!-- soft contact shadow -->
-  <ellipse cx="92" cy="111" rx="59" ry="13" fill="#17242a" opacity=".20"/>
-
-  <!-- rear tank bank -->
-  <g>
-    <ellipse cx="53" cy="56" rx="19" ry="8" fill="#825f1d" opacity=".45"/>
-    <rect x="34" y="33" width="38" height="24" rx="8" fill="url(#tank)"/>
-    <ellipse cx="53" cy="33" rx="19" ry="8" fill="#f4d884"/>
-    <ellipse cx="53" cy="57" rx="19" ry="8" fill="#b88b2d"/>
-    <path d="M42 34v23M64 34v23" stroke="#fff2b8" stroke-opacity=".32" stroke-width="2"/>
-    <rect x="49" y="23" width="8" height="10" rx="2" fill="#667985"/>
-    <ellipse cx="53" cy="23" rx="4" ry="2" fill="#a8bdc7"/>
-  </g>
-
-  <g>
-    <ellipse cx="92" cy="70" rx="18" ry="7.5" fill="#825f1d" opacity=".42"/>
-    <rect x="74" y="48" width="36" height="22" rx="8" fill="url(#tank)"/>
-    <ellipse cx="92" cy="48" rx="18" ry="7.5" fill="#edcf74"/>
-    <ellipse cx="92" cy="70" rx="18" ry="7.5" fill="#ad8129"/>
-    <path d="M82 49v20M103 49v20" stroke="#fff2b8" stroke-opacity=".28" stroke-width="2"/>
-  </g>
-
-  <!-- pump/control kiosk -->
-  <polygon points="104,58 139,41 158,50 123,68" fill="url(#roof)"/>
-  <polygon points="123,68 158,50 158,82 123,101" fill="#3c5c68"/>
-  <polygon points="104,58 123,68 123,101 104,91" fill="#557684"/>
-  <rect x="129" y="61" width="18" height="20" rx="2" fill="#163947"/>
-  <rect x="132" y="64" width="12" height="5" rx="1" fill="#6fe2ff"/>
-  <circle cx="135" cy="75" r="2" fill="#f7ce55"/>
-  <circle cx="142" cy="75" r="2" fill="#7ee0a7"/>
-  <path d="M108 69 C92 73 89 87 81 96" fill="none" stroke="#27383f" stroke-width="3" stroke-linecap="round"/>
-  <path d="M110 70 C95 75 92 88 84 98" fill="none" stroke="#7ea0aa" stroke-width="1.1" stroke-linecap="round"/>
-
-  <!-- safety rail / bollards -->
-  <path d="M29 76 L103 113" stroke="#d8b349" stroke-width="2.4"/>
-  <g fill="#f5f1e7" stroke="#d75c55" stroke-width="2">
-    <rect x="37" y="77" width="4" height="13" rx="1"/>
-    <rect x="59" y="88" width="4" height="13" rx="1"/>
-    <rect x="82" y="99" width="4" height="13" rx="1"/>
-  </g>
-
-  <!-- amber beacon -->
-  <circle cx="148" cy="43" r="4.3" fill="#ffcc45" opacity=".35"/>
-  <circle cx="148" cy="43" r="2.1" fill="#fff0a1"/>
-<g id="fuel-detail-v4" stroke-linejoin="round">
-<!-- Ribbed inspection hatches, bands and access ladder -->
-<path d="M34 42q19 8 38 0M74 57q18 8 36 0" fill="none" stroke="#765728" stroke-width="2.5" opacity=".52"/>
-<path d="M34 40q19 8 38 0M74 55q18 8 36 0" fill="none" stroke="#ffedb0" stroke-width=".8"/>
-<ellipse cx="53" cy="33" rx="11" ry="4.4" fill="none" stroke="#fff0b7" stroke-width=".9"/>
-<ellipse cx="53" cy="33" rx="4.3" ry="1.8" fill="#99712e" stroke="#fff2c6" stroke-width=".8"/>
-<path d="M37 34v24m5-24v24m-6-19h8m-8 5h8m-8 5h8m-8 5h8" stroke="#e4eff3" stroke-width="1.1" fill="none" opacity=".86"/>
-<!-- Visible steel piping, flanges, gauge and hose reel -->
-<path d="M59 62v5q0 5 7 5h22q5 0 5 6v7" stroke="#263b44" stroke-width="5" fill="none"/>
-<path d="M59 62v5q0 5 7 5h22q5 0 5 6v7" stroke="#a3bdc5" stroke-width="2" fill="none"/>
-<path d="M55 68h9M82 72h12" stroke="#ecf5f5" stroke-width="2.4"/>
-<rect x="77" y="79" width="17" height="14" rx="2.7" fill="#234657" stroke="#b5d4dd" stroke-width="1.1"/>
-<circle cx="85" cy="85" r="4" fill="#e3ebe4" stroke="#597787" stroke-width="1.1"/>
-<path d="M85 85l2-2" stroke="#ba6c2b" stroke-width="1.2"/>
-<circle cx="91" cy="90" r="1.3" fill="#84f3b2"/>
-<circle cx="110" cy="91" r="6.3" fill="#1e3949" stroke="#d4e9eb" stroke-width="1.2"/>
-<circle cx="110" cy="91" r="3.8" fill="none" stroke="#132e3b" stroke-width="2.2"/>
-<path d="M116 90q8 3 5 13" fill="none" stroke="#304c58" stroke-width="2"/>
-<!-- Control kiosk: roof fascia, glazing, console -->
-<path d="M104 58l35-17 19 9-35 18z" fill="none" stroke="#ecfbff" stroke-width="1.25"/>
-<path d="M123 68l35-18v6l-35 18z" fill="#184c65"/>
-<path d="M130 75l20-11v16l-20 11z" fill="#214b5e" stroke="#88bacc" stroke-width=".8"/>
-<path d="M133 77l12-7v8l-12 7z" fill="#2a7797" stroke="#aaf4ff" stroke-width=".7"/>
-<path d="M113 67l6 3m-6 4l6 3m-6 4l6 3" stroke="#b8d2d9" stroke-width="1.25"/>
-<path d="M119 53l12-6m-8 9l12-6" stroke="#f4ffff" stroke-width="1.2" opacity=".7"/>
-<!-- Safety bollards and apron worklights -->
-<path d="M25 77l5 3m20 6l5 3m20 6l5 3" stroke="#fbe2a1" stroke-width="2.2"/>
-<path d="M105 103l7 3m-4-7l7 3" stroke="#ffd15a" stroke-width="1.3"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="196" viewBox="0 0 240 196">
+<defs>
+  <linearGradient id="white" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffefa"/><stop offset=".55" stop-color="#eaf4f5"/><stop offset="1" stop-color="#abcddc"/></linearGradient>
+  <linearGradient id="tank" x1="0" y1="0" x2="1" y2=".3"><stop stop-color="#fffefa"/><stop offset=".37" stop-color="#f7f7ed"/><stop offset=".78" stop-color="#c1dfec"/><stop offset="1" stop-color="#81aebe"/></linearGradient>
+  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#80d9ff"/><stop offset=".2" stop-color="#329de5"/><stop offset=".7" stop-color="#1772bf"/><stop offset="1" stop-color="#17528f"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff1a0"/><stop offset="1" stop-color="#e79c2c"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9df4ff"/><stop offset="1" stop-color="#2476ad"/></linearGradient>
+</defs>
+<!-- Soft isometric grounding without duplicating the grid pad -->
+<ellipse cx="118" cy="172" rx="91" ry="17" fill="#163747" opacity=".14"/>
+<!-- Tall polished white storage tank, purposely rounded and toy-like -->
+<rect x="39" y="49" width="75" height="89" rx="9" fill="url(#tank)" stroke="#608b9c" stroke-width="2.7"/>
+<ellipse cx="76.5" cy="50" rx="37.5" ry="13.5" fill="#faffff" stroke="#699caf" stroke-width="2.7"/>
+<path d="M40 88h73v21H40z" fill="url(#blue)" stroke="#2a7aad" stroke-width="1.5"/>
+<path d="M42 90h70" stroke="#a6f5ff" stroke-width="2.5" opacity=".7"/>
+<ellipse cx="76.5" cy="138" rx="37.5" ry="12" fill="#a4c2c9" opacity=".94" stroke="#648c9a" stroke-width="2"/>
+<path d="M51 63v68M57 59v72" stroke="#fff" stroke-width="3" opacity=".61"/>
+<path d="M91 62v64" stroke="#649cad" stroke-width="1.8" opacity=".4"/>
+<circle cx="76" cy="98" r="11.5" fill="#f9faf1" stroke="#e1f9ff" stroke-width="2"/>
+<path d="M76 90c-6 7-8 12 0 15 8-3 6-8 0-15z" fill="#2e9ce0" stroke="#176ca3" stroke-width="1"/>
+<path d="M100 42v-17q0-4-4-4" fill="none" stroke="#d9a42f" stroke-width="3"/>
+<path d="M100 31h-13m13 6h-13m13 6h-13m13 6h-13m13 6h-13m13 6h-13" stroke="#dfae37" stroke-width="2"/>
+<path d="M100 25q-4-7-11-2" fill="none" stroke="#ffdb55" stroke-width="3"/>
+<path d="M94 20v-8" stroke="#7e9fab" stroke-width="3"/>
+<circle cx="94" cy="11" r="4.7" fill="url(#gold)" stroke="#b9782c" stroke-width="1.3"/>
+<!-- Blue-roof fueling canopy, beams and lit pumps -->
+<polygon points="110,109 169,78 218,102 158,134" fill="url(#blue)" stroke="#195b8b" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M112 108l57-29 47 23" fill="none" stroke="#c0f2ff" stroke-width="3" opacity=".72"/>
+<path d="M122 107l41 21 50-25" stroke="#eaf9fa" stroke-width="1.8" fill="none" opacity=".62"/>
+<path d="M139 98l31 15m-18-22l30 16m-18-22l29 16" stroke="#1c79bc" stroke-width="1.2" opacity=".64"/>
+<polygon points="115,109 158,130 158,139 115,117" fill="#277fbb" stroke="#1d5d86" stroke-width="1.3"/>
+<polygon points="158,130 219,101 219,111 158,140" fill="#145c9e" stroke="#18547a" stroke-width="1.3"/>
+<path d="M124 120v41l7 3v-40M204 114v40l7-3v-41" fill="#f8f7ee" stroke="#6e9cac" stroke-width="2"/>
+<path d="M128 142v19m79-25v16" stroke="#f8cc55" stroke-width="5" stroke-dasharray="6 4"/>
+<rect x="152" y="134" width="21" height="31" rx="3" fill="url(#white)" stroke="#356b85" stroke-width="1.8"/>
+<path d="M153 137h19v8h-19z" fill="#1679b6"/>
+<rect x="156" y="147" width="13" height="9" rx="2" fill="url(#glass)" stroke="#3b92ad" stroke-width="1.1"/>
+<circle cx="159.5" cy="161" r="2" fill="#f2bb37"/>
+<circle cx="165.5" cy="161" r="2" fill="#71cc89"/>
+<path d="M174 142q14 4 12 16t-10 7" stroke="#304b54" stroke-width="3" fill="none"/>
+<!-- Little fueling trolley and colorful safety furniture -->
+<ellipse cx="88" cy="158" rx="29" ry="7" fill="#244454" opacity=".21"/>
+<path d="M68 146l29-14 26 12-29 15z" fill="url(#gold)" stroke="#ad7a25" stroke-width="1.5"/>
+<path d="M94 159l29-15v14l-29 14z" fill="#d89a35" stroke="#976e2b" stroke-width="1.5"/>
+<path d="M68 146l26 13v13l-26-13z" fill="#e8b64f" stroke="#a57c35" stroke-width="1.5"/>
+<path d="M75 147l16-8 18 8-16 8z" fill="#e9f8fa" stroke="#4e9db0" stroke-width="1.1"/>
+<circle cx="85" cy="169" r="4.7" fill="#314855" stroke="#d3d7cb" stroke-width="1.3"/>
+<circle cx="111" cy="162" r="4.7" fill="#314855" stroke="#d3d7cb" stroke-width="1.3"/>
+<path d="M30 145l6 3 6-3-6-3z" fill="#fff7ce"/>
+<path d="M31 145h10l2 10-8 4-8-3z" fill="#ed9d32" stroke="#fce0a3" stroke-width="1"/>
+<path d="M28 154h15" stroke="#faffff" stroke-width="2"/>
+<circle cx="208" cy="97" r="4" fill="#ffed9d" stroke="#fb990f" stroke-width="2"/>
 </svg>

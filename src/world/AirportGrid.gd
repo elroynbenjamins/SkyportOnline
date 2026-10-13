@@ -166,7 +166,6 @@ var occupied_cells: Dictionary = {}
 var next_building_uid := 1
 var building_labels: Array[Label] = []
 var building_textures: Dictionary = {}
-var grid_first_masked_structure_textures: Dictionary = {}
 var building_texture_images: Dictionary = {}
 var building_sprite_visible_bounds: Dictionary = {}
 var airside_status: Dictionary = {}
@@ -1174,13 +1173,6 @@ func _draw_grid_first_structure_overlay(
 		0.30,
 		1.0
 	)
-	if bool(definition.get("grid_first_structure_clip_base_to_footprint", false)):
-		texture = _get_grid_first_masked_structure_texture(
-			path,
-			texture,
-			definition,
-			width_scale
-		)
 	var desired_width := footprint_width * width_scale
 	var source_size := texture.get_size()
 	if source_size.x <= 0.0 or source_size.y <= 0.0:
@@ -1222,9 +1214,9 @@ func _draw_grid_first_structure_overlay(
 		),
 		Color(0.02, 0.04, 0.05, 0.16)
 	)
-	# A single rendered sprite is intentionally reused for both hangar
-	# orientations. Its transparent base is width-fitted to the correct
-	# isometric 3x2/2x3 footprint; only the artwork is mirrored.
+	# Place each preauthored view against the footprint's front anchor.
+	# A generated building sprite includes NO painted ground; the grid
+	# already owns the 3x2/2x3 surface, snap and collision boundaries.
 	if (
 		bool(definition.get(
 			"grid_first_structure_flip_odd_rotations",
@@ -1256,128 +1248,6 @@ func _draw_grid_first_structure_overlay(
 			modulate
 		)
 
-
-
-# The illustrated hangar already contains its apron, so rasterize its
-# transparent base once against the exact (3x2) projected diamond. The
-# upper building remains uncut; ground-level art cannot spill into
-# neighbouring editable cells. Mirroring this cached result also gives a
-# correct 2x3 footprint without regenerating a second illustration.
-# The illustrated source contains an extra skewed concrete platform.
-# Follow the building's base edge, not an arbitrary horizontal cut: the
-# front door, side wall and bushes stay visible, but the extra platform
-# disappears. Coordinates are normalized to the authored 160x119 sprite.
-func _hangar_facade_ground_y(art_x: float) -> float:
-	var edge := PackedVector2Array([
-		Vector2(0, 60), Vector2(7, 63),
-		Vector2(17, 69), Vector2(28, 75),
-		Vector2(39, 82), Vector2(49, 88),
-		Vector2(57, 91), Vector2(69, 88),
-		Vector2(86, 82), Vector2(101, 77),
-		Vector2(120, 72), Vector2(132, 70),
-		Vector2(145, 69), Vector2(159, 73),
-		Vector2(160, 75)
-	])
-	for index in range(edge.size() - 1):
-		var left: Vector2 = edge[index]
-		var right: Vector2 = edge[index + 1]
-		if art_x <= right.x:
-			var t := clampf(
-				(art_x - left.x) / maxf(right.x - left.x, 0.001),
-				0.0,
-				1.0
-			)
-			return lerpf(left.y, right.y, t)
-	return 75.0
-
-
-# Rasterize and cache a grid-aligned overlay texture once per airport,
-# keeping draw and placement previews cheap even on mobile devices.
-func _get_grid_first_masked_structure_texture(
-	path: String,
-	source: Texture2D,
-	definition: Dictionary,
-	width_scale: float
-) -> Texture2D:
-	if grid_first_masked_structure_textures.has(path):
-		return grid_first_masked_structure_textures[path] as Texture2D
-	var image := source.get_image()
-	if image == null or image.is_empty():
-		return source
-	image = image.duplicate() as Image
-	if image.is_compressed():
-		image.decompress()
-
-	var trim_apron := bool(definition.get(
-		"grid_first_structure_remove_integrated_apron", false
-	))
-	var art_width := float(image.get_width())
-	var art_height := float(image.get_height())
-	if trim_apron:
-		var cut_y_by_x := PackedFloat32Array()
-		for x in range(image.get_width()):
-			var art_x := (float(x) + 0.5) * 160.0 / art_width
-			cut_y_by_x.append(_hangar_facade_ground_y(art_x))
-		for y in range(image.get_height()):
-			var art_y := (float(y) + 0.5) * 119.0 / art_height
-			for x in range(image.get_width()):
-				var cut_y := float(cut_y_by_x[x])
-				# One-pixel feather eliminates jagged base silhouettes.
-				var remaining := clampf(
-					(cut_y - art_y + 0.5) / 1.5, 0.0, 1.0
-				)
-				if remaining >= 0.999:
-					continue
-				var color := image.get_pixel(x, y)
-				if color.a <= 0.0:
-					continue
-				color.a *= remaining
-				image.set_pixel(x, y, color)
-	else:
-		# Other integrated service art may continue using the projected
-		# footprint clip instead of the hangar-specific fascia trim.
-		var author_footprint: Vector2i = definition.get(
-			"grid_first_structure_footprint", Vector2i(3, 2)
-		)
-		var bounds := PlacementGridV2.footprint_bounds(
-			Vector2i.ZERO, author_footprint
-		)
-		var vertices := PlacementGridV2.footprint_polygon(
-			Vector2i.ZERO, author_footprint
-		)
-		var local_polygon := PackedVector2Array()
-		for vertex in vertices:
-			local_polygon.append(vertex - bounds.position)
-		var pad_offset := Vector2(
-			(bounds.size.x - art_width * width_scale) * 0.5,
-			bounds.size.y - art_height * width_scale
-		)
-		var clip_start := float(definition.get(
-			"grid_first_structure_clip_start_y", 35.0
-		))
-		for y in range(image.get_height()):
-			var projected_y := (
-				pad_offset.y + (float(y) + 0.5) * width_scale
-			)
-			if projected_y < clip_start:
-				continue
-			for x in range(image.get_width()):
-				var projected := Vector2(
-					pad_offset.x + (float(x) + 0.5) * width_scale,
-					projected_y
-				)
-				if Geometry2D.is_point_in_polygon(
-					projected, local_polygon
-				):
-					continue
-				var color := image.get_pixel(x, y)
-				if color.a > 0.0:
-					color.a = 0.0
-					image.set_pixel(x, y, color)
-
-	var masked := ImageTexture.create_from_image(image)
-	grid_first_masked_structure_textures[path] = masked
-	return masked
 
 
 func draw_ellipse(

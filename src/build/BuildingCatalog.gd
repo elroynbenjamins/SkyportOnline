@@ -516,7 +516,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
-			"art_tier": "grid_authored_hangar_v5",
+			"art_tier": "grid_authored_hangar_v6",
 			"grid_first_service_visual": true,
 			"grid_first_world_sprite": true,
 			"grid_native_surface_paths": PackedStringArray([
@@ -533,16 +533,16 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v5/small_hangar_3x2.webp",
-				"res://assets/production/airport_buildings_v5/small_hangar_2x3.webp"
+				"res://assets/production/airport_buildings_v6/small_hangar_3x2.svg",
+				"res://assets/production/airport_buildings_v6/small_hangar_2x3.svg"
 			]),
 			"grid_first_structure_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v5/small_hangar_3x2.webp",
-				"res://assets/production/airport_buildings_v5/small_hangar_2x3.webp"
+				"res://assets/production/airport_buildings_v6/small_hangar_3x2.svg",
+				"res://assets/production/airport_buildings_v6/small_hangar_2x3.svg"
 			]),
 			"grid_first_structure_width_scale": 1.0,
 			"grid_first_structure_flip_odd_rotations": false,
-			"grid_first_structure_art_size": Vector2i(160, 150),
+			"grid_first_structure_art_size": Vector2i(160, 190),
 			"grid_first_structure_footprint": Vector2i(3, 2),
 			"grid_first_structure_shadow_offset_y": -21.0
 		},

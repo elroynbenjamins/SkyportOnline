@@ -95,6 +95,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture generated hangar on snapped grid
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_generated_hangar_grid_ingame.gd
+
+      - name: Upload generated hangar grid screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-hangar-grid-ingame
+          path: artifacts/generated_hangar_grid_ingame.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Capture Skyrama flight FX
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_skyrama_flight_fx.gd
 

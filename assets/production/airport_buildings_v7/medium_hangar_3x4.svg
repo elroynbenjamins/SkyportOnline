@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="224" height="260" viewBox="0 0 224 260"><g transform="translate(224 0) scale(-1 1)">
+<svg xmlns="http://www.w3.org/2000/svg" width="224" height="260" viewBox="0 0 224 260"><g transform="translate(11 16) scale(0.90)"><g transform="translate(224 0) scale(-1 1)">
 <defs>
  <linearGradient id="cream" x2=".7" y2="1"><stop stop-color="#fffef4"/><stop offset=".44" stop-color="#eaf4f3"/><stop offset="1" stop-color="#a4c5d0"/></linearGradient>
  <linearGradient id="side" x2="1" y2="1"><stop stop-color="#f4ffff"/><stop offset=".50" stop-color="#d0e8ed"/><stop offset="1" stop-color="#82afbf"/></linearGradient>
@@ -117,4 +117,4 @@
 <path d="M121.12,183.56 l4,5" stroke="#35444c" stroke-width="2"/>
 <circle cx="123.12" cy="174.56" r="3.5" fill="url(#gold)" stroke="#fff1be" stroke-width="1.2"/>
 <circle cx="67.00" cy="139.50" r="5" fill="#f6feff" stroke="#4f8dac" stroke-width="1.1"/><circle cx="67.00" cy="139.50" r="2.7" fill="#6bd6ff"/>
-</g></svg>
+</g></g></svg>

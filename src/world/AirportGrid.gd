@@ -1271,6 +1271,9 @@ func _get_grid_first_masked_structure_texture(
 	var image := source.get_image()
 	if image == null or image.is_empty():
 		return source
+	# get_image() may return shared pixel storage for imported textures.
+	# Always mask a copy so the unmodified art stays usable elsewhere.
+	image = image.duplicate() as Image
 	if image.is_compressed():
 		image.decompress()
 

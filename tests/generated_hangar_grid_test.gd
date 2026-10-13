@@ -40,6 +40,22 @@ func _run() -> void:
 	root.add_child(grid)
 	await process_frame
 	grid.prepare_new_airport_builder_layout()
+	# The original illustration includes a baked apron. Verify the runtime
+	# masks its outside-ground pixels without trimming the raised roof.
+	var clipped: Texture2D = grid._get_grid_first_masked_structure_texture(
+		SPRITE, resource, building, 0.94
+	)
+	var raw_image: Image = resource.get_image()
+	var clipped_image: Image = clipped.get_image()
+	if raw_image.get_pixel(68, 112).a < 0.8:
+		_fail("Source should contain the apron pixel used for clipping QA.")
+		return
+	if clipped_image.get_pixel(68, 112).a > 0.05:
+		_fail("Illustrated apron still spills beyond the 3x2 grid diamond.")
+		return
+	if clipped_image.get_pixel(80, 18).a < 0.8:
+		_fail("Grid clipping must preserve the building's raised roof.")
+		return
 	for rotation in [0, 1]:
 		var contract := grid.get_grid_visual_contract_for_definition(
 			building, rotation

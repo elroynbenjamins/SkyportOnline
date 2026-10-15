@@ -59,8 +59,8 @@ func _run() -> void:
 		return
 	if not _check_surface(
 		"small_hangar",
-		Vector2i(3, 2),
-		Vector2i(160, 80),
+		Vector2i(4, 3),
+		Vector2i(224, 112),
 		2
 	):
 		return
@@ -90,7 +90,7 @@ func _run() -> void:
 	var fuel := grid.get_best_service_building("fuel", "S")
 	var cargo := grid.get_best_service_building("cargo", "S")
 	if fuel.is_empty() or cargo.is_empty():
-		_fail("Fuel and cargo structures should remain usable service targets.")
+		_fail("Fuel and cargo service buildings should remain active independently of parking pads.")
 		return
 
 	var fuel_center := grid.tile_to_world(Vector2(2.5, 7.5))
@@ -99,7 +99,7 @@ func _run() -> void:
 		return
 
 	print(
-		"SKYRAMA_SERVICE_VISUAL_OK fuel=2x2 cargo=1x1 hangar=3x2 "
+		"SKYRAMA_SERVICE_VISUAL_OK fuel=2x2 cargo=1x1 hangar=4x3 "
 		+ "grid_native=true canonical_sprite=true"
 	)
 	quit(0)

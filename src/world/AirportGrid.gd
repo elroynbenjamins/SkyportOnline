@@ -313,25 +313,12 @@ func _initialize_parcels() -> void:
 
 func _initialize_starter_airport() -> void:
 	_place_building_internal("short_runway", Vector2i(8, 8), 0)
-	_place_building_internal("taxiway", Vector2i(11, 10), 0)
-	_place_building_internal("taxiway", Vector2i(12, 10), 0)
-	_place_building_internal("taxiway", Vector2i(13, 10), 0)
 	_place_building_internal("small_stand", Vector2i(11, 11), 0)
 	_place_building_internal("small_stand", Vector2i(13, 11), 0)
 	_place_building_internal("small_terminal", Vector2i(8, 14), 0)
 	_place_building_internal("travel_office", Vector2i(9, 10), 0)
 	_place_building_internal("ground_ops_depot", Vector2i(11, 14), 0)
 	_place_building_internal("basic_fuel", Vector2i(13, 13), 0)
-	_place_building_internal("service_road", Vector2i(11, 13), 0)
-	_place_building_internal("service_road", Vector2i(12, 13), 0)
-	_place_building_internal("service_road", Vector2i(15, 12), 0)
-	_place_building_internal("service_road", Vector2i(15, 13), 0)
-	_place_building_internal("service_road", Vector2i(12, 14), 0)
-	_place_building_internal("service_road", Vector2i(12, 15), 0)
-	_place_building_internal("service_road", Vector2i(13, 15), 0)
-	_place_building_internal("service_road", Vector2i(14, 15), 0)
-	_place_building_internal("service_road", Vector2i(15, 15), 0)
-	_place_building_internal("service_road", Vector2i(15, 14), 0)
 	_rebuild_occupied_cells()
 
 
@@ -586,8 +573,6 @@ func _draw_grid_first_buildings() -> void:
 	buildings_to_draw.sort_custom(
 		Callable(self, "_sort_buildings_by_depth")
 	)
-	var taxiway_origins: Array[Vector2i] = []
-	var service_road_origins: Array[Vector2i] = []
 
 	for building in buildings_to_draw:
 		if (
@@ -612,18 +597,6 @@ func _draw_grid_first_buildings() -> void:
 			rotation
 		)
 		var id := String(definition.get("id", ""))
-
-		if (
-			id == "taxiway"
-			and _definition_has_grid_native_autotile(definition)
-		):
-			_draw_grid_native_taxiway_variant(
-				definition,
-				origin,
-				Color.WHITE
-			)
-			taxiway_origins.append(origin)
-			continue
 
 		# Grid-native surface art is authored directly against the exact
 		# projected footprint and is safe during the reset.
@@ -651,8 +624,6 @@ func _draw_grid_first_buildings() -> void:
 					rotation
 				)
 
-			if id == "service_road":
-				service_road_origins.append(origin)
 			continue
 
 		var fill := _grid_first_building_fill(definition)
@@ -681,27 +652,7 @@ func _draw_grid_first_buildings() -> void:
 				2.0
 			)
 
-		if id == "taxiway":
-			taxiway_origins.append(origin)
-		elif id == "service_road":
-			service_road_origins.append(origin)
 
-	# Runway connector art is composed from the real placed 1x1 taxiway
-	# sockets. The 5x2 runway remains a fixed grid-native base asset.
-	_draw_grid_native_runway_exit_overlays()
-
-	# Base taxiway-to-taxiway joins are baked into the selected autotile.
-	# These late seams are only for stands/hangars; runway seams are now owned
-	# by the modular runway connector pass above.
-	for taxiway_origin in taxiway_origins:
-		_draw_grid_native_taxiway_connections(
-			taxiway_origin
-		)
-	for service_origin in service_road_origins:
-		_draw_grid_first_network_links(
-			service_origin,
-			"service_road"
-		)
 
 func _definition_has_grid_native_surface(
 	definition: Dictionary
@@ -1514,10 +1465,7 @@ func _draw_grid_first_preview() -> void:
 		preview_status.get("valid", false)
 	)
 
-	if (
-		preview_building_id == "taxiway"
-		and _definition_has_grid_native_autotile(definition)
-	):
+	if _definition_has_grid_native_surface(definition):
 		var preview_modulate := (
 			Color(0.82, 1.0, 0.86, 0.88)
 			if valid
@@ -9642,87 +9590,12 @@ func _get_placement_status(
 			)
 		}
 
-	if (
-		building_id == "taxiway"
-		and _taxiway_has_invalid_runway_adjacency(
-			origin
-		)
-	):
-		return {
-			"valid": false,
-			"reason": (
-				"Taxiways may connect to a runway only at its rollout-end exits."
-			),
-			"origin": origin,
-			"footprint": footprint,
-			"runway_exit_rule": "rollout_end_four"
-		}
-
-	if building_id == "taxiway":
-		var runway_limit := _taxiway_runway_connection_limit_status(
-			origin
-		)
-		if not bool(
-			runway_limit.get(
-				"valid",
-				true
-			)
-		):
-			return {
-				"valid": false,
-				"reason": String(
-					runway_limit.get(
-						"reason",
-						"Runway taxiway limit reached."
-					)
-				),
-				"origin": origin,
-				"footprint": footprint,
-				"runway_exit_rule": "rollout_end_four",
-				"runway_connection_limit": String(
-					runway_limit.get(
-						"limit",
-						""
-					)
-				),
-				"runway_exit_lane": String(
-					runway_limit.get(
-						"lane",
-						""
-					)
-				)
-			}
-
-	if (
-		_is_runway_definition(definition)
-		and _runway_candidate_has_invalid_taxiway_adjacency(
-			definition,
-			origin,
-			rotation,
-			ignore_uid
-		)
-	):
-		return {
-			"valid": false,
-			"reason": (
-				"Runway taxi connections are allowed only at the rollout end."
-			),
-			"origin": origin,
-			"footprint": footprint,
-			"runway_exit_rule": "rollout_end_four"
-		}
-
 	var result := {
 		"valid": true,
 		"reason": "Ready to build.",
 		"origin": origin,
 		"footprint": footprint
 	}
-
-	if _needs_airside_connection(definition):
-		var preview_cells := _cells_for(origin, footprint)
-		if not _cells_touch_reachable_taxiway(preview_cells):
-			result["warning"] = "No taxiway connection to a runway yet."
 
 	var synergy := get_preview_synergy_summary(
 		building_id,
@@ -10053,30 +9926,10 @@ func _refresh_building_labels() -> void:
 
 
 func _world_building_warning_text(
-	building: Dictionary,
-	definition: Dictionary
+	_building: Dictionary,
+	_definition: Dictionary
 ) -> String:
-	# V1 owned-aircraft handling deliberately teleports between service
-	# structures. Approved Skyrama-style handling buildings therefore do not
-	# require a physical Taxiway connection and must not show the legacy
-	# TAXIWAY warning.
-	if bool(
-		definition.get(
-			"grid_first_service_visual",
-			false
-		)
-	):
-		return ""
-
-	var id := String(definition.get("id", ""))
-	if (
-		id.contains("stand")
-		or id.contains("hangar")
-	):
-		if not _is_airside_building_connected(
-			int(building.get("uid", -1))
-		):
-			return "⚠ TAXIWAY"
+	# Aircraft handling teleports; structures never require road connections.
 	return ""
 
 
@@ -10090,9 +9943,7 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 			fuel_label += "  •  LV %d" % int(building.get("upgrade_level", 1))
 		return fuel_label
 	if id.contains("stand"):
-		if not _is_airside_building_connected(int(building["uid"])):
-			return "STAND  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
-		return "STAND  •  " + _size_text(definition) + "  ✓"
+		return "STAND  •  " + _size_text(definition)
 	if id.contains("terminal"):
 		var terminal_text := "TERMINAL"
 		var terminal_synergy := get_building_synergy_summary(
@@ -10123,9 +9974,8 @@ func _building_label_text(building: Dictionary, definition: Dictionary) -> Strin
 			)
 		return passenger_text
 	if id.contains("hangar"):
-		if not _is_airside_building_connected(int(building["uid"])):
-			return "HANGAR  •  " + _size_text(definition) + "  ⚠ TAXIWAY"
-		return "HANGAR  •  " + _size_text(definition) + "  ✓"
+		return "HANGAR  •  " + _size_text(definition)
+
 	if ServiceUpgradeCatalog.is_upgradeable(id):
 		var service_text := "%s  •  LV %d" % [
 			String(definition["menu_name"]).to_upper(),
@@ -10801,162 +10651,61 @@ func get_hangar_to_stand_routes(
 	stand_uid: int,
 	aircraft_size: String = "S"
 ) -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
+	# Legacy callers receive endpoints, not a path over taxiway cells.
+	var results: Array[Dictionary] = []
 	var stand := _building_by_uid(stand_uid)
 	if stand.is_empty():
-		return result
-	var stand_definition := BuildingCatalog.get_definition(
+		return results
+	var stand_def := BuildingCatalog.get_definition(
 		String(stand.get("definition_id", ""))
 	)
-	if (
-		stand_definition.is_empty()
-		or not String(
-			stand_definition.get("id", "")
-		).contains("stand")
-	):
-		return result
-
-	var reachable_keys: Array = airside_status.get(
-		"reachable_taxiway_cells",
-		[]
-	)
-	var reachable: Dictionary = {}
-	for key_variant in reachable_keys:
-		var key := String(key_variant)
-		var parts := key.split(":")
-		if parts.size() != 2:
-			continue
-		reachable[key] = Vector2i(
-			int(parts[0]),
-			int(parts[1])
-		)
-
-	if reachable.is_empty():
-		return result
-
-	var stand_fp := _footprint_for(
-		stand_definition,
-		int(stand.get("rotation", 0))
-	)
-	var stand_cells := _cells_for(
+	if stand_def.is_empty():
+		return results
+	var to_pos := _footprint_center_world(
 		stand.get("origin", Vector2i.ZERO),
-		stand_fp
+		_footprint_for(stand_def, int(stand.get("rotation", 0)))
 	)
-	var goals := _adjacent_cells_in_set(
-		stand_cells,
-		reachable
-	)
-	if goals.is_empty():
-		return result
-
 	for hangar in get_connected_hangars(aircraft_size):
-		var hangar_definition := BuildingCatalog.get_definition(
+		var definition := BuildingCatalog.get_definition(
 			String(hangar.get("definition_id", ""))
 		)
-		if hangar_definition.is_empty():
-			continue
-		var hangar_fp := _footprint_for(
-			hangar_definition,
-			int(hangar.get("rotation", 0))
+		var from_pos := _footprint_center_world(
+			hangar.get("origin", Vector2i.ZERO),
+			_footprint_for(definition, int(hangar.get("rotation", 0)))
 		)
-		var starts := _adjacent_cells_in_set(
-			_cells_for(
-				hangar.get("origin", Vector2i.ZERO),
-				hangar_fp
-			),
-			reachable
-		)
-		if starts.is_empty():
-			continue
-		var taxi_path := _road_path_between(
-			starts,
-			goals,
-			reachable
-		)
-		if taxi_path.is_empty():
-			continue
-
-		var points := PackedVector2Array()
-		points.append(
-			_footprint_center_world(
-				hangar.get("origin", Vector2i.ZERO),
-				hangar_fp
-			)
-		)
-		var distance := 0.0
-		var previous := points[0]
-		for cell in taxi_path:
-			var point := tile_to_world(
-				Vector2(cell.x, cell.y)
-			)
-			points.append(point)
-			distance += previous.distance_to(point)
-			previous = point
-		var stand_position := _footprint_center_world(
-			stand.get("origin", Vector2i.ZERO),
-			stand_fp
-		)
-		points.append(stand_position)
-		distance += previous.distance_to(stand_position)
-		result.append({
+		results.append({
 			"hangar_uid": int(hangar.get("uid", -1)),
 			"stand_uid": stand_uid,
-			"taxi_distance": distance,
-			"route": points
+			"taxi_distance": 0.0,
+			"route": PackedVector2Array([from_pos, to_pos])
 		})
-
-	result.sort_custom(
-		func(a: Dictionary, b: Dictionary) -> bool:
-			return float(a.get("taxi_distance", 0.0)) < float(
-				b.get("taxi_distance", 0.0)
-			)
-	)
-	return result
+	return results
 
 
 func get_service_route(station_uid: int, stand_uid: int) -> PackedVector2Array:
+	# Service movement is an instant transfer, with no service-road path.
 	var station := _building_by_uid(station_uid)
 	var stand := _building_by_uid(stand_uid)
 	if station.is_empty() or stand.is_empty():
 		return PackedVector2Array()
-
-	var station_definition := BuildingCatalog.get_definition(String(station["definition_id"]))
-	var stand_definition := BuildingCatalog.get_definition(String(stand["definition_id"]))
-	if station_definition.is_empty() or stand_definition.is_empty():
+	var station_def := BuildingCatalog.get_definition(
+		String(station.get("definition_id", ""))
+	)
+	var stand_def := BuildingCatalog.get_definition(
+		String(stand.get("definition_id", ""))
+	)
+	if station_def.is_empty() or stand_def.is_empty():
 		return PackedVector2Array()
-
-	var road_cells: Dictionary = {}
-	for building in placed_buildings:
-		if String(building["definition_id"]) != "service_road":
-			continue
-		var road_definition := BuildingCatalog.get_definition("service_road")
-		var footprint := _footprint_for(road_definition, int(building["rotation"]))
-		for cell in _cells_for(building["origin"], footprint):
-			road_cells[_cell_key(cell)] = cell
-
-	if road_cells.is_empty():
-		return PackedVector2Array()
-
-	var station_footprint := _footprint_for(station_definition, int(station["rotation"]))
-	var stand_footprint := _footprint_for(stand_definition, int(stand["rotation"]))
-	var station_cells := _cells_for(station["origin"], station_footprint)
-	var stand_cells := _cells_for(stand["origin"], stand_footprint)
-
-	var starts := _adjacent_cells_in_set(station_cells, road_cells)
-	var goals := _adjacent_cells_in_set(stand_cells, road_cells)
-	if starts.is_empty() or goals.is_empty():
-		return PackedVector2Array()
-
-	var road_path := _road_path_between(starts, goals, road_cells)
-	if road_path.is_empty():
-		return PackedVector2Array()
-
-	var points := PackedVector2Array()
-	points.append(_footprint_center_world(station["origin"], station_footprint))
-	for cell in road_path:
-		points.append(tile_to_world(Vector2(cell.x, cell.y)))
-	points.append(_footprint_center_world(stand["origin"], stand_footprint))
-	return points
+	return PackedVector2Array([
+		_footprint_center_world(
+			station.get("origin", Vector2i.ZERO),
+			_footprint_for(station_def, int(station.get("rotation", 0)))
+		),
+		_footprint_center_world(
+			stand.get("origin", Vector2i.ZERO),
+			_footprint_for(stand_def, int(stand.get("rotation", 0)))
+		)
+	])
 
 
 func _adjacent_cells_in_set(cells: Array[Vector2i], allowed: Dictionary) -> Array[Vector2i]:
@@ -12418,75 +12167,32 @@ func _is_airside_building_connected(uid: int) -> bool:
 
 
 func _recalculate_airside_network() -> void:
-	var taxiway_cells: Dictionary = {}
-	var runway_cells: Dictionary = {}
-	var airside_buildings: Array[Dictionary] = []
-
+	# The active Skyrama handling loop uses taps and instant transfers.
+	# Keep familiar public counters; taxiway reachability is retired.
+	var linked: Array[int] = []
+	var stands := 0
+	var hangars := 0
 	for building in placed_buildings:
-		var definition := BuildingCatalog.get_definition(String(building["definition_id"]))
-		if definition.is_empty():
-			continue
-
-		var footprint := _footprint_for(definition, int(building["rotation"]))
-		var cells := _cells_for(building["origin"], footprint)
-
-		if _is_taxiway_definition(definition):
-			for cell in cells:
-				taxiway_cells[_cell_key(cell)] = cell
-		elif _is_runway_definition(definition):
-			for cell in cells:
-				runway_cells[_cell_key(cell)] = cell
-		elif _needs_airside_connection(definition):
-			airside_buildings.append({
-				"uid": int(building["uid"]),
-				"definition_id": String(building["definition_id"]),
-				"cells": cells
-			})
-
-	var reachable_taxiways := _reachable_taxiway_cells(taxiway_cells, runway_cells)
-	var connected_uids: Array[int] = []
-	var disconnected: Array[Dictionary] = []
-	var connected_stands := 0
-	var total_stands := 0
-	var connected_hangars := 0
-	var total_hangars := 0
-
-	for info in airside_buildings:
-		var uid := int(info["uid"])
-		var definition_id := String(info["definition_id"])
-		var connected := _cells_touch_cell_set(info["cells"], reachable_taxiways)
-
-		if definition_id.contains("stand"):
-			total_stands += 1
-			if connected:
-				connected_stands += 1
-		elif definition_id.contains("hangar"):
-			total_hangars += 1
-			if connected:
-				connected_hangars += 1
-
-		if connected:
-			connected_uids.append(uid)
-		else:
-			disconnected.append({
-				"uid": uid,
-				"definition_id": definition_id
-			})
-
+		var id := String(building.get("definition_id", ""))
+		if id.contains("stand"):
+			stands += 1
+			linked.append(int(building.get("uid", -1)))
+		elif id.contains("hangar"):
+			hangars += 1
+			linked.append(int(building.get("uid", -1)))
 	airside_status = {
 		"runways": _count_buildings_matching("runway"),
-		"taxiways": taxiway_cells.size(),
-		"stands_total": total_stands,
-		"stands_connected": connected_stands,
-		"hangars_total": total_hangars,
-		"hangars_connected": connected_hangars,
-		"connected_uids": connected_uids,
-		"disconnected": disconnected,
-		"reachable_taxiway_cells": reachable_taxiways.keys()
+		"taxiways": 0,
+		"stands_total": stands,
+		"stands_connected": stands,
+		"hangars_total": hangars,
+		"hangars_connected": hangars,
+		"connected_uids": linked,
+		"disconnected": [],
+		"reachable_taxiway_cells": []
 	}
 	network_status_changed.emit(get_airside_status())
 	queue_redraw()
-
 
 
 func _reachable_taxiway_cells(

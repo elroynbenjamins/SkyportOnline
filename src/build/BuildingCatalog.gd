@@ -25,21 +25,16 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Handles small aircraft.",
 			"icon_path": "res://assets/production/airfield_v2/runway_icon_v2.svg",
-			"art_tier": "grid_native_v3",
-			"surface_art": "short_runway_s_5x2_v3",
+			"art_tier": "grid_native_runway_v4",
+			"surface_art": "short_runway_s_5x2_v4",
 			"visual_contract": "square_grid_iso_v1",
 			"grid_native_surface_paths": PackedStringArray([
-				"res://assets/production/airfield_v3/short_runway_s_0.svg",
-				"res://assets/production/airfield_v3/short_runway_s_90.svg"
+				"res://assets/production/airfield_v4/short_runway_5x2.svg",
+				"res://assets/production/airfield_v4/short_runway_2x5.svg"
 			]),
 			"grid_native_surface_size": Vector2i(224, 112),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
-			"grid_native_modular_runway_exits": true,
-			"runway_direction_policy": "origin_to_long_axis_end",
-			"runway_taxi_exit_policy": "rollout_end_four",
-			"runway_taxi_lane_count": 2,
-			"runway_max_active_taxi_connections": 2,
-			"runway_max_active_taxi_connections_per_lane": 1
+			"runway_direction_policy": "origin_to_long_axis_end"
 		},
 		{
 			"id": "small_stand",

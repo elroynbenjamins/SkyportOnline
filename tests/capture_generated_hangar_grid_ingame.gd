@@ -27,22 +27,22 @@ func _run() -> void:
 		"small_hangar", grid.tile_to_world(Vector2(9, 4)), 0
 	)
 	if not bool(built.get("valid", false)):
-		_fail("Could not snap 3x2 hangar.")
+		_fail("Could not snap 4x3 hangar.")
 		return
 	if grid.confirm_build_preview().is_empty():
-		_fail("Could not confirm constructed 3x2 hangar.")
+		_fail("Could not confirm constructed 4x3 hangar.")
 		return
 
 	var rotated := grid.set_build_preview(
 		"small_hangar", grid.tile_to_world(Vector2(3, 5)), 1
 	)
 	if not bool(rotated.get("valid", false)):
-		_fail("Could not preview snapped 2x3 hangar.")
+		_fail("Could not preview snapped 3x4 hangar.")
 		return
 
 	var camera := Camera2D.new()
 	camera.position = grid.tile_to_world(Vector2(7.0, 5.4))
-	camera.zoom = Vector2(1.9, 1.9)
+	camera.zoom = Vector2(1.7, 1.7)
 	camera.enabled = true
 	world.add_child(camera)
 

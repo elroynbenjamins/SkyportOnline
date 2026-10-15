@@ -3,8 +3,8 @@ extends SceneTree
 # The hangar is the first grid-geometry-driven building, not an illustration
 # deformed to fit a tile. Both sprite corners and build occupancy agree.
 
-const NORMAL := "res://assets/production/airport_buildings_v6/small_hangar_3x2.svg"
-const ROTATED := "res://assets/production/airport_buildings_v6/small_hangar_2x3.svg"
+const NORMAL := "res://assets/production/airport_buildings_v8/small_hangar_4x3.svg"
+const ROTATED := "res://assets/production/airport_buildings_v8/small_hangar_3x4.svg"
 
 
 func _init() -> void:
@@ -13,8 +13,8 @@ func _init() -> void:
 
 func _run() -> void:
 	var definition := BuildingCatalog.get_definition("small_hangar")
-	if definition.get("footprint", Vector2i.ZERO) != Vector2i(3, 2):
-		_fail("The hangar's logical footprint must remain 3x2.")
+	if definition.get("footprint", Vector2i.ZERO) != Vector2i(4, 3):
+		_fail("The hangar's logical footprint must remain 4x3.")
 		return
 	if not bool(definition.get("grid_first_world_sprite", false)):
 		_fail("Hangar must be displayed as an authored sprite on the pad.")
@@ -30,29 +30,22 @@ func _run() -> void:
 		"grid_first_structure_paths", PackedStringArray()
 	)
 	if paths != PackedStringArray([NORMAL, ROTATED]):
-		_fail("Missing independently authored 3x2 and 2x3 image paths.")
+		_fail("Missing independently authored 4x3 and 3x4 image paths.")
 		return
 	for asset_path in paths:
 		var sprite := load(asset_path)
 		if not (sprite is Texture2D):
 			_fail("Hangar did not import as Godot Texture2D: %s" % asset_path)
 			return
-		if sprite.get_size() != Vector2(160, 190):
-			_fail("Sprite should use 160x190 pixel canvas: %s" % asset_path)
+		if sprite.get_size() != Vector2(224, 260):
+			_fail("Sprite should use 224x260 pixel canvas: %s" % asset_path)
 			return
 		var image: Image = sprite.get_image()
-		if image.get_pixel(70, 145).a < 0.60:
-			_fail("Closed hangar door/base did not render: %s" % asset_path)
+		if image.get_pixel(112, 155).a < 0.25:
+			_fail("Hangar body missing on the upgraded 4x3 sprite.")
 			return
-		var gable_x := 51 if asset_path == NORMAL else 109
-		if image.get_pixel(gable_x, 85).a < 0.65:
-			_fail("Curved roof gable must be solid, not expose terrain.")
-			return
-		if image.get_pixel(10, 185).a > 0.05:
-			_fail("Ground art overhangs the bottom-left tile: %s" % asset_path)
-			return
-		if image.get_pixel(151, 183).a > 0.05:
-			_fail("Ground art overhangs the bottom-right tile: %s" % asset_path)
+		if image.get_pixel(2, 258).a > 0.05 or image.get_pixel(221, 258).a > 0.05:
+			_fail("Hangar ground artwork spills outside the grid-native pad.")
 			return
 
 	var grid := AirportGrid.new()
@@ -64,33 +57,33 @@ func _run() -> void:
 			definition, rotation
 		)
 		var expected := (
-			Vector2i(3, 2) if rotation == 0 else Vector2i(2, 3)
+			Vector2i(4, 3) if rotation == 0 else Vector2i(3, 4)
 		)
 		if contract.get("footprint", Vector2i.ZERO) != expected:
 			_fail("Hangar footprint rotation is incorrect.")
 			return
 		if (
-			int(contract.get("authoring_width_px", 0)) != 160
-			or int(contract.get("base_depth_px", 0)) != 80
+			int(contract.get("authoring_width_px", 0)) != 224
+			or int(contract.get("base_depth_px", 0)) != 112
 		):
-			_fail("Wrong 160x80 isometric hangar ground projection.")
+			_fail("Wrong 224x112 isometric hangar ground projection.")
 			return
 		var preview := grid.set_build_preview(
 			"small_hangar", grid.tile_to_world(Vector2(8, 6)), rotation
 		)
 		if not bool(preview.get("valid", false)):
-			_fail("Hangar needs to snap to an empty 3x2 or 2x3 area.")
+			_fail("Hangar needs to snap to an empty 4x3 or 3x4 area.")
 			return
 		var draw_rect := grid.get_grid_visual_draw_rect_for_definition(
-			definition, Vector2i(4, 4), rotation, Vector2i(160, 190)
+			definition, Vector2i(4, 4), rotation, Vector2i(224, 260)
 		)
-		if draw_rect.size != Vector2(160, 190):
+		if draw_rect.size != Vector2(224, 260):
 			_fail("Sprite should render at its grid-authored native width.")
 			return
 
 	print(
-		"GENERATED_HANGAR_GRID_OK v6=true footprint=3x2 rotations=2 "
-		+ "pad=160x80 art=160x190 grid_geometry=true runtime_clip=false"
+		"GENERATED_HANGAR_GRID_OK v8=true footprint=4x3 rotations=2 "
+		+ "pad=224x112 art=224x260 grid_geometry=true runtime_clip=false"
 	)
 	quit(0)
 

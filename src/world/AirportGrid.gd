@@ -10862,152 +10862,70 @@ func get_departure_route_options_for_stand(
 	stand_uid: int,
 	aircraft_size: String = "S"
 ) -> Array[Dictionary]:
+	# Physical taxiways no longer exist. A route represents the runway
+	# movement only; servicing and hangar changes are instantaneous.
 	var result: Array[Dictionary] = []
 	var stand := _building_by_uid(stand_uid)
 	if stand.is_empty():
 		return result
-
 	var definition := BuildingCatalog.get_definition(
 		String(stand.get("definition_id", ""))
 	)
 	if (
 		definition.is_empty()
-		or not String(
-			definition.get("id", "")
-		).contains("stand")
-		or not _definition_supports_size(
-			definition,
-			aircraft_size
-		)
+		or not String(definition.get("id", "")).contains("stand")
+		or not _definition_supports_size(definition, aircraft_size)
 	):
 		return result
-
-	var connected_uids: Array = airside_status.get(
-		"connected_uids",
-		[]
-	)
-	if not connected_uids.has(stand_uid):
-		return result
-
-	var footprint := _footprint_for(
-		definition,
-		int(stand.get("rotation", 0))
-	)
-	var stand_cells := _cells_for(
-		stand["origin"],
-		footprint
-	)
-	var start_taxiway := _first_adjacent_reachable_taxiway(
-		stand_cells
-	)
-	if start_taxiway.x < 0:
-		return result
-
 	var stand_position := _footprint_center_world(
-		stand["origin"],
-		footprint
-	)
-	var first_taxi_position := tile_to_world(
-		Vector2(
-			start_taxiway.x,
-			start_taxiway.y
-		)
-	)
-	# Keep a short visual lead-in before the actual taxiway, but place the
-	# access waypoint close enough to the taxiway that normal pushback can
-	# remain inside this first protected stand segment.
-	var stand_access_position := stand_position.lerp(
-		first_taxi_position,
-		0.90
+		stand.get("origin", Vector2i.ZERO),
+		_footprint_for(definition, int(stand.get("rotation", 0)))
 	)
 
 	for runway in placed_buildings:
-		var runway_definition := BuildingCatalog.get_definition(
+		var runway_def := BuildingCatalog.get_definition(
 			String(runway.get("definition_id", ""))
 		)
 		if (
-			runway_definition.is_empty()
-			or not _is_runway_definition(
-				runway_definition
-			)
-			or not _definition_supports_size(
-				runway_definition,
-				aircraft_size
-			)
+			runway_def.is_empty()
+			or not _is_runway_definition(runway_def)
+			or not _definition_supports_size(runway_def, aircraft_size)
 		):
 			continue
 
-		var runway_uid := int(
-			runway.get("uid", -1)
+		var runway_uid := int(runway.get("uid", -1))
+		var runway_origin: Vector2i = runway.get(
+			"origin", Vector2i.ZERO
 		)
-		var taxi_path := _taxiway_path_to_specific_runway(
-			start_taxiway,
-			runway_uid,
-			aircraft_size
+		var footprint := _footprint_for(
+			runway_def, int(runway.get("rotation", 0))
 		)
-		if taxi_path.is_empty():
-			continue
+		# The aircraft starts and ends along the long axis of the runway.
+		var runway_entry := runway_origin
+		var runway_exit := runway_origin
+		if footprint.x >= footprint.y:
+			var center_y := int(floor(float(footprint.y) * 0.5))
+			runway_entry.y += center_y
+			runway_exit.y += center_y
+			runway_exit.x += footprint.x - 1
+		else:
+			var center_x := int(floor(float(footprint.x) * 0.5))
+			runway_entry.x += center_x
+			runway_exit.x += center_x
+			runway_exit.y += footprint.y - 1
 
-		var last_taxi_cell: Vector2i = taxi_path[
-			taxi_path.size() - 1
-		]
-		var runway_entry := _adjacent_runway_cell_for_uid(
-			last_taxi_cell,
-			runway_uid,
-			aircraft_size
-		)
-		if runway_entry.x < 0:
-			continue
-
-		var runway_exit := _farthest_cell_on_runway_uid(
-			runway_entry,
-			runway_uid,
-			aircraft_size
-		)
-		var hold_short_position := _hold_short_world_position(
-			last_taxi_cell,
-			runway_entry
-		)
-
-		var points := PackedVector2Array()
-		points.append(stand_position)
-		points.append(stand_access_position)
-		var taxi_distance := stand_position.distance_to(
-			stand_access_position
-		)
-		var previous_point := stand_access_position
-		for taxi_cell in taxi_path:
-			var taxi_point := tile_to_world(
-				Vector2(taxi_cell.x, taxi_cell.y)
-			)
-			points.append(taxi_point)
-			taxi_distance += previous_point.distance_to(
-				taxi_point
-			)
-			previous_point = taxi_point
-
-		points.append(hold_short_position)
-		taxi_distance += previous_point.distance_to(
-			hold_short_position
-		)
-		points.append(
-			tile_to_world(
-				Vector2(
-					runway_entry.x,
-					runway_entry.y
-				)
-			)
-		)
-		if runway_exit != runway_entry:
-			points.append(
-				tile_to_world(
-					Vector2(
-						runway_exit.x,
-						runway_exit.y
-					)
-				)
-			)
-
+		var entry_position := tile_to_world(Vector2(
+			runway_entry.x, runway_entry.y
+		))
+		var end_position := tile_to_world(Vector2(
+			runway_exit.x, runway_exit.y
+		))
+		var points := PackedVector2Array([
+			entry_position,
+			entry_position.lerp(end_position, 0.18),
+			entry_position.lerp(end_position, 0.72),
+			end_position
+		])
 		result.append({
 			"stand_uid": stand_uid,
 			"stand_definition_id": String(
@@ -11018,31 +10936,18 @@ func get_departure_route_options_for_stand(
 			"runway_definition_id": String(
 				runway.get("definition_id", "")
 			),
-			"hold_short_position": hold_short_position,
-			"stand_access_position": stand_access_position,
+			"hold_short_position": entry_position,
+			"stand_access_position": stand_position,
 			"runway_entry_cell": runway_entry,
-			"taxi_cells": taxi_path.duplicate(),
-			"taxi_turns": AirsideRoutingRules.turn_count(
-				taxi_path
-			),
-			"routing_version": 2,
-			"taxi_distance": taxi_distance,
+			"taxi_cells": [],
+			"taxi_turns": 0,
+			"taxi_distance": 0.0,
+			"routing_version": 3,
 			"route": points
 		})
-
 	result.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			var a_distance := float(
-				a.get("taxi_distance", 0.0)
-			)
-			var b_distance := float(
-				b.get("taxi_distance", 0.0)
-			)
-			if absf(a_distance - b_distance) > 0.01:
-				return a_distance < b_distance
-			return int(
-				a.get("runway_uid", -1)
-			) < int(
+			return int(a.get("runway_uid", -1)) < int(
 				b.get("runway_uid", -1)
 			)
 	)

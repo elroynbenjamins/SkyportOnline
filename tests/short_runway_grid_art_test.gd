@@ -65,10 +65,10 @@ func _run() -> void:
 		definition,
 		0
 	)
-	if int(contract_0.get("authoring_width_px", 0)) != 224:
+	if int(contract_0.get("authoring_width_px", 0)) != 256:
 		_fail("6x2 runway contract should require 256 px width.")
 		return
-	if int(contract_0.get("base_depth_px", 0)) != 112:
+	if int(contract_0.get("base_depth_px", 0)) != 128:
 		_fail("6x2 runway contract should require 128 px base depth.")
 		return
 	if contract_0.get("runtime_scale", Vector2.ZERO) != Vector2.ONE:
@@ -82,10 +82,10 @@ func _run() -> void:
 	if contract_90.get("footprint", Vector2i.ZERO) != Vector2i(2, 6):
 		_fail("Rotated Short Runway should occupy exactly 2x6 cells.")
 		return
-	if int(contract_90.get("authoring_width_px", 0)) != 224:
+	if int(contract_90.get("authoring_width_px", 0)) != 256:
 		_fail("Rotated 2x6 runway should still use a 256 px art base.")
 		return
-	if int(contract_90.get("base_depth_px", 0)) != 112:
+	if int(contract_90.get("base_depth_px", 0)) != 128:
 		_fail("Rotated 2x6 runway should still use a 128 px art depth.")
 		return
 

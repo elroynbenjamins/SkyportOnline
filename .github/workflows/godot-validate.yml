@@ -139,6 +139,7 @@ jobs:
             tests/handling_art_v4_test.gd
             tests/generated_hangar_grid_test.gd
             tests/medium_hangar_grid_test.gd
+            tests/airport_three_asset_focus_test.gd
             tests/resource_drop_rules_test.gd
             tests/passenger_economy_test.gd
             tests/fuel_economy_test.gd

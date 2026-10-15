@@ -2,7 +2,7 @@ extends SceneTree
 
 # Grid-authored medium-hangar regression:
 # 5x4 occupancy, distinct 4x5 rotation, concrete pads, imported textures,
-# and a genuinely larger visual footprint than the 3x2 starter hangar.
+# and a genuinely larger visual footprint than the 4x3 Small Hangar.
 const ART_PATHS := [
 	"res://assets/production/airport_buildings_v8/medium_hangar_5x4.svg",
 	"res://assets/production/airport_buildings_v8/medium_hangar_4x5.svg"
@@ -85,7 +85,7 @@ func _run() -> void:
 			_fail("Medium hangar cannot snap to free cells.")
 			return
 		var draw_rect := grid.get_grid_visual_draw_rect_for_definition(
-			medium, Vector2i(7, 7), rotation, Vector2i(224, 260)
+			medium, Vector2i(7, 7), rotation, Vector2i(288, 336)
 		)
 		if draw_rect.size != Vector2(288, 336):
 			_fail("Medium art must render at its grid-native size.")

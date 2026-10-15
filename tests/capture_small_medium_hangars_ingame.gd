@@ -45,9 +45,15 @@ func _run() -> void:
 		quit(1)
 		return
 
+	# The V1 airport uses landing bubbles and instant servicing. A
+	# free-standing 5x2 runway needs no taxi connection to these hangars.
+	if not _place(grid, "short_runway", Vector2i(5, 11)):
+		quit(1)
+		return
+
 	var camera := Camera2D.new()
-	camera.position = grid.tile_to_world(Vector2(7.5, 5.0))
-	camera.zoom = Vector2(1.75, 1.75)
+	camera.position = grid.tile_to_world(Vector2(7.5, 7.0))
+	camera.zoom = Vector2(1.55, 1.55)
 	camera.enabled = true
 	world.add_child(camera)
 
@@ -72,6 +78,6 @@ func _run() -> void:
 
 	print(
 		"SMALL_MEDIUM_HANGARS_SCREENSHOT_OK "
-		+ "small=3x2 medium=4x3 path=%s" % output
+		+ "small=3x2 medium=4x3 runway=5x2 path=%s" % output
 	)
 	quit(0)

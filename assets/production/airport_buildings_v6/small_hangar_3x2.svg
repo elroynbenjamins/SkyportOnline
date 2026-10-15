@@ -2,7 +2,7 @@
 <defs>
 <linearGradient id="wall" x2=".85" y2="1"><stop stop-color="#fffefa"/><stop offset=".55" stop-color="#eaf6f4"/><stop offset="1" stop-color="#a5cfdd"/></linearGradient>
 <linearGradient id="side" x2="1" y2="1"><stop stop-color="#c9ecf2"/><stop offset=".48" stop-color="#d0e6e7"/><stop offset="1" stop-color="#80adbe"/></linearGradient>
-<linearGradient id="roof" x2=".4" y2="1"><stop stop-color="#80dffe"/><stop offset=".20" stop-color="#399fdf"/><stop offset=".70" stop-color="#227ec8"/><stop offset="1" stop-color="#145595"/></linearGradient>
+<linearGradient id="roof" x2=".4" y2="1"><stop stop-color="#a4eaff"/><stop offset=".20" stop-color="#5ab9ea"/><stop offset=".70" stop-color="#368bd1"/><stop offset="1" stop-color="#1762a2"/></linearGradient>
 <linearGradient id="door" x2="1" y2="1"><stop stop-color="#489bd1"/><stop offset=".50" stop-color="#1270bb"/><stop offset="1" stop-color="#154b87"/></linearGradient>
 <linearGradient id="sky" x2="1" y2="1"><stop stop-color="#ddffff"/><stop offset=".44" stop-color="#97e6ff"/><stop offset="1" stop-color="#277fb7"/></linearGradient>
 <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#ffeb97"/><stop offset="1" stop-color="#eeb432"/></linearGradient>
@@ -34,6 +34,10 @@
 <path d="M12.30,93.15 L89.70,131.85" stroke="#165e98" stroke-width="3"/>
 <path d="M15.45,146.72 L86.55,182.28" stroke="#ffde5f" stroke-width="1.6" opacity=".92"/>
 <path d="M6.00,77.00 L9.00,75.26 L12.00,73.55 L15.00,71.92 L18.00,70.39 L21.00,69.00 L24.00,67.78 L27.00,66.76 L30.00,65.96 L33.00,65.42 L36.00,65.15 L39.00,65.18 L42.00,65.52 L45.00,66.18 L48.00,67.17 L51.00,68.50 L54.00,70.17 L57.00,72.18 L60.00,74.52 L63.00,77.18 L66.00,80.15 L69.00,83.42 L72.00,86.96 L75.00,90.76 L78.00,94.78 L81.00,99.00 L84.00,103.39 L87.00,107.92 L90.00,112.55 L93.00,117.26 L96.00,122.00 L6.00,77.00 Z" fill="url(#wall)" stroke="#d4ebed" stroke-width=".8"/><path d="M6.00,77.00 L9.00,75.26 L12.00,73.55 L15.00,71.92 L18.00,70.39 L21.00,69.00 L24.00,67.78 L27.00,66.76 L30.00,65.96 L33.00,65.42 L36.00,65.15 L39.00,65.18 L42.00,65.52 L45.00,66.18 L48.00,67.17 L51.00,68.50 L54.00,70.17 L57.00,72.18 L60.00,74.52 L63.00,77.18 L66.00,80.15 L69.00,83.42 L72.00,86.96 L75.00,90.76 L78.00,94.78 L81.00,99.00 L84.00,103.39 L87.00,107.92 L90.00,112.55 L93.00,117.26 L96.00,122.00" fill="none" stroke="#fffdfa" stroke-width="1.2"/><path d="M6.00,77.00 L10.09,74.63 L14.18,72.36 L18.27,70.26 L22.36,68.42 L26.45,66.93 L30.55,65.84 L34.64,65.24 L38.73,65.17 L42.82,65.66 L46.91,66.77 L51.00,68.50 L55.09,70.86 L59.18,73.85 L63.27,77.44 L67.36,81.60 L71.45,86.30 L75.55,91.47 L79.64,97.06 L83.73,102.99 L87.82,109.18 L91.91,115.54 L96.00,122.00 L154.00,91.00 L149.91,84.54 L145.82,78.18 L141.73,71.99 L137.64,66.06 L133.55,60.47 L129.45,55.30 L125.36,50.60 L121.27,46.44 L117.18,42.85 L113.09,39.86 L109.00,37.50 L104.91,35.77 L100.82,34.66 L96.73,34.17 L92.64,34.24 L88.55,34.84 L84.45,35.93 L80.36,37.42 L76.27,39.26 L72.18,41.36 L68.09,43.63 L64.00,46.00 Z" fill="url(#roof)" stroke="#24638d" stroke-width="1.8" stroke-linejoin="round"/>
+<!-- skyrama-inspired-roof-bands-v2: lighter barrel-roof panels, always inside original roof silhouette -->
+<defs><clipPath id="skyportRoofBandsClip"><path d="M6.00,77.00 L10.09,74.63 L14.18,72.36 L18.27,70.26 L22.36,68.42 L26.45,66.93 L30.55,65.84 L34.64,65.24 L38.73,65.17 L42.82,65.66 L46.91,66.77 L51.00,68.50 L55.09,70.86 L59.18,73.85 L63.27,77.44 L67.36,81.60 L71.45,86.30 L75.55,91.47 L79.64,97.06 L83.73,102.99 L87.82,109.18 L91.91,115.54 L96.00,122.00 L154.00,91.00 L149.91,84.54 L145.82,78.18 L141.73,71.99 L137.64,66.06 L133.55,60.47 L129.45,55.30 L125.36,50.60 L121.27,46.44 L117.18,42.85 L113.09,39.86 L109.00,37.50 L104.91,35.77 L100.82,34.66 L96.73,34.17 L92.64,34.24 L88.55,34.84 L84.45,35.93 L80.36,37.42 L76.27,39.26 L72.18,41.36 L68.09,43.63 L64.00,46.00 Z"/></clipPath></defs>
+<g clip-path="url(#skyportRoofBandsClip)"><polygon points="18.69,70.06 76.69,39.06 81.91,36.81 23.91,67.81" fill="#d5f8ff" opacity=".26"/><path d="M19.60,69.63L77.60,38.63" stroke="#f2ffff" stroke-width="0.95" opacity=".57" fill="none"/><polygon points="34.89,65.22 92.89,34.22 98.11,34.27 40.11,65.27" fill="#94d8fb" opacity=".15"/><path d="M35.80,65.16L93.80,34.16" stroke="#f2ffff" stroke-width="0.95" opacity=".57" fill="none"/><polygon points="51.09,68.55 109.09,37.55 114.31,40.69 56.31,71.69" fill="#d5f8ff" opacity=".26"/><path d="M52.00,69.02L110.00,38.02" stroke="#f2ffff" stroke-width="0.95" opacity=".57" fill="none"/><polygon points="67.29,81.52 125.29,50.52 130.51,56.59 72.51,87.59" fill="#94d8fb" opacity=".15"/><path d="M68.20,82.53L126.20,51.53" stroke="#f2ffff" stroke-width="0.95" opacity=".57" fill="none"/><polygon points="83.49,102.63 141.49,71.63 146.71,79.55 88.71,110.55" fill="#d5f8ff" opacity=".26"/><path d="M84.40,103.99L142.40,72.99" stroke="#f2ffff" stroke-width="0.95" opacity=".57" fill="none"/></g>
+
 <path d="M71.20,41.89 L13.20,72.89" stroke="#d6f7fb" stroke-width="1" opacity=".56"/>
 <path d="M72.55,41.16 L14.55,72.16" stroke="#125a98" stroke-width=".55" opacity=".67"/>
 <path d="M85.60,35.58 L27.60,66.58" stroke="#d6f7fb" stroke-width="1" opacity=".56"/>
@@ -135,5 +139,18 @@
 <!-- Roof ventilation grill and realistic blue/silver highlight. -->
 <path d="M134,145 L143,141 L143,134 L134,138 Z" fill="#516e7a" stroke="#c2e5ef" stroke-width=".6"/>
 <path d="M136,138 L141,136 M136,140 L141,138 M136,142 L141,140" stroke="#e8f8f9" stroke-width=".7"/>
+</g>
+<g id="skyrama-airport-life-small-v2">
+ <path d="M18 96 L85 129" stroke="#eaffff" stroke-width="1.5" opacity=".78"/>
+ <path d="M103 132 L145 111" stroke="#f4ffff" stroke-width="1.6" opacity=".76"/>
+ <path d="M16 145 L88 181" stroke="#ffe49a" stroke-width="1.5" opacity=".93"/>
+ <!-- One small planted corner, safely within the hangar sprite bounds. -->
+ <ellipse cx="143" cy="158" rx="4.3" ry="1.6" fill="#344e56" opacity=".16"/>
+ <path d="M140 159 L147 155 L147 162 L140 166Z" fill="#b4bab8" stroke="#72919a" stroke-width=".7"/>
+ <path d="M139 154 Q138 150 141 149 Q143 144 145 149 Q149 146 150 153 Q152 156 146 159Z" fill="#75bf5f" stroke="#478b55" stroke-width="1"/>
+ <path d="M141 154 Q145 150 147 153" fill="none" stroke="#c7f4aa" stroke-width="1.15"/>
+ <!-- Small blue information plaque on the side wall. -->
+ <path d="M103 160 L112 155 L112 163 L103 168Z" fill="#276ca8" stroke="#edfaff" stroke-width=".85"/>
+ <path d="M106 161 L110 159" stroke="#ffffff" stroke-width="1.1"/>
 </g></g>
 </g></svg>

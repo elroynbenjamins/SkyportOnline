@@ -2,7 +2,7 @@
 <defs>
  <linearGradient id="cream" x2=".7" y2="1"><stop stop-color="#fffef4"/><stop offset=".44" stop-color="#eaf4f3"/><stop offset="1" stop-color="#a4c5d0"/></linearGradient>
  <linearGradient id="side" x2="1" y2="1"><stop stop-color="#f4ffff"/><stop offset=".50" stop-color="#d0e8ed"/><stop offset="1" stop-color="#82afbf"/></linearGradient>
- <linearGradient id="roof" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#94e5ff"/><stop offset=".19" stop-color="#3caef2"/><stop offset=".55" stop-color="#1985d3"/><stop offset="1" stop-color="#145093"/></linearGradient>
+ <linearGradient id="roof" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#beedff"/><stop offset=".19" stop-color="#58bef8"/><stop offset=".55" stop-color="#3699e5"/><stop offset="1" stop-color="#1a5f9c"/></linearGradient>
  <linearGradient id="door" x2="1" y2="1"><stop stop-color="#62c7f1"/><stop offset=".15" stop-color="#268fd0"/><stop offset="1" stop-color="#12518f"/></linearGradient>
  <linearGradient id="glass" x2="1" y2="1"><stop stop-color="#e8ffff"/><stop offset=".37" stop-color="#89e2f9"/><stop offset="1" stop-color="#2678b5"/></linearGradient>
  <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff0a6"/><stop offset="1" stop-color="#f8b537"/></linearGradient>
@@ -60,6 +60,10 @@
 <path d="M6.00,105.00 L9.05,103.39 L12.10,101.79 L15.15,100.24 L18.20,98.74 L21.25,97.32 L24.30,95.99 L27.35,94.78 L30.40,93.69 L33.45,92.75 L36.50,91.97 L39.55,91.36 L42.60,90.94 L45.65,90.72 L48.70,90.71 L51.75,90.92 L54.80,91.36 L57.85,92.03 L60.90,92.94 L63.95,94.10 L67.00,95.50 L70.05,97.15 L73.10,99.04 L76.15,101.18 L79.20,103.56 L82.25,106.17 L85.30,109.01 L88.35,112.07 L91.40,115.34 L94.45,118.81 L97.50,122.47 L100.55,126.30 L103.60,130.29 L106.65,134.43 L109.70,138.69 L112.75,143.07 L115.80,147.54 L118.85,152.09 L121.90,156.69 L124.95,161.34 L128.00,166.00 Z" fill="url(#cream)" stroke="#e4faff" stroke-width="1.4"/>
 <path d="M6.00,105.00 L9.05,103.39 L12.10,101.79 L15.15,100.24 L18.20,98.74 L21.25,97.32 L24.30,95.99 L27.35,94.78 L30.40,93.69 L33.45,92.75 L36.50,91.97 L39.55,91.36 L42.60,90.94 L45.65,90.72 L48.70,90.71 L51.75,90.92 L54.80,91.36 L57.85,92.03 L60.90,92.94 L63.95,94.10 L67.00,95.50 L70.05,97.15 L73.10,99.04 L76.15,101.18 L79.20,103.56 L82.25,106.17 L85.30,109.01 L88.35,112.07 L91.40,115.34 L94.45,118.81 L97.50,122.47 L100.55,126.30 L103.60,130.29 L106.65,134.43 L109.70,138.69 L112.75,143.07 L115.80,147.54 L118.85,152.09 L121.90,156.69 L124.95,161.34 L128.00,166.00" fill="none" stroke="#ffffff" stroke-width="1.7"/>
 <path d="M6.00,105.00 L9.05,103.39 L12.10,101.79 L15.15,100.24 L18.20,98.74 L21.25,97.32 L24.30,95.99 L27.35,94.78 L30.40,93.69 L33.45,92.75 L36.50,91.97 L39.55,91.36 L42.60,90.94 L45.65,90.72 L48.70,90.71 L51.75,90.92 L54.80,91.36 L57.85,92.03 L60.90,92.94 L63.95,94.10 L67.00,95.50 L70.05,97.15 L73.10,99.04 L76.15,101.18 L79.20,103.56 L82.25,106.17 L85.30,109.01 L88.35,112.07 L91.40,115.34 L94.45,118.81 L97.50,122.47 L100.55,126.30 L103.60,130.29 L106.65,134.43 L109.70,138.69 L112.75,143.07 L115.80,147.54 L118.85,152.09 L121.90,156.69 L124.95,161.34 L128.00,166.00 L218.00,121.00 L214.95,116.34 L211.90,111.69 L208.85,107.09 L205.80,102.54 L202.75,98.07 L199.70,93.69 L196.65,89.43 L193.60,85.29 L190.55,81.30 L187.50,77.47 L184.45,73.81 L181.40,70.34 L178.35,67.07 L175.30,64.01 L172.25,61.17 L169.20,58.56 L166.15,56.18 L163.10,54.04 L160.05,52.15 L157.00,50.50 L153.95,49.10 L150.90,47.94 L147.85,47.03 L144.80,46.36 L141.75,45.92 L138.70,45.71 L135.65,45.72 L132.60,45.94 L129.55,46.36 L126.50,46.97 L123.45,47.75 L120.40,48.69 L117.35,49.78 L114.30,50.99 L111.25,52.32 L108.20,53.74 L105.15,55.24 L102.10,56.79 L99.05,58.39 L96.00,60.00 Z" fill="url(#roof)" stroke="#125e9b" stroke-width="2.3"/>
+<!-- skyrama-inspired-roof-bands-v2: lighter barrel-roof panels, always inside original roof silhouette -->
+<defs><clipPath id="skyportRoofBandsClip"><path d="M6.00,105.00 L9.05,103.39 L12.10,101.79 L15.15,100.24 L18.20,98.74 L21.25,97.32 L24.30,95.99 L27.35,94.78 L30.40,93.69 L33.45,92.75 L36.50,91.97 L39.55,91.36 L42.60,90.94 L45.65,90.72 L48.70,90.71 L51.75,90.92 L54.80,91.36 L57.85,92.03 L60.90,92.94 L63.95,94.10 L67.00,95.50 L70.05,97.15 L73.10,99.04 L76.15,101.18 L79.20,103.56 L82.25,106.17 L85.30,109.01 L88.35,112.07 L91.40,115.34 L94.45,118.81 L97.50,122.47 L100.55,126.30 L103.60,130.29 L106.65,134.43 L109.70,138.69 L112.75,143.07 L115.80,147.54 L118.85,152.09 L121.90,156.69 L124.95,161.34 L128.00,166.00 L218.00,121.00 L214.95,116.34 L211.90,111.69 L208.85,107.09 L205.80,102.54 L202.75,98.07 L199.70,93.69 L196.65,89.43 L193.60,85.29 L190.55,81.30 L187.50,77.47 L184.45,73.81 L181.40,70.34 L178.35,67.07 L175.30,64.01 L172.25,61.17 L169.20,58.56 L166.15,56.18 L163.10,54.04 L160.05,52.15 L157.00,50.50 L153.95,49.10 L150.90,47.94 L147.85,47.03 L144.80,46.36 L141.75,45.92 L138.70,45.71 L135.65,45.72 L132.60,45.94 L129.55,46.36 L126.50,46.97 L123.45,47.75 L120.40,48.69 L117.35,49.78 L114.30,50.99 L111.25,52.32 L108.20,53.74 L105.15,55.24 L102.10,56.79 L99.05,58.39 L96.00,60.00 Z"/></clipPath></defs>
+<g clip-path="url(#skyportRoofBandsClip)"><polygon points="19.91,97.93 109.91,52.93 116.25,50.20 26.25,95.20" fill="#d5f8ff" opacity=".26"/><path d="M21.02,97.42L111.02,52.42" stroke="#f2ffff" stroke-width="1.2" opacity=".57" fill="none"/><polygon points="39.43,91.38 129.43,46.38 135.77,45.71 45.77,90.71" fill="#94d8fb" opacity=".15"/><path d="M40.54,91.20L130.54,46.20" stroke="#f2ffff" stroke-width="1.2" opacity=".57" fill="none"/><polygon points="58.95,92.33 148.95,47.33 155.29,49.68 65.29,94.68" fill="#d5f8ff" opacity=".26"/><path d="M60.06,92.67L150.06,47.67" stroke="#f2ffff" stroke-width="1.2" opacity=".57" fill="none"/><polygon points="78.47,102.97 168.47,57.97 174.81,63.54 84.81,108.54" fill="#94d8fb" opacity=".15"/><path d="M79.58,103.87L169.58,58.87" stroke="#f2ffff" stroke-width="1.2" opacity=".57" fill="none"/><polygon points="97.99,123.07 187.99,78.07 194.33,86.27 104.33,131.27" fill="#d5f8ff" opacity=".26"/><path d="M99.10,124.45L189.10,79.45" stroke="#f2ffff" stroke-width="1.2" opacity=".57" fill="none"/><polygon points="113.85,144.67 203.85,99.67 210.19,109.11 120.19,154.11" fill="#94d8fb" opacity=".15"/><path d="M114.96,146.30L204.96,101.30" stroke="#f2ffff" stroke-width="1.2" opacity=".57" fill="none"/></g>
+
 <path d="M10.88,102.43 L100.88,57.43" stroke="#b9ebff" stroke-width="1.3" opacity=".63"/>
 <path d="M11.49,102.11 L101.49,57.11" stroke="#1766a0" stroke-width=".6" opacity=".5"/>
 <path d="M25.52,95.49 L115.52,50.49" stroke="#b9ebff" stroke-width="1.3" opacity=".63"/>
@@ -181,4 +185,21 @@
 <circle cx="18" cy="192" r="5.2" fill="#ffe7a0" opacity=".15"/>
 <circle cx="121" cy="244" r="5.2" fill="#ffe7a0" opacity=".16"/>
 <path d="M17,190 l3,2 M120,242 l3,2" stroke="#fff4c3" stroke-width="1.2"/>
+</g>
+<g id="skyrama-airport-life-medium-v2">
+ <!-- Warm warning lamps & thicker toy-like window trim at gameplay zoom. -->
+ <path d="M18 127 L117 176" stroke="#e6ffff" stroke-width="1.9" opacity=".8"/>
+ <path d="M139 181 L207 147" stroke="#f9ffff" stroke-width="1.8" opacity=".77"/>
+ <path d="M15 198 L121 251" stroke="#ffe085" stroke-width="1.8" opacity=".94"/>
+ <!-- Compact planter pots; both stay within the art silhouette/footprint. -->
+ <ellipse cx="204" cy="214" rx="6" ry="2.9" fill="#405b5e" opacity=".15"/>
+ <path d="M200 213 L208 209 L208 216 L200 220Z" fill="#b4bdbe" stroke="#77969c" stroke-width=".65"/>
+ <path d="M198 209 Q196 203 202 201 Q205 194 208 200 Q213 197 213 205 Q218 209 208 213Z" fill="#71bc5b" stroke="#478d5e" stroke-width="1.15"/>
+ <path d="M200 208 Q204 202 208 205" fill="none" stroke="#bbf6a8" stroke-width="1.3" opacity=".7"/>
+ <!-- Terminal-style sign inset, rather than text baked into the UI. -->
+ <path d="M134 212 L147 205 L147 214 L134 221Z" fill="#2366a2" stroke="#f5ffff" stroke-width="1.0"/>
+ <path d="M138 212 L142 210 M138 216 L144 213" stroke="#efffff" stroke-width="1.15"/>
+ <!-- On-wall vents, at least 2px thick in the rendered game. -->
+ <path d="M141 234 L154 228 M141 238 L154 232" fill="none" stroke="#6b93a1" stroke-width="1.3"/>
+ <rect x="181" y="190" width="4" height="3" rx="1.5" fill="#ffdb71" opacity=".85"/>
 </g></g></g></svg>

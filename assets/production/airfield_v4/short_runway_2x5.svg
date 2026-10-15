@@ -2,11 +2,11 @@
 <defs>
   <clipPath id="locked-footprint"><polygon points="64,0 224,80 160,112 0,32"/></clipPath>
   <linearGradient id="edge" x1="0" y1="0" x2=".8" y2="1">
-   <stop stop-color="#dadbd4"/><stop offset=".45" stop-color="#b9c7c9"/><stop offset="1" stop-color="#829aab"/>
+   <stop stop-color="#e5e6dc"/><stop offset=".45" stop-color="#c4d0d0"/><stop offset="1" stop-color="#829aab"/>
   </linearGradient>
   <linearGradient id="paved" x1="0" y1="0" x2=".92" y2=".8">
-   <stop stop-color="#6b7a86"/><stop offset=".21" stop-color="#485762"/>
-   <stop offset=".67" stop-color="#35424d"/><stop offset="1" stop-color="#283740"/>
+   <stop stop-color="#87949a"/><stop offset=".21" stop-color="#626e76"/>
+   <stop offset=".67" stop-color="#4a5962"/><stop offset="1" stop-color="#384953"/>
   </linearGradient>
   <linearGradient id="shoulder" x1="0" y1="0" x2=".8" y2="1">
    <stop stop-color="#c9ccca"/><stop offset=".5" stop-color="#9eacb0"/><stop offset="1" stop-color="#748993"/>
@@ -151,5 +151,19 @@
   <circle cx="32" cy="33" r="1.05"/><circle cx="63" cy="48.5" r="1.05"/>
   <circle cx="95" cy="64.5" r="1.05"/><circle cx="127" cy="80.5" r="1.05"/>
   <circle cx="159" cy="96.5" r="1.05"/>
+ </g>
+ </g><g id="skyrama-soft-asphalt-v2" clip-path="url(#locked-footprint)">
+ <!-- Slim, contrasty edge highlights and short-runway touchdown points. -->
+ <path d="M53.1 10.1 L206.6 86.85" stroke="#f7ffff" stroke-width=".8" opacity=".86"/>
+ <path d="M18 26.5 L170.7 102.85" stroke="#f6ffff" stroke-width=".75" opacity=".8"/>
+ <path d="M82 31 L88 34 M108 44 L114 47 M134 57 L140 60 M160 70 L166 73"
+       stroke="#e5eef0" stroke-width=".6" opacity=".38"/>
+ <!-- Reflective inset shoulder rivets, placed well inside the original 5x2 diamond. -->
+ <g fill="#e5f8fe" opacity=".85">
+   <circle cx="68" cy="6" r="1"/><circle cx="100" cy="22" r="1"/>
+   <circle cx="132" cy="38" r="1"/><circle cx="164" cy="54" r="1"/>
+   <circle cx="196" cy="70" r="1"/>
+   <circle cx="32" cy="32" r="1"/><circle cx="64" cy="48" r="1"/>
+   <circle cx="96" cy="64" r="1"/><circle cx="128" cy="80" r="1"/>
  </g>
  </g></g></svg>

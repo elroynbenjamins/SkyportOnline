@@ -15,9 +15,9 @@ func _run() -> void:
 			return
 
 	var cases := [
-		["small_hangar", Vector2i(3, 2), Vector2i(160, 80), 2],
-		["medium_hangar", Vector2i(4, 3), Vector2i(224, 112), 2],
-		["short_runway", Vector2i(5, 2), Vector2i(224, 112), 2]
+		["small_hangar", Vector2i(4, 3), Vector2i(224, 112), 2],
+		["medium_hangar", Vector2i(5, 4), Vector2i(288, 144), 2],
+		["short_runway", Vector2i(6, 2), Vector2i(256, 128), 2]
 	]
 	for item in cases:
 		var id: String = item[0]
@@ -58,8 +58,8 @@ func _run() -> void:
 					return
 
 	print(
-		"THREE_ASSET_FOCUS_OK small_hangar=3x2 "
-		+ "medium_hangar=4x3 runway=5x2 taxiway_shop=false"
+		"THREE_ASSET_FOCUS_OK small_hangar=4x3 "
+		+ "medium_hangar=5x4 runway=6x2 taxiway_shop=false"
 	)
 	quit(0)
 

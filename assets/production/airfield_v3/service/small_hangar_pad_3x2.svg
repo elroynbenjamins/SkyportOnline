@@ -6,17 +6,17 @@
  <g clip-path="url(#gridDiamond)">
  <polygon points="64,0 160,48 96,80 0,32" fill="url(#ground)"/>
  <!-- Every paving tile derives from the square-grid projection; no overhang. -->
- <polygon points="64,0 96,16 64,32 32,16" fill="#8b9ca4" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+ <polygon points="64,0 96,16 64,32 32,16" fill="#c8d2d3" stroke="#f2f7f3" stroke-opacity=".88" stroke-width="1.1"/>
 <path d="M55 18l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
-<polygon points="96,16 128,32 96,48 64,32" fill="#83929a" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<polygon points="96,16 128,32 96,48 64,32" fill="#b4c5c9" stroke="#f2f7f3" stroke-opacity=".88" stroke-width="1.1"/>
 <path d="M87 34l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
-<polygon points="128,32 160,48 128,64 96,48" fill="#8b9ca4" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<polygon points="128,32 160,48 128,64 96,48" fill="#c8d2d3" stroke="#f2f7f3" stroke-opacity=".88" stroke-width="1.1"/>
 <path d="M119 50l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
-<polygon points="32,16 64,32 32,48 0,32" fill="#83929a" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<polygon points="32,16 64,32 32,48 0,32" fill="#b4c5c9" stroke="#f2f7f3" stroke-opacity=".88" stroke-width="1.1"/>
 <path d="M23 34l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
-<polygon points="64,32 96,48 64,64 32,48" fill="#8b9ca4" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<polygon points="64,32 96,48 64,64 32,48" fill="#c8d2d3" stroke="#f2f7f3" stroke-opacity=".88" stroke-width="1.1"/>
 <path d="M55 50l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
-<polygon points="96,48 128,64 96,80 64,64" fill="#83929a" stroke="#e7eef0" stroke-opacity=".88" stroke-width="1.1"/>
+<polygon points="96,48 128,64 96,80 64,64" fill="#b4c5c9" stroke="#f2f7f3" stroke-opacity=".88" stroke-width="1.1"/>
 <path d="M87 66l5 2.5m14-5l5 2.5" fill="none" stroke="#bcc9ca" stroke-width=".7" opacity=".55"/>
  <polygon points="64,0 160,48 96,80 0,32" fill="none" stroke="#f9fffa" stroke-width="2" opacity=".82"/>
  <polygon points="64,0 160,48 96,80 0,32" fill="none" stroke="#476c67" stroke-width=".75" opacity=".6"/>
@@ -25,5 +25,13 @@
  <path d="M44.84 47.08l7 7 7-7" stroke="#ffe48c" stroke-width="2" fill="none"/>
  <path d="M88.48 34.76l5 3m19-9l5 3" stroke="#e9a52d" stroke-width="2.6"/>
  <g fill="#68dcff" stroke="#fff" stroke-width=".65"><circle cx="39" cy="16" r="1.5"/><circle cx="121" cy="64" r="1.5"/><circle cx="51.84" cy="59.08" r="1.5"/></g>
- </g>
+<g id="hangar-apron-polish-v1" fill="none">
+ <!-- Embedded concrete seams, edge reflectors and hazard access marking. -->
+ <path d="M22.4,32.3 L89.6,65.9" stroke="#f8f2df" stroke-width=".7" opacity=".44"/>
+ <path d="M40.3,44.5 l6,3 m-3,-1.5 l-4,2" stroke="#dba949" stroke-width="1.0" opacity=".62"/>
+ <path d="M32.6,33.0 l7,3.5" stroke="#ffffff" stroke-width="1.1" opacity=".34"/>
+ <path d="M83.2,59.5 l7,3.5" stroke="#ffffff" stroke-width="1.1" opacity=".34"/>
+ <circle cx="15.36" cy="39.68" r="1.4" fill="#66c9ed" stroke="#e4fbff" stroke-width=".5"/>
+ <circle cx="149.76" cy="53.12" r="1.4" fill="#66c9ed" stroke="#e4fbff" stroke-width=".5"/>
+ </g> </g>
  </svg>

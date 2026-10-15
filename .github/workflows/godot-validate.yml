@@ -95,6 +95,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture separate aircraft fuel and cargo parking
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_separate_service_parking_ingame.gd
+
+      - name: Upload separate fuel and cargo parking screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: separate-service-parking-ingame
+          path: artifacts/separate_service_parking_ingame.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Capture small and medium hangars in Godot
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_small_medium_hangars_ingame.gd
 
@@ -140,6 +151,7 @@ jobs:
             tests/generated_hangar_grid_test.gd
             tests/medium_hangar_grid_test.gd
             tests/airport_three_asset_focus_test.gd
+            tests/separate_service_parking_test.gd
             tests/resource_drop_rules_test.gd
             tests/passenger_economy_test.gd
             tests/fuel_economy_test.gd

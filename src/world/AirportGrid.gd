@@ -669,126 +669,6 @@ func _definition_has_grid_native_surface(
 
 
 
-func _definition_has_grid_native_autotile(
-	definition: Dictionary
-) -> bool:
-	var paths: PackedStringArray = definition.get(
-		"grid_native_autotile_variant_paths",
-		PackedStringArray()
-	)
-	return (
-		paths.size() >= 16
-		and int(
-			definition.get(
-				"grid_native_autotile_variant_count",
-				0
-			)
-		) >= 16
-	)
-
-func _taxiway_connection_mask(
-	origin: Vector2i
-) -> int:
-	var mask := 0
-	for item in [
-		[Vector2i(0, -1), 1],
-		[Vector2i(1, 0), 2],
-		[Vector2i(0, 1), 4],
-		[Vector2i(-1, 0), 8]
-	]:
-		var direction: Vector2i = item[0]
-		var bit: int = int(item[1])
-		if not _airside_visual_connection_kind_between(
-			origin,
-			origin + direction
-		).is_empty():
-			mask |= bit
-	return mask
-
-
-func _taxiway_variant_name(mask: int) -> String:
-	match clampi(mask, 0, 15):
-		0: return "isolated"
-		1: return "dead_n"
-		2: return "dead_e"
-		3: return "corner_ne"
-		4: return "dead_s"
-		5: return "straight_ns"
-		6: return "corner_es"
-		7: return "t_nes"
-		8: return "dead_w"
-		9: return "corner_wn"
-		10: return "straight_ew"
-		11: return "t_new"
-		12: return "corner_sw"
-		13: return "t_nsw"
-		14: return "t_esw"
-		_: return "cross"
-
-
-func _taxiway_variant_path(
-	definition: Dictionary,
-	mask: int
-) -> String:
-	var paths: PackedStringArray = definition.get(
-		"grid_native_autotile_variant_paths",
-		PackedStringArray()
-	)
-	if paths.size() < 16:
-		return ""
-	return paths[clampi(mask, 0, 15)]
-
-
-func _taxiway_variant_region(mask: int) -> Rect2:
-	var safe_mask := clampi(mask, 0, 15)
-	var column := safe_mask % 4
-	var row := int(safe_mask / 4)
-	return Rect2(
-		column * 64,
-		row * 32,
-		64,
-		32
-	)
-
-
-
-func _draw_grid_native_taxiway_variant(
-	definition: Dictionary,
-	origin: Vector2i,
-	modulate: Color = Color.WHITE
-) -> void:
-	var mask := _taxiway_connection_mask(
-		origin
-	)
-	var variant_path := _taxiway_variant_path(
-		definition,
-		mask
-	)
-	if variant_path.is_empty():
-		return
-
-	var texture := _get_building_texture(
-		variant_path
-	)
-	if texture == null:
-		return
-
-	var asset_size := Vector2i(64, 32)
-	var rect := PlacementGridV2.asset_draw_rect(
-		origin,
-		Vector2i.ONE,
-		asset_size
-	)
-	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
-		return
-
-	draw_texture_rect(
-		texture,
-		rect,
-		false,
-		modulate
-	)
-
 func _grid_native_surface_path_for_rotation(
 	definition: Dictionary,
 	rotation: int
@@ -1305,103 +1185,21 @@ func get_runway_modular_visual_state(
 
 
 
-func _draw_grid_native_taxiway_connections(
-	origin: Vector2i,
-	alpha: float = 1.0
-) -> void:
-	var center := tile_to_world(
-		Vector2(origin.x, origin.y)
-	)
-
-	for direction: Vector2i in [
-		Vector2i(1, 0),
-		Vector2i(-1, 0),
-		Vector2i(0, 1),
-		Vector2i(0, -1)
-	]:
-		var neighbor := origin + direction
-		var connection_kind := _airside_visual_connection_kind_between(
-			origin,
-			neighbor
-		)
-		if connection_kind.is_empty():
-			continue
-
-		# Taxiway-to-taxiway openings are baked into the selected autotile.
-		# Runway openings are owned by the modular runway overlay pass.
-		if (
-			connection_kind == "taxiway"
-			or connection_kind == "runway"
-		):
-			continue
-
-		var neighbor_center := tile_to_world(
-			Vector2(neighbor.x, neighbor.y)
-		)
-		var seam_start := center.lerp(
-			neighbor_center,
-			0.39
-		)
-		var seam_end := center.lerp(
-			neighbor_center,
-			0.62
-		)
-
-		draw_line(
-			seam_start,
-			seam_end,
-			Color("272f34", 0.92 * alpha),
-			12.0
-		)
-		draw_line(
-			seam_start,
-			seam_end,
-			Color("3e484e", 1.0 * alpha),
-			9.0
-		)
-		draw_line(
-			seam_start,
-			seam_end,
-			Color("efc84e", 0.98 * alpha),
-			1.7
-		)
-
 func get_taxiway_visual_connection_snapshot(
-	origin: Vector2i
+	_origin: Vector2i
 ) -> Dictionary:
-	var kinds: Dictionary = {}
-	var count := 0
-	for direction: Vector2i in [
-		Vector2i(1, 0),
-		Vector2i(-1, 0),
-		Vector2i(0, 1),
-		Vector2i(0, -1)
-	]:
-		var kind := _airside_visual_connection_kind_between(
-			origin,
-			origin + direction
-		)
-		if kind.is_empty():
-			continue
-		count += 1
-		kinds["%d,%d" % [direction.x, direction.y]] = kind
-
-	var mask := _taxiway_connection_mask(
-		origin
-	)
+	# Compatibility only. Physical taxiways and connections are retired.
 	return {
-		"origin": origin,
-		"connection_count": count,
-		"kinds": kinds,
-		"runway_connected": kinds.values().has("runway"),
-		"mask": mask,
-		"variant_name": _taxiway_variant_name(mask),
-		"atlas_region": _taxiway_variant_region(mask),
-		"variant_path": _taxiway_variant_path(
-			BuildingCatalog.get_definition("taxiway"),
-			mask
-		)
+		"origin": _origin,
+		"connection_count": 0,
+		"kinds": {},
+		"mask": 0,
+		"variant_name": "",
+		"atlas_region": Rect2(),
+		"variant_path": ""
 	}
+
+
 
 func _draw_grid_first_network_links(
 	origin: Vector2i,
@@ -1466,21 +1264,6 @@ func _draw_grid_first_preview() -> void:
 	)
 
 	if _definition_has_grid_native_surface(definition):
-		var preview_modulate := (
-			Color(0.82, 1.0, 0.86, 0.88)
-			if valid
-			else Color(1.0, 0.68, 0.68, 0.84)
-		)
-		_draw_grid_native_taxiway_variant(
-			definition,
-			preview_origin,
-			preview_modulate
-		)
-		_draw_grid_native_taxiway_connections(
-			preview_origin,
-			0.88 if valid else 0.58
-		)
-	elif _definition_has_grid_native_surface(definition):
 		var preview_modulate := (
 			Color(0.82, 1.0, 0.86, 0.88)
 			if valid

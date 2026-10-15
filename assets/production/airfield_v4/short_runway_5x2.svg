@@ -129,4 +129,33 @@
 <polygon points="64,0 224,80 160,112 0,32" fill="none" stroke="#edf5ed" stroke-width="1.65" opacity=".72"/>
  <polygon points="64,0 224,80 160,112 0,32" fill="none" stroke="#395361" stroke-width=".55" opacity=".82"/>
  </g>
-</svg>
+<g id="runway-polish-v5" clip-path="url(#locked-footprint)">
+ <!-- Native 5x2 paving detailing: continuous crisp runway border, longitudinal
+      asphalt highlights and edge reflectors, all clipped to the tile footprint. -->
+ <path d="M53.20,9.90 L205.90,86.25 M18.80,25.20 L170.40,101.00"
+   fill="none" stroke="#ffffff" stroke-width="1.2" opacity=".64"/>
+ <path d="M52.50,12.20 L205.20,88.55 M21.00,26.30 L172.60,102.10"
+   fill="none" stroke="#bce7f6" stroke-width=".58" opacity=".42"/>
+ <path d="M63,19 L164,69.5" stroke="#e8edf0" stroke-width=".55" opacity=".13"/>
+ <path d="M60,26 L154,73" stroke="#8ea6af" stroke-width=".60" opacity=".18"/>
+ <!-- Threshold highlight and touchdown banding perpendicular to centerline. -->
+ <path d="M40.8,17.5 L36.2,26.8 M46.0,20.1 L41.4,29.4
+ M51.2,22.7 L46.6,32.0 M56.4,25.3 L51.8,34.6"
+ fill="none" stroke="#f8ffff" stroke-width="1.9" opacity=".67"/>
+ <path d="M184,83 L179,93 M190,86 L185,96 M196,89 L191,99"
+ fill="none" stroke="#f8ffff" stroke-width="1.6" opacity=".52"/>
+ <!-- Short-runway apron lip and concrete joints: deliberately faint to
+      preserve visual scale for small aircraft at ordinary camera zoom. -->
+ <path d="M64,1 L223,80 M2,33 L159,111"
+ fill="none" stroke="#f6ffff" stroke-width=".75" opacity=".58"/>
+ <path d="M88,17 L83,28 M120,33 L115,44 M152,49 L147,60
+ M184,65 L179,76" stroke="#d2e1e2" stroke-width=".55" opacity=".22"/>
+ <g fill="#a7ebfa" stroke="#e9ffff" stroke-width=".35">
+  <circle cx="64" cy="4" r="1.05"/><circle cx="95" cy="19.5" r="1.05"/>
+  <circle cx="127" cy="35.5" r="1.05"/><circle cx="159" cy="51.5" r="1.05"/>
+  <circle cx="191" cy="67.5" r="1.05"/>
+  <circle cx="32" cy="33" r="1.05"/><circle cx="63" cy="48.5" r="1.05"/>
+  <circle cx="95" cy="64.5" r="1.05"/><circle cx="127" cy="80.5" r="1.05"/>
+  <circle cx="159" cy="96.5" r="1.05"/>
+ </g>
+ </g></svg>

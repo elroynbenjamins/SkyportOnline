@@ -707,6 +707,12 @@ func _simple_handling_infrastructure(
 		"cargo": airport_grid.get_best_service_building(
 			"cargo",
 			aircraft_size
+		),
+		"fuel_parking": airport_grid.get_simple_service_parking_pads(
+			"fuel", aircraft_size
+		),
+		"cargo_parking": airport_grid.get_simple_service_parking_pads(
+			"cargo", aircraft_size
 		)
 	}
 
@@ -743,6 +749,14 @@ func _simple_handling_missing_text(
 		) as Dictionary
 	).is_empty():
 		missing.append("cargo / ground ops")
+	if (
+		infrastructure.get("fuel_parking", []) as Array
+	).is_empty():
+		missing.append("fuel parking pad")
+	if (
+		infrastructure.get("cargo_parking", []) as Array
+	).is_empty():
+		missing.append("cargo parking pad")
 	return ", ".join(PackedStringArray(missing))
 
 
@@ -863,6 +877,51 @@ func _is_skyrama_owned_aircraft(
 	)
 
 
+# Each built fuel/cargo pad is a one-plane parking bay. Service depots
+# control throughput, but the aircraft NEVER parks inside the depot.
+func _available_skyrama_parking(
+	service_type: String,
+	aircraft: AircraftPrototype
+) -> Dictionary:
+	if airport_grid == null or aircraft == null:
+		return {}
+	var size := aircraft.aircraft_size
+	var pads := airport_grid.get_simple_service_parking_pads(
+		service_type, size
+	)
+	var capacity := airport_grid.get_simple_service_parking_capacity(
+		service_type, size
+	)
+	if capacity <= 0:
+		return {}
+	var occupied := 0
+	var available: Array[Dictionary] = []
+	for pad in pads:
+		var location: Vector2 = pad.get(
+			"world_position", Vector2.ZERO
+		)
+		var in_use := false
+		for other in aircraft_demos:
+			if (
+				other == null
+				or not is_instance_valid(other)
+				or other == aircraft
+				or not other.visible
+				or not other.uses_skyrama_handling()
+			):
+				continue
+			if other.position.distance_to(location) < 3.0:
+				in_use = true
+				break
+		if in_use:
+			occupied += 1
+		else:
+			available.append(pad)
+	if occupied >= capacity or available.is_empty():
+		return {}
+	return available[0].duplicate(true)
+
+
 func _begin_skyrama_departure_prep(
 	aircraft: AircraftPrototype
 ) -> bool:
@@ -888,6 +947,13 @@ func _begin_skyrama_departure_prep(
 
 	var runway: Dictionary = infrastructure["runway"]
 	var fuel_station: Dictionary = infrastructure["fuel"]
+	var fuel_pad := _available_skyrama_parking("fuel", aircraft)
+	if fuel_pad.is_empty():
+		hud.set_operation_status(
+			"All fuel parking bays are busy • wait for an available slot",
+			"warning"
+		)
+		return false
 	aircraft.set_simple_runway_route(
 		runway.get(
 			"start_world",
@@ -948,14 +1014,11 @@ func _begin_skyrama_departure_prep(
 		0.5
 	)
 	aircraft.start_simple_fueling(
-		fuel_station.get(
-			"world_position",
-			Vector2.ZERO
-		),
+		fuel_pad.get("world_position", Vector2.ZERO),
 		fuel_seconds
 	)
 	hud.set_operation_status(
-		"%s moved to fuel station • fueling started"
+		"%s parked on fuel pad • fueling timer started"
 		% String(aircraft.name)
 	)
 	return true
@@ -1256,11 +1319,17 @@ func _on_aircraft_handling_action_requested(
 						"warning"
 					)
 					return
+				var cargo_pad := _available_skyrama_parking(
+					"cargo", aircraft
+				)
+				if cargo_pad.is_empty():
+					hud.set_operation_status(
+						"All cargo parking bays are busy",
+						"warning"
+					)
+					return
 				aircraft.start_simple_unloading(
-					cargo_station.get(
-						"world_position",
-						Vector2.ZERO
-					),
+					cargo_pad.get("world_position", Vector2.ZERO),
 					maxf(
 						TurnaroundRules.arrival_block_seconds(
 							aircraft.get_aircraft_profile()
@@ -1269,7 +1338,7 @@ func _on_aircraft_handling_action_requested(
 					)
 				)
 				hud.set_operation_status(
-					"%s moved to cargo handling • unloading"
+					"%s parked on cargo pad • unloading timer"
 					% label
 				)
 			"LOAD":
@@ -1285,11 +1354,17 @@ func _on_aircraft_handling_action_requested(
 						"warning"
 					)
 					return
+				var cargo_pad := _available_skyrama_parking(
+					"cargo", aircraft
+				)
+				if cargo_pad.is_empty():
+					hud.set_operation_status(
+						"All cargo parking bays are busy",
+						"warning"
+					)
+					return
 				aircraft.start_simple_loading(
-					cargo_station.get(
-						"world_position",
-						Vector2.ZERO
-					),
+					cargo_pad.get("world_position", Vector2.ZERO),
 					maxf(
 						TurnaroundRules.loading_block_seconds(
 							aircraft.get_aircraft_profile()
@@ -1301,7 +1376,7 @@ func _on_aircraft_handling_action_requested(
 					"load_started"
 				)
 				hud.set_operation_status(
-					"%s moved to cargo handling • loading"
+					"%s parked on cargo pad • loading timer"
 					% label
 				)
 			"SEND":

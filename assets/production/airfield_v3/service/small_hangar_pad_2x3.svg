@@ -25,5 +25,13 @@
  <path d="M30.760000000000005 54.12l7 7 7-7" stroke="#ffe48c" stroke-width="2" fill="none"/>
  <path d="M98.72 29.64l5 3m19-9l5 3" stroke="#e9a52d" stroke-width="2.6"/>
  <g fill="#68dcff" stroke="#fff" stroke-width=".65"><circle cx="55" cy="24" r="1.5"/><circle cx="105" cy="56" r="1.5"/><circle cx="37.760000000000005" cy="66.12" r="1.5"/></g>
- </g>
+<g id="hangar-apron-polish-v1" fill="none">
+ <!-- Embedded concrete seams, edge reflectors and hazard access marking. -->
+ <path d="M24.0,43.7 L68.8,66.1" stroke="#f8f2df" stroke-width=".7" opacity=".44"/>
+ <path d="M33.3,53.1 l6,3 m-3,-1.5 l-4,2" stroke="#dba949" stroke-width="1.0" opacity=".62"/>
+ <path d="M34.6,42.2 l7,3.5" stroke="#ffffff" stroke-width="1.1" opacity=".34"/>
+ <path d="M67.2,60.5 l7,3.5" stroke="#ffffff" stroke-width="1.1" opacity=".34"/>
+ <circle cx="10.24" cy="53.12" r="1.4" fill="#66c9ed" stroke="#e4fbff" stroke-width=".5"/>
+ <circle cx="144.64" cy="39.68" r="1.4" fill="#66c9ed" stroke="#e4fbff" stroke-width=".5"/>
+ </g> </g>
  </svg>

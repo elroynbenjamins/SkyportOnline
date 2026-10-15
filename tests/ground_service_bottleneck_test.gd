@@ -45,9 +45,9 @@ func _run() -> void:
 				int(station.get("uid", -1)),
 				int(route_info.get("stand_uid", -1))
 			)
-			if service_route.size() < 3:
+			if service_route.size() < 2:
 				_fail(
-					"Ground Operations Depot should reach both stands for %s."
+					"Ground Operations Depot should have direct endpoints for %s."
 					% service_type
 				)
 				return

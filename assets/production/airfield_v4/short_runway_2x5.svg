@@ -138,12 +138,6 @@
    fill="none" stroke="#bce7f6" stroke-width=".58" opacity=".42"/>
  <path d="M63,19 L164,69.5" stroke="#e8edf0" stroke-width=".55" opacity=".13"/>
  <path d="M60,26 L154,73" stroke="#8ea6af" stroke-width=".60" opacity=".18"/>
- <!-- Threshold highlight and touchdown banding perpendicular to centerline. -->
- <path d="M40.8,17.5 L36.2,26.8 M46.0,20.1 L41.4,29.4
- M51.2,22.7 L46.6,32.0 M56.4,25.3 L51.8,34.6"
- fill="none" stroke="#f8ffff" stroke-width="1.9" opacity=".67"/>
- <path d="M184,83 L179,93 M190,86 L185,96 M196,89 L191,99"
- fill="none" stroke="#f8ffff" stroke-width="1.6" opacity=".52"/>
  <!-- Short-runway apron lip and concrete joints: deliberately faint to
       preserve visual scale for small aircraft at ordinary camera zoom. -->
  <path d="M64,1 L223,80 M2,33 L159,111"

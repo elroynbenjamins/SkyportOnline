@@ -23,11 +23,11 @@ func _run() -> void:
 
 	var expected_footprints := {
 		"airport_office": Vector2i(3, 2),
-		"short_runway": Vector2i(5, 2),
+		"short_runway": Vector2i(6, 2),
 		"small_stand": Vector2i(2, 2),
 		"small_terminal": Vector2i(3, 2),
-		"small_hangar": Vector2i(3, 2),
-		"medium_hangar": Vector2i(4, 3),
+		"small_hangar": Vector2i(4, 3),
+		"medium_hangar": Vector2i(5, 4),
 		"basic_fuel": Vector2i(2, 2),
 		"regional_runway": Vector2i(12, 3)
 	}
@@ -168,7 +168,9 @@ func _check_footprint_geometry() -> bool:
 		Vector2i(2, 2),
 		Vector2i(3, 2),
 		Vector2i(4, 3),
-		Vector2i(5, 2)
+		Vector2i(5, 2),
+		Vector2i(6, 2),
+		Vector2i(5, 4)
 	]:
 		var contract := BuildingPlacementGrid.visual_contract(
 			footprint

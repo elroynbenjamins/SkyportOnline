@@ -47,7 +47,7 @@ func _run() -> void:
 	var camera := Camera2D.new()
 	camera.position = grid.tile_to_world(Vector2(8.0, 8.0))
 	camera.zoom = Vector2(1.60, 1.60)
-	camera.position += Vector2(0, -25)
+	camera.position += Vector2(0, -65)
 	camera.position_smoothing_enabled = false
 	camera.enabled = true
 	scene.add_child(camera)

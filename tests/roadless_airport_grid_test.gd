@@ -52,7 +52,7 @@ func _run() -> void:
 	for spec in expectations:
 		var definition := BuildingCatalog.get_definition(String(spec[0]))
 		for rotation in [0, 1]:
-			var expected := (
+			var expected: Vector2i = (
 				spec[1] if rotation == 0
 				else Vector2i(spec[1].y, spec[1].x)
 			)

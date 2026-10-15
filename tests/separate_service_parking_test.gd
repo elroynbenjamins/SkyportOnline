@@ -77,6 +77,13 @@ func _run() -> void:
 			_fail("Aircraft may not park on/in its service depot.")
 			return
 
+	# Each pad is only parking; a processing depot is required to create
+	# service throughput. Additional pads cannot exceed that capacity.
+	var fuel_pads := grid.get_simple_service_parking_pads("fuel", "S")
+	var cargo_pads := grid.get_simple_service_parking_pads("cargo", "S")
+	if fuel_pads.size() != 1 or cargo_pads.size() != 1:
+		_fail("Exactly one of each independent parking pad should be found.")
+		return
 	print("SEPARATE_HANDLING_PARKING_OK fuel=3x2 cargo=3x2 pads=2 roadless=true capacity=1")
 	quit(0)
 

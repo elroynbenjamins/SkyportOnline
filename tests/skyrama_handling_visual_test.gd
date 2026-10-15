@@ -41,6 +41,15 @@ func _run() -> void:
 	if not String(fueling.get("status_text", "")).contains("FUELING"):
 		_fail("Fuel progress bubble should clearly name the stage.")
 		return
+	if not String(fueling.get("status_text", "")).contains("0:06"):
+		_fail("Skyrama fuel bubble must show a live countdown.")
+		return
+	if plane.turnaround_panel.custom_minimum_size.x > 114.0:
+		_fail("Parking-pad countdown bubble is wider than intended.")
+		return
+	if plane.turnaround_progress.custom_minimum_size.y > 6.0:
+		_fail("Service progress should be a slim indicator.")
+		return
 
 	plane._process(6.1)
 	var fuel_done := plane.get_handling_visual_snapshot()

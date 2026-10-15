@@ -1042,9 +1042,10 @@ func _sync_turnaround_status_transform() -> void:
 		visual_scale - 1.0,
 		0.0
 	) * 34.0
+	var bubble_width := 112.0 if skyrama_handling_enabled else 126.0
 	var anchor := Vector2(
-		-63,
-		-64 - vertical_clearance
+		-bubble_width * 0.5,
+		-66 - vertical_clearance
 	).rotated(-rotation)
 	turnaround_panel.position = anchor
 	turnaround_panel.rotation = -rotation
@@ -1056,6 +1057,38 @@ func configure_skyrama_handling(
 	skyrama_handling_enabled = enabled
 	if enabled:
 		configure_handling_mode(true, false)
+	_apply_skyrama_timer_bubble_style()
+
+
+# Preserve the existing HUD for other handling modes, but use a compact
+# non-interactive countdown bubble for the Skyrama tap-and-teleport loop.
+func _apply_skyrama_timer_bubble_style() -> void:
+	if turnaround_panel == null or turnaround_progress == null:
+		return
+	turnaround_panel.custom_minimum_size = Vector2(112, 36)
+	turnaround_progress.custom_minimum_size = Vector2(92, 5)
+	turnaround_label.add_theme_font_size_override("font_size", 9)
+	var bubble := turnaround_panel.get_theme_stylebox("panel") as StyleBoxFlat
+	if bubble != null:
+		var compact := bubble.duplicate() as StyleBoxFlat
+		compact.bg_color = Color("123345", 0.96)
+		compact.border_color = Color("8bdaf5")
+		compact.border_width_left = 1
+		compact.border_width_top = 1
+		compact.border_width_right = 1
+		compact.border_width_bottom = 1
+		compact.corner_radius_top_left = 13
+		compact.corner_radius_top_right = 13
+		compact.corner_radius_bottom_left = 13
+		compact.corner_radius_bottom_right = 13
+		compact.content_margin_left = 8
+		compact.content_margin_right = 8
+		compact.content_margin_top = 4
+		compact.content_margin_bottom = 5
+		compact.shadow_size = 4
+		compact.shadow_offset = Vector2(0, 2)
+		turnaround_panel.add_theme_stylebox_override("panel", compact)
+	_sync_turnaround_status_transform()
 
 
 func uses_skyrama_handling() -> bool:
@@ -1213,13 +1246,22 @@ func _update_simple_stage_status() -> void:
 		1.0
 	)
 	var percent := roundi(progress * 100.0)
-	var short_label := simple_stage_label.to_upper()
-	set_turnaround_status(
-		"%s  %d%%" % [
-			short_label,
-			percent
-		]
-	)
+	var short_label := "FUELING"
+	match state:
+		"SIMPLE_LOADING":
+			short_label = "LOADING"
+		"SIMPLE_UNLOADING":
+			short_label = "UNLOADING"
+		_:
+			pass
+	# A readable countdown replaces long percentage headings; the slim bar
+	# already conveys percentage and remains visible throughout the timer.
+	var seconds_left := maxi(ceili(simple_stage_remaining), 0)
+	var countdown := "%d:%02d" % [
+		seconds_left / 60,
+		seconds_left % 60
+	]
+	set_turnaround_status("%s  %s" % [short_label, countdown])
 	if turnaround_progress != null:
 		turnaround_progress.visible = true
 		turnaround_progress.value = float(percent)

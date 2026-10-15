@@ -1,10 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80" viewBox="0 0 160 80"><defs>
- <linearGradient id="slab" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e3e7e6"/><stop offset=".50" stop-color="#cbd4d7"/><stop offset="1" stop-color="#abbac1"/></linearGradient>
- <clipPath id="fit"><polygon points="96.00,0.00 160.00,32.00 64.00,80.00 0.00,48.00"/></clipPath></defs><g clip-path="url(#fit)">
- <polygon points="96.00,0.00 160.00,32.00 64.00,80.00 0.00,48.00" fill="url(#slab)"/><polygon points="96.00,0.00 128.00,16.00 96.00,32.00 64.00,16.00" fill="#cfd8d9" opacity=".25" stroke="#f0f3f1" stroke-width=".95"/><polygon points="128.00,16.00 160.00,32.00 128.00,48.00 96.00,32.00" fill="#cfd8d9" opacity=".25" stroke="#f0f3f1" stroke-width=".95"/><polygon points="64.00,16.00 96.00,32.00 64.00,48.00 32.00,32.00" fill="#cfd8d9" opacity=".25" stroke="#f0f3f1" stroke-width=".95"/><polygon points="96.00,32.00 128.00,48.00 96.00,64.00 64.00,48.00" fill="#cfd8d9" opacity=".25" stroke="#f0f3f1" stroke-width=".95"/><polygon points="32.00,32.00 64.00,48.00 32.00,64.00 0.00,48.00" fill="#cfd8d9" opacity=".25" stroke="#f0f3f1" stroke-width=".95"/><polygon points="64.00,48.00 96.00,64.00 64.00,80.00 32.00,64.00" fill="#cfd8d9" opacity=".25" stroke="#f0f3f1" stroke-width=".95"/><ellipse cx="90.24" cy="7.72" rx="2.9" ry="1.55" fill="#536a71" opacity=".20"/>
- <circle cx="90.24" cy="6.72" r="2.35" fill="#efb65b" stroke="#f5fbfb" stroke-width=".85"/><ellipse cx="177.60" cy="49.80" rx="2.9" ry="1.55" fill="#536a71" opacity=".20"/>
- <circle cx="177.60" cy="48.80" r="2.35" fill="#efb65b" stroke="#f5fbfb" stroke-width=".85"/><ellipse cx="44.48" cy="30.60" rx="2.9" ry="1.55" fill="#536a71" opacity=".20"/>
- <circle cx="44.48" cy="29.60" r="2.35" fill="#efb65b" stroke="#f5fbfb" stroke-width=".85"/><ellipse cx="130.56" cy="72.68" rx="2.9" ry="1.55" fill="#536a71" opacity=".20"/>
- <circle cx="130.56" cy="71.68" r="2.35" fill="#efb65b" stroke="#f5fbfb" stroke-width=".85"/><polygon points="63.36,20.48 75.84,26.72 64.64,32.32 52.16,26.08" fill="#cc8b37" opacity=".75"/>
- <polygon points="64.96,22.56 72.00,26.08 64.32,29.92 57.28,26.40" fill="#f4f8f7" opacity=".85"/>
- <polygon points="96.00,0.00 160.00,32.00 64.00,80.00 0.00,48.00" fill="none" stroke="#f5f8f5" stroke-width="1.3" opacity=".86"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80" viewBox="0 0 160 80">
+ <defs>
+ <linearGradient id="paving" x1=".10" y1="0" x2=".91" y2="1">
+  <stop stop-color="#e8ebea"/><stop offset=".50" stop-color="#d3dbdc"/><stop offset="1" stop-color="#abbac0"/>
+ </linearGradient>
+ <clipPath id="gridFootprint"><polygon points="96.00,0.00 160.00,32.00 64.00,80.00 0.00,48.00"/></clipPath>
+ </defs>
+ <g clip-path="url(#gridFootprint)">
+ <polygon points="96.00,0.00 160.00,32.00 64.00,80.00 0.00,48.00" fill="url(#paving)"/>
+ <!-- The whole platform is one continuous pale-concrete material. -->
+ <polygon points="95.12,2.20 155.60,32.44 64.88,77.80 4.40,47.56" fill="#e5eae9" opacity=".27"/>
+ <polygon points="96.00,0.00 128.00,16.00 96.00,32.00 64.00,16.00" fill="none" stroke="#a6b6bb" stroke-opacity=".42" stroke-width=".75"/><polygon points="128.00,16.00 160.00,32.00 128.00,48.00 96.00,32.00" fill="none" stroke="#a6b6bb" stroke-opacity=".42" stroke-width=".75"/><polygon points="64.00,16.00 96.00,32.00 64.00,48.00 32.00,32.00" fill="none" stroke="#a6b6bb" stroke-opacity=".42" stroke-width=".75"/><polygon points="96.00,32.00 128.00,48.00 96.00,64.00 64.00,48.00" fill="none" stroke="#a6b6bb" stroke-opacity=".42" stroke-width=".75"/><polygon points="32.00,32.00 64.00,48.00 32.00,64.00 0.00,48.00" fill="none" stroke="#a6b6bb" stroke-opacity=".42" stroke-width=".75"/><polygon points="64.00,48.00 96.00,64.00 64.00,80.00 32.00,64.00" fill="none" stroke="#a6b6bb" stroke-opacity=".42" stroke-width=".75"/><!-- Narrow two-tone bevel, painted wholly inside the snapped footprint. -->
+ <polygon points="96.00,0.00 160.00,32.00 64.00,80.00 0.00,48.00" fill="none" stroke="#91a8ad" stroke-width="2" opacity=".63"/>
+ <polygon points="95.12,2.20 155.60,32.44 64.88,77.80 4.40,47.56" fill="none" stroke="#ffffff" stroke-width=".9" opacity=".72"/>
+ <path d="M96.00,0.00L160.00,32.00" fill="none" stroke="#f9fdfb" stroke-width="1.2" opacity=".82"/>
+ <path d="M160.00,32.00L64.00,80.00" fill="none" stroke="#79979e" stroke-width="1.2" opacity=".48"/>
+ <ellipse cx="94.40" cy="5.96" rx="2" ry=".9" fill="#66797e" opacity=".25"/>
+ <circle cx="94.40" cy="4.96" r="1.55" fill="#f6c277" stroke="#f6ffff" stroke-width=".42"/><ellipse cx="148.80" cy="33.16" rx="2" ry=".9" fill="#66797e" opacity=".25"/>
+ <circle cx="148.80" cy="32.16" r="1.55" fill="#f6c277" stroke="#f6ffff" stroke-width=".42"/><ellipse cx="8.96" cy="48.68" rx="2" ry=".9" fill="#66797e" opacity=".25"/>
+ <circle cx="8.96" cy="47.68" r="1.55" fill="#f6c277" stroke="#f6ffff" stroke-width=".42"/><ellipse cx="63.36" cy="75.88" rx="2" ry=".9" fill="#66797e" opacity=".25"/>
+ <circle cx="63.36" cy="74.88" r="1.55" fill="#f6c277" stroke="#f6ffff" stroke-width=".42"/></g></svg>

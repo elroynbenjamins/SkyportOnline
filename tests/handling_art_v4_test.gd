@@ -10,7 +10,7 @@ func _run() -> void:
 	for item in [
 		["basic_fuel", Vector2i(2, 2), Vector2i(128, 64), 1],
 		["ground_ops_depot", Vector2i(1, 1), Vector2i(64, 32), 1],
-		["small_hangar", Vector2i(3, 2), Vector2i(160, 80), 2]
+		["small_hangar", Vector2i(4, 3), Vector2i(224, 112), 2]
 	]:
 		var id := String(item[0])
 		var definition := BuildingCatalog.get_definition(id)

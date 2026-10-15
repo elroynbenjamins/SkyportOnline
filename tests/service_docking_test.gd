@@ -142,12 +142,12 @@ func _run() -> void:
 		"passenger_in"
 	)
 
-	if base_route.size() < 3:
-		_fail("Starter service route should visibly traverse placed service-road cells.")
+	if base_route.size() < 2:
+		_fail("Starter service route should expose direct service endpoints.")
 		return
 	for index in range(base_route.size() - 1):
 		if fuel_route[index].distance_to(base_route[index]) > 0.01:
-			_fail("Aircraft docking approach should preserve the service-road route prefix.")
+			_fail("Aircraft docking approach should preserve the direct route prefix.")
 			return
 
 	var expected_fuel := pico.get_service_docking_position(
@@ -217,7 +217,7 @@ func _run() -> void:
 
 	print(
 		"Service docking passed: distinct scalable aircraft anchors, "
-		+ "service-road prefix, tuned staging, routed docking, and visual connections."
+		+ "direct transfer endpoints, tuned staging and visual connections."
 	)
 	quit(0)
 

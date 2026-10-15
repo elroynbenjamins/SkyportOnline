@@ -37,6 +37,48 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"runway_direction_policy": "origin_to_long_axis_end"
 		},
 		{
+			"id": "fuel_parking_s",
+			"name": "Small Fueling Parking",
+			"menu_name": "S FUEL PARK",
+			"category": "Infrastructure",
+			"footprint": Vector2i(3, 2),
+			"cost": 1800,
+			"level": 2,
+			"color": Color("cbd5d9"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["S"]),
+			"description": "A separate parking pad for small planes during fueling. Requires a fuel station; no road connection.",
+			"service_parking": "fuel",
+			"parking_slots": 1,
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v9/service/fuel_parking_s_3x2.svg",
+				"res://assets/production/airfield_v9/service/fuel_parking_s_2x3.svg"
+			]),
+			"grid_native_surface_size": Vector2i(160, 80),
+			"grid_native_surface_runtime_scale": Vector2.ONE
+		},
+		{
+			"id": "cargo_parking_s",
+			"name": "Small Cargo Parking",
+			"menu_name": "S CARGO PARK",
+			"category": "Infrastructure",
+			"footprint": Vector2i(3, 2),
+			"cost": 1800,
+			"level": 2,
+			"color": Color("ced7d6"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["S"]),
+			"description": "A separate parking pad for small planes during cargo loading and unloading. Requires cargo/ground operations; no roads.",
+			"service_parking": "cargo",
+			"parking_slots": 1,
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v9/service/cargo_parking_s_3x2.svg",
+				"res://assets/production/airfield_v9/service/cargo_parking_s_2x3.svg"
+			]),
+			"grid_native_surface_size": Vector2i(160, 80),
+			"grid_native_surface_runtime_scale": Vector2.ONE
+		},
+		{
 			"id": "small_stand",
 			"name": "Small Aircraft Stand",
 			"menu_name": "SMALL STAND",

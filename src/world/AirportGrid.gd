@@ -10190,6 +10190,50 @@ func get_simple_hangar(
 	return {}
 
 
+# Aircraft occupy independent grid-native parking pads, never the service depot.
+# A placed fuel/cargo building provides capacity; a placed pad provides one bay.
+func get_simple_service_parking_pads(
+	service_type: String,
+	aircraft_size: String = "S"
+) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for building in placed_buildings:
+		var definition := BuildingCatalog.get_definition(
+			String(building.get("definition_id", ""))
+		)
+		if (
+			String(definition.get("service_parking", "")) != service_type
+			or not _definition_supports_size(definition, aircraft_size)
+		):
+			continue
+		var origin: Vector2i = building.get("origin", Vector2i.ZERO)
+		var rotation := int(building.get("rotation", 0))
+		var footprint := _footprint_for(definition, rotation)
+		result.append({
+			"uid": int(building.get("uid", -1)),
+			"definition_id": String(definition.get("id", "")),
+			"world_position": _footprint_center_world(origin, footprint),
+			"footprint": footprint,
+			"parking_slots": int(definition.get("parking_slots", 1))
+		})
+	return result
+
+
+func get_simple_service_parking_capacity(
+	service_type: String,
+	aircraft_size: String = "S"
+) -> int:
+	# The number of simultaneous jobs cannot exceed BOTH available
+	# parked bays and the built service buildings' processing capacity.
+	var bays := 0
+	for parking in get_simple_service_parking_pads(service_type, aircraft_size):
+		bays += int(parking.get("parking_slots", 1))
+	var service_capacity := 0
+	for station in get_compatible_service_buildings(service_type, aircraft_size):
+		service_capacity += int(station.get("vehicle_capacity", 1))
+	return mini(bays, service_capacity)
+
+
 func get_best_service_building(service_type: String, aircraft_size: String) -> Dictionary:
 	var compatible := get_compatible_service_buildings(service_type, aircraft_size)
 	if compatible.is_empty():

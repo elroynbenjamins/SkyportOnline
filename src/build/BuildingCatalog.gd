@@ -17,7 +17,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"name": "Short Runway",
 			"menu_name": "SHORT RUNWAY",
 			"category": "Infrastructure",
-			"footprint": Vector2i(5, 2),
+			"footprint": Vector2i(6, 2),
 			"cost": 7500,
 			"level": 1,
 			"color": Color("343c42"),
@@ -25,14 +25,14 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Handles small aircraft.",
 			"icon_path": "res://assets/production/airfield_v2/runway_icon_v2.svg",
-			"art_tier": "grid_native_runway_v4",
-			"surface_art": "short_runway_s_5x2_v4",
+			"art_tier": "grid_native_runway_v5",
+			"surface_art": "short_runway_s_6x2_v5",
 			"visual_contract": "square_grid_iso_v1",
 			"grid_native_surface_paths": PackedStringArray([
-				"res://assets/production/airfield_v4/short_runway_5x2.svg",
-				"res://assets/production/airfield_v4/short_runway_2x5.svg"
+				"res://assets/production/airfield_v5/short_runway_6x2.svg",
+				"res://assets/production/airfield_v5/short_runway_2x6.svg"
 			]),
-			"grid_native_surface_size": Vector2i(224, 112),
+			"grid_native_surface_size": Vector2i(256, 128),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
 			"runway_direction_policy": "origin_to_long_axis_end"
 		},
@@ -433,7 +433,7 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"name": "Small Hangar",
 			"menu_name": "SMALL HANGAR",
 			"category": "Operations",
-			"footprint": Vector2i(3, 2),
+			"footprint": Vector2i(4, 3),
 			"cost": 12000,
 			"level": 3,
 			"color": Color("8094a1"),
@@ -441,56 +441,12 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray(["S"]),
 			"description": "Stores and maintains small aircraft.",
 			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
-			"art_tier": "grid_authored_hangar_v6",
+			"art_tier": "grid_authored_hangar_v8",
 			"grid_first_service_visual": true,
 			"grid_first_world_sprite": true,
 			"grid_native_surface_paths": PackedStringArray([
-				"res://assets/production/airfield_v3/service/small_hangar_pad_3x2.svg",
-				"res://assets/production/airfield_v3/service/small_hangar_pad_2x3.svg"
-			]),
-			"grid_native_surface_size": Vector2i(160, 80),
-			"grid_native_surface_runtime_scale": Vector2.ONE,
-			"world_art_has_integrated_base": false,
-			"world_sprite_grid_fit": true,
-			"world_sprite_auto_ground": true,
-			"world_sprite_visible_width_scale": 1.0,
-			"world_sprite_max_width_scale": 1.0,
-			"world_sprite_ground_align": true,
-			"world_ground_pad": false,
-			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v6/small_hangar_3x2.svg",
-				"res://assets/production/airport_buildings_v6/small_hangar_2x3.svg"
-			]),
-			"grid_first_structure_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v6/small_hangar_3x2.svg",
-				"res://assets/production/airport_buildings_v6/small_hangar_2x3.svg"
-			]),
-			"grid_first_structure_width_scale": 1.0,
-			"grid_first_structure_flip_odd_rotations": false,
-			"grid_first_structure_art_size": Vector2i(160, 190),
-			"grid_first_structure_footprint": Vector2i(3, 2),
-			"grid_first_structure_shadow_offset_y": -21.0,
-			"grid_first_structure_shadow_opacity": 0.0
-		},
-		{
-			"id": "medium_hangar",
-			"name": "Medium Hangar",
-			"menu_name": "MEDIUM HANGAR",
-			"category": "Operations",
-			"footprint": Vector2i(4, 3),
-			"cost": 48000,
-			"level": 8,
-			"color": Color("439bdf"),
-			"rotatable": true,
-			"sizes": PackedStringArray(["S", "M"]),
-			"description": "An upgraded hangar for small and medium aircraft, with a wider aircraft door and modern service rooms.",
-			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
-			"art_tier": "grid_authored_hangar_v7",
-			"grid_first_service_visual": true,
-			"grid_first_world_sprite": true,
-			"grid_native_surface_paths": PackedStringArray([
-				"res://assets/production/airfield_v7/service/medium_hangar_pad_4x3.svg",
-				"res://assets/production/airfield_v7/service/medium_hangar_pad_3x4.svg"
+				"res://assets/production/airfield_v8/service/small_hangar_pad_4x3.svg",
+				"res://assets/production/airfield_v8/service/small_hangar_pad_3x4.svg"
 			]),
 			"grid_native_surface_size": Vector2i(224, 112),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
@@ -502,17 +458,61 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v7/medium_hangar_4x3.svg",
-				"res://assets/production/airport_buildings_v7/medium_hangar_3x4.svg"
+				"res://assets/production/airport_buildings_v8/small_hangar_4x3.svg",
+				"res://assets/production/airport_buildings_v8/small_hangar_3x4.svg"
 			]),
 			"grid_first_structure_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v7/medium_hangar_4x3.svg",
-				"res://assets/production/airport_buildings_v7/medium_hangar_3x4.svg"
+				"res://assets/production/airport_buildings_v8/small_hangar_4x3.svg",
+				"res://assets/production/airport_buildings_v8/small_hangar_3x4.svg"
 			]),
 			"grid_first_structure_width_scale": 1.0,
 			"grid_first_structure_flip_odd_rotations": false,
 			"grid_first_structure_art_size": Vector2i(224, 260),
 			"grid_first_structure_footprint": Vector2i(4, 3),
+			"grid_first_structure_shadow_offset_y": -21.0,
+			"grid_first_structure_shadow_opacity": 0.0
+		},
+		{
+			"id": "medium_hangar",
+			"name": "Medium Hangar",
+			"menu_name": "MEDIUM HANGAR",
+			"category": "Operations",
+			"footprint": Vector2i(5, 4),
+			"cost": 48000,
+			"level": 8,
+			"color": Color("439bdf"),
+			"rotatable": true,
+			"sizes": PackedStringArray(["S", "M"]),
+			"description": "An upgraded hangar for small and medium aircraft, with a wider aircraft door and modern service rooms.",
+			"icon_path": "res://assets/pixel/airport_v1/hangar_small.svg",
+			"art_tier": "grid_authored_hangar_v8",
+			"grid_first_service_visual": true,
+			"grid_first_world_sprite": true,
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_v8/service/medium_hangar_pad_5x4.svg",
+				"res://assets/production/airfield_v8/service/medium_hangar_pad_4x5.svg"
+			]),
+			"grid_native_surface_size": Vector2i(288, 144),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"world_art_has_integrated_base": false,
+			"world_sprite_grid_fit": true,
+			"world_sprite_auto_ground": true,
+			"world_sprite_visible_width_scale": 1.0,
+			"world_sprite_max_width_scale": 1.0,
+			"world_sprite_ground_align": true,
+			"world_ground_pad": false,
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_v8/medium_hangar_5x4.svg",
+				"res://assets/production/airport_buildings_v8/medium_hangar_4x5.svg"
+			]),
+			"grid_first_structure_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_v8/medium_hangar_5x4.svg",
+				"res://assets/production/airport_buildings_v8/medium_hangar_4x5.svg"
+			]),
+			"grid_first_structure_width_scale": 1.0,
+			"grid_first_structure_flip_odd_rotations": false,
+			"grid_first_structure_art_size": Vector2i(288, 336),
+			"grid_first_structure_footprint": Vector2i(5, 4),
 			"grid_first_structure_shadow_opacity": 0.0
 		},
 		{

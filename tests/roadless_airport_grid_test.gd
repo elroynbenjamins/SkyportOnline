@@ -12,9 +12,9 @@ func _run() -> void:
 			return
 
 	var expectations := [
-		["small_hangar", Vector2i(3, 2), Vector2i(160, 80), Vector2i(160, 190)],
-		["medium_hangar", Vector2i(4, 3), Vector2i(224, 112), Vector2i(224, 260)],
-		["short_runway", Vector2i(5, 2), Vector2i(224, 112), Vector2i.ZERO]
+		["small_hangar", Vector2i(4, 3), Vector2i(224, 112), Vector2i(224, 260)],
+		["medium_hangar", Vector2i(5, 4), Vector2i(288, 144), Vector2i(288, 336)],
+		["short_runway", Vector2i(6, 2), Vector2i(256, 128), Vector2i.ZERO]
 	]
 	for spec in expectations:
 		var def := BuildingCatalog.get_definition(String(spec[0]))
@@ -77,7 +77,7 @@ func _run() -> void:
 	if grid.get_airside_status().get("taxiways", -1) != 0:
 		_fail("Road reachability should not exist.")
 		return
-	print("ROADLESS_AIRPORT_GRID_OK small=3x2 medium=4x3 runway=5x2")
+	print("ROADLESS_AIRPORT_GRID_OK small=4x3 medium=5x4 runway=6x2")
 	quit(0)
 
 

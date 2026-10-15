@@ -27,8 +27,8 @@ func _run() -> void:
 	var definition := BuildingCatalog.get_definition(
 		"short_runway"
 	)
-	if definition.get("footprint", Vector2i.ZERO) != Vector2i(5, 2):
-		push_error("Visual QA requires the Short Runway to be 5x2.")
+	if definition.get("footprint", Vector2i.ZERO) != Vector2i(6, 2):
+		push_error("Visual QA requires the Short Runway to be 6x2.")
 		quit(1)
 		return
 
@@ -42,7 +42,7 @@ func _run() -> void:
 	)
 	if not bool(preview.get("valid", false)):
 		push_error(
-			"Could not place 5x2 Short Runway for visual QA: %s"
+			"Could not place 6x2 Short Runway for visual QA: %s"
 			% String(preview.get("reason", "invalid"))
 		)
 		quit(1)
@@ -55,7 +55,7 @@ func _run() -> void:
 		return
 
 	var camera := Camera2D.new()
-	camera.position = grid.tile_to_world(Vector2(4.0, 2.5))
+	camera.position = grid.tile_to_world(Vector2(4.5, 2.5))
 	camera.zoom = Vector2(1.70, 1.70)
 	camera.position_smoothing_enabled = false
 	camera.enabled = true
@@ -78,7 +78,7 @@ func _run() -> void:
 		grid.get_airside_status()
 	)
 	hud.set_operation_status(
-		"Small Runway • 5×2 grid-native surface"
+		"Small Runway • 6×2 grid-native surface"
 	)
 
 	for _frame in range(8):
@@ -108,7 +108,7 @@ func _run() -> void:
 		return
 
 	print(
-		"SHORT_RUNWAY_SCREENSHOT_OK path=%s size=%dx%d footprint=5x2"
+		"SHORT_RUNWAY_SCREENSHOT_OK path=%s size=%dx%d footprint=6x2"
 		% [
 			output_absolute,
 			image.get_width(),

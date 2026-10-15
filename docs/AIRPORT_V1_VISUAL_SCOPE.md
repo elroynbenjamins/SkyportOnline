@@ -6,9 +6,9 @@
 
 | Asset | Cells | Ground canvas | Source |
 |---|---|---|---|
-| Small Hangar | 3×2 / 2×3 | 160×80 px | `assets/production/airport_buildings_v6/small_hangar_{3x2,2x3}.svg` |
-| Medium Hangar | 4×3 / 3×4 | 224×112 px | `assets/production/airport_buildings_v7/medium_hangar_{4x3,3x4}.svg` |
-| Small Runway | 5×2 / 2×5 | 224×112 px | `assets/production/airfield_v4/short_runway_{5x2,2x5}.svg` |
+| Small Hangar | 4×3 / 3×4 | 224×112 px | `assets/production/airport_buildings_v8/small_hangar_{4x3,3x4}.svg` |
+| Medium Hangar | 5×4 / 4×5 | 288×144 px | `assets/production/airport_buildings_v8/medium_hangar_{5x4,4x5}.svg` |
+| Small Runway | 6×2 / 2×6 | 256×128 px | `assets/production/airfield_v5/short_runway_{6x2,2x6}.svg` |
 
 Hangars draw their separate matching concrete pad beneath a transparent building sprite. All decorative footings, edge stripes and inset markings must follow the exact projected grid footprint. Never scale a free-form illustration to compensate for a mismatched footprint.
 

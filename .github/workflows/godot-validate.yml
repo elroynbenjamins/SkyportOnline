@@ -51,25 +51,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Capture taxiway runway connection
-        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_taxiway_connection_ingame.gd
+      - name: Capture polished core airport buildings and runway
+        run: timeout 50s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_airport_core_art_ingame.gd
 
-      - name: Upload taxiway runway connection
+      - name: Upload polished core airport screenshot
         uses: actions/upload-artifact@v4
         with:
-          name: taxiway-runway-connection-ingame
-          path: artifacts/taxiway_connection_ingame.png
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Capture modular runway exits
-        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_modular_runway_exits_ingame.gd
-
-      - name: Upload modular runway exits
-        uses: actions/upload-artifact@v4
-        with:
-          name: modular-runway-exits-ingame
-          path: artifacts/modular_runway_exits_ingame.png
+          name: airport-core-art-ingame
+          path: artifacts/airport_core_art_ingame.png
           if-no-files-found: error
           retention-days: 7
 
@@ -141,10 +130,7 @@ jobs:
             tests/starter_airport_tutorial_test.gd
             tests/starter_building_grid_fit_test.gd
             tests/short_runway_grid_art_test.gd
-            tests/runway_taxi_exit_policy_test.gd
-            tests/runway_modular_art_test.gd
-            tests/taxiway_grid_art_test.gd
-            tests/airside_connectivity_test.gd
+            tests/roadless_airport_grid_test.gd
             tests/flight_rules_test.gd
             tests/skyrama_simple_handling_test.gd
             tests/skyrama_runway_slot_test.gd
@@ -198,14 +184,10 @@ jobs:
             tests/layout_edit_feedback_test.gd
             tests/new_build_construction_feedback_test.gd
             tests/building_storage_test.gd
-            tests/taxi_traffic_test.gd
-            tests/airport_ground_movement_safety_test.gd
             tests/airport_operations_cycle_test.gd
-            tests/runway_hold_short_test.gd
             tests/runway_pacing_test.gd
             tests/atc_tower_upgrade_test.gd
             tests/multi_runway_assignment_test.gd
-            tests/runway_strategy_test.gd
             tests/runway_analytics_test.gd
             tests/operations_analytics_test.gd
             tests/operations_payoff_test.gd

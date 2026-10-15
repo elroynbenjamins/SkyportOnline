@@ -117,4 +117,68 @@
 <path d="M121.12,183.56 l4,5" stroke="#35444c" stroke-width="2"/>
 <circle cx="123.12" cy="174.56" r="3.5" fill="url(#gold)" stroke="#fff1be" stroke-width="1.2"/>
 <circle cx="67.00" cy="139.50" r="5" fill="#f6feff" stroke="#4f8dac" stroke-width="1.1"/><circle cx="67.00" cy="139.50" r="2.7" fill="#6bd6ff"/>
-</g></g></svg>
+
+<g id="skyport-finish-pass-medium">
+<defs>
+ <linearGradient id="finish-metal-m" x1="0" y1="0" x2=".8" y2="1">
+  <stop stop-color="#ffffff"/><stop offset=".5" stop-color="#c6e1e6"/>
+  <stop offset="1" stop-color="#759bac"/>
+ </linearGradient>
+ <linearGradient id="finish-gloss-m" x1="0" y1="0" x2="1" y2=".85">
+  <stop stop-color="#efffff" stop-opacity=".83"/>
+  <stop offset=".47" stop-color="#aeeeff" stop-opacity=".4"/>
+  <stop offset="1" stop-color="#237bb9" stop-opacity=".07"/>
+ </linearGradient>
+</defs>
+<!-- Medium front gable uses the actual arched wall width, with engineered ribs. -->
+<path d="M10,106 L67,135.5 L124,164.5 M67,135.5 L67,96.2
+ M30,117 L44,103 M99,151 L84,114" stroke="#b5d1d9" stroke-width="1.7" fill="none" opacity=".70"/>
+<path d="M12,108 L67,135.5 L123,164.2" fill="none"
+ stroke="#ffffff" stroke-width="1.45" opacity=".77"/>
+<!-- Higher quality roller door and inset glass panes. -->
+<path d="M17,127 L118,177 L118,247 M20,195 L115,242" fill="none"
+ stroke="#d2f4ff" stroke-width="1.45" opacity=".74"/>
+<path d="M22,194 L113,240" stroke="#084d88" stroke-width="1.1" opacity=".45"/>
+<path d="M28,168 L40,174 L40,183 L28,177 Z M46,177 L58,183 L58,192 L46,186 Z
+ M64,186 L76,192 L76,201 L64,195 Z M82,195 L94,201 L94,210 L82,204 Z
+ M100,204 L112,210 L112,219 L100,213 Z"
+ fill="url(#finish-gloss-m)" opacity=".54"/>
+<path d="M17.5,198 L117,248" stroke="#ffeaa1" stroke-width="1.75" opacity=".95"/>
+<!-- Segmented blue roof: restrained metallic glints and clean bright rim. -->
+<path d="M15,101 C32,86 51,87 68,98 Q102,121 125,163" fill="none"
+ stroke="#f5fdff" stroke-width="1.8" opacity=".85"/>
+<path d="M104,65 L121,59 M130,66 L145,70 M151,83 L166,88 M174,104 L184,115"
+ stroke="#e0faff" stroke-width="1.35" stroke-linecap="round" opacity=".65"/>
+<path d="M112,70 L128,63 M144,78 L157,83 M166,96 L180,106"
+ stroke="#0b5c9a" stroke-width=".75" opacity=".75"/>
+<!-- Sky-facing rooflight reflections, underneath the glazing edges. -->
+<path d="M70,76 l10,-5 M103,69 l9,-3 M136,78 l10,1" fill="none"
+ stroke="#ffffff" stroke-width="1.45" opacity=".72"/>
+<!-- Side service rooms: brighter windows, extra trim and an equipment rack. -->
+<polygon points="144.4,182 168.8,169.3 166.5,183.8 144.4,196"
+ fill="#ffffff" opacity=".17"/>
+<path d="M136,174 L211,136" stroke="#f7ffff" stroke-width="1.65" opacity=".8"/>
+<path d="M132,253 L214,213" stroke="#567d88" stroke-width="1.3"/>
+<path d="M215,132 L215,211" stroke="#deeff5" stroke-width="1.3"/>
+<path d="M140,204 L152,198 L152,205 L140,211 Z"
+ fill="url(#finish-metal-m)" stroke="#5d91a7" stroke-width=".75"/>
+<path d="M142,204 L149,200 M142,207 L149,203" stroke="#5a8a9b" stroke-width=".8"/>
+<!-- Control cabinet with recessed front, lit status LEDs. -->
+<polygon points="164,224 175,218 175,239 164,245" fill="url(#finish-metal-m)"
+ stroke="#557f92" stroke-width="1.05"/>
+<path d="M166,226 L173,222 L173,231 L166,235 Z" fill="#6e9aae" opacity=".73"/>
+<circle cx="169" cy="237" r="1.5" fill="#85ecc1"/>
+<circle cx="172" cy="235" r="1.15" fill="#ffcc57"/>
+<!-- Medium-only exterior service-access strip and blue status plates. -->
+<path d="M191,192 L205,185 L205,192 L191,199 Z" fill="#284d6e"
+ stroke="#c4f6ff" stroke-width="1"/>
+<path d="M194,193 L201,190" stroke="#eafcff" stroke-width="1.3"/>
+<path d="M130,252 L138,248" stroke="#ffd050" stroke-width="2" opacity=".85"/>
+<path d="M217,207 L213,209" stroke="#ffdd78" stroke-width="1.4"/>
+<!-- Fitted downpipe and service lighting. -->
+<path d="M214,144 L214,201" stroke="#c7dfeb" stroke-width="2.1"/>
+<path d="M212,158 L216,156 M212,186 L216,184" stroke="#ffce50" stroke-width="2"/>
+<circle cx="18" cy="192" r="5.2" fill="#ffe7a0" opacity=".15"/>
+<circle cx="121" cy="244" r="5.2" fill="#ffe7a0" opacity=".16"/>
+<path d="M17,190 l3,2 M120,242 l3,2" stroke="#fff4c3" stroke-width="1.2"/>
+</g></g></g></svg>

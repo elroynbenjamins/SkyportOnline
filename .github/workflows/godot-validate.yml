@@ -141,6 +141,7 @@ jobs:
             tests/starter_airport_tutorial_test.gd
             tests/starter_building_grid_fit_test.gd
             tests/short_runway_grid_art_test.gd
+            tests/separate_service_parking_test.gd
             tests/roadless_airport_grid_test.gd
             tests/flight_rules_test.gd
             tests/skyrama_simple_handling_test.gd
@@ -151,7 +152,6 @@ jobs:
             tests/generated_hangar_grid_test.gd
             tests/medium_hangar_grid_test.gd
             tests/airport_three_asset_focus_test.gd
-            tests/separate_service_parking_test.gd
             tests/resource_drop_rules_test.gd
             tests/passenger_economy_test.gd
             tests/fuel_economy_test.gd

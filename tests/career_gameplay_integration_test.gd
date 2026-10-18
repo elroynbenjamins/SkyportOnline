@@ -39,6 +39,12 @@ func _build_required_starter_airside(main) -> bool:
 		return false
 	if not _place_for_career(main, "ground_ops_depot", Vector2i(5, 9)):
 		return false
+	# V1 moves planes to dedicated 3x2 parking pads rather than into depots.
+	# Both are required for the first owned Pico to enter the hangar/fleet.
+	if not _place_for_career(main, "fuel_parking_s", Vector2i(11, 2)):
+		return false
+	if not _place_for_career(main, "cargo_parking_s", Vector2i(11, 7)):
+		return false
 
 	if not _place_for_career(main, "small_stand", Vector2i(4, 6)):
 		return false

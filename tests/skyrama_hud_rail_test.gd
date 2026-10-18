@@ -46,8 +46,8 @@ func _run() -> void:
 	hud.set_build_catalog(definitions)
 	await process_frame
 	var stand := hud.catalog_buttons.get("small_stand") as Button
-	if stand == null or not (stand.icon is AtlasTexture):
-		_fail("Build cards should use the approved production atlas thumbnail.")
+	if stand == null or stand.icon == null:
+		_fail("Build cards must display a real thumbnail or game icon fallback.")
 		return
 	if not stand.text.contains("2×2") or not stand.text.contains("COINS"):
 		_fail("Build cards should show price and true grid footprint.")

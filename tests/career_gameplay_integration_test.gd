@@ -102,6 +102,10 @@ func _run() -> void:
 		return
 	main._persist_airport_layout()
 	main._refresh_layout_dependent_systems()
+	# This test builds directly through AirportGrid, bypassing the live
+	# placement-confirm callback. Explicitly trigger the usual post-build
+	# deployment after all V1 handling pads are available.
+	main._spawn_aircraft_demos()
 	await process_frame
 	check(
 		main.aircraft_demos.size() == 1,

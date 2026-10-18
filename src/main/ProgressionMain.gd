@@ -311,6 +311,9 @@ func _spawn_aircraft_demos() -> void:
 	_deploy_reserve_aircraft()
 
 func _deploy_reserve_aircraft() -> void:
+	if SKYRAMA_SIMPLE_HANDLING:
+		_deploy_skyrama_reserve_aircraft()
+		return
 	if not progression_ready or deploying or ground_services == null:
 		return
 	deploying = true
@@ -447,6 +450,98 @@ func _deploy_reserve_aircraft() -> void:
 				aircraft.uses_manual_handling()
 			)
 	deploying = false
+
+# The actual game scene is ProgressionMain, not the base Main script.
+# Own aircraft must use the same roadless runways and separate parking pads
+# as the visual/grid-first V1. Never demand taxiways or stand service routes.
+# Only the first owned plane is active for V1; the rest remain available in
+# the account's ownership inventory until multi-plane handling ships.
+func _deploy_skyrama_reserve_aircraft() -> void:
+	if not progression_ready or deploying or ground_services == null:
+		return
+	if not deployed_owned.is_empty():
+		return
+	var owned: Array = progression.get("owned_aircraft", [])
+	if owned.is_empty():
+		return
+	var choice: Dictionary = {}
+	var airport_runway: Dictionary = {}
+	for entry in owned:
+		if not (entry is Dictionary):
+			continue
+		var candidate: Dictionary = entry
+		var type_id := String(candidate.get("type", ""))
+		var profile := AircraftCatalog.get_profile(type_id)
+		if profile.is_empty():
+			continue
+		var size_class := String(profile.get("size", "S"))
+		var infrastructure := _simple_handling_infrastructure(size_class)
+		if not _simple_handling_missing_text(infrastructure).is_empty():
+			continue
+		choice = candidate
+		airport_runway = infrastructure.get("runway", {})
+		break
+	if choice.is_empty() or airport_runway.is_empty():
+		return
+
+	deploying = true
+	var uid := String(choice.get("uid", ""))
+	var type_id := String(choice.get("type", "pico_p8"))
+	var saved: Dictionary = (
+		progression.get("aircraft_runtime", {}) as Dictionary
+	).get(uid, {})
+	var phase := String(saved.get("phase", ""))
+	var aircraft := CareerAircraft.new()
+	aircraft.configure_aircraft_type(type_id)
+	aircraft.configure_skyrama_handling(true)
+	aircraft.name = "SO-%03d" % int(uid.trim_prefix("owned-"))
+	aircraft.z_index = 80
+	aircraft.set_meta("owned_uid", uid)
+	aircraft.set_meta("career_flight_token", String(saved.get("token", "")))
+	aircraft.set_meta("passengers_paid", bool(saved.get("paid", false)))
+	var label := String(aircraft.name)
+	aircraft.state_changed.connect(_on_demo_aircraft_state_changed.bind(aircraft, label))
+	aircraft.departed.connect(_on_demo_aircraft_departed.bind(aircraft, label))
+	aircraft.arrival_requested.connect(_on_demo_arrival_requested.bind(aircraft, label))
+	aircraft.arrival_completed.connect(_on_demo_arrival_completed.bind(aircraft, label))
+	aircraft.handling_action_requested.connect(_on_aircraft_handling_action_requested)
+	add_child(aircraft)
+	aircraft.set_simple_runway_route(
+		airport_runway.get("start_world", Vector2.ZERO),
+		airport_runway.get("end_world", Vector2.ZERO),
+		int(airport_runway.get("runway_uid", -1))
+	)
+	deployed_owned[uid] = aircraft
+	aircraft_demos.append(aircraft)
+	var returning := phase in [
+		"EN_ROUTE", "HOLDING_FOR_ARRIVAL", "APPROACH", "LANDING_ROLL"
+	]
+	if returning:
+		aircraft.assign_flight_plan(saved.get("plan", {}))
+		var since := maxf(
+			Time.get_unix_time_from_system()
+			- float(saved.get("saved_at", Time.get_unix_time_from_system())),
+			0.0
+		)
+		aircraft.flight_remaining = maxf(
+			float(saved.get("remaining", 0.0)) - since, 0.0
+		)
+		aircraft.visible = false
+		if phase == "EN_ROUTE" and aircraft.flight_remaining > 0.0:
+			aircraft._set_state("EN_ROUTE")
+		else:
+			aircraft._set_state("HOLDING_FOR_ARRIVAL")
+			_on_demo_arrival_requested(aircraft, label)
+	else:
+		# Any ground handling job interrupted by app suspension safely
+		# returns to the hangar; never resume with a fake occupied taxi road.
+		aircraft.stage_simple_hangar_inventory()
+		hud.set_operation_status(
+			"%s ready in hangar • choose a flight in Fleet" % label,
+			"success"
+		)
+	deploying = false
+
 
 func _release_stand(aircraft: AircraftPrototype) -> void:
 	super._release_stand(aircraft)

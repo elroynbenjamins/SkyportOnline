@@ -147,6 +147,7 @@ func set_handling_action(
 	handling_action_button.text = _handling_action_label(
 		pending_handling_action
 	)
+	handling_action_button.tooltip_text = "Tap to %s" % pending_handling_action.to_lower()
 	var icon_path := _handling_action_icon_path(
 		pending_handling_action
 	)
@@ -203,48 +204,13 @@ func _handling_action_icon_path(
 			return ""
 
 
-func _apply_handling_action_style(
-	action: String
-) -> void:
+func _apply_handling_action_style(action: String) -> void:
 	if handling_action_button == null:
 		return
-
-	var fill := Color("0b3e5a")
-	var border := Color("72dcff")
-	match action:
-		"RECEIVE", "LAND":
-			fill = Color("0c4965")
-			border = Color("79e3ff")
-		"UNLOAD":
-			fill = Color("15545b")
-			border = Color("7be9d1")
-		"LOAD":
-			fill = Color("6b4c12")
-			border = Color("ffd86f")
-		"SEND":
-			fill = Color("235d35")
-			border = Color("9df3a5")
-		"HANGAR":
-			fill = Color("354554")
-			border = Color("b8d7ed")
-
-	for state_name in ["normal", "hover", "pressed"]:
-		var style_box = handling_action_button.get_theme_stylebox(
-			state_name
-		)
-		if style_box is StyleBoxFlat:
-			var box := style_box as StyleBoxFlat
-			box.bg_color = fill.lightened(
-				0.10 if state_name == "hover" else 0.0
-			)
-			box.border_color = (
-				Color.WHITE
-				if state_name == "pressed"
-				else border
-			)
-
+	GameUIStyle.apply_handling_action_bubble(handling_action_button, action)
+	var colors := GameUIStyle.handling_action_palette(action)
 	if handling_action_tail != null:
-		handling_action_tail.color = fill
+		handling_action_tail.color = colors["fill"]
 
 
 func get_handling_action() -> String:
@@ -356,12 +322,12 @@ func _build_handling_action_button() -> void:
 
 	handling_action_button = Button.new()
 	handling_action_button.custom_minimum_size = Vector2(
-		108,
-		38
+		112,
+		44
 	)
 	handling_action_button.size = Vector2(
-		108,
-		38
+		112,
+		44
 	)
 	handling_action_button.mouse_filter = (
 		Control.MOUSE_FILTER_STOP
@@ -371,57 +337,7 @@ func _build_handling_action_button() -> void:
 	)
 	handling_action_button.z_index = 170
 
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("0b3e5a", 0.98)
-	normal.border_color = Color("72dcff")
-	normal.border_width_left = 2
-	normal.border_width_top = 2
-	normal.border_width_right = 2
-	normal.border_width_bottom = 2
-	normal.corner_radius_top_left = 14
-	normal.corner_radius_top_right = 14
-	normal.corner_radius_bottom_left = 14
-	normal.corner_radius_bottom_right = 14
-	normal.content_margin_left = 12.0
-	normal.content_margin_right = 12.0
-	normal.content_margin_top = 6.0
-	normal.content_margin_bottom = 6.0
-	normal.shadow_color = Color(0, 0, 0, 0.40)
-	normal.shadow_size = 7
-	normal.shadow_offset = Vector2(0, 3)
-
-	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color("135d83", 0.99)
-	hover.border_color = Color("c6f3ff")
-
-	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color("082a3d", 0.99)
-	pressed.border_color = Color("ffffff")
-
-	handling_action_button.add_theme_stylebox_override(
-		"normal",
-		normal
-	)
-	handling_action_button.add_theme_stylebox_override(
-		"hover",
-		hover
-	)
-	handling_action_button.add_theme_stylebox_override(
-		"pressed",
-		pressed
-	)
-	handling_action_button.add_theme_color_override(
-		"font_color",
-		Color("f8fdff")
-	)
-	handling_action_button.add_theme_color_override(
-		"font_hover_color",
-		Color("ffffff")
-	)
-	handling_action_button.add_theme_font_size_override(
-		"font_size",
-		11
-	)
+	GameUIStyle.apply_handling_action_bubble(handling_action_button, "RECEIVE")
 	handling_action_button.expand_icon = false
 	handling_action_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	handling_action_button.pressed.connect(

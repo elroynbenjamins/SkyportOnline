@@ -58,42 +58,9 @@ func _build_required_starter_airside(main) -> bool:
 	if not _place_for_career(main, "small_stand", Vector2i(4, 6)):
 		return false
 
-	# Optional NPC taxi path enters only through the runway rollout-end socket.
-	for y in range(2, 6):
-		if not _place_for_career(
-			main,
-			"taxiway",
-			Vector2i(4, y)
-		):
-			return false
-	if not _place_for_career(
-		main,
-		"taxiway",
-		Vector2i(3, 5)
-	):
-		return false
-	for y in range(6, 11):
-		if not _place_for_career(
-			main,
-			"taxiway",
-			Vector2i(3, y)
-		):
-			return false
-
-	for cell in [
-		# Fuel approach from the right side of the stand.
-		Vector2i(7, 6),
-		Vector2i(6, 6),
-		# Ground Ops approach from below the stand.
-		Vector2i(5, 8)
-	]:
-		if not _place_for_career(
-			main,
-			"service_road",
-			cell
-		):
-			return false
-
+	# Physical taxiways and service roads were retired in the roadless
+	# Skyrama V1 airport. Stand and service capacity no longer require
+	# connected construction pieces; do not resurrect legacy road assets.
 	if not _place_for_career(main, "small_terminal", Vector2i(10, 10)):
 		return false
 	return true

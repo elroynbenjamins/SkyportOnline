@@ -45,18 +45,14 @@ func _run() -> void:
 
 	# Narrow landscape should clip + allow scrolling rather than pushing
 	# action buttons over the bottom contextual strip.
-	root.size = Vector2i(980, 500)
-	await process_frame
-	hud._update_action_rail_layout()
+	hud._update_action_rail_layout(Vector2i(980, 500))
 	if hud.right_action_rail.offset_bottom > 439.0:
 		_fail("Action rail must leave room for the bottom dock.")
 		return
 	if hud.right_action_scroll == null:
 		_fail("Rail needs scroll support on smaller landscape screens.")
 		return
-	root.size = Vector2i(1280, 720)
-	await process_frame
-	hud._update_action_rail_layout()
+	hud._update_action_rail_layout(Vector2i(1280, 720))
 
 	var selected_tabs: Array[String] = []
 	hud.navigation_requested.connect(func(tab: String) -> void:

@@ -365,16 +365,18 @@ static func apply_button(
 			pressed_bg = Color("603319")
 			pressed_border = Color("ffb36a")
 		"dock":
-			normal_bg = Color("082b40")
-			normal_border = Color("176d91")
-			hover_bg = Color("0b3d59")
-			pressed_bg = Color("0b4c69")
-			pressed_border = COLOR_ACCENT
+			# Modern floating tool surface: matte navy, thin outline and subtle
+			# lift rather than the heavy glossy square legacy image asset.
+			normal_bg = Color("102e42", 0.98)
+			normal_border = Color("45758e", 0.94)
+			hover_bg = Color("1b4c63", 0.99)
+			pressed_bg = Color("174359")
+			pressed_border = Color("64cbe6")
 		"dock_selected":
-			normal_bg = Color("0876aa")
-			normal_border = Color("41d9ff")
-			hover_bg = Color("0a8cc4")
-			pressed_bg = Color("06638f")
+			normal_bg = Color("116c89", 0.99)
+			normal_border = Color("86e5f0")
+			hover_bg = Color("1885a2")
+			pressed_bg = Color("0c556e")
 			pressed_border = Color("d4f9ff")
 		"build_card":
 			normal_bg = Color("0a3046")
@@ -413,14 +415,17 @@ static func apply_button(
 			pressed_bg = Color("143126")
 			pressed_border = Color("a8efc1")
 
-	var radius := 10 if compact else 12
-	button.add_theme_stylebox_override(
-		"normal",
-		panel(normal_bg, normal_border, radius, 1, false)
-	)
+	var floating := kind in ["dock", "dock_selected"]
+	var radius := 16 if floating else (10 if compact else 12)
+	var normal_style := panel(normal_bg, normal_border, radius, 1, floating)
+	if floating:
+		normal_style.shadow_size = 4
+		normal_style.shadow_offset = Vector2(0, 2)
+		normal_style.shadow_color = Color(0, 0, 0, 0.25)
+	button.add_theme_stylebox_override("normal", normal_style)
 	button.add_theme_stylebox_override(
 		"hover",
-		panel(hover_bg, normal_border, radius, 2, false)
+		panel(hover_bg, normal_border, radius, 1, floating)
 	)
 	button.add_theme_stylebox_override(
 		"pressed",
@@ -449,10 +454,8 @@ static func apply_button(
 	var glossy_path := ""
 	if kind in ["primary", "mission_complete"]:
 		glossy_path = ProductionUIAssets.BUTTON_GREEN
-	elif kind == "dock":
-		glossy_path = ProductionUIAssets.NAV_TILE
-	elif kind == "dock_selected":
-		glossy_path = ProductionUIAssets.NAV_TILE_SELECTED
+	# The airport dock intentionally uses the lightweight flat styles above.
+	# Older glossy assets remain for other screens pending the art refactor.
 	elif kind in [
 		"nav",
 		"build_card",

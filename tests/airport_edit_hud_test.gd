@@ -187,6 +187,7 @@ func _run() -> void:
 		return
 	hud.exit_building_mode()
 
+	hud.enter_expansion_mode()
 	hud.show_parcel(
 		{
 			"id": "north_west",
@@ -198,8 +199,8 @@ func _run() -> void:
 		40,
 		3000000
 	)
-	if hud.purchase_button.text != "NOT CONNECTED":
-		_fail("Future parcel should show Not Connected.")
+	if hud.purchase_button.text != "NOT AVAILABLE":
+		_fail("Disconnected land should show unavailable in the expansion shop.")
 		return
 	if not hud.purchase_button.disabled:
 		_fail("Future parcel purchase should remain disabled.")
@@ -223,6 +224,10 @@ func _run() -> void:
 		_fail("Legacy parcel data without a district name should still show its location.")
 		return
 
+	# Expansion remains a shop-only action, never a purchase inside a
+	# building/drag placement modal.
+	hud.exit_expansion_mode(true)
+	hud.enter_move_mode(definition)
 	hud.show_move_preview(
 		definition,
 		{
@@ -234,14 +239,11 @@ func _run() -> void:
 			"locked_parcel_cost": 1200000
 		}
 	)
-	if not hud.expand_here_button.visible:
-		_fail("Future placement should still explain the expansion blocker.")
+	if hud.expand_here_button.visible:
+		_fail("Disconnected placement must not expose a purchase shortcut.")
 		return
-	if not hud.expand_here_button.disabled:
-		_fail("Disconnected placement expansion must stay disabled.")
-		return
-	if not hud.expand_here_button.text.contains("CONNECT LAND"):
-		_fail("Future placement should instruct the player to connect land.")
+	if not hud.place_button.disabled:
+		_fail("Unowned land cannot be used to move buildings.")
 		return
 
 	hud._on_done_airport_edit_pressed()

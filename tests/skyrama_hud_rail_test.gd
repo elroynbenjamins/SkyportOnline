@@ -90,6 +90,32 @@ func _run() -> void:
 		_fail("Bottom contextual strip should show current airport status.")
 		return
 
+	# Escape / Android Back should close just the top airport overlay,
+	# not accidentally navigate away or confirm a building purchase.
+	hud._on_status_chip_pressed("airside")
+	if not hud._handle_hud_back() or hud.status_detail_panel.visible:
+		_fail("Back should collapse the airfield details panel.")
+		return
+	hud._on_build_navigation_pressed()
+	if not hud._handle_hud_back() or hud.catalog_panel.visible:
+		_fail("Back should close the Build drawer.")
+		return
+	hud._toggle_hud_tools()
+	if not hud._handle_hud_back() or hud.tools_expanded:
+		_fail("Back should collapse secondary tools.")
+		return
+	var cancelled: Array[String] = []
+	hud.cancel_building_requested.connect(func() -> void: cancelled.append("cancel"))
+	hud.enter_building_mode(BuildingCatalog.get_definition("small_stand"))
+	if not hud._handle_hud_back() or cancelled.size() != 1:
+		_fail("Back during placement should request cancel once.")
+		return
+	hud.exit_building_mode()
+	hud._on_catalog_close_pressed()
+	if hud._handle_hud_back():
+		_fail("Back must not consume unrelated navigation when no overlay is open.")
+		return
+
 	var aircraft := AircraftPrototype.new()
 	root.add_child(aircraft)
 	await process_frame

@@ -42,7 +42,8 @@ func _run() -> void:
 		_fail("Closing construction drawer should reveal the rail.")
 		return
 
-	hud.set_build_catalog([BuildingCatalog.get_definition("small_stand")])
+	var definitions: Array[Dictionary] = [BuildingCatalog.get_definition("small_stand")]
+	hud.set_build_catalog(definitions)
 	await process_frame
 	var stand := hud.catalog_buttons.get("small_stand") as Button
 	if stand == null or not (stand.icon is AtlasTexture):

@@ -117,6 +117,35 @@ func _run() -> void:
 		_fail("M aircraft shadow scale should visibly exceed the S baseline.")
 		return
 
+	# Production aircraft should be visibly smaller than their source art,
+	# without reducing the mobile tap target or changing size ordering.
+	var world_plane := CareerAircraft.new()
+	root.add_child(world_plane)
+	await process_frame
+	for aircraft_id in ["pico_p8", "voyager_v32", "nimbus_n40", "horizon_h88"]:
+		world_plane.configure_aircraft_type(aircraft_id)
+		var expected_world_scale := (
+			float(scales[aircraft_id])
+			* CareerAircraft.AIRPORT_WORLD_VISUAL_SCALE
+		)
+		if not is_equal_approx(
+			world_plane.get_visual_scale(),
+			expected_world_scale
+		):
+			_fail("%s must use the world aircraft art multiplier." % aircraft_id)
+			return
+		var minimum_hit_radius := 44.0 if world_plane.aircraft_size == "M" else 36.0
+		if world_plane.get_interaction_radius() < minimum_hit_radius:
+			_fail("%s must keep its original mobile interaction radius." % aircraft_id)
+			return
+		if (
+			world_plane.get_directional_draw_width() * 0.5
+			> world_plane.get_interaction_radius()
+		):
+			_fail("%s sprite must remain inside the interaction target." % aircraft_id)
+			return
+	world_plane.queue_free()
+
 	print(
 		"AIRCRAFT_VISUAL_SCALE_OK pico=%.2f voyager=%.2f nimbus=%.2f horizon=%.2f"
 		% [

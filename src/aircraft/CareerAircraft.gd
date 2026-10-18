@@ -5,6 +5,17 @@ var direction_textures: Dictionary = {}
 var last_direction := ""
 var last_heading := INF
 
+# World-only aircraft visual sizing. Tune this single value rather than
+# changing source sprite sizes, flight geometry, runway slots or hit targets.
+const AIRPORT_WORLD_VISUAL_SCALE := 0.80
+
+
+func get_visual_scale() -> float:
+	# Both directional sprites and inherited shadows / operating FX use
+	# this scale, while minimum interaction radii stay unchanged.
+	return super.get_visual_scale() * AIRPORT_WORLD_VISUAL_SCALE
+
+
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
 	direction_textures.clear()

@@ -165,6 +165,7 @@ jobs:
             tests/economy_history_test.gd
             tests/aircraft_mastery_test.gd
             tests/aircraft_directional_coverage_test.gd
+            tests/aircraft_visual_scale_test.gd
             tests/fleet_screen_test.gd
             tests/passenger_support_test.gd
             tests/social_airport_test.gd

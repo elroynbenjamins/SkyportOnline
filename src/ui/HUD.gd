@@ -184,7 +184,7 @@ func _build_interface() -> void:
 	top_panel.offset_left = 10
 	top_panel.offset_top = 6
 	top_panel.offset_right = -10
-	top_panel.offset_bottom = 70
+	top_panel.offset_bottom = 78
 	root.add_child(top_panel)
 	GameUIStyle.apply_panel(top_panel, "hud_top")
 
@@ -344,9 +344,9 @@ func _build_interface() -> void:
 		Control.PRESET_TOP_RIGHT
 	)
 	tutorial_objective_panel.offset_left = -360
-	tutorial_objective_panel.offset_top = 74
+	tutorial_objective_panel.offset_top = 82
 	tutorial_objective_panel.offset_right = -10
-	tutorial_objective_panel.offset_bottom = 108
+	tutorial_objective_panel.offset_bottom = 117
 	root.add_child(tutorial_objective_panel)
 	GameUIStyle.apply_panel(
 		tutorial_objective_panel,
@@ -381,9 +381,9 @@ func _build_interface() -> void:
 	var status_strip := HBoxContainer.new()
 	status_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	status_strip.offset_left = 10
-	status_strip.offset_top = 74
+	status_strip.offset_top = 82
 	status_strip.offset_right = 610
-	status_strip.offset_bottom = 108
+	status_strip.offset_bottom = 117
 	status_strip.add_theme_constant_override("separation", 4)
 	root.add_child(status_strip)
 

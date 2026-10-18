@@ -207,6 +207,41 @@ func _refresh_secondary_shortcuts() -> void:
 	_update_action_rail_layout()
 
 
+
+# A single consistent escape/back path for airport overlays. This intentionally
+# does not intercept Back while no airport overlay is open, letting the
+# platform or any active full-screen game view decide what to do.
+func _unhandled_key_input(event: InputEvent) -> void:
+	if interface_root == null or not interface_root.visible:
+		return
+	if event.is_action_pressed("ui_cancel") and _handle_hud_back():
+		get_viewport().set_input_as_handled()
+
+
+func _handle_hud_back() -> bool:
+	if status_detail_panel != null and status_detail_panel.visible:
+		_close_status_detail()
+		return true
+	if storage_panel != null and storage_panel.visible:
+		storage_panel.visible = false
+		return true
+	if catalog_panel != null and catalog_panel.visible:
+		_on_catalog_close_pressed()
+		return true
+	if tools_expanded:
+		_collapse_hud_tools()
+		return true
+	if active_expansion_mode:
+		expansion_mode_cancel_requested.emit()
+		return true
+	if airport_edit_panel != null and airport_edit_panel.visible:
+		done_airport_edit_requested.emit()
+		return true
+	if not active_build_mode.is_empty():
+		cancel_building_requested.emit()
+		return true
+	return false
+
 func _sync_action_rail_visibility() -> void:
 	if right_action_rail == null:
 		return

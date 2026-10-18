@@ -1525,7 +1525,23 @@ func _catalog_icon_for(definition: Dictionary) -> Texture2D:
 			var fallback := ProductionUIAssets.texture(paths[0])
 			if fallback != null:
 				return fallback
-	return null
+
+	# Some older catalog definitions point at artwork that has not yet been
+	# committed to this repository. Never ship blank construction cards.
+	# Use the matching glossy game icon until the grid-native art exists.
+	var id := String(definition.get("id", ""))
+	var category := String(definition.get("category", ""))
+	if id.contains("fuel"):
+		return _hud_icon("fuel")
+	if id.contains("hangar") or id.contains("storage") or id.contains("depot"):
+		return _hud_icon("storage")
+	if id.contains("runway") or id.contains("stand") or id.contains("parking"):
+		return _hud_icon("airfield")
+	if category == "Passenger":
+		return _hud_icon("passengers")
+	if category == "Infrastructure":
+		return _hud_icon("airfield")
+	return _hud_icon("build")
 
 
 func _find_building_grid() -> GridContainer:

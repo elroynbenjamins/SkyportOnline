@@ -37,6 +37,18 @@ The interaction model is:
 11. The takeoff + climb-out animation plays.
 12. The aircraft enters its flight timer.
 
+## Aircraft visual sizing
+
+The airport world uses a **0.80× production aircraft sprite scale**, configured once in
+`CareerAircraft.AIRPORT_WORLD_VISUAL_SCALE`. This affects plane artwork, shadows
+and associated ground/flight effects together. It does **not** change the logical
+runway or parking grid, movement timing, or the minimum mobile touch target.
+Flight-selection and inventory UI artwork is unchanged.
+
+Fueling and cargo each use their own separate **3×2 airplane parking pad**.
+A fueling or Ground Ops building sets service throughput; the airplane never
+parks inside the service building itself.
+
 ## Runway slot rules
 
 A runway has one operational aircraft slot for V1.

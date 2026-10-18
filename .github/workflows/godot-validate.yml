@@ -73,6 +73,19 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture Skyrama compact HUD and build drawer
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_skyrama_hud.gd
+
+      - name: Upload Skyrama HUD visual QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyrama-hud-world-and-build
+          path: |
+            artifacts/skyrama_hud_world.png
+            artifacts/skyrama_hud_build.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Capture handling structures
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_handling_structures_ingame.gd
 

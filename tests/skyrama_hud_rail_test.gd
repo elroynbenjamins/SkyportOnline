@@ -54,6 +54,16 @@ func _run() -> void:
 		return
 	hud._update_action_rail_layout(Vector2i(1280, 720))
 
+	var build_surface := (
+		(hud.nav_buttons["build"] as Button).get_theme_stylebox("normal")
+	)
+	if not (build_surface is StyleBoxFlat):
+		_fail("Modern floating rail buttons must not use old heavy tile graphics.")
+		return
+	if (build_surface as StyleBoxFlat).corner_radius_top_left < 14:
+		_fail("Modern rail buttons should have consistently rounded corners.")
+		return
+
 	var selected_tabs: Array[String] = []
 	hud.navigation_requested.connect(func(tab: String) -> void:
 		selected_tabs.append(tab)

@@ -106,6 +106,12 @@ func _run() -> void:
 	# placement-confirm callback. Explicitly trigger the usual post-build
 	# deployment after all V1 handling pads are available.
 	main._spawn_aircraft_demos()
+	var infra := main._simple_handling_infrastructure("S")
+	print("CAREER_BOOT_DIAGNOSTIC started=%s missing=%s total=%d" % [
+		str(main.gameplay_started),
+		main._simple_handling_missing_text(infra),
+		main.aircraft_demos.size()
+	])
 	await process_frame
 	check(
 		main.aircraft_demos.size() == 1,

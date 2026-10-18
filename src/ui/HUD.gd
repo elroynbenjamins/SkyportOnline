@@ -1439,12 +1439,14 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(164, 62)
+		button.custom_minimum_size = Vector2(164, 76)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 11)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
+		button.add_theme_constant_override("icon_max_width", 38)
+		button.add_theme_constant_override("h_separation", 7)
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		button.tooltip_text = String(definition.get("description", ""))
 		GameUIStyle.apply_button(button, "build_card", true)
@@ -1496,9 +1498,33 @@ func _apply_catalog_filter() -> void:
 		]
 
 
-func _catalog_icon_for(_definition: Dictionary) -> Texture2D:
-	# Grid-first visual reset: catalog entries remain fully usable, but no
-	# airport-world art is loaded until the new grid-native asset contract lands.
+func _catalog_icon_for(definition: Dictionary) -> Texture2D:
+	# Use the approved production atlas where possible. This draws a thumbnail
+	# inside the BUILD UI only; world/grid rendering stays untouched.
+	var atlas_path := String(definition.get("world_sprite_atlas_path", ""))
+	var regions: Array = definition.get("world_sprite_regions", [])
+	if not atlas_path.is_empty() and not regions.is_empty():
+		var atlas_texture := ProductionUIAssets.texture(atlas_path)
+		if atlas_texture != null and regions[0] is Rect2:
+			var icon := AtlasTexture.new()
+			icon.atlas = atlas_texture
+			icon.region = regions[0]
+			icon.filter_clip = true
+			return icon
+
+	var icon_path := String(definition.get("icon_path", ""))
+	if not icon_path.is_empty():
+		var thumbnail := ProductionUIAssets.texture(icon_path)
+		if thumbnail != null:
+			return thumbnail
+
+	# Some grid-native service structures do not yet have a dedicated icon.
+	for key in ["grid_first_structure_paths", "world_sprite_paths", "grid_native_surface_paths"]:
+		var paths: PackedStringArray = definition.get(key, PackedStringArray())
+		if not paths.is_empty():
+			var fallback := ProductionUIAssets.texture(paths[0])
+			if fallback != null:
+				return fallback
 	return null
 
 
@@ -3005,19 +3031,23 @@ func exit_building_mode() -> void:
 
 func _update_catalog_buttons() -> void:
 	for definition in catalog_definitions:
-		var id := String(definition["id"])
+		var id := String(definition.get("id", ""))
 		if not catalog_buttons.has(id):
 			continue
 		var button: Button = catalog_buttons[id]
-		var required_level := int(definition["level"])
-		var cost := int(definition["cost"])
-
+		var required_level := int(definition.get("level", 1))
+		var cost := int(definition.get("cost", 0))
+		var footprint: Vector2i = definition.get("footprint", Vector2i.ONE)
+		var footprint_text := "%d×%d" % [footprint.x, footprint.y]
+		var name := String(definition.get("menu_name", id))
+		var size_class := _size_text(definition)
+		button.tooltip_text = "%s\n%d coins • Level %d • %s tiles • %s aircraft" % [
+			String(definition.get("description", name)),
+			cost, required_level, footprint_text, size_class
+		]
 		if current_level < required_level:
 			GameUIStyle.apply_button(button, "build_card_locked", true)
-			button.text = "%s\nLOCKED • LV %d" % [
-				String(definition["menu_name"]),
-				required_level
-			]
+			button.text = "%s\nLV %d • %s" % [name, required_level, footprint_text]
 			button.disabled = true
 		else:
 			var selected := id == active_building_id
@@ -3026,12 +3056,11 @@ func _update_catalog_buttons() -> void:
 				"build_card_selected" if selected else "build_card",
 				true
 			)
-			button.text = "%s%s\n%s COINS • LV %d • %s" % [
-				"SELECTED • " if selected else "",
-				String(definition["menu_name"]),
+			button.text = "%s%s\n%s COINS • %s" % [
+				"✓ " if selected else "",
+				name,
 				_format_number(cost),
-				required_level,
-				_size_text(definition)
+				footprint_text
 			]
 			button.disabled = false
 	_apply_catalog_filter()

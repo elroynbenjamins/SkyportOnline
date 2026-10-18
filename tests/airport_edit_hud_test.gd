@@ -145,33 +145,13 @@ func _run() -> void:
 			"locked_parcel_cost": 25000
 		}
 	)
-	if not hud.expand_here_button.visible:
-		_fail("Locked placement should expose Expand Here.")
+	# Expansion is intentionally shop-only; a blocked move cannot purchase
+	# land inline and its normal confirm button must stay disabled.
+	if hud.expand_here_button.visible:
+		_fail("Placement must not expose inline Expand Here purchases.")
 		return
-	if not hud.expand_here_button.disabled:
-		_fail("Expand Here should respect the parcel level requirement.")
-		return
-	if hud.place_button.visible:
-		_fail("Expand Here should replace the blocked confirm button.")
-		return
-
-	hud.set_player_data(5, 25000, 0)
-	hud.show_move_preview(
-		definition,
-		{
-			"valid": false,
-			"reason": "This land parcel is still locked.",
-			"locked_parcel_id": "north",
-			"locked_parcel_level": 5,
-			"locked_parcel_cost": 25000
-		}
-	)
-	if hud.expand_here_button.disabled:
-		_fail("Affordable level-eligible expansion should be enabled.")
-		return
-	hud._on_expand_here_pressed()
-	if expanded_parcel_id != "north":
-		_fail("Expand Here should emit the blocking parcel id.")
+	if not hud.place_button.disabled:
+		_fail("Locked land must block building moves.")
 		return
 
 	hud.show_move_preview(
@@ -181,36 +161,14 @@ func _run() -> void:
 			"footprint": Vector2i(2, 2)
 		}
 	)
-	if hud.expand_here_button.visible:
-		_fail("Expand Here should hide once placement is valid.")
-		return
-	if not hud.place_button.visible:
-		_fail("Confirm Move should return after expansion is resolved.")
+	if hud.place_button.disabled or not hud.place_button.visible:
+		_fail("Valid movement should restore Confirm Move.")
 		return
 
 	hud.enter_building_mode(definition)
 	if hud.catalog_panel.visible:
 		_fail("Choosing a building should hide the drawer during placement.")
 		return
-	hud.set_player_data(5, 30000, 0)
-	hud.show_build_preview(
-		definition,
-		{
-			"valid": false,
-			"reason": "This land parcel is still locked.",
-			"locked_parcel_id": "north",
-			"locked_parcel_level": 5,
-			"locked_parcel_cost": 25000
-		},
-		5,
-		30000
-	)
-	if not hud.expand_here_button.disabled:
-		_fail(
-			"New construction expansion should reserve the building cost."
-		)
-		return
-
 	hud.set_player_data(5, 32500, 0)
 	hud.show_build_preview(
 		definition,
@@ -224,12 +182,9 @@ func _run() -> void:
 		5,
 		32500
 	)
-	if hud.expand_here_button.disabled:
-		_fail(
-			"Parcel plus building affordability should enable expansion."
-		)
+	if hud.expand_here_button.visible or not hud.place_button.disabled:
+		_fail("Construction must require buying land through the Build shop.")
 		return
-
 	hud.exit_building_mode()
 
 	hud.show_parcel(

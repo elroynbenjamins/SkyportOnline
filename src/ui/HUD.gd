@@ -159,10 +159,13 @@ func _process(_delta: float) -> void:
 		_update_action_rail_layout()
 
 
-func _update_action_rail_layout() -> void:
+func _update_action_rail_layout(override_size: Vector2i = Vector2i.ZERO) -> void:
 	if right_action_rail == null:
 		return
-	rail_viewport_size = Vector2i(get_viewport().get_visible_rect().size)
+	rail_viewport_size = (
+		override_size if override_size != Vector2i.ZERO
+		else Vector2i(get_viewport().get_visible_rect().size)
+	)
 	# Reserve room for the status chips above and the contextual dock below.
 	# The scroll container keeps all touch targets reachable on short screens.
 	var top := 124

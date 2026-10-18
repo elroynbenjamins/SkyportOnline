@@ -2927,10 +2927,30 @@ func _status_button_kind(
 
 
 func _compact_status(text: String) -> String:
-	var compact := text.replace("\n", " • ")
-	if compact.length() > 20:
-		compact = compact.substr(0, 17) + "..."
-	return compact.to_upper()
+	# Full operation descriptions belong in the bottom status dock and the
+	# tappable details panel; the upper chip must remain short and readable.
+	var value := text.to_upper()
+	if (
+		value.contains("WAIT")
+		or value.contains("QUEUE")
+		or value.contains("AWAIT")
+	):
+		return "WAITING"
+	if (
+		value.contains("MISSING")
+		or value.contains("CANNOT")
+		or value.contains("NOT ENOUGH")
+		or value.contains("BLOCK")
+		or value.contains("FAILED")
+	):
+		return "ACTION"
+	if value.contains("BUILD") or value.contains("CONSTRUCTION"):
+		return "BUILDING"
+	if value.contains("PREPAR"):
+		return "PREPARING"
+	if value.contains("READY") or value.contains("CLEAR"):
+		return "READY"
+	return "ACTIVE"
 
 func _on_status_chip_pressed(key: String) -> void:
 	if active_status_chip == key and status_detail_panel.visible:

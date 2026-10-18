@@ -23,8 +23,17 @@ func _place_for_career(
 		0
 	)
 	if not bool(preview.get("valid", false)):
+		push_error("Cannot place %s at %s: %s" % [
+			building_id, str(cell), String(preview.get("reason", "unknown"))
+		])
 		return false
-	return not main.airport_grid.confirm_build_preview().is_empty()
+	var placed: Dictionary = main.airport_grid.confirm_build_preview()
+	if placed.is_empty():
+		push_error("Placement returned no building: %s at %s" % [
+			building_id, str(cell)
+		])
+		return false
+	return true
 
 
 func _build_required_starter_airside(main) -> bool:
@@ -115,10 +124,15 @@ func _run() -> void:
 	await process_frame
 	check(main.gameplay_started and main.progression_ready, "Guest creation must start the real game.")
 	check(main.player_level == 1, "A new airport starts career progression at level one.")
+	var built := _build_required_starter_airside(main)
 	check(
-		_build_required_starter_airside(main),
+		built,
 		"Fresh career test should construct simple handling plus the optional NPC network."
 	)
+	if not built:
+		push_error("Career test setup failed: cannot build required starter airport.")
+		quit(1)
+		return
 	main._persist_airport_layout()
 	main._refresh_layout_dependent_systems()
 	await process_frame
@@ -126,6 +140,12 @@ func _run() -> void:
 		main.aircraft_demos.size() == 1,
 		"V1 should deploy one owned Pico from hangar inventory."
 	)
+	if main.aircraft_demos.is_empty():
+		push_error("Owned aircraft not spawned: infrastructure=%s" % [
+			str(main._simple_handling_infrastructure("S"))
+		])
+		quit(1)
+		return
 	check(
 		main.aircraft_demos[0].uses_skyrama_handling(),
 		"Owned V1 aircraft must use the Skyrama handling loop."

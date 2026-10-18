@@ -22,6 +22,42 @@ func _run() -> void:
 			_fail("Rail touch targets must remain mobile friendly.")
 			return
 
+	# New shortcut behavior: secondary tools stay available without
+	# permanently covering the runway / parked aircraft.
+	if (hud.nav_buttons["tools"] as Button).icon == null:
+		_fail("Tools expander should have a dedicated icon.")
+		return
+	for secondary in ["edit", "storage", "social"]:
+		if (hud.nav_buttons[secondary] as Button).visible:
+			_fail("Secondary actions should start collapsed.")
+			return
+	(hud.nav_buttons["tools"] as Button).pressed.emit()
+	for secondary in ["edit", "storage", "social"]:
+		if not (hud.nav_buttons[secondary] as Button).visible:
+			_fail("Tools should reveal " + secondary)
+			return
+	hud.set_social_attention(true)
+	hud._collapse_hud_tools()
+	if not (hud.nav_buttons["tools"] as Button).text.contains("•"):
+		_fail("Collapsed Tools must preserve a social attention indicator.")
+		return
+	hud.set_social_attention(false)
+
+	# Narrow landscape should clip + allow scrolling rather than pushing
+	# action buttons over the bottom contextual strip.
+	root.size = Vector2i(980, 500)
+	await process_frame
+	hud._update_action_rail_layout()
+	if hud.right_action_rail.offset_bottom > 439.0:
+		_fail("Action rail must leave room for the bottom dock.")
+		return
+	if hud.right_action_scroll == null:
+		_fail("Rail needs scroll support on smaller landscape screens.")
+		return
+	root.size = Vector2i(1280, 720)
+	await process_frame
+	hud._update_action_rail_layout()
+
 	var selected_tabs: Array[String] = []
 	hud.navigation_requested.connect(func(tab: String) -> void:
 		selected_tabs.append(tab)

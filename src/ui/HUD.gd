@@ -7,6 +7,7 @@ const HUD_ICON_SVG := {
 	"activities": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><rect x="6.5" y="5.5" width="11" height="13" rx="1.8" fill="none" stroke="#f8fcff" stroke-width="1.5"/><rect x="9" y="4.2" width="6" height="2.8" rx="1" fill="#f5b33b"/><path d="M12 9l.9 1.8 2 .3-1.5 1.4.4 2-1.8-.9-1.8.9.4-2-1.5-1.4 2-.3L12 9z" fill="#f8fcff"/></svg>""",
 	"social": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><circle cx="9" cy="9" r="2.4" fill="#f8fcff"/><circle cx="15.5" cy="10" r="2" fill="#f8fcff" opacity=".9"/><path d="M4.8 17.8c.4-3.1 2-4.6 4.4-4.6s4 1.5 4.4 4.6" fill="#f8fcff"/><path d="M13.2 17.8c.3-2.4 1.4-3.6 3.3-3.6 1.6 0 2.7 1.2 3 3.6" fill="#f8fcff" opacity=".85"/></svg>""",
 	"more": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><circle cx="7" cy="12" r="1.7" fill="#f8fcff"/><circle cx="12" cy="12" r="1.7" fill="#f8fcff"/><circle cx="17" cy="12" r="1.7" fill="#f8fcff"/></svg>""",
+	"tools": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M12 5.5l1.1 1.7 2.1.5 1.8-1 1.5 1.5-1 1.8.5 2.1 1.7 1.1-1.7 1.1-.5 2.1 1 1.8-1.5 1.5-1.8-1-2.1.5L12 20.5l-1.1-1.7-2.1-.5-1.8 1-1.5-1.5 1-1.8-.5-2.1-1.7-1.1L6 11.7l.5-2.1-1-1.8L7 6.3l1.8 1 2.1-.5L12 5.5z" fill="#f3c663" stroke="#ffffff" stroke-width=".8" transform="translate(0 -1) scale(1 .91)"/><circle cx="12" cy="11.9" r="2.7" fill="#0b4f70" stroke="#f8fcff" stroke-width="1"/></svg>""",
 	"edit": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M6 17.5l1-4 8-8a2 2 0 0 1 3 3l-8 8-4 1z" fill="#f5b33b" stroke="#f8fcff" stroke-width="1.2"/><path d="M7.4 14l2.7 2.6" stroke="#fff" stroke-width="1.1"/></svg>""",
 	"storage": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M5 9l7-3.5L19 9v8l-7 3-7-3V9z" fill="#efb44a" stroke="#f8fcff" stroke-width="1"/><path d="M5 9l7 3.5L19 9M12 12.5V20" stroke="#7b4c18" stroke-width="1.3" fill="none"/></svg>""",
 	"passengers": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#075a78" stroke="#4bd7f6" stroke-width="1.2"/><circle cx="9" cy="8.8" r="2.2" fill="#f8fcff"/><circle cx="15.2" cy="9.5" r="1.8" fill="#f8fcff" opacity=".85"/><path d="M5 17.7c.4-3.2 1.9-4.8 4.2-4.8 2.4 0 3.8 1.6 4.2 4.8" fill="#f8fcff"/><path d="M13 17.7c.3-2.5 1.4-3.7 3.2-3.7 1.6 0 2.7 1.2 3 3.7" fill="#f8fcff" opacity=".82"/></svg>""",
@@ -79,6 +80,10 @@ var dispatch_shift_panel: PanelContainer
 var dispatch_shift_label: Label
 var bottom_nav_panel: PanelContainer
 var right_action_rail: PanelContainer
+var right_action_scroll: ScrollContainer
+var tools_expanded := false
+var rail_viewport_size := Vector2i.ZERO
+var social_attention := false
 var bottom_status_label: Label
 var active_status_chip := ""
 var status_details: Dictionary = {}
@@ -149,6 +154,54 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_sync_action_rail_visibility()
+	var viewport_size := get_viewport().get_visible_rect().size
+	if Vector2i(viewport_size) != rail_viewport_size:
+		_update_action_rail_layout()
+
+
+func _update_action_rail_layout() -> void:
+	if right_action_rail == null:
+		return
+	rail_viewport_size = Vector2i(get_viewport().get_visible_rect().size)
+	# Reserve room for the status chips above and the contextual dock below.
+	# The scroll container keeps all touch targets reachable on short screens.
+	var top := 124
+	var bottom_clearance := 62
+	var available := maxi(rail_viewport_size.y - top - bottom_clearance, 150)
+	var desired := 466 if tools_expanded else 318
+	right_action_rail.offset_top = float(top)
+	right_action_rail.offset_bottom = float(top + mini(desired, available))
+	if right_action_scroll != null:
+		right_action_scroll.custom_minimum_size = Vector2(112, 0)
+
+
+func _toggle_hud_tools() -> void:
+	tools_expanded = not tools_expanded
+	_refresh_secondary_shortcuts()
+
+
+func _collapse_hud_tools() -> void:
+	if tools_expanded:
+		tools_expanded = false
+		_refresh_secondary_shortcuts()
+
+
+func _refresh_secondary_shortcuts() -> void:
+	for tab in ["edit", "storage", "social"]:
+		var button := nav_buttons.get(tab) as Button
+		if button != null:
+			button.visible = tools_expanded
+	var tools_button := nav_buttons.get("tools") as Button
+	if tools_button != null:
+		tools_button.text = "TOOLS •" if social_attention and not tools_expanded else "TOOLS"
+		GameUIStyle.apply_button(
+			tools_button,
+			"gold" if social_attention and not tools_expanded else (
+				"dock_selected" if tools_expanded else "dock"
+			),
+			true
+		)
+	_update_action_rail_layout()
 
 
 func _sync_action_rail_visibility() -> void:
@@ -1244,17 +1297,28 @@ func _build_bottom_navigation(root: Control) -> void:
 	root.add_child(right_action_rail)
 	GameUIStyle.apply_panel(right_action_rail, "dock")
 
-	var nav_column := VBoxContainer.new()
-	nav_column.add_theme_constant_override("separation", 4)
-	right_action_rail.add_child(nav_column)
+	right_action_scroll = ScrollContainer.new()
+	right_action_scroll.custom_minimum_size = Vector2(112, 0)
+	right_action_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_action_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_action_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	right_action_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	right_action_rail.add_child(right_action_scroll)
 
-	for item in ["BUILD", "EDIT", "STORAGE", "FLEET", "WORLD", "TASKS", "SOCIAL", "MORE"]:
+	var nav_column := VBoxContainer.new()
+	nav_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nav_column.add_theme_constant_override("separation", 4)
+	right_action_scroll.add_child(nav_column)
+
+	# Six shortcuts stay visible; Edit / Storage / Social live behind
+	# an optional Tools expander so airport scenery remains unobstructed.
+	for item in ["BUILD", "FLEET", "WORLD", "TASKS", "TOOLS", "EDIT", "STORAGE", "SOCIAL", "MORE"]:
 		var tab: String = item.to_lower()
 		if tab == "tasks":
 			tab = "activities"
 		var button := Button.new()
 		button.text = item
-		button.custom_minimum_size = Vector2(112, 50)
+		button.custom_minimum_size = Vector2(106, 46)
 		button.tooltip_text = "Open " + item.capitalize()
 		_apply_button_icon(button, _nav_icon_for(tab), 24)
 		GameUIStyle.apply_button(button, "dock", true)
@@ -1266,6 +1330,9 @@ func _build_bottom_navigation(root: Control) -> void:
 			"build":
 				button.tooltip_text = "Build airport structures and expand land"
 				button.pressed.connect(_on_build_navigation_pressed)
+			"tools":
+				button.tooltip_text = "Show or hide Edit, Storage and Social"
+				button.pressed.connect(_toggle_hud_tools)
 			"edit":
 				button.tooltip_text = "Move or store airport buildings"
 				button.pressed.connect(_on_airport_edit_pressed)
@@ -1282,6 +1349,7 @@ func _build_bottom_navigation(root: Control) -> void:
 			social_nav_button = button
 
 		nav_column.add_child(button)
+	_refresh_secondary_shortcuts()
 	_sync_action_rail_visibility()
 
 
@@ -1378,6 +1446,7 @@ func _refresh_activities_nav() -> void:
 
 
 func set_social_attention(active: bool) -> void:
+	social_attention = active
 	if social_nav_button == null:
 		return
 	if active:
@@ -1394,6 +1463,7 @@ func set_social_attention(active: bool) -> void:
 			"dock",
 			true
 		)
+	_refresh_secondary_shortcuts()
 
 
 func set_interface_visible(value: bool) -> void:
@@ -3179,6 +3249,8 @@ func _on_storage_pressed() -> void:
 	if storage_panel == null:
 		return
 	storage_panel.visible = not storage_panel.visible
+	if storage_panel.visible:
+		_collapse_hud_tools()
 
 
 func _on_stored_building_pressed(uid: int) -> void:
@@ -3188,6 +3260,7 @@ func _on_stored_building_pressed(uid: int) -> void:
 
 
 func _on_airport_edit_pressed() -> void:
+	_collapse_hud_tools()
 	airport_edit_requested.emit()
 
 
@@ -3279,6 +3352,7 @@ func _format_number(value: int) -> String:
 
 
 func _on_build_navigation_pressed() -> void:
+	_collapse_hud_tools()
 	if active_expansion_mode:
 		expansion_mode_cancel_requested.emit()
 	if catalog_panel != null:
@@ -3293,4 +3367,5 @@ func _on_build_navigation_pressed() -> void:
 	)
 
 func _on_navigation_pressed(tab: String) -> void:
+	_collapse_hud_tools()
 	navigation_requested.emit(tab)

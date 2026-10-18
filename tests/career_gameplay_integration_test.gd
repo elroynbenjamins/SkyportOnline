@@ -63,6 +63,10 @@ func _build_required_starter_airside(main) -> bool:
 	# connected construction pieces; do not resurrect legacy road assets.
 	if not _place_for_career(main, "small_terminal", Vector2i(10, 10)):
 		return false
+	# Passenger storage belongs to a generator, not the terminal. A real
+	# generator is required for the full-capacity reward reserve assertion.
+	if not _place_for_career(main, "travel_office", Vector2i(10, 13)):
+		return false
 	return true
 
 
@@ -105,6 +109,7 @@ func _run() -> void:
 	# Direct test construction bypasses the tutorial's starter fuel grants.
 	# Supply enough test stock so the own-aircraft cycle can start immediately.
 	main.fuel_economy.set_fuel(float(main.fuel_economy.get_capacity()))
+	main.passenger_economy.set_passengers(20.0)
 	# This test builds directly through AirportGrid, bypassing the live
 	# placement-confirm callback. Explicitly trigger the usual post-build
 	# deployment after all V1 handling pads are available.

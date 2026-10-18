@@ -128,6 +128,15 @@ func _run() -> void:
 		"Owned V1 aircraft must use the Skyrama handling loop."
 	)
 	check(
+		main.deployed_owned.has("owned-1")
+		and String(main.aircraft_demos[0].get_meta("owned_uid", "")) == "owned-1",
+		"Starter aircraft must retain progression ownership identity."
+	)
+	check(
+		main.aircraft_demos[0].state == "READY_FOR_DESTINATION",
+		"Starter aircraft should wait invisibly in hangar for a destination."
+	)
+	check(
 		(main.progression.get("owned_aircraft", []) as Array).size() == 2,
 		"Both starter Picos should remain owned even when only one is deployed."
 	)

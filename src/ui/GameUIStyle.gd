@@ -212,6 +212,11 @@ static func apply_panel(
 				"panel",
 				compact_panel(Color("062b42", 0.985), Color("25b5e2"), 12, 1, true)
 			)
+		"hud_footer":
+			control.add_theme_stylebox_override(
+				"panel",
+				compact_panel(Color("08344b", 0.97), Color("329fc5"), 16, 1, true)
+			)
 		"hud_context":
 			control.add_theme_stylebox_override(
 				"panel",
@@ -489,6 +494,58 @@ static func apply_button(
 		"font_size",
 		13 if compact else 15
 	)
+
+
+# Shared world bubble skin, intentionally separate from all HUD/drawer buttons.
+# Keeps the original minimum touch area while visual treatment communicates
+# which of the Skyrama actions can be tapped next.
+static func handling_action_palette(action: String) -> Dictionary:
+	match action.to_upper():
+		"RECEIVE", "LAND":
+			return {"fill": Color("135f93"), "border": Color("8be4ff")}
+		"UNLOAD":
+			return {"fill": Color("a05222"), "border": Color("ffd195")}
+		"LOAD":
+			return {"fill": Color("176b91"), "border": Color("82e5ff")}
+		"SEND":
+			return {"fill": Color("926315"), "border": Color("ffe490")}
+		"HANGAR":
+			return {"fill": Color("276a4f"), "border": Color("b5f5c1")}
+		_:
+			return {"fill": Color("0e4868"), "border": COLOR_ACCENT}
+
+
+static func apply_handling_action_bubble(button: Button, action: String) -> void:
+	if button == null:
+		return
+	var colors := handling_action_palette(action)
+	var fill: Color = colors["fill"]
+	var outline: Color = colors["border"]
+	var normal := panel(fill, outline, 18, 2, true)
+	normal.content_margin_left = 10
+	normal.content_margin_right = 10
+	normal.content_margin_top = 6
+	normal.content_margin_bottom = 6
+	normal.shadow_size = 6
+	normal.shadow_offset = Vector2(0, 3)
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = fill.lightened(0.16)
+	hover.border_color = outline.lightened(0.12)
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = fill.darkened(0.20)
+	pressed.border_color = Color.WHITE
+	pressed.shadow_size = 2
+	pressed.shadow_offset = Vector2(0, 1)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_stylebox_override("focus", panel(Color.TRANSPARENT, outline, 18, 2, false))
+	button.add_theme_color_override("font_color", COLOR_TEXT)
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	button.add_theme_font_size_override("font_size", 12)
+	button.add_theme_constant_override("h_separation", 6)
+	button.add_theme_constant_override("icon_max_width", 22)
 
 
 static func apply_progress(progress: ProgressBar, gold: bool = false) -> void:

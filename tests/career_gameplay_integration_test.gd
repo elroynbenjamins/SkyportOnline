@@ -102,6 +102,9 @@ func _run() -> void:
 		return
 	main._persist_airport_layout()
 	main._refresh_layout_dependent_systems()
+	# Direct test construction bypasses the tutorial's starter fuel grants.
+	# Supply enough test stock so the own-aircraft cycle can start immediately.
+	main.fuel_economy.set_fuel(float(main.fuel_economy.get_capacity()))
 	# This test builds directly through AirportGrid, bypassing the live
 	# placement-confirm callback. Explicitly trigger the usual post-build
 	# deployment after all V1 handling pads are available.

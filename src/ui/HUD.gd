@@ -453,7 +453,7 @@ func _build_interface() -> void:
 	fuel_order_button.tooltip_text = "Order fuel • 750 coins"
 	fuel_order_button.custom_minimum_size = Vector2(40, 44)
 	fuel_order_button.add_theme_font_size_override("font_size", 24)
-	GameUIStyle.apply_button(fuel_order_button, "primary", true)
+	GameUIStyle.apply_button(fuel_order_button, "hud_mint", true)
 	fuel_order_button.pressed.connect(_on_fuel_order_pressed)
 	top_row.add_child(fuel_order_button)
 
@@ -631,7 +631,7 @@ func _build_interface() -> void:
 	var detail_close := Button.new()
 	detail_close.text = "✕"
 	detail_close.custom_minimum_size = Vector2(34, 34)
-	GameUIStyle.apply_button(detail_close, "secondary", true)
+	GameUIStyle.apply_button(detail_close, "hud_soft", true)
 	detail_close.pressed.connect(_close_status_detail)
 	detail_row.add_child(detail_close)
 
@@ -645,7 +645,7 @@ func _build_interface() -> void:
 	status_details = {
 		"airside": {
 			"title": "AIRFIELD",
-			"body": "Checking taxiway network...",
+			"body": "Build a runway and service stops to start flights.",
 			"tone": "normal"
 		},
 		"operations": {
@@ -1304,7 +1304,7 @@ func _build_catalog_panel(root: Control) -> void:
 	catalog_close_button = Button.new()
 	catalog_close_button.text = "✕"
 	catalog_close_button.custom_minimum_size = Vector2(44, 44)
-	GameUIStyle.apply_button(catalog_close_button, "secondary", true)
+	GameUIStyle.apply_button(catalog_close_button, "hud_soft", true)
 	catalog_close_button.pressed.connect(_on_catalog_close_pressed)
 	catalog_header_row.add_child(catalog_close_button)
 
@@ -3021,41 +3021,30 @@ func set_atc_state(snapshot: Dictionary) -> void:
 
 
 func set_airside_status(status: Dictionary) -> void:
-	var stands_total := int(status.get("stands_total", 0))
-	var stands_connected := int(status.get("stands_connected", 0))
-	var hangars_total := int(status.get("hangars_total", 0))
-	var hangars_connected := int(status.get("hangars_connected", 0))
-	var runways := int(status.get("runways", 0))
+	# V1 uses instant tap-to-transfer service handling. Connectivity
+	# percentages here came from the retired physical taxiway system and
+	# made empty airports misleadingly look ready.
+	var runways := maxi(int(status.get("runways", 0)), 0)
+	var stands := maxi(int(status.get("stands_total", 0)), 0)
+	var hangars := maxi(int(status.get("hangars_total", 0)), 0)
 
-	var detail := ""
-	var compact := ""
+	var detail := "%d runway%s • %d stand%s • %d hangar%s" % [
+		runways, "" if runways == 1 else "s",
+		stands, "" if stands == 1 else "s",
+		hangars, "" if hangars == 1 else "s"
+	]
+	var compact := "AIRFIELD READY"
 	var tone := "success"
-
-	if (
-		stands_connected == stands_total
-		and hangars_connected == hangars_total
-	):
-		detail = "%d runway%s • %d/%d stands connected" % [
-			runways,
-			"" if runways == 1 else "s",
-			stands_connected,
-			stands_total
-		]
-		compact = "✓ %d/%d STANDS" % [
-			stands_connected,
-			stands_total
-		]
-	else:
-		var disconnected := (
-			(stands_total - stands_connected)
-			+ (hangars_total - hangars_connected)
-		)
-		detail = "%d airside building%s need taxiway" % [
-			disconnected,
-			"" if disconnected == 1 else "s"
-		]
-		compact = "⚠ %d DISCONNECTED" % disconnected
+	if runways <= 0:
+		compact = "BUILD RUNWAY"
+		detail += "\nBuild a runway to receive and dispatch aircraft."
 		tone = "warning"
+	elif hangars <= 0:
+		compact = "BUILD HANGAR"
+		detail += "\nBuild a hangar to store your aircraft."
+		tone = "warning"
+	else:
+		detail += "\nUse separate fuel and cargo pads to handle aircraft."
 
 	if airside_status_label != null:
 		airside_status_label.text = "AIRFIELD\n" + detail
@@ -3068,7 +3057,6 @@ func set_airside_status(status: Dictionary) -> void:
 		detail,
 		tone
 	)
-
 
 
 func _set_status_chip(

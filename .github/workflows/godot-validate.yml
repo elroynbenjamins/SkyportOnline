@@ -198,6 +198,7 @@ jobs:
             tests/winter_launch_event_test.gd
             tests/ui_modernization_test.gd
             tests/skyrama_hud_rail_test.gd
+            tests/modern_resource_build_ui_test.gd
             tests/airport_background_layer_test.gd
             tests/production_ui_skin_test.gd
             tests/aircraft_context_card_test.gd

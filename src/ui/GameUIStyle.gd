@@ -74,6 +74,42 @@ static func compact_panel(
 		style.shadow_offset = Vector2(0, 2)
 	return style
 
+# Native-style surfaces replace legacy browser-era glossy textures in the
+# airport's compact resource bar. World art and flight-state bubbles stay
+# independent so Codex can later replace icon art without changing logic.
+static func modern_resource_pill(kind: String) -> StyleBoxFlat:
+	var fill := Color("102d3b", 0.96)
+	var stroke := Color("4b7382", 0.78)
+	match kind:
+		"level":
+			fill = Color("193b50", 0.98)
+			stroke = Color("72c0d4", 0.85)
+		"identity":
+			fill = Color("0e2c40", 0.97)
+			stroke = Color("4a859d", 0.68)
+		"passenger":
+			fill = Color("143b45", 0.97)
+			stroke = Color("57b9a9", 0.75)
+		"fuel":
+			fill = Color("183744", 0.97)
+			stroke = Color("5fa9c5", 0.78)
+		"coin":
+			fill = Color("3a321f", 0.97)
+			stroke = Color("bea25a", 0.7)
+		"premium":
+			fill = Color("30294b", 0.97)
+			stroke = Color("a49be2", 0.73)
+	var style := compact_panel(fill, stroke, 15, 1, true)
+	style.content_margin_left = 8.0
+	style.content_margin_right = 8.0
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
+	style.shadow_color = Color(0, 0, 0, 0.21)
+	style.shadow_size = 4
+	style.shadow_offset = Vector2(0, 2)
+	return style
+
+
 static func top_bar() -> StyleBoxFlat:
 	return panel(
 		Color("102e3b", 0.96),
@@ -139,41 +175,13 @@ static func apply_panel(
 				compact_panel(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 1, 0, false)
 			)
 		"hud_level":
-			control.add_theme_stylebox_override(
-				"panel",
-				ProductionUIAssets.style_box(
-					ProductionUIAssets.LEVEL_BADGE,
-					28.0,
-					8.0
-				)
-			)
+			control.add_theme_stylebox_override("panel", modern_resource_pill("level"))
 		"hud_identity":
-			control.add_theme_stylebox_override(
-				"panel",
-				ProductionUIAssets.style_box(
-					ProductionUIAssets.IDENTITY_PANEL,
-					22.0,
-					10.0
-				)
-			)
+			control.add_theme_stylebox_override("panel", modern_resource_pill("identity"))
 		"hud_passenger":
-			control.add_theme_stylebox_override(
-				"panel",
-				ProductionUIAssets.style_box(
-					ProductionUIAssets.RESOURCE_CHIP,
-					20.0,
-					7.0
-				)
-			)
+			control.add_theme_stylebox_override("panel", modern_resource_pill("passenger"))
 		"hud_fuel":
-			control.add_theme_stylebox_override(
-				"panel",
-				ProductionUIAssets.style_box(
-					ProductionUIAssets.RESOURCE_CHIP,
-					20.0,
-					7.0
-				)
-			)
+			control.add_theme_stylebox_override("panel", modern_resource_pill("fuel"))
 		"hud_fuel_low":
 			control.add_theme_stylebox_override(
 				"panel",
@@ -185,23 +193,9 @@ static func apply_panel(
 				compact_panel(Color("4b2526"), COLOR_DANGER, 11, 2, true)
 			)
 		"hud_coin":
-			control.add_theme_stylebox_override(
-				"panel",
-				ProductionUIAssets.style_box(
-					ProductionUIAssets.RESOURCE_CHIP,
-					20.0,
-					7.0
-				)
-			)
+			control.add_theme_stylebox_override("panel", modern_resource_pill("coin"))
 		"hud_premium":
-			control.add_theme_stylebox_override(
-				"panel",
-				ProductionUIAssets.style_box(
-					ProductionUIAssets.RESOURCE_CHIP,
-					20.0,
-					7.0
-				)
-			)
+			control.add_theme_stylebox_override("panel", modern_resource_pill("premium"))
 		"hud_task":
 			control.add_theme_stylebox_override(
 				"panel",
@@ -378,24 +372,60 @@ static func apply_button(
 			hover_bg = Color("1885a2")
 			pressed_bg = Color("0c556e")
 			pressed_border = Color("d4f9ff")
+		"build_filter":
+			normal_bg = Color("183645", 0.97)
+			normal_border = Color("40697a", 0.76)
+			hover_bg = Color("245063")
+			pressed_bg = Color("153b4e")
+			pressed_border = COLOR_ACCENT
+		"build_filter_selected":
+			normal_bg = Color("1c6378", 0.99)
+			normal_border = Color("76d4db")
+			hover_bg = Color("287a8f")
+			pressed_bg = Color("154a61")
+			pressed_border = Color("a7ecf1")
+		"hud_chip":
+			normal_bg = Color("102f40", 0.96)
+			normal_border = Color("3d7e96", 0.82)
+			hover_bg = Color("1c465b")
+			pressed_bg = Color("184055")
+			pressed_border = COLOR_ACCENT
+		"hud_chip_selected":
+			normal_bg = Color("175e74", 0.99)
+			normal_border = Color("66cbdb")
+			hover_bg = Color("207b92")
+			pressed_bg = Color("15475b")
+			pressed_border = Color("b3eff4")
+		"hud_chip_warning":
+			normal_bg = Color("493b28", 0.97)
+			normal_border = Color("d6ac60", 0.82)
+			hover_bg = Color("5f4c30")
+			pressed_bg = Color("433423")
+			pressed_border = COLOR_WARNING
+		"hud_chip_danger":
+			normal_bg = Color("542b32", 0.97)
+			normal_border = Color("e58b85", 0.8)
+			hover_bg = Color("67373c")
+			pressed_bg = Color("49272c")
+			pressed_border = COLOR_DANGER
 		"build_card":
-			normal_bg = Color("0a3046")
-			normal_border = Color("176f95")
-			hover_bg = Color("0b405b")
-			pressed_bg = Color("0b506d")
+			normal_bg = Color("102f40", 0.985)
+			normal_border = Color("3f7489", 0.83)
+			hover_bg = Color("1b475c")
+			pressed_bg = Color("16435a")
 			pressed_border = COLOR_ACCENT
 		"build_card_selected":
-			normal_bg = Color("075d83")
-			normal_border = Color("3dd5fb")
-			hover_bg = Color("0876a1")
-			pressed_bg = Color("064f70")
+			normal_bg = Color("144d62")
+			normal_border = Color("65d2e6")
+			hover_bg = Color("1c6880")
+			pressed_bg = Color("0f4257")
 			pressed_border = Color("c8f7ff")
 		"build_card_locked":
-			normal_bg = Color("18242a")
-			normal_border = Color("34464d")
-			hover_bg = Color("18242a")
-			pressed_bg = Color("18242a")
-			pressed_border = Color("34464d")
+			normal_bg = Color("1a282e")
+			normal_border = Color("40535a")
+			hover_bg = Color("1a282e")
+			pressed_bg = Color("1a282e")
+			pressed_border = Color("40535a")
 		"screen_tab":
 			normal_bg = Color("0d2631")
 			normal_border = Color("2b4d59")
@@ -416,8 +446,26 @@ static func apply_button(
 			pressed_border = Color("a8efc1")
 
 	var floating := kind in ["dock", "dock_selected"]
-	var radius := 16 if floating else (10 if compact else 12)
-	var normal_style := panel(normal_bg, normal_border, radius, 1, floating)
+	var building_card := kind in [
+		"build_card", "build_card_selected", "build_card_locked"
+	]
+	var modern_chip := kind in [
+		"build_filter", "build_filter_selected",
+		"hud_chip", "hud_chip_selected", "hud_chip_warning", "hud_chip_danger"
+	]
+	var radius := (
+		16 if floating else (15 if building_card else (13 if modern_chip
+		else (10 if compact else 12)))
+	)
+	var normal_style := panel(normal_bg, normal_border, radius, 1, floating or building_card)
+	if building_card:
+		normal_style.content_margin_left = 9
+		normal_style.content_margin_right = 9
+		normal_style.content_margin_top = 7
+		normal_style.content_margin_bottom = 7
+		normal_style.shadow_size = 3
+		normal_style.shadow_offset = Vector2(0, 2)
+		normal_style.shadow_color = Color(0, 0, 0, 0.17)
 	if floating:
 		normal_style.shadow_size = 4
 		normal_style.shadow_offset = Vector2(0, 2)
@@ -458,14 +506,12 @@ static func apply_button(
 	# Older glossy assets remain for other screens pending the art refactor.
 	elif kind in [
 		"nav",
-		"build_card",
 		"screen_tab",
 		"secondary"
 	]:
 		glossy_path = ProductionUIAssets.BUTTON_BLUE
 	elif kind in [
 		"selected",
-		"build_card_selected",
 		"screen_tab_selected"
 	]:
 		glossy_path = ProductionUIAssets.BUTTON_BLUE

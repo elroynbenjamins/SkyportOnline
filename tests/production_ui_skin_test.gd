@@ -67,8 +67,8 @@ func _run() -> void:
 	if not (hud.xp_progress.get_theme_stylebox("fill") is StyleBoxTexture):
 		_fail("XP bar should use a production textured fill.")
 		return
-	if not (hud.fuel_order_button.get_theme_stylebox("normal") is StyleBoxTexture):
-		_fail("Fuel order should retain a real glossy interactive button.")
+	if not (hud.fuel_order_button.get_theme_stylebox("normal") is StyleBoxFlat):
+		_fail("Fuel order should use the friendly native mint action style.")
 		return
 
 	var bubble = BUBBLE_SCRIPT.new()

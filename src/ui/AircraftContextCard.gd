@@ -16,6 +16,8 @@ var title_label: Label
 var state_label: Label
 var route_label: Label
 var service_label: Label
+var service_progress: ProgressBar
+var service_progress_hint: Label
 var passenger_label: Label
 var mastery_label: Label
 var primary_button: Button
@@ -168,6 +170,24 @@ func refresh_card() -> void:
 		mastery_hours
 	]
 
+	# These are real service timers, separate from the tap-to-advance
+	# actions. Keep progress and button state in sync on every refresh.
+	var timed_service := aircraft.uses_skyrama_handling() and aircraft.state in [
+		"SIMPLE_FUELING", "SIMPLE_LOADING", "SIMPLE_UNLOADING"
+	]
+	service_progress.visible = timed_service
+	service_progress_hint.visible = timed_service
+	if timed_service:
+		var service_snapshot := aircraft.get_simple_handling_snapshot()
+		var total := maxf(float(service_snapshot.get("total", 0.0)), 0.5)
+		var remaining := clampf(float(service_snapshot.get("remaining", 0.0)), 0.0, total)
+		service_progress.max_value = total
+		service_progress.value = total - remaining
+		service_progress.tooltip_text = "%.0f of %.0f seconds completed" % [
+			total - remaining, total
+		]
+		service_progress_hint.text = "Service in progress • next action unlocks when ready"
+
 	if aircraft.is_social_visitor():
 		var social := aircraft.get_social_visit_data()
 		var relationship := String(
@@ -199,7 +219,7 @@ func refresh_card() -> void:
 		primary_button.disabled = false
 		GameUIStyle.apply_button(
 			primary_button,
-			"gold"
+			"hud_soft"
 		)
 		fleet_button.visible = false
 		return
@@ -212,8 +232,10 @@ func refresh_card() -> void:
 		primary_button.disabled = false
 		GameUIStyle.apply_button(
 			primary_button,
-			"gold"
+			_action_button_kind(handling_action),
+			true
 		)
+		primary_button.tooltip_text = "Continue aircraft handling: " + handling_action.capitalize()
 		fleet_button.visible = true
 		return
 
@@ -230,7 +252,7 @@ func refresh_card() -> void:
 		]
 		primary_button.disabled = true
 		primary_button.tooltip_text = "Service in progress • next action unlocks when finished"
-		GameUIStyle.apply_button(primary_button, "screen_tab", true)
+		GameUIStyle.apply_button(primary_button, "hud_soft", true)
 		fleet_button.visible = true
 		return
 
@@ -241,7 +263,8 @@ func refresh_card() -> void:
 		primary_button.disabled = false
 		GameUIStyle.apply_button(
 			primary_button,
-			"primary"
+			"hud_mint",
+			true
 		)
 		fleet_button.visible = true
 	else:
@@ -249,9 +272,21 @@ func refresh_card() -> void:
 		primary_button.disabled = false
 		GameUIStyle.apply_button(
 			primary_button,
-			"selected"
+			"hud_soft",
+			true
 		)
 		fleet_button.visible = false
+
+
+# Keep action colors semantic rather than making every operation gold.
+func _action_button_kind(action: String) -> String:
+	match action.to_upper():
+		"SEND":
+			return "gold"
+		"LOAD", "HANGAR":
+			return "hud_mint"
+		_:
+			return "hud_soft"
 
 
 func _build_ui() -> void:
@@ -265,7 +300,7 @@ func _build_ui() -> void:
 	panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	panel.offset_left = 14
-	panel.offset_top = -344
+	panel.offset_top = -389
 	panel.offset_right = 430
 	panel.offset_bottom = -84
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -324,7 +359,7 @@ func _build_ui() -> void:
 	close_button.custom_minimum_size = Vector2(42, 42)
 	GameUIStyle.apply_button(
 		close_button,
-		"secondary",
+		"hud_soft",
 		true
 	)
 	close_button.pressed.connect(close_card)
@@ -344,6 +379,28 @@ func _build_ui() -> void:
 	service_label.add_theme_font_size_override("font_size", 13)
 	GameUIStyle.muted(service_label)
 	column.add_child(service_label)
+
+	service_progress = ProgressBar.new()
+	service_progress.custom_minimum_size = Vector2(0, 9)
+	service_progress.show_percentage = false
+	service_progress.min_value = 0.0
+	service_progress.max_value = 1.0
+	service_progress.visible = false
+	var service_track := StyleBoxFlat.new()
+	service_track.bg_color = Color("244d5f")
+	service_track.set_corner_radius_all(6)
+	var service_fill := StyleBoxFlat.new()
+	service_fill.bg_color = GameUIStyle.COLOR_SUCCESS
+	service_fill.set_corner_radius_all(6)
+	service_progress.add_theme_stylebox_override("background", service_track)
+	service_progress.add_theme_stylebox_override("fill", service_fill)
+	column.add_child(service_progress)
+
+	service_progress_hint = Label.new()
+	service_progress_hint.add_theme_font_size_override("font_size", 10)
+	GameUIStyle.muted(service_progress_hint)
+	service_progress_hint.visible = false
+	column.add_child(service_progress_hint)
 
 	passenger_label = Label.new()
 	passenger_label.add_theme_font_size_override("font_size", 13)
@@ -373,7 +430,7 @@ func _build_ui() -> void:
 	)
 	GameUIStyle.apply_button(
 		fleet_button,
-		"secondary",
+		"hud_soft",
 		true
 	)
 	actions.add_child(fleet_button)

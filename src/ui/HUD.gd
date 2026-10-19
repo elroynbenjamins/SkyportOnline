@@ -1862,9 +1862,10 @@ func set_fuel_data(
 		fuel_order_button.tooltip_text = "Order fuel • 750 coins"
 		GameUIStyle.apply_button(
 			fuel_order_button,
-			"danger"
+			"hud_chip_danger"
 			if status == "critical"
-			else ("gold" if status == "low" else "secondary")
+			else ("hud_chip_warning" if status == "low" else "hud_mint"),
+			true
 		)
 
 

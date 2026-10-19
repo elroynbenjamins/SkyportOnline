@@ -40,6 +40,15 @@ var interface_root: Control
 var title_label: Label
 var airport_meta_label: Label
 var level_label: Label
+var hud_level_card: PanelContainer
+var hud_identity_card: PanelContainer
+var hud_top_row: HBoxContainer
+var hud_passenger_chip: PanelContainer
+var hud_fuel_chip: PanelContainer
+var hud_coin_chip: PanelContainer
+var hud_premium_chip: PanelContainer
+var hud_settings_button: Button
+var hud_compact_layout := false
 var xp_progress: ProgressBar
 var xp_label: Label
 var passenger_label: Label
@@ -166,6 +175,7 @@ func _update_action_rail_layout(override_size: Vector2i = Vector2i.ZERO) -> void
 		override_size if override_size != Vector2i.ZERO
 		else Vector2i(get_viewport().get_visible_rect().size)
 	)
+	_update_top_bar_layout(rail_viewport_size.x)
 	# Reserve room for the status chips above and the contextual dock below.
 	# The scroll container keeps all touch targets reachable on short screens.
 	var top := 124
@@ -176,6 +186,52 @@ func _update_action_rail_layout(override_size: Vector2i = Vector2i.ZERO) -> void
 	right_action_rail.offset_bottom = float(top + mini(desired, available))
 	if right_action_scroll != null:
 		right_action_scroll.custom_minimum_size = Vector2(112, 0)
+
+
+# The resource bar must fit the actual landscape viewport, including smaller
+# phones. Keep amounts legible and expose unabridged numbers via tooltips.
+func _update_top_bar_layout(viewport_width: int) -> void:
+	if hud_top_row == null:
+		return
+	var narrow := viewport_width < 950
+	hud_compact_layout = narrow
+	hud_top_row.add_theme_constant_override("separation", 3 if narrow else 5)
+	hud_level_card.custom_minimum_size = Vector2(56, 52) if narrow else Vector2(78, 56)
+	hud_identity_card.custom_minimum_size = Vector2(148, 52) if narrow else Vector2(214, 56)
+	xp_progress.custom_minimum_size.x = 110 if narrow else 160
+	hud_passenger_chip.custom_minimum_size.x = 88 if narrow else 116
+	hud_fuel_chip.custom_minimum_size.x = 84 if narrow else 108
+	hud_coin_chip.custom_minimum_size.x = 74 if narrow else 94
+	hud_premium_chip.custom_minimum_size.x = 66 if narrow else 82
+	fuel_order_button.custom_minimum_size = Vector2(36, 44) if narrow else Vector2(40, 44)
+	hud_settings_button.custom_minimum_size = Vector2(42, 44) if narrow else Vector2(48, 48)
+	passenger_rate_label.visible = not narrow
+	fuel_rate_label.visible = not narrow
+	for icon in [passenger_icon, fuel_icon, coins_icon, gems_icon]:
+		if icon != null:
+			icon.custom_minimum_size = Vector2(20, 20) if narrow else Vector2(24, 24)
+	# Small screens hide only secondary text; currency and capacity remain
+	# visible and available to inspect.
+	xp_label.visible = not narrow
+
+
+func _compact_hud_number(value: int) -> String:
+	var magnitude := absf(float(value))
+	if magnitude >= 1000000000.0:
+		return "%.1fB" % (float(value) / 1000000000.0)
+	if magnitude >= 1000000.0:
+		return "%.1fM" % (float(value) / 1000000.0)
+	if magnitude >= 10000.0:
+		return "%.1fK" % (float(value) / 1000.0)
+	return _format_number(value)
+
+
+func _hud_stock_label(current: int, capacity: int) -> String:
+	if current >= 10000 or capacity >= 10000:
+		return "%s / %s" % [
+			_compact_hud_number(current), _compact_hud_number(capacity)
+		]
+	return "%d / %d" % [current, capacity]
 
 
 func _toggle_hud_tools() -> void:
@@ -287,10 +343,12 @@ func _build_interface() -> void:
 	top_panel.add_child(top_margin)
 
 	var top_row := HBoxContainer.new()
+	hud_top_row = top_row
 	top_row.add_theme_constant_override("separation", 5)
 	top_margin.add_child(top_row)
 
 	var level_card := PanelContainer.new()
+	hud_level_card = level_card
 	level_card.custom_minimum_size = Vector2(78, 56)
 	GameUIStyle.apply_panel(level_card, "hud_level")
 	top_row.add_child(level_card)
@@ -300,11 +358,18 @@ func _build_interface() -> void:
 	level_box.add_theme_constant_override("separation", 0)
 	level_card.add_child(level_box)
 
+	var level_caption := Label.new()
+	level_caption.text = "LEVEL"
+	level_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	level_caption.add_theme_font_size_override("font_size", 9)
+	GameUIStyle.muted(level_caption)
+	level_box.add_child(level_caption)
+
 	level_label = Label.new()
 	level_label.text = "1"
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	level_label.add_theme_font_size_override("font_size", 26)
+	level_label.add_theme_font_size_override("font_size", 22)
 	level_label.add_theme_color_override("font_color", Color.WHITE)
 	level_label.add_theme_color_override(
 		"font_shadow_color",
@@ -315,6 +380,7 @@ func _build_interface() -> void:
 	level_box.add_child(level_label)
 
 	var identity_card := PanelContainer.new()
+	hud_identity_card = identity_card
 	identity_card.custom_minimum_size = Vector2(214, 56)
 	identity_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	GameUIStyle.apply_panel(identity_card, "hud_identity")
@@ -362,6 +428,7 @@ func _build_interface() -> void:
 		116,
 		_hud_icon("passengers")
 	)
+	hud_passenger_chip = passenger_chip["panel"] as PanelContainer
 	passenger_label = passenger_chip["value"] as Label
 	passenger_rate_label = passenger_chip["detail"] as Label
 	passenger_icon = passenger_chip["icon"] as TextureRect
@@ -379,6 +446,7 @@ func _build_interface() -> void:
 	fuel_rate_label = fuel_chip["detail"] as Label
 	fuel_icon = fuel_chip["icon"] as TextureRect
 	fuel_panel = fuel_chip["panel"] as PanelContainer
+	hud_fuel_chip = fuel_panel
 
 	fuel_order_button = Button.new()
 	fuel_order_button.text = "+"
@@ -398,6 +466,7 @@ func _build_interface() -> void:
 		94,
 		_hud_icon("coins")
 	)
+	hud_coin_chip = coin_chip["panel"] as PanelContainer
 	coins_label = coin_chip["value"] as Label
 	coins_icon = coin_chip["icon"] as TextureRect
 
@@ -410,10 +479,12 @@ func _build_interface() -> void:
 		82,
 		_hud_icon("aero")
 	)
+	hud_premium_chip = aero_chip["panel"] as PanelContainer
 	gems_label = aero_chip["value"] as Label
 	gems_icon = aero_chip["icon"] as TextureRect
 
 	var settings_button := Button.new()
+	hud_settings_button = settings_button
 	settings_button.text = ""
 	settings_button.custom_minimum_size = Vector2(48, 48)
 	_apply_button_icon(
@@ -609,6 +680,7 @@ func _build_interface() -> void:
 	_build_storage_panel(root)
 	_build_catalog_panel(root)
 	_build_bottom_navigation(root)
+	_update_top_bar_layout(Vector2i(get_viewport().get_visible_rect().size).x)
 
 
 func _build_hud_resource_chip(
@@ -648,14 +720,14 @@ func _build_hud_resource_chip(
 	var caption_label := Label.new()
 	caption_label.text = caption
 	caption_label.visible = true
-	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	caption_label.add_theme_font_size_override("font_size", 9)
 	GameUIStyle.muted(caption_label)
 	box.add_child(caption_label)
 
 	var value_label := Label.new()
 	value_label.text = value_text
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	value_label.add_theme_font_size_override("font_size", 14)
 	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
@@ -664,7 +736,7 @@ func _build_hud_resource_chip(
 	var detail_label := Label.new()
 	detail_label.text = detail_text
 	detail_label.visible = not detail_text.is_empty()
-	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	detail_label.add_theme_font_size_override("font_size", 9)
 	GameUIStyle.muted(detail_label)
 	box.add_child(detail_label)
@@ -1224,14 +1296,14 @@ func _build_catalog_panel(root: Control) -> void:
 
 	edit_airport_button = Button.new()
 	edit_airport_button.text = "EDIT"
-	edit_airport_button.custom_minimum_size = Vector2(62, 30)
+	edit_airport_button.custom_minimum_size = Vector2(64, 44)
 	GameUIStyle.apply_button(edit_airport_button, "gold", true)
 	edit_airport_button.pressed.connect(_on_airport_edit_pressed)
 	catalog_header_row.add_child(edit_airport_button)
 
 	catalog_close_button = Button.new()
 	catalog_close_button.text = "✕"
-	catalog_close_button.custom_minimum_size = Vector2(32, 30)
+	catalog_close_button.custom_minimum_size = Vector2(44, 44)
 	GameUIStyle.apply_button(catalog_close_button, "secondary", true)
 	catalog_close_button.pressed.connect(_on_catalog_close_pressed)
 	catalog_header_row.add_child(catalog_close_button)
@@ -1246,7 +1318,7 @@ func _build_catalog_panel(root: Control) -> void:
 
 	expand_land_button = Button.new()
 	expand_land_button.text = "EXPAND LAND  •  SELECT AN ADJACENT PLOT"
-	expand_land_button.custom_minimum_size = Vector2(0, 42)
+	expand_land_button.custom_minimum_size = Vector2(0, 46)
 	expand_land_button.tooltip_text = (
 		"Buy more airport land, then choose the adjacent plot you want."
 	)
@@ -1277,7 +1349,7 @@ func _build_catalog_panel(root: Control) -> void:
 		var chip := Button.new()
 		chip.text = String(filter_data[0])
 		chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		chip.custom_minimum_size = Vector2(0, 30)
+		chip.custom_minimum_size = Vector2(0, 42)
 		var category := String(filter_data[1])
 		GameUIStyle.apply_button(
 			chip,
@@ -1547,13 +1619,13 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(164, 76)
+		button.custom_minimum_size = Vector2(160, 86)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 11)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
-		button.add_theme_constant_override("icon_max_width", 38)
+		button.add_theme_constant_override("icon_max_width", 42)
 		button.add_theme_constant_override("h_separation", 7)
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		button.tooltip_text = String(definition.get("description", ""))
@@ -1664,8 +1736,10 @@ func set_player_data(level: int, coins: int, gems: int) -> void:
 	current_coins = coins
 	current_gems = gems
 	level_label.text = "%d" % level
-	coins_label.text = _format_number(coins)
-	gems_label.text = _format_number(gems)
+	coins_label.text = _compact_hud_number(coins)
+	gems_label.text = _compact_hud_number(gems)
+	hud_coin_chip.tooltip_text = "Coins: %s" % _format_number(coins)
+	hud_premium_chip.tooltip_text = "Aero: %s" % _format_number(gems)
 	_update_catalog_buttons()
 
 	if (
@@ -1719,9 +1793,9 @@ func set_passenger_data(
 ) -> void:
 	if passenger_label == null:
 		return
-	passenger_label.text = "%d / %d" % [
-		passengers,
-		capacity
+	passenger_label.text = _hud_stock_label(passengers, capacity)
+	hud_passenger_chip.tooltip_text = "Passengers: %s / %s • +%.1f per minute" % [
+		_format_number(passengers), _format_number(capacity), per_minute
 	]
 	if passenger_rate_label != null:
 		passenger_rate_label.text = "+%.1f/m" % per_minute
@@ -1735,7 +1809,10 @@ func set_fuel_data(
 	if fuel_label == null:
 		return
 
-	fuel_label.text = "%d / %d" % [fuel, capacity]
+	fuel_label.text = _hud_stock_label(fuel, capacity)
+	hud_fuel_chip.tooltip_text = "Fuel: %s / %s • +%.1f per minute" % [
+		_format_number(fuel), _format_number(capacity), per_minute
+	]
 	var ratio := 1.0
 	if capacity > 0:
 		ratio = clampf(

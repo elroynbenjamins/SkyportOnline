@@ -127,7 +127,7 @@ func _build_ui() -> void:
 	var close_button := Button.new()
 	close_button.text = "✕"
 	close_button.custom_minimum_size = Vector2(42, 42)
-	GameUIStyle.apply_button(close_button, "secondary", true)
+	GameUIStyle.apply_button(close_button, "hud_soft", true)
 	close_button.pressed.connect(close_card)
 	header.add_child(close_button)
 
@@ -164,14 +164,14 @@ func _build_ui() -> void:
 	move_button = Button.new()
 	move_button.text = "✥ MOVE"
 	move_button.custom_minimum_size = Vector2(94, 46)
-	GameUIStyle.apply_button(move_button, "secondary", true)
+	GameUIStyle.apply_button(move_button, "hud_soft", true)
 	move_button.pressed.connect(_on_move_pressed)
 	actions.add_child(move_button)
 
 	details_button = Button.new()
 	details_button.text = "ⓘ DETAILS"
 	details_button.custom_minimum_size = Vector2(100, 46)
-	GameUIStyle.apply_button(details_button, "secondary", true)
+	GameUIStyle.apply_button(details_button, "hud_soft", true)
 	details_button.pressed.connect(_on_details_pressed)
 	actions.add_child(details_button)
 
@@ -245,7 +245,7 @@ func _refresh() -> void:
 	if show_move:
 		GameUIStyle.apply_button(
 			move_button,
-			"secondary",
+			"hud_soft",
 			true
 		)
 
@@ -259,6 +259,7 @@ func _refresh() -> void:
 	)
 	building_image.texture = preview_texture
 	building_image.visible = preview_texture != null
+	building_image.tooltip_text = String(definition.get("name", "Building"))
 
 
 func _make_stat_card(
@@ -301,71 +302,8 @@ func _apply_status_tone(tone: String) -> void:
 	)
 
 
-func _building_texture(
-	definition: Dictionary
-) -> Texture2D:
-	# Match the airport/build drawer: show the exact production world art
-	# before falling back to a legacy menu icon.
-	var atlas_path := String(
-		definition.get("world_sprite_atlas_path", "")
-	)
-	var regions: Array = definition.get(
-		"world_sprite_regions",
-		[]
-	)
-	if (
-		not atlas_path.is_empty()
-		and not regions.is_empty()
-		and ResourceLoader.exists(atlas_path)
-	):
-		var atlas_resource := load(atlas_path)
-		var first_region = regions[0]
-		if (
-			atlas_resource is Texture2D
-			and first_region is Rect2
-		):
-			var atlas_texture := AtlasTexture.new()
-			atlas_texture.atlas = atlas_resource as Texture2D
-			atlas_texture.region = first_region
-			return atlas_texture
-
-	var variants: PackedStringArray = definition.get(
-		"world_sprite_paths",
-		PackedStringArray()
-	)
-	if not variants.is_empty():
-		var world_path := String(variants[0])
-		if ResourceLoader.exists(world_path):
-			var world_resource := load(world_path)
-			if world_resource is Texture2D:
-				return world_resource as Texture2D
-
-	var single_world_path := String(
-		definition.get("world_sprite_path", "")
-	)
-	if (
-		not single_world_path.is_empty()
-		and ResourceLoader.exists(single_world_path)
-	):
-		var single_world_resource := load(
-			single_world_path
-		)
-		if single_world_resource is Texture2D:
-			return single_world_resource as Texture2D
-
-	var icon_path := String(
-		definition.get("icon_path", "")
-	)
-	if (
-		icon_path.is_empty()
-		or not ResourceLoader.exists(icon_path)
-	):
-		return null
-
-	var icon_resource := load(icon_path)
-	if icon_resource is Texture2D:
-		return icon_resource as Texture2D
-	return null
+func _building_texture(definition: Dictionary) -> Texture2D:
+	return AirportBuildThumbnails.for_definition(definition)
 
 
 func _on_primary_pressed() -> void:

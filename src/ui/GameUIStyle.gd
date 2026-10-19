@@ -1,23 +1,26 @@
 class_name GameUIStyle
 extends RefCounted
 
-const COLOR_BG := Color("041521")
-const COLOR_BG_SOFT := Color("07283b")
-const COLOR_PANEL := Color("07334b")
-const COLOR_PANEL_RAISED := Color("0a3b57")
-const COLOR_PANEL_DARK := Color("061f30")
-const COLOR_BORDER := Color("168fbd")
-const COLOR_BORDER_SOFT := Color("155a78")
-const COLOR_TEXT := Color("f8fcff")
-const COLOR_MUTED := Color("b0cbd5")
-const COLOR_ACCENT := Color("28c9f5")
-const COLOR_ACCENT_DARK := Color("087fa6")
-const COLOR_GOLD := Color("f5b33b")
-const COLOR_GOLD_DARK := Color("b77412")
-const COLOR_SUCCESS := Color("78df77")
-const COLOR_WARNING := Color("f4a12a")
-const COLOR_DANGER := Color("ff7168")
-const COLOR_EVENT := Color("e7762d")
+# Friendly travel/airport palette — lightly saturated sky, aqua and
+# mint surfaces with sand-gold rewards. Keep darker foundations under white
+# body text so the brighter look does not cost small-screen legibility.
+const COLOR_BG := Color("122d3c")
+const COLOR_BG_SOFT := Color("1a4353")
+const COLOR_PANEL := Color("214b5d")
+const COLOR_PANEL_RAISED := Color("285b6c")
+const COLOR_PANEL_DARK := Color("1a3d4f")
+const COLOR_BORDER := Color("65afbf")
+const COLOR_BORDER_SOFT := Color("467f91")
+const COLOR_TEXT := Color("fbfdff")
+const COLOR_MUTED := Color("c5e0e5")
+const COLOR_ACCENT := Color("87dcdf")
+const COLOR_ACCENT_DARK := Color("308e9e")
+const COLOR_GOLD := Color("ffd184")
+const COLOR_GOLD_DARK := Color("977039")
+const COLOR_SUCCESS := Color("96e3b6")
+const COLOR_WARNING := Color("ffcf86")
+const COLOR_DANGER := Color("ff9a94")
+const COLOR_EVENT := Color("f1ac82")
 
 
 static func panel(
@@ -78,37 +81,36 @@ static func compact_panel(
 # airport's compact resource bar. World art and flight-state bubbles stay
 # independent so Codex can later replace icon art without changing logic.
 static func modern_resource_pill(kind: String) -> StyleBoxFlat:
-	var fill := Color("102d3b", 0.96)
-	var stroke := Color("4b7382", 0.78)
+	var fill := Color("275363", 0.97)
+	var stroke := Color("84c4c6", 0.86)
 	match kind:
 		"level":
-			fill = Color("193b50", 0.98)
-			stroke = Color("72c0d4", 0.85)
+			fill = Color("29566e", 0.98)
+			stroke = Color("93d4e2", 0.88)
 		"identity":
-			fill = Color("0e2c40", 0.97)
-			stroke = Color("4a859d", 0.68)
+			fill = Color("234c61", 0.98)
+			stroke = Color("7dbfce", 0.83)
 		"passenger":
-			fill = Color("143b45", 0.97)
-			stroke = Color("57b9a9", 0.75)
+			fill = Color("255d56", 0.98)
+			stroke = Color("94dbbc", 0.91)
 		"fuel":
-			fill = Color("183744", 0.97)
-			stroke = Color("5fa9c5", 0.78)
+			fill = Color("275671", 0.98)
+			stroke = Color("94ccec", 0.88)
 		"coin":
-			fill = Color("3a321f", 0.97)
-			stroke = Color("bea25a", 0.7)
+			fill = Color("5c4b31", 0.98)
+			stroke = Color("e5c98c", 0.92)
 		"premium":
-			fill = Color("30294b", 0.97)
-			stroke = Color("a49be2", 0.73)
-	var style := compact_panel(fill, stroke, 15, 1, true)
+			fill = Color("4e4367", 0.98)
+			stroke = Color("c9b6eb", 0.9)
+	var style := compact_panel(fill, stroke, 16, 1, true)
 	style.content_margin_left = 8.0
 	style.content_margin_right = 8.0
 	style.content_margin_top = 4.0
 	style.content_margin_bottom = 4.0
-	style.shadow_color = Color(0, 0, 0, 0.21)
-	style.shadow_size = 4
+	style.shadow_color = Color(0, 0, 0, 0.15)
+	style.shadow_size = 3
 	style.shadow_offset = Vector2(0, 2)
 	return style
-
 
 static func top_bar() -> StyleBoxFlat:
 	return panel(
@@ -185,12 +187,12 @@ static func apply_panel(
 		"hud_fuel_low":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("4a3517"), COLOR_WARNING, 11, 2, true)
+				compact_panel(Color("685336"), COLOR_WARNING, 16, 1, true)
 			)
 		"hud_fuel_critical":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("4b2526"), COLOR_DANGER, 11, 2, true)
+				compact_panel(Color("633c46"), COLOR_DANGER, 16, 1, true)
 			)
 		"hud_coin":
 			control.add_theme_stylebox_override("panel", modern_resource_pill("coin"))
@@ -199,27 +201,27 @@ static func apply_panel(
 		"hud_task":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("102a35", 0.95), Color("315766"), 11, 1, true)
+				compact_panel(Color("254d5a", 0.98), Color("83c7cc"), 15, 1, true)
 			)
 		"hud_status_detail":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("062b42", 0.985), Color("25b5e2"), 12, 1, true)
+				compact_panel(Color("245267", 0.985), Color("88c7d3"), 16, 1, true)
 			)
 		"hud_footer":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("08344b", 0.97), Color("329fc5"), 16, 1, true)
+				compact_panel(Color("214e61", 0.97), Color("74bdcc"), 18, 1, true)
 			)
 		"hud_context":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("08283a", 0.985), Color("258fb6"), 12, 1, true)
+				compact_panel(Color("244e60", 0.985), Color("76bac6"), 16, 1, true)
 			)
 		"hud_drawer":
 			control.add_theme_stylebox_override(
 				"panel",
-				compact_panel(Color("06283b", 0.992), Color("1d8db4"), 12, 1, true)
+				compact_panel(Color("23495a", 0.99), Color("78b9c7"), 18, 1, true)
 			)
 		"dock":
 			control.add_theme_stylebox_override(
@@ -238,32 +240,32 @@ static func apply_panel(
 		"context":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("062b42", 0.992), Color("25b5e2"), 18, 2, true)
+				panel(Color("214e61", 0.99), Color("83c5d1"), 18, 1, true)
 			)
 		"context_preview":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("08283a"), Color("197ea4"), 12, 1, false)
+				panel(Color("254c5c"), Color("79b3c0"), 14, 1, false)
 			)
 		"screen_top":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("06314a", 0.995), Color("28bfe9"), 18, 2, true)
+				panel(Color("2a596d", 0.99), Color("84cbd3"), 18, 1, true)
 			)
 		"screen_section":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("07273a", 0.99), Color("18799f"), 14, 1, false)
+				panel(Color("234959", 0.99), Color("6da9b6"), 15, 1, false)
 			)
 		"screen_focus":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("083f5d", 0.995), Color("36d1f6"), 16, 2, true)
+				panel(Color("2a6470", 0.99), Color("a0e2d8"), 18, 1, true)
 			)
 		"reward_tile":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("122c35"), Color("4d7988"), 11, 1, false)
+				panel(Color("2c505d"), Color("7fa9b0"), 13, 1, false)
 			)
 		"mission_done":
 			control.add_theme_stylebox_override(
@@ -273,17 +275,17 @@ static func apply_panel(
 		"toast_success":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("123328", 0.98), COLOR_SUCCESS, 12, 2, true)
+				panel(Color("285947", 0.98), COLOR_SUCCESS, 15, 1, true)
 			)
 		"toast_warning":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("3a2e18", 0.98), COLOR_WARNING, 12, 2, true)
+				panel(Color("655039", 0.98), COLOR_WARNING, 15, 1, true)
 			)
 		"toast_danger":
 			control.add_theme_stylebox_override(
 				"panel",
-				panel(Color("3a2022", 0.98), COLOR_DANGER, 12, 2, true)
+				panel(Color("623c43", 0.98), COLOR_DANGER, 15, 1, true)
 			)
 		"raised":
 			control.add_theme_stylebox_override(

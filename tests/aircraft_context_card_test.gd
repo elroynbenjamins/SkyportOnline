@@ -90,6 +90,14 @@ func _run() -> void:
 	if not card.primary_button.disabled:
 		_fail("Fueling in progress must not expose a premature LOAD action.")
 		return
+	if not card.service_progress.visible or card.service_progress.value != 0:
+		_fail("Fueling should display a visible, initially empty service bar.")
+		return
+	plane._process(5.0)
+	card.refresh_card()
+	if card.service_progress.value < 4.9 or not card.primary_button.disabled:
+		_fail("Service timer should advance smoothly without unlocking early.")
+		return
 	if not card.primary_button.text.contains("FUELING") or not card.primary_button.text.contains("0:15"):
 		_fail("Selected aircraft should show a live handling countdown.")
 		return
@@ -97,6 +105,17 @@ func _run() -> void:
 	card.refresh_card()
 	if card.primary_button.disabled or card.primary_button.text != "LOAD":
 		_fail("Finishing fuel should replace countdown with tappable LOAD.")
+		return
+	if card.service_progress.visible:
+		_fail("Finished service should hide the work-in-progress bar.")
+		return
+	if String(card.primary_button.get_meta("game_style_key", "")) != "hud_mint:compact":
+		_fail("Load should use a friendly mint primary action.")
+		return
+	plane.set_handling_action("SEND")
+	card.refresh_card()
+	if String(card.primary_button.get_meta("game_style_key", "")) != "gold:compact":
+		_fail("Send should use the warmer sand-gold action.")
 		return
 
 	card.close_card()

@@ -372,6 +372,42 @@ static func apply_button(
 			hover_bg = Color("1885a2")
 			pressed_bg = Color("0c556e")
 			pressed_border = Color("d4f9ff")
+		"build_filter":
+			normal_bg = Color("183645", 0.97)
+			normal_border = Color("40697a", 0.76)
+			hover_bg = Color("245063")
+			pressed_bg = Color("153b4e")
+			pressed_border = COLOR_ACCENT
+		"build_filter_selected":
+			normal_bg = Color("1c6378", 0.99)
+			normal_border = Color("76d4db")
+			hover_bg = Color("287a8f")
+			pressed_bg = Color("154a61")
+			pressed_border = Color("a7ecf1")
+		"hud_chip":
+			normal_bg = Color("102f40", 0.96)
+			normal_border = Color("3d7e96", 0.82)
+			hover_bg = Color("1c465b")
+			pressed_bg = Color("184055")
+			pressed_border = COLOR_ACCENT
+		"hud_chip_selected":
+			normal_bg = Color("175e74", 0.99)
+			normal_border = Color("66cbdb")
+			hover_bg = Color("207b92")
+			pressed_bg = Color("15475b")
+			pressed_border = Color("b3eff4")
+		"hud_chip_warning":
+			normal_bg = Color("493b28", 0.97)
+			normal_border = Color("d6ac60", 0.82)
+			hover_bg = Color("5f4c30")
+			pressed_bg = Color("433423")
+			pressed_border = COLOR_WARNING
+		"hud_chip_danger":
+			normal_bg = Color("542b32", 0.97)
+			normal_border = Color("e58b85", 0.8)
+			hover_bg = Color("67373c")
+			pressed_bg = Color("49272c")
+			pressed_border = COLOR_DANGER
 		"build_card":
 			normal_bg = Color("102f40", 0.985)
 			normal_border = Color("3f7489", 0.83)
@@ -413,7 +449,14 @@ static func apply_button(
 	var building_card := kind in [
 		"build_card", "build_card_selected", "build_card_locked"
 	]
-	var radius := 16 if floating else (15 if building_card else (10 if compact else 12))
+	var modern_chip := kind in [
+		"build_filter", "build_filter_selected",
+		"hud_chip", "hud_chip_selected", "hud_chip_warning", "hud_chip_danger"
+	]
+	var radius := (
+		16 if floating else (15 if building_card else (13 if modern_chip
+		else (10 if compact else 12)))
+	)
 	var normal_style := panel(normal_bg, normal_border, radius, 1, floating or building_card)
 	if building_card:
 		normal_style.content_margin_left = 9

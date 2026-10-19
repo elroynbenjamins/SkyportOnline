@@ -36,8 +36,11 @@ func _run() -> void:
 	var coin_fill := (
 		hud.hud_coin_chip.get_theme_stylebox("panel") as StyleBoxFlat
 	).bg_color
-	if passenger_fill.get_luminance() < 0.07 or passenger_fill.get_luminance() > 0.25:
-		_fail("Friendly passenger pill should brighten without losing contrast.")
+	if passenger_fill.get_luminance() <= Color("143b45").get_luminance() + 0.03:
+		_fail("Friendly passenger pill should be brighter than the former dark surface.")
+		return
+	if passenger_fill.get_luminance() >= Color("96cbd0").get_luminance():
+		_fail("Resource backgrounds should stay darker than their soft accent borders.")
 		return
 	if fuel_fill == passenger_fill or coin_fill == fuel_fill:
 		_fail("Passengers, fuel and coins need distinct recognizable hues.")

@@ -84,6 +84,21 @@ func _run() -> void:
 		_fail("Context card passenger stock should refresh live.")
 		return
 
+	plane.configure_skyrama_handling(true)
+	plane.start_simple_fueling(Vector2(220, 180), 15.0)
+	card.refresh_card()
+	if not card.primary_button.disabled:
+		_fail("Fueling in progress must not expose a premature LOAD action.")
+		return
+	if not card.primary_button.text.contains("FUELING") or not card.primary_button.text.contains("0:15"):
+		_fail("Selected aircraft should show a live handling countdown.")
+		return
+	plane._process(16.0)
+	card.refresh_card()
+	if card.primary_button.disabled or card.primary_button.text != "LOAD":
+		_fail("Finishing fuel should replace countdown with tappable LOAD.")
+		return
+
 	card.close_card()
 	if card.is_open():
 		_fail("Aircraft context card should close cleanly.")

@@ -217,6 +217,24 @@ func refresh_card() -> void:
 		fleet_button.visible = true
 		return
 
+	# Service progress is informational, not a second route/departure button.
+	# Keep the panel reactive as the aircraft's handling timer ticks down.
+	if aircraft.uses_skyrama_handling() and aircraft.state in [
+		"SIMPLE_FUELING", "SIMPLE_LOADING", "SIMPLE_UNLOADING"
+	]:
+		var stage := aircraft.get_simple_handling_snapshot()
+		var seconds := maxi(ceili(float(stage.get("remaining", 0.0))), 0)
+		var stage_name := String(stage.get("stage_label", "Handling")).to_upper()
+		primary_button.text = "%s  %d:%02d" % [
+			stage_name, seconds / 60, seconds % 60
+		]
+		primary_button.disabled = true
+		primary_button.tooltip_text = "Service in progress • next action unlocks when finished"
+		GameUIStyle.apply_button(primary_button, "screen_tab", true)
+		fleet_button.visible = true
+		return
+
+	primary_button.tooltip_text = ""
 	var can_choose_route := aircraft.can_change_flight_plan()
 	if can_choose_route:
 		primary_button.text = "🌍  CHOOSE ROUTE"

@@ -23,8 +23,17 @@ func _place_for_career(
 		0
 	)
 	if not bool(preview.get("valid", false)):
+		push_error("Cannot place %s at %s: %s" % [
+			building_id, str(cell), String(preview.get("reason", "unknown"))
+		])
 		return false
-	return not main.airport_grid.confirm_build_preview().is_empty()
+	var placed: Dictionary = main.airport_grid.confirm_build_preview()
+	if placed.is_empty():
+		push_error("Placement returned no building: %s at %s" % [
+			building_id, str(cell)
+		])
+		return false
+	return true
 
 
 func _build_required_starter_airside(main) -> bool:
@@ -39,47 +48,24 @@ func _build_required_starter_airside(main) -> bool:
 		return false
 	if not _place_for_career(main, "ground_ops_depot", Vector2i(5, 9)):
 		return false
+	# V1 moves planes to dedicated 3x2 parking pads rather than into depots.
+	# Both are required for the first owned Pico to enter the hangar/fleet.
+	if not _place_for_career(main, "fuel_parking_s", Vector2i(11, 2)):
+		return false
+	if not _place_for_career(main, "cargo_parking_s", Vector2i(11, 7)):
+		return false
 
 	if not _place_for_career(main, "small_stand", Vector2i(4, 6)):
 		return false
 
-	# Optional NPC taxi path enters only through the runway rollout-end socket.
-	for y in range(2, 6):
-		if not _place_for_career(
-			main,
-			"taxiway",
-			Vector2i(4, y)
-		):
-			return false
-	if not _place_for_career(
-		main,
-		"taxiway",
-		Vector2i(3, 5)
-	):
-		return false
-	for y in range(6, 11):
-		if not _place_for_career(
-			main,
-			"taxiway",
-			Vector2i(3, y)
-		):
-			return false
-
-	for cell in [
-		# Fuel approach from the right side of the stand.
-		Vector2i(7, 6),
-		Vector2i(6, 6),
-		# Ground Ops approach from below the stand.
-		Vector2i(5, 8)
-	]:
-		if not _place_for_career(
-			main,
-			"service_road",
-			cell
-		):
-			return false
-
+	# Physical taxiways and service roads were retired in the roadless
+	# Skyrama V1 airport. Stand and service capacity no longer require
+	# connected construction pieces; do not resurrect legacy road assets.
 	if not _place_for_career(main, "small_terminal", Vector2i(10, 10)):
+		return false
+	# Passenger storage belongs to a generator, not the terminal. A real
+	# generator is required for the full-capacity reward reserve assertion.
+	if not _place_for_career(main, "travel_office", Vector2i(10, 13)):
 		return false
 	return true
 
@@ -109,20 +95,54 @@ func _run() -> void:
 	await process_frame
 	check(main.gameplay_started and main.progression_ready, "Guest creation must start the real game.")
 	check(main.player_level == 1, "A new airport starts career progression at level one.")
+	var built := _build_required_starter_airside(main)
 	check(
-		_build_required_starter_airside(main),
+		built,
 		"Fresh career test should construct simple handling plus the optional NPC network."
 	)
+	if not built:
+		push_error("Career test setup failed: cannot build required starter airport.")
+		quit(1)
+		return
 	main._persist_airport_layout()
 	main._refresh_layout_dependent_systems()
+	# Direct test construction bypasses the tutorial's starter fuel grants.
+	# Supply enough test stock so the own-aircraft cycle can start immediately.
+	main.fuel_economy.set_fuel(float(main.fuel_economy.get_capacity()))
+	main.passenger_economy.set_passengers(20.0)
+	# This test builds directly through AirportGrid, bypassing the live
+	# placement-confirm callback. Explicitly trigger the usual post-build
+	# deployment after all V1 handling pads are available.
+	main._spawn_aircraft_demos()
+	var infra: Dictionary = main._simple_handling_infrastructure("S")
+	print("CAREER_BOOT_DIAGNOSTIC started=%s missing=%s total=%d" % [
+		str(main.gameplay_started),
+		main._simple_handling_missing_text(infra),
+		main.aircraft_demos.size()
+	])
 	await process_frame
 	check(
 		main.aircraft_demos.size() == 1,
 		"V1 should deploy one owned Pico from hangar inventory."
 	)
+	if main.aircraft_demos.is_empty():
+		push_error("Owned aircraft not spawned: infrastructure=%s" % [
+			str(main._simple_handling_infrastructure("S"))
+		])
+		quit(1)
+		return
 	check(
 		main.aircraft_demos[0].uses_skyrama_handling(),
 		"Owned V1 aircraft must use the Skyrama handling loop."
+	)
+	check(
+		main.deployed_owned.has("owned-1")
+		and String(main.aircraft_demos[0].get_meta("owned_uid", "")) == "owned-1",
+		"Starter aircraft must retain progression ownership identity."
+	)
+	check(
+		main.aircraft_demos[0].state == "READY_FOR_DESTINATION",
+		"Starter aircraft should wait invisibly in hangar for a destination."
 	)
 	check(
 		(main.progression.get("owned_aircraft", []) as Array).size() == 2,

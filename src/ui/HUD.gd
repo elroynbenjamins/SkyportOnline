@@ -7,6 +7,9 @@ const HUD_ICON_SVG := {
 	"activities": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><rect x="6.5" y="5.5" width="11" height="13" rx="1.8" fill="none" stroke="#f8fcff" stroke-width="1.5"/><rect x="9" y="4.2" width="6" height="2.8" rx="1" fill="#f5b33b"/><path d="M12 9l.9 1.8 2 .3-1.5 1.4.4 2-1.8-.9-1.8.9.4-2-1.5-1.4 2-.3L12 9z" fill="#f8fcff"/></svg>""",
 	"social": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><circle cx="9" cy="9" r="2.4" fill="#f8fcff"/><circle cx="15.5" cy="10" r="2" fill="#f8fcff" opacity=".9"/><path d="M4.8 17.8c.4-3.1 2-4.6 4.4-4.6s4 1.5 4.4 4.6" fill="#f8fcff"/><path d="M13.2 17.8c.3-2.4 1.4-3.6 3.3-3.6 1.6 0 2.7 1.2 3 3.6" fill="#f8fcff" opacity=".85"/></svg>""",
 	"more": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><circle cx="7" cy="12" r="1.7" fill="#f8fcff"/><circle cx="12" cy="12" r="1.7" fill="#f8fcff"/><circle cx="17" cy="12" r="1.7" fill="#f8fcff"/></svg>""",
+	"tools": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M12 5.5l1.1 1.7 2.1.5 1.8-1 1.5 1.5-1 1.8.5 2.1 1.7 1.1-1.7 1.1-.5 2.1 1 1.8-1.5 1.5-1.8-1-2.1.5L12 20.5l-1.1-1.7-2.1-.5-1.8 1-1.5-1.5 1-1.8-.5-2.1-1.7-1.1L6 11.7l.5-2.1-1-1.8L7 6.3l1.8 1 2.1-.5L12 5.5z" fill="#f3c663" stroke="#ffffff" stroke-width=".8" transform="translate(0 -1) scale(1 .91)"/><circle cx="12" cy="11.9" r="2.7" fill="#0b4f70" stroke="#f8fcff" stroke-width="1"/></svg>""",
+	"edit": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M6 17.5l1-4 8-8a2 2 0 0 1 3 3l-8 8-4 1z" fill="#f5b33b" stroke="#f8fcff" stroke-width="1.2"/><path d="M7.4 14l2.7 2.6" stroke="#fff" stroke-width="1.1"/></svg>""",
+	"storage": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#0b4f70" stroke="#36d1f6" stroke-width="1.2"/><path d="M5 9l7-3.5L19 9v8l-7 3-7-3V9z" fill="#efb44a" stroke="#f8fcff" stroke-width="1"/><path d="M5 9l7 3.5L19 9M12 12.5V20" stroke="#7b4c18" stroke-width="1.3" fill="none"/></svg>""",
 	"passengers": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#075a78" stroke="#4bd7f6" stroke-width="1.2"/><circle cx="9" cy="8.8" r="2.2" fill="#f8fcff"/><circle cx="15.2" cy="9.5" r="1.8" fill="#f8fcff" opacity=".85"/><path d="M5 17.7c.4-3.2 1.9-4.8 4.2-4.8 2.4 0 3.8 1.6 4.2 4.8" fill="#f8fcff"/><path d="M13 17.7c.3-2.5 1.4-3.7 3.2-3.7 1.6 0 2.7 1.2 3 3.7" fill="#f8fcff" opacity=".82"/></svg>""",
 	"fuel": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#4a3517" stroke="#f5c55d" stroke-width="1.2"/><rect x="6.5" y="5.5" width="7.5" height="12.5" rx="1.2" fill="#f5b33b"/><rect x="8" y="7" width="4.5" height="3.4" rx=".5" fill="#403418"/><path d="M14 8h2.2l1.6 1.8v5.6c0 .8-.5 1.3-1.2 1.3-.8 0-1.3-.5-1.3-1.3v-3.1" fill="none" stroke="#f8fcff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>""",
 	"coins": """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#3a3020" stroke="#f5b33b" stroke-width="1.2"/><ellipse cx="11.5" cy="8" rx="5.2" ry="2.2" fill="#f5b33b"/><path d="M6.3 8v3c0 1.2 2.3 2.2 5.2 2.2s5.2-1 5.2-2.2V8" fill="#f5b33b" opacity=".92"/><path d="M6.3 11v3c0 1.2 2.3 2.2 5.2 2.2s5.2-1 5.2-2.2v-3" fill="#f5b33b" opacity=".82"/><path d="M9.5 7.8h4" stroke="#6f4b0d" stroke-width="1.1" stroke-linecap="round"/></svg>""",
@@ -76,6 +79,12 @@ var operation_toast_tween: Tween
 var dispatch_shift_panel: PanelContainer
 var dispatch_shift_label: Label
 var bottom_nav_panel: PanelContainer
+var right_action_rail: PanelContainer
+var right_action_scroll: ScrollContainer
+var tools_expanded := false
+var rail_viewport_size := Vector2i.ZERO
+var social_attention := false
+var bottom_status_label: Label
 var active_status_chip := ""
 var status_details: Dictionary = {}
 var current_operation_status_text := "Preparing airport..."
@@ -143,6 +152,116 @@ func _ready() -> void:
 	_build_interface()
 
 
+func _process(_delta: float) -> void:
+	_sync_action_rail_visibility()
+	var viewport_size := get_viewport().get_visible_rect().size
+	if Vector2i(viewport_size) != rail_viewport_size:
+		_update_action_rail_layout()
+
+
+func _update_action_rail_layout(override_size: Vector2i = Vector2i.ZERO) -> void:
+	if right_action_rail == null:
+		return
+	rail_viewport_size = (
+		override_size if override_size != Vector2i.ZERO
+		else Vector2i(get_viewport().get_visible_rect().size)
+	)
+	# Reserve room for the status chips above and the contextual dock below.
+	# The scroll container keeps all touch targets reachable on short screens.
+	var top := 124
+	var bottom_clearance := 62
+	var available := maxi(rail_viewport_size.y - top - bottom_clearance, 150)
+	var desired := 466 if tools_expanded else 318
+	right_action_rail.offset_top = float(top)
+	right_action_rail.offset_bottom = float(top + mini(desired, available))
+	if right_action_scroll != null:
+		right_action_scroll.custom_minimum_size = Vector2(112, 0)
+
+
+func _toggle_hud_tools() -> void:
+	tools_expanded = not tools_expanded
+	_refresh_secondary_shortcuts()
+
+
+func _collapse_hud_tools() -> void:
+	if tools_expanded:
+		tools_expanded = false
+		_refresh_secondary_shortcuts()
+
+
+func _refresh_secondary_shortcuts() -> void:
+	for tab in ["edit", "storage", "social"]:
+		var button := nav_buttons.get(tab) as Button
+		if button != null:
+			button.visible = tools_expanded
+	var tools_button := nav_buttons.get("tools") as Button
+	if tools_button != null:
+		tools_button.text = "TOOLS •" if social_attention and not tools_expanded else "TOOLS"
+		GameUIStyle.apply_button(
+			tools_button,
+			"gold" if social_attention and not tools_expanded else (
+				"dock_selected" if tools_expanded else "dock"
+			),
+			true
+		)
+	_update_action_rail_layout()
+
+
+
+# A single consistent escape/back path for airport overlays. This intentionally
+# does not intercept Back while no airport overlay is open, letting the
+# platform or any active full-screen game view decide what to do.
+func _unhandled_key_input(event: InputEvent) -> void:
+	if interface_root == null or not interface_root.visible:
+		return
+	if event.is_action_pressed("ui_cancel") and _handle_hud_back():
+		get_viewport().set_input_as_handled()
+
+
+func _handle_hud_back() -> bool:
+	if status_detail_panel != null and status_detail_panel.visible:
+		_close_status_detail()
+		return true
+	if storage_panel != null and storage_panel.visible:
+		storage_panel.visible = false
+		return true
+	if catalog_panel != null and catalog_panel.visible:
+		_on_catalog_close_pressed()
+		return true
+	if tools_expanded:
+		_collapse_hud_tools()
+		return true
+	if active_expansion_mode:
+		expansion_mode_cancel_requested.emit()
+		return true
+	if airport_edit_panel != null and airport_edit_panel.visible:
+		done_airport_edit_requested.emit()
+		return true
+	if not active_build_mode.is_empty():
+		cancel_building_requested.emit()
+		return true
+	return false
+
+func _sync_action_rail_visibility() -> void:
+	if right_action_rail == null:
+		return
+	var drawer_open := (
+		(catalog_panel != null and catalog_panel.visible)
+		or (storage_panel != null and storage_panel.visible)
+	)
+	var editing := (
+		(active_expansion_mode)
+		or (not active_build_mode.is_empty())
+		or (airport_edit_panel != null and airport_edit_panel.visible)
+	)
+	right_action_rail.visible = not drawer_open and not editing
+	if bottom_nav_panel != null:
+		bottom_nav_panel.visible = (
+			not drawer_open
+			and not editing
+			and (parcel_panel == null or not parcel_panel.visible)
+		)
+
 
 func _build_interface() -> void:
 	interface_root = Control.new()
@@ -172,7 +291,7 @@ func _build_interface() -> void:
 	top_margin.add_child(top_row)
 
 	var level_card := PanelContainer.new()
-	level_card.custom_minimum_size = Vector2(96, 66)
+	level_card.custom_minimum_size = Vector2(78, 56)
 	GameUIStyle.apply_panel(level_card, "hud_level")
 	top_row.add_child(level_card)
 
@@ -196,7 +315,7 @@ func _build_interface() -> void:
 	level_box.add_child(level_label)
 
 	var identity_card := PanelContainer.new()
-	identity_card.custom_minimum_size = Vector2(250, 62)
+	identity_card.custom_minimum_size = Vector2(214, 56)
 	identity_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	GameUIStyle.apply_panel(identity_card, "hud_identity")
 	top_row.add_child(identity_card)
@@ -214,7 +333,7 @@ func _build_interface() -> void:
 	identity_box.add_child(title_label)
 
 	xp_progress = ProgressBar.new()
-	xp_progress.custom_minimum_size = Vector2(188, 12)
+	xp_progress.custom_minimum_size = Vector2(160, 9)
 	xp_progress.show_percentage = false
 	xp_progress.min_value = 0.0
 	xp_progress.max_value = 1.0
@@ -240,7 +359,7 @@ func _build_interface() -> void:
 		"0 / 0",
 		"+0.0/m",
 		"hud_passenger",
-		124,
+		116,
 		_hud_icon("passengers")
 	)
 	passenger_label = passenger_chip["value"] as Label
@@ -253,7 +372,7 @@ func _build_interface() -> void:
 		"0 / 0",
 		"+0.0/m",
 		"hud_fuel",
-		112,
+		108,
 		_hud_icon("fuel")
 	)
 	fuel_label = fuel_chip["value"] as Label
@@ -276,7 +395,7 @@ func _build_interface() -> void:
 		"0",
 		"",
 		"hud_coin",
-		96,
+		94,
 		_hud_icon("coins")
 	)
 	coins_label = coin_chip["value"] as Label
@@ -410,9 +529,9 @@ func _build_interface() -> void:
 	status_detail_panel = PanelContainer.new()
 	status_detail_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	status_detail_panel.offset_left = 10
-	status_detail_panel.offset_top = 106
+	status_detail_panel.offset_top = 112
 	status_detail_panel.offset_right = 620
-	status_detail_panel.offset_bottom = 244
+	status_detail_panel.offset_bottom = 252
 	status_detail_panel.visible = false
 	root.add_child(status_detail_panel)
 	GameUIStyle.apply_panel(status_detail_panel, "hud_status_detail")
@@ -502,7 +621,7 @@ func _build_hud_resource_chip(
 	icon_texture: Texture2D = null
 ) -> Dictionary:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(minimum_width, 38)
+	panel.custom_minimum_size = Vector2(minimum_width, 50)
 	GameUIStyle.apply_panel(panel, panel_variant)
 	parent.add_child(panel)
 
@@ -512,7 +631,7 @@ func _build_hud_resource_chip(
 	panel.add_child(content_row)
 
 	var icon_rect := TextureRect.new()
-	icon_rect.custom_minimum_size = Vector2(26, 26)
+	icon_rect.custom_minimum_size = Vector2(24, 24)
 	icon_rect.texture = icon_texture
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -528,20 +647,26 @@ func _build_hud_resource_chip(
 
 	var caption_label := Label.new()
 	caption_label.text = caption
-	caption_label.visible = false
+	caption_label.visible = true
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption_label.add_theme_font_size_override("font_size", 9)
+	GameUIStyle.muted(caption_label)
 	box.add_child(caption_label)
 
 	var value_label := Label.new()
 	value_label.text = value_text
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	value_label.add_theme_font_size_override("font_size", 16)
+	value_label.add_theme_font_size_override("font_size", 14)
 	value_label.add_theme_color_override("font_color", GameUIStyle.COLOR_TEXT)
 	box.add_child(value_label)
 
 	var detail_label := Label.new()
 	detail_label.text = detail_text
-	detail_label.visible = false
+	detail_label.visible = not detail_text.is_empty()
+	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detail_label.add_theme_font_size_override("font_size", 9)
+	GameUIStyle.muted(detail_label)
 	box.add_child(detail_label)
 
 	return {
@@ -1179,48 +1304,92 @@ func _build_catalog_panel(root: Control) -> void:
 
 
 func _build_bottom_navigation(root: Control) -> void:
+	# A slim contextual footer replaces the former row of six large buttons.
+	# The actual airport shortcuts now float on the right, Skyrama-style.
 	bottom_nav_panel = PanelContainer.new()
 	bottom_nav_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_nav_panel.offset_left = 16
-	bottom_nav_panel.offset_top = -82
+	bottom_nav_panel.offset_top = -54
 	bottom_nav_panel.offset_right = -16
 	bottom_nav_panel.offset_bottom = -8
 	root.add_child(bottom_nav_panel)
-	GameUIStyle.apply_panel(bottom_nav_panel, "dock")
+	GameUIStyle.apply_panel(bottom_nav_panel, "hud_footer")
 
-	var nav_row := HBoxContainer.new()
-	nav_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	nav_row.add_theme_constant_override("separation", 8)
-	bottom_nav_panel.add_child(nav_row)
+	bottom_status_label = Label.new()
+	bottom_status_label.text = "AIRPORT READY • Tap a plane or building to manage it"
+	bottom_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bottom_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	bottom_status_label.clip_text = true
+	bottom_status_label.add_theme_font_size_override("font_size", 12)
+	bottom_status_label.add_theme_color_override(
+		"font_color", GameUIStyle.COLOR_TEXT
+	)
+	bottom_nav_panel.add_child(bottom_status_label)
 
-	for item in ["BUILD", "FLEET", "WORLD", "ACTIVITIES", "SOCIAL", "MORE"]:
+	right_action_rail = PanelContainer.new()
+	right_action_rail.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	right_action_rail.offset_left = -128
+	right_action_rail.offset_top = 124
+	right_action_rail.offset_right = -8
+	right_action_rail.offset_bottom = 580
+	root.add_child(right_action_rail)
+	GameUIStyle.apply_panel(right_action_rail, "dock")
+
+	right_action_scroll = ScrollContainer.new()
+	right_action_scroll.custom_minimum_size = Vector2(112, 0)
+	right_action_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_action_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_action_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	right_action_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	right_action_rail.add_child(right_action_scroll)
+
+	var nav_column := VBoxContainer.new()
+	nav_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nav_column.add_theme_constant_override("separation", 4)
+	right_action_scroll.add_child(nav_column)
+
+	# Six shortcuts stay visible; Edit / Storage / Social live behind
+	# an optional Tools expander so airport scenery remains unobstructed.
+	for item in ["BUILD", "FLEET", "WORLD", "TASKS", "TOOLS", "EDIT", "STORAGE", "SOCIAL", "MORE"]:
+		var tab: String = item.to_lower()
+		if tab == "tasks":
+			tab = "activities"
 		var button := Button.new()
 		button.text = item
-		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		button.custom_minimum_size = Vector2(88, 66)
-		button.add_theme_font_size_override("font_size", 10)
-
-		var tab: String = item.to_lower()
-		_apply_button_icon(button, _nav_icon_for(tab), 27)
-		GameUIStyle.apply_button(
-			button,
-			"dock_selected" if tab == "build" else "dock",
-			true
-		)
+		button.custom_minimum_size = Vector2(106, 46)
+		button.tooltip_text = "Open " + item.capitalize()
+		_apply_button_icon(button, _nav_icon_for(tab), 24)
+		GameUIStyle.apply_button(button, "dock", true)
+		button.add_theme_font_size_override("font_size", 11)
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		nav_buttons[tab] = button
-		if tab == "build":
-			button.tooltip_text = "Airport home • building and layout tools"
-			button.pressed.connect(_on_build_navigation_pressed)
-		else:
-			button.pressed.connect(_on_navigation_pressed.bind(tab))
+
+		match tab:
+			"build":
+				button.tooltip_text = "Build airport structures and expand land"
+				button.pressed.connect(_on_build_navigation_pressed)
+			"tools":
+				button.tooltip_text = "Show or hide Edit, Storage and Social"
+				button.pressed.connect(_toggle_hud_tools)
+			"edit":
+				button.tooltip_text = "Move or store airport buildings"
+				button.pressed.connect(_on_airport_edit_pressed)
+			"storage":
+				button.tooltip_text = "Open saved building storage"
+				button.pressed.connect(_on_storage_pressed)
+			_:
+				button.pressed.connect(_on_navigation_pressed.bind(tab))
 
 		if tab == "activities":
 			activities_nav_button = button
-			button.tooltip_text = "Missions, Charter, weekly challenges, Alliance Operations and events"
+			button.tooltip_text = "Missions, Charter, challenges and events"
 		elif tab == "social":
 			social_nav_button = button
 
-		nav_row.add_child(button)
+		nav_column.add_child(button)
+	_refresh_secondary_shortcuts()
+	_sync_action_rail_visibility()
+
 
 func _hud_icon(key: String) -> Texture2D:
 	if hud_icon_textures.has(key):
@@ -1296,7 +1465,7 @@ func set_activities_attention(attention: bool) -> void:
 	# Aggregate fallback for callers that already computed all activity states.
 	if activities_nav_button == null:
 		return
-	activities_nav_button.text = "ACTIVITIES •" if attention else "ACTIVITIES"
+	activities_nav_button.text = "TASKS •" if attention else "TASKS"
 	GameUIStyle.apply_button(
 		activities_nav_button,
 		"gold" if attention else "dock",
@@ -1315,6 +1484,7 @@ func _refresh_activities_nav() -> void:
 
 
 func set_social_attention(active: bool) -> void:
+	social_attention = active
 	if social_nav_button == null:
 		return
 	if active:
@@ -1331,6 +1501,7 @@ func set_social_attention(active: bool) -> void:
 			"dock",
 			true
 		)
+	_refresh_secondary_shortcuts()
 
 
 func set_interface_visible(value: bool) -> void:
@@ -1376,12 +1547,14 @@ func set_build_catalog(definitions: Array[Dictionary]) -> void:
 
 	for definition in catalog_definitions:
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(164, 62)
+		button.custom_minimum_size = Vector2(164, 76)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 11)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.expand_icon = true
+		button.add_theme_constant_override("icon_max_width", 38)
+		button.add_theme_constant_override("h_separation", 7)
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		button.tooltip_text = String(definition.get("description", ""))
 		GameUIStyle.apply_button(button, "build_card", true)
@@ -1433,10 +1606,50 @@ func _apply_catalog_filter() -> void:
 		]
 
 
-func _catalog_icon_for(_definition: Dictionary) -> Texture2D:
-	# Grid-first visual reset: catalog entries remain fully usable, but no
-	# airport-world art is loaded until the new grid-native asset contract lands.
-	return null
+func _catalog_icon_for(definition: Dictionary) -> Texture2D:
+	# Use the approved production atlas where possible. This draws a thumbnail
+	# inside the BUILD UI only; world/grid rendering stays untouched.
+	var atlas_path := String(definition.get("world_sprite_atlas_path", ""))
+	var regions: Array = definition.get("world_sprite_regions", [])
+	if not atlas_path.is_empty() and not regions.is_empty():
+		var atlas_texture := ProductionUIAssets.texture(atlas_path)
+		if atlas_texture != null and regions[0] is Rect2:
+			var icon := AtlasTexture.new()
+			icon.atlas = atlas_texture
+			icon.region = regions[0]
+			icon.filter_clip = true
+			return icon
+
+	var icon_path := String(definition.get("icon_path", ""))
+	if not icon_path.is_empty():
+		var thumbnail := ProductionUIAssets.texture(icon_path)
+		if thumbnail != null:
+			return thumbnail
+
+	# Some grid-native service structures do not yet have a dedicated icon.
+	for key in ["grid_first_structure_paths", "world_sprite_paths", "grid_native_surface_paths"]:
+		var paths: PackedStringArray = definition.get(key, PackedStringArray())
+		if not paths.is_empty():
+			var fallback := ProductionUIAssets.texture(paths[0])
+			if fallback != null:
+				return fallback
+
+	# Some older catalog definitions point at artwork that has not yet been
+	# committed to this repository. Never ship blank construction cards.
+	# Use the matching glossy game icon until the grid-native art exists.
+	var id := String(definition.get("id", ""))
+	var category := String(definition.get("category", ""))
+	if id.contains("fuel"):
+		return _hud_icon("fuel")
+	if id.contains("hangar") or id.contains("storage") or id.contains("depot"):
+		return _hud_icon("storage")
+	if id.contains("runway") or id.contains("stand") or id.contains("parking"):
+		return _hud_icon("airfield")
+	if category == "Passenger":
+		return _hud_icon("passengers")
+	if category == "Infrastructure":
+		return _hud_icon("airfield")
+	return _hud_icon("build")
 
 
 func _find_building_grid() -> GridContainer:
@@ -2267,6 +2480,9 @@ func set_operation_status(
 	)
 	current_operation_status_text = text
 	current_operation_status_tone = tone
+	if bottom_status_label != null:
+		bottom_status_label.text = text.left(115)
+		bottom_status_label.tooltip_text = text
 	_refresh_operations_status()
 	if changed and tone in ["success", "warning", "danger"]:
 		_show_operation_toast(text, tone)
@@ -2835,10 +3051,30 @@ func _status_button_kind(
 
 
 func _compact_status(text: String) -> String:
-	var compact := text.replace("\n", " • ")
-	if compact.length() > 20:
-		compact = compact.substr(0, 17) + "..."
-	return compact.to_upper()
+	# Full operation descriptions belong in the bottom status dock and the
+	# tappable details panel; the upper chip must remain short and readable.
+	var value := text.to_upper()
+	if (
+		value.contains("WAIT")
+		or value.contains("QUEUE")
+		or value.contains("AWAIT")
+	):
+		return "WAITING"
+	if (
+		value.contains("MISSING")
+		or value.contains("CANNOT")
+		or value.contains("NOT ENOUGH")
+		or value.contains("BLOCK")
+		or value.contains("FAILED")
+	):
+		return "ACTION"
+	if value.contains("BUILD") or value.contains("CONSTRUCTION"):
+		return "BUILDING"
+	if value.contains("PREPAR"):
+		return "PREPARING"
+	if value.contains("READY") or value.contains("CLEAR"):
+		return "READY"
+	return "ACTIVE"
 
 func _on_status_chip_pressed(key: String) -> void:
 	if active_status_chip == key and status_detail_panel.visible:
@@ -2939,19 +3175,23 @@ func exit_building_mode() -> void:
 
 func _update_catalog_buttons() -> void:
 	for definition in catalog_definitions:
-		var id := String(definition["id"])
+		var id := String(definition.get("id", ""))
 		if not catalog_buttons.has(id):
 			continue
 		var button: Button = catalog_buttons[id]
-		var required_level := int(definition["level"])
-		var cost := int(definition["cost"])
-
+		var required_level := int(definition.get("level", 1))
+		var cost := int(definition.get("cost", 0))
+		var footprint: Vector2i = definition.get("footprint", Vector2i.ONE)
+		var footprint_text := "%d×%d" % [footprint.x, footprint.y]
+		var name := String(definition.get("menu_name", id))
+		var size_class := _size_text(definition)
+		button.tooltip_text = "%s\n%d coins • Level %d • %s tiles • %s aircraft" % [
+			String(definition.get("description", name)),
+			cost, required_level, footprint_text, size_class
+		]
 		if current_level < required_level:
 			GameUIStyle.apply_button(button, "build_card_locked", true)
-			button.text = "%s\nLOCKED • LV %d" % [
-				String(definition["menu_name"]),
-				required_level
-			]
+			button.text = "%s\nLV %d • %s" % [name, required_level, footprint_text]
 			button.disabled = true
 		else:
 			var selected := id == active_building_id
@@ -2960,12 +3200,11 @@ func _update_catalog_buttons() -> void:
 				"build_card_selected" if selected else "build_card",
 				true
 			)
-			button.text = "%s%s\n%s COINS • LV %d • %s" % [
-				"SELECTED • " if selected else "",
-				String(definition["menu_name"]),
+			button.text = "%s%s\n%s COINS • %s" % [
+				"✓ " if selected else "",
+				name,
 				_format_number(cost),
-				required_level,
-				_size_text(definition)
+				footprint_text
 			]
 			button.disabled = false
 	_apply_catalog_filter()
@@ -3048,6 +3287,8 @@ func _on_storage_pressed() -> void:
 	if storage_panel == null:
 		return
 	storage_panel.visible = not storage_panel.visible
+	if storage_panel.visible:
+		_collapse_hud_tools()
 
 
 func _on_stored_building_pressed(uid: int) -> void:
@@ -3057,6 +3298,7 @@ func _on_stored_building_pressed(uid: int) -> void:
 
 
 func _on_airport_edit_pressed() -> void:
+	_collapse_hud_tools()
 	airport_edit_requested.emit()
 
 
@@ -3148,6 +3390,7 @@ func _format_number(value: int) -> String:
 
 
 func _on_build_navigation_pressed() -> void:
+	_collapse_hud_tools()
 	if active_expansion_mode:
 		expansion_mode_cancel_requested.emit()
 	if catalog_panel != null:
@@ -3162,4 +3405,5 @@ func _on_build_navigation_pressed() -> void:
 	)
 
 func _on_navigation_pressed(tab: String) -> void:
+	_collapse_hud_tools()
 	navigation_requested.emit(tab)

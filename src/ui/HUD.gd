@@ -553,7 +553,7 @@ func _build_interface() -> void:
 	airside_status_chip.text = "AIR • CHECKING"
 	airside_status_chip.custom_minimum_size = Vector2(132, 34)
 	_apply_button_icon(airside_status_chip, _hud_icon("airfield"), 18)
-	GameUIStyle.apply_button(airside_status_chip, "nav", true)
+	GameUIStyle.apply_button(airside_status_chip, "hud_chip", true)
 	airside_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("airside")
 	)
@@ -563,7 +563,7 @@ func _build_interface() -> void:
 	operation_status_chip.text = "OPS • PREPARING"
 	operation_status_chip.custom_minimum_size = Vector2(150, 34)
 	_apply_button_icon(operation_status_chip, _hud_icon("ops"), 18)
-	GameUIStyle.apply_button(operation_status_chip, "nav", true)
+	GameUIStyle.apply_button(operation_status_chip, "hud_chip", true)
 	operation_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("operations")
 	)
@@ -573,7 +573,7 @@ func _build_interface() -> void:
 	atc_status_chip.text = "ATC • CLEAR"
 	atc_status_chip.custom_minimum_size = Vector2(136, 34)
 	_apply_button_icon(atc_status_chip, _hud_icon("atc"), 18)
-	GameUIStyle.apply_button(atc_status_chip, "nav", true)
+	GameUIStyle.apply_button(atc_status_chip, "hud_chip", true)
 	atc_status_chip.pressed.connect(
 		_on_status_chip_pressed.bind("atc")
 	)
@@ -1353,7 +1353,7 @@ func _build_catalog_panel(root: Control) -> void:
 		var category := String(filter_data[1])
 		GameUIStyle.apply_button(
 			chip,
-			"selected" if category == selected_catalog_category else "nav",
+			"build_filter_selected" if category == selected_catalog_category else "build_filter",
 			true
 		)
 		chip.pressed.connect(_on_catalog_filter_pressed.bind(category))
@@ -1647,7 +1647,7 @@ func _on_catalog_filter_pressed(category: String) -> void:
 		var chip: Button = catalog_filter_buttons[key]
 		GameUIStyle.apply_button(
 			chip,
-			"selected" if String(key) == category else "nav",
+			"build_filter_selected" if String(key) == category else "build_filter",
 			true
 		)
 	_apply_catalog_filter()
@@ -3116,14 +3116,14 @@ func _status_button_kind(
 	active: bool
 ) -> String:
 	if active:
-		return "selected"
+		return "hud_chip_selected"
 	match tone:
 		"warning":
-			return "gold"
+			return "hud_chip_warning"
 		"danger":
-			return "danger"
+			return "hud_chip_danger"
 		_:
-			return "nav"
+			return "hud_chip"
 
 
 

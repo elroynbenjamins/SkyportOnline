@@ -98,8 +98,8 @@ func _run() -> void:
 	if card.service_progress.value < 4.9 or not card.primary_button.disabled:
 		_fail("Service timer should advance smoothly without unlocking early.")
 		return
-	if not card.primary_button.text.contains("FUELING") or not card.primary_button.text.contains("0:15"):
-		_fail("Selected aircraft should show a live handling countdown.")
+	if not card.primary_button.text.contains("FUELING") or not card.primary_button.text.contains("0:10"):
+		_fail("Selected aircraft should update the countdown alongside service progress.")
 		return
 	plane._process(16.0)
 	card.refresh_card()

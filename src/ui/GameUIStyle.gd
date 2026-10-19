@@ -325,121 +325,127 @@ static func apply_button(
 
 	match kind:
 		"primary":
-			normal_bg = Color("2b8094")
-			normal_border = Color("6bd2e6")
-			hover_bg = Color("3598ae")
-			pressed_bg = Color("226c7e")
-			pressed_border = Color("a3e9f5")
+			normal_bg = Color("387f86")
+			normal_border = Color("a4d9d2")
+			hover_bg = Color("44999a")
+			pressed_bg = Color("2c6e76")
+			pressed_border = Color("ceefdf")
 		"gold":
-			normal_bg = Color("d67b12")
-			normal_border = Color("ffd263")
-			hover_bg = Color("ee941f")
-			pressed_bg = Color("af610b")
-			pressed_border = Color("fff0b2")
+			normal_bg = Color("916d3b")
+			normal_border = Color("f6d69a")
+			hover_bg = Color("a98145")
+			pressed_bg = Color("785c33")
+			pressed_border = Color("fff0cf")
 		"danger":
-			normal_bg = Color("743b3d")
-			normal_border = Color("c96a6d")
-			hover_bg = Color("8d474a")
-			pressed_bg = Color("5a2e31")
+			normal_bg = Color("924c59")
+			normal_border = Color("eda19c")
+			hover_bg = Color("a45a65")
+			pressed_bg = Color("753e49")
 			pressed_border = COLOR_DANGER
 		"nav":
-			normal_bg = Color("08314a")
-			normal_border = Color("197fa6")
-			hover_bg = Color("0b4565")
-			pressed_bg = Color("0b5777")
+			normal_bg = Color("2c5b70")
+			normal_border = Color("8bbecb")
+			hover_bg = Color("376d7e")
+			pressed_bg = Color("275568")
 			pressed_border = COLOR_ACCENT
 		"selected":
-			normal_bg = Color("075c83")
-			normal_border = Color("32d1f6")
-			hover_bg = Color("0876a6")
-			pressed_bg = Color("064f72")
-			pressed_border = Color("bdf5ff")
+			normal_bg = Color("297786")
+			normal_border = Color("abdfd6")
+			hover_bg = Color("329099")
+			pressed_bg = Color("235e6e")
+			pressed_border = Color("e0faf6")
 		"event":
-			normal_bg = Color("7c421f")
+			normal_bg = Color("965e45")
 			normal_border = COLOR_EVENT
-			hover_bg = Color("985126")
-			pressed_bg = Color("603319")
-			pressed_border = Color("ffb36a")
+			hover_bg = Color("aa7056")
+			pressed_bg = Color("754a39")
+			pressed_border = Color("ffe1c7")
 		"dock":
 			# Modern floating tool surface: matte navy, thin outline and subtle
 			# lift rather than the heavy glossy square legacy image asset.
-			normal_bg = Color("102e42", 0.98)
-			normal_border = Color("45758e", 0.94)
-			hover_bg = Color("1b4c63", 0.99)
-			pressed_bg = Color("174359")
-			pressed_border = Color("64cbe6")
+			normal_bg = Color("295769", 0.98)
+			normal_border = Color("80b9c5", 0.94)
+			hover_bg = Color("366a78", 0.99)
+			pressed_bg = Color("254c5d")
+			pressed_border = Color("a2dde1")
 		"dock_selected":
-			normal_bg = Color("116c89", 0.99)
-			normal_border = Color("86e5f0")
-			hover_bg = Color("1885a2")
-			pressed_bg = Color("0c556e")
-			pressed_border = Color("d4f9ff")
+			normal_bg = Color("327e81", 0.99)
+			normal_border = Color("b5e6d0")
+			hover_bg = Color("42989a")
+			pressed_bg = Color("24696e")
+			pressed_border = Color("e5f9ed")
 		"build_filter":
-			normal_bg = Color("183645", 0.97)
-			normal_border = Color("40697a", 0.76)
-			hover_bg = Color("245063")
-			pressed_bg = Color("153b4e")
+			normal_bg = Color("315d69", 0.97)
+			normal_border = Color("85b4bd", 0.76)
+			hover_bg = Color("416f79")
+			pressed_bg = Color("28515e")
 			pressed_border = COLOR_ACCENT
 		"build_filter_selected":
-			normal_bg = Color("1c6378", 0.99)
-			normal_border = Color("76d4db")
-			hover_bg = Color("287a8f")
-			pressed_bg = Color("154a61")
-			pressed_border = Color("a7ecf1")
+			normal_bg = Color("367f7e", 0.99)
+			normal_border = Color("b2e4d1")
+			hover_bg = Color("49958e")
+			pressed_bg = Color("2b686b")
+			pressed_border = Color("ddf9e8")
 		"hud_chip":
-			normal_bg = Color("102f40", 0.96)
-			normal_border = Color("3d7e96", 0.82)
-			hover_bg = Color("1c465b")
-			pressed_bg = Color("184055")
+			normal_bg = Color("315b6a", 0.96)
+			normal_border = Color("88b9c4", 0.82)
+			hover_bg = Color("3c6a79")
+			pressed_bg = Color("2b5265")
 			pressed_border = COLOR_ACCENT
 		"hud_chip_selected":
-			normal_bg = Color("175e74", 0.99)
-			normal_border = Color("66cbdb")
-			hover_bg = Color("207b92")
-			pressed_bg = Color("15475b")
-			pressed_border = Color("b3eff4")
+			normal_bg = Color("337e85", 0.99)
+			normal_border = Color("ade0d6")
+			hover_bg = Color("43949b")
+			pressed_bg = Color("2c6475")
+			pressed_border = Color("e1f9ee")
 		"hud_chip_warning":
-			normal_bg = Color("493b28", 0.97)
-			normal_border = Color("d6ac60", 0.82)
-			hover_bg = Color("5f4c30")
-			pressed_bg = Color("433423")
+			normal_bg = Color("70583c", 0.97)
+			normal_border = Color("f2ce8f", 0.82)
+			hover_bg = Color("80664a")
+			pressed_bg = Color("594730")
 			pressed_border = COLOR_WARNING
 		"hud_chip_danger":
-			normal_bg = Color("542b32", 0.97)
-			normal_border = Color("e58b85", 0.8)
-			hover_bg = Color("67373c")
-			pressed_bg = Color("49272c")
+			normal_bg = Color("784b56", 0.97)
+			normal_border = Color("f0aca7", 0.8)
+			hover_bg = Color("8d5c62")
+			pressed_bg = Color("633c49")
 			pressed_border = COLOR_DANGER
+		"hud_soft":
+			normal_bg = Color("365c6b")
+			normal_border = Color("96cbd0")
+			hover_bg = Color("457285")
+			pressed_bg = Color("2c5060")
+			pressed_border = Color("c8efed")
 		"build_card":
-			normal_bg = Color("102f40", 0.985)
-			normal_border = Color("3f7489", 0.83)
-			hover_bg = Color("1b475c")
-			pressed_bg = Color("16435a")
+			normal_bg = Color("2a5466", 0.985)
+			normal_border = Color("86bdc7", 0.83)
+			hover_bg = Color("356a78")
+			pressed_bg = Color("234d63")
 			pressed_border = COLOR_ACCENT
 		"build_card_selected":
-			normal_bg = Color("144d62")
-			normal_border = Color("65d2e6")
-			hover_bg = Color("1c6880")
-			pressed_bg = Color("0f4257")
-			pressed_border = Color("c8f7ff")
+			normal_bg = Color("34766f")
+			normal_border = Color("a8e1cb")
+			hover_bg = Color("3d8b82")
+			pressed_bg = Color("285f65")
+			pressed_border = Color("e6fff2")
 		"build_card_locked":
-			normal_bg = Color("1a282e")
-			normal_border = Color("40535a")
-			hover_bg = Color("1a282e")
-			pressed_bg = Color("1a282e")
-			pressed_border = Color("40535a")
+			normal_bg = Color("364951")
+			normal_border = Color("607a82")
+			hover_bg = Color("364951")
+			pressed_bg = Color("364951")
+			pressed_border = Color("607a82")
 		"screen_tab":
-			normal_bg = Color("0d2631")
-			normal_border = Color("2b4d59")
-			hover_bg = Color("173b48")
-			pressed_bg = Color("194653")
+			normal_bg = Color("305462")
+			normal_border = Color("85b3bd")
+			hover_bg = Color("396574")
+			pressed_bg = Color("2b4b59")
 			pressed_border = COLOR_ACCENT
 		"screen_tab_selected":
-			normal_bg = Color("1a5363")
-			normal_border = Color("78d5e7")
-			hover_bg = Color("216779")
-			pressed_bg = Color("174754")
-			pressed_border = Color("b6f1fb")
+			normal_bg = Color("347777")
+			normal_border = Color("abe0d5")
+			hover_bg = Color("428c86")
+			pressed_bg = Color("286266")
+			pressed_border = Color("ddf9eb")
 		"mission_complete":
 			normal_bg = Color("183a2d")
 			normal_border = COLOR_SUCCESS
@@ -453,7 +459,8 @@ static func apply_button(
 	]
 	var modern_chip := kind in [
 		"build_filter", "build_filter_selected",
-		"hud_chip", "hud_chip_selected", "hud_chip_warning", "hud_chip_danger"
+		"hud_chip", "hud_chip_selected", "hud_chip_warning", "hud_chip_danger",
+		"hud_soft"
 	]
 	var radius := (
 		16 if floating else (15 if building_card else (13 if modern_chip
@@ -553,17 +560,17 @@ static func apply_button(
 static func handling_action_palette(action: String) -> Dictionary:
 	match action.to_upper():
 		"RECEIVE", "LAND":
-			return {"fill": Color("135f93"), "border": Color("8be4ff")}
+			return {"fill": Color("35769c"), "border": Color("b5e6f5")}
 		"UNLOAD":
-			return {"fill": Color("a05222"), "border": Color("ffd195")}
+			return {"fill": Color("95634a"), "border": Color("ffd6b4")}
 		"LOAD":
-			return {"fill": Color("176b91"), "border": Color("82e5ff")}
+			return {"fill": Color("327f92"), "border": Color("b8eff0")}
 		"SEND":
-			return {"fill": Color("926315"), "border": Color("ffe490")}
+			return {"fill": Color("927246"), "border": Color("ffe3a4")}
 		"HANGAR":
-			return {"fill": Color("276a4f"), "border": Color("b5f5c1")}
+			return {"fill": Color("397d62"), "border": Color("b8f1cf")}
 		_:
-			return {"fill": Color("0e4868"), "border": COLOR_ACCENT}
+			return {"fill": Color("3b687e"), "border": COLOR_ACCENT}
 
 
 static func apply_handling_action_bubble(button: Button, action: String) -> void:
@@ -627,8 +634,8 @@ static func apply_input(input: LineEdit) -> void:
 	input.add_theme_stylebox_override(
 		"normal",
 		panel(
-			Color("0b2029"),
-			Color("375d6b"),
+			Color("254a59"),
+			Color("6b9cab"),
 			10,
 			1,
 			false
@@ -637,7 +644,7 @@ static func apply_input(input: LineEdit) -> void:
 	input.add_theme_stylebox_override(
 		"focus",
 		panel(
-			Color("0e2630"),
+			Color("2e5b69"),
 			COLOR_ACCENT,
 			10,
 			2,
@@ -647,7 +654,7 @@ static func apply_input(input: LineEdit) -> void:
 	input.add_theme_color_override("font_color", COLOR_TEXT)
 	input.add_theme_color_override(
 		"font_placeholder_color",
-		Color("6f8b95")
+		Color("b0ced5")
 	)
 
 

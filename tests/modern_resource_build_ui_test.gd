@@ -24,6 +24,55 @@ func _run() -> void:
 			_fail("Resource pills need consistently soft rounded corners.")
 			return
 
+	# Friendly palette should be visibly warmer/lighter than the old
+	# near-black HUD, but remain dark enough under bright game terrain for
+	# readable white type.
+	var passenger_fill := (
+		hud.hud_passenger_chip.get_theme_stylebox("panel") as StyleBoxFlat
+	).bg_color
+	var fuel_fill := (
+		hud.hud_fuel_chip.get_theme_stylebox("panel") as StyleBoxFlat
+	).bg_color
+	var coin_fill := (
+		hud.hud_coin_chip.get_theme_stylebox("panel") as StyleBoxFlat
+	).bg_color
+	if passenger_fill.get_luminance() < 0.07 or passenger_fill.get_luminance() > 0.25:
+		_fail("Friendly passenger pill should brighten without losing contrast.")
+		return
+	if fuel_fill == passenger_fill or coin_fill == fuel_fill:
+		_fail("Passengers, fuel and coins need distinct recognizable hues.")
+		return
+	if GameUIStyle.COLOR_ACCENT.get_luminance() < 0.55:
+		_fail("HUD accents should use an inviting aqua rather than dark neon-blue.")
+		return
+
+	var drawer_surface := hud.catalog_panel.get_theme_stylebox("panel") as StyleBoxFlat
+	if drawer_surface == null or drawer_surface.bg_color.get_luminance() < 0.055:
+		_fail("Build drawer should no longer be close to black.")
+		return
+	if not (hud.catalog_close_button.get_theme_stylebox("normal") is StyleBoxFlat):
+		_fail("Build close controls should use the softer native style.")
+		return
+	if not (hud.fuel_order_button.get_theme_stylebox("normal") is StyleBoxFlat):
+		_fail("Fuel order should use a native mint button.")
+		return
+
+	hud.set_airside_status({"runways": 0, "stands_total": 0, "hangars_total": 0})
+	if not hud.airside_status_chip.text.contains("BUILD RUNWAY"):
+		_fail("Empty airport status must suggest a runway, not old taxi roads.")
+		return
+	hud.set_airside_status({"runways": 1, "stands_total": 0, "hangars_total": 0})
+	if not hud.airside_status_chip.text.contains("BUILD HANGAR"):
+		_fail("Airside status should guide a missing hangar.")
+		return
+	hud.set_airside_status({"runways": 1, "stands_total": 1, "hangars_total": 1})
+	if not hud.airside_status_chip.text.contains("AIRFIELD READY"):
+		_fail("Basic airfield should show its roadless readiness.")
+		return
+	if hud.status_details["airside"]["body"].contains("taxiway"):
+		_fail("Airside details must not mention retired taxiway connectivity.")
+		return
+
 	hud.set_player_data(12, 1250000, 37500)
 	if hud.coins_label.text != "1.2M" or hud.gems_label.text != "37.5K":
 		_fail("Large resource counts should not overflow their pills.")

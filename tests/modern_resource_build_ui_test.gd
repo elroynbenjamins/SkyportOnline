@@ -78,6 +78,22 @@ func _run() -> void:
 			_fail("Build filters need comfortable landscape touch targets.")
 			return
 
+	var filter := hud.catalog_filter_buttons.get("Infrastructure") as Button
+	if filter == null or not (filter.get_theme_stylebox("normal") is StyleBoxFlat):
+		_fail("Build category filters must not fall back to glossy legacy textures.")
+		return
+	hud._on_catalog_filter_pressed("Infrastructure")
+	if String(filter.get_meta("game_style_key", "")) != "build_filter_selected:compact":
+		_fail("Chosen category should retain an obvious native selection state.")
+		return
+
+	for status_button in [
+		hud.airside_status_chip, hud.operation_status_chip, hud.atc_status_chip
+	]:
+		if not (status_button.get_theme_stylebox("normal") is StyleBoxFlat):
+			_fail("Airport status chips should share native pill controls.")
+			return
+
 	print("MODERN_RESOURCE_BUILD_UI_OK native_pills=true responsive=true build_cards=true")
 	quit(0)
 

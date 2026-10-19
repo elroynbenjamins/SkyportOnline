@@ -92,8 +92,13 @@ func _run() -> void:
 	if not card.title_label.text.contains("LV 1"):
 		_fail("Building card should show upgrade level.")
 		return
-	if card.building_image.texture != null:
-		_fail("Grid-first reset should keep building cards free of legacy building art.")
+	if card.building_image.texture == null:
+		_fail("Building selection must show real art or a friendly grid-first thumbnail.")
+		return
+	if card.building_image.texture != AirportBuildThumbnails.for_definition(
+		BuildingCatalog.get_definition("basic_fuel")
+	):
+		_fail("Building card and catalog must share the same thumbnail resolver.")
 		return
 
 	var fuel_definition := BuildingCatalog.get_definition(
@@ -159,7 +164,7 @@ func _run() -> void:
 		stand,
 		{
 			"role": "Infrastructure",
-			"status": "Connected to taxiway network",
+			"status": "Ready for tap-to-transfer",
 			"tone": "success",
 			"stat_one": "AIRCRAFT\nS",
 			"stat_two": "FOOTPRINT\n2x2",

@@ -91,13 +91,20 @@ func _run() -> void:
 		return
 	if String(
 		hud.fuel_order_button.get_meta("game_style_key", "")
-	) != "danger:full":
+	) != "hud_chip_danger:compact":
 		_fail("Critical fuel should promote the emergency order action.")
 		return
 
 	hud.set_fuel_data(80, 360, 1.45)
 	if not hud.fuel_rate_label.text.begins_with("LOW"):
 		_fail("HUD should label low fuel.")
+		return
+	if String(hud.fuel_order_button.get_meta("game_style_key", "")) != "hud_chip_warning:compact":
+		_fail("Low fuel should keep the native warm-amber order action.")
+		return
+	hud.set_fuel_data(200, 360, 1.45)
+	if String(hud.fuel_order_button.get_meta("game_style_key", "")) != "hud_mint:compact":
+		_fail("Normal fuel should return to the friendly native mint action.")
 		return
 
 	var panel := ServiceUpgradePanel.new()

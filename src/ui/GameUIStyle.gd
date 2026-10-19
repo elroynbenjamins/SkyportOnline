@@ -47,8 +47,8 @@ static func panel(
 	style.content_margin_bottom = 10.0
 
 	if shadow:
-		style.shadow_color = Color(0, 0, 0, 0.34)
-		style.shadow_size = 9
+		style.shadow_color = Color(0, 0, 0, 0.21)
+		style.shadow_size = 6
 		style.shadow_offset = Vector2(0, 4)
 
 	return style
@@ -410,6 +410,12 @@ static func apply_button(
 			hover_bg = Color("8d5c62")
 			pressed_bg = Color("633c49")
 			pressed_border = COLOR_DANGER
+		"hud_mint":
+			normal_bg = Color("3b806d")
+			normal_border = Color("b3e8d4")
+			hover_bg = Color("4a9780")
+			pressed_bg = Color("306c5e")
+			pressed_border = Color("e4fff2")
 		"hud_soft":
 			normal_bg = Color("365c6b")
 			normal_border = Color("96cbd0")
@@ -460,7 +466,7 @@ static func apply_button(
 	var modern_chip := kind in [
 		"build_filter", "build_filter_selected",
 		"hud_chip", "hud_chip_selected", "hud_chip_warning", "hud_chip_danger",
-		"hud_soft"
+		"hud_soft", "hud_mint"
 	]
 	var radius := (
 		16 if floating else (15 if building_card else (13 if modern_chip

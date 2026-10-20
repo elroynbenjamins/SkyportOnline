@@ -49,6 +49,9 @@ func _run() -> void:
 	if card.aircraft_image.texture == null:
 		_fail("Aircraft context card should load pixel aircraft sprite.")
 		return
+	if card.aircraft_detail_image.texture == null or not card.aircraft_detail_image.visible:
+		_fail("Pico selection preview must share its four-direction artwork polish.")
+		return
 	if not card.title_label.text.contains("Pico P8"):
 		_fail("Context card should show aircraft model.")
 		return

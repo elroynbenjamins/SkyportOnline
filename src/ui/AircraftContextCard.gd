@@ -472,6 +472,24 @@ func _route_text(
 
 
 func _service_text(aircraft: AircraftPrototype) -> String:
+	if aircraft.uses_skyrama_handling():
+		match aircraft.state:
+			"SIMPLE_FUELING":
+				return "Fueling on the dedicated fuel parking pad"
+			"SIMPLE_WAITING_LOAD":
+				return "Fuel ready • tap LOAD to continue"
+			"SIMPLE_LOADING":
+				return "Loading cargo at the separate cargo pad"
+			"SIMPLE_WAITING_SEND":
+				return "Cargo ready • tap SEND to take off"
+			"SIMPLE_WAITING_UNLOAD":
+				return "Landed • tap UNLOAD to empty cargo"
+			"SIMPLE_UNLOADING":
+				return "Unloading cargo on the cargo parking pad"
+			"SIMPLE_WAITING_HANGAR":
+				return "Unloaded • tap HANGAR to store the aircraft"
+			"READY_FOR_DESTINATION":
+				return "In hangar • choose a destination to send this plane"
 	if aircraft.is_taxi_holding():
 		return "Taxi hold • %s" % aircraft.get_taxi_hold_reason()
 

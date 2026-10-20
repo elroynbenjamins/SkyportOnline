@@ -195,6 +195,7 @@ jobs:
             tests/aircraft_mastery_test.gd
             tests/aircraft_directional_coverage_test.gd
             tests/pico_world_render_polish_test.gd
+            tests/pico_sprite_v2_test.gd
             tests/fleet_screen_test.gd
             tests/passenger_support_test.gd
             tests/social_airport_test.gd

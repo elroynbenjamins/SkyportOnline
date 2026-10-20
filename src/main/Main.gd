@@ -892,35 +892,26 @@ func _available_skyrama_parking(
 	var capacity := airport_grid.get_simple_service_parking_capacity(
 		service_type, size
 	)
-	if capacity <= 0:
-		return {}
-	var occupied := 0
-	var available: Array[Dictionary] = []
-	for pad in pads:
-		var location: Vector2 = pad.get(
-			"world_position", Vector2.ZERO
-		)
-		var in_use := false
-		for other in aircraft_demos:
-			if (
-				other == null
-				or not is_instance_valid(other)
-				or other == aircraft
-				or not other.visible
-				or not other.uses_skyrama_handling()
-			):
-				continue
-			if other.position.distance_to(location) < 3.0:
-				in_use = true
-				break
-		if in_use:
-			occupied += 1
-		else:
-			available.append(pad)
-	if occupied >= capacity or available.is_empty():
-		return {}
-	return available[0].duplicate(true)
-
+	var occupants: Array[Dictionary] = []
+	for other in aircraft_demos:
+		if (
+			other == null
+			or not is_instance_valid(other)
+			or other == aircraft
+			or not other.visible
+			or not other.uses_skyrama_handling()
+		):
+			continue
+		occupants.append({
+			"world_position": other.position,
+			"state": other.state
+		})
+	return SkyramaParkingRules.select_available_pad(
+		service_type,
+		pads,
+		capacity,
+		occupants
+	)
 
 func _begin_skyrama_departure_prep(
 	aircraft: AircraftPrototype

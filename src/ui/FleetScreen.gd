@@ -606,6 +606,10 @@ func _clear_stat_chips() -> void:
 func _aircraft_texture(aircraft_type_id: String) -> Texture2D:
 	if aircraft_type_id.is_empty():
 		return null
+	if aircraft_type_id == "pico_p8":
+		var refined := PicoSpriteArt.texture_for("ne")
+		if refined != null:
+			return refined
 	var path := (
 		"res://assets/pixel/aircraft/%s/%s_ne.png"
 		% [aircraft_type_id, aircraft_type_id]

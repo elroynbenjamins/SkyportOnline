@@ -11,6 +11,13 @@ func configure_aircraft_type(type_id: String) -> void:
 	direction_textures.clear()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
 	for direction in ["ne", "se", "sw", "nw"]:
+		# Pico v2 is the new four-angle approved candidate. Keep the
+		# original directional PNG as fallback if the atlas can't load.
+		if type_id == "pico_p8":
+			var refined := PicoSpriteArt.texture_for(direction)
+			if refined != null:
+				direction_textures[direction] = refined
+				continue
 		var path := "res://assets/pixel/aircraft/%s/%s_%s.png" % [type_id, type_id, direction]
 		if ResourceLoader.exists(path):
 			direction_textures[direction] = load(path)

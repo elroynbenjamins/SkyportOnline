@@ -8,7 +8,7 @@ var last_heading := INF
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
 	direction_textures.clear()
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	for direction in ["ne", "se", "sw", "nw"]:
 		var path := "res://assets/pixel/aircraft/%s/%s_%s.png" % [type_id, type_id, direction]
 		if ResourceLoader.exists(path):
@@ -74,7 +74,7 @@ func _draw() -> void:
 		and not visible
 	):
 		return
-	_draw_shadow()
+	_draw_directional_shadow()
 	_draw_motion_feedback()
 	# Directional artwork is already isometric: cancel node rotation instead of rotating the image twice.
 	draw_set_transform(
@@ -139,6 +139,48 @@ func _draw() -> void:
 		)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+# The four rendered aircraft sprites already carry isometric orientation.
+# Keep their underlying apron shadow aligned with that same silhouette.
+# Soft outer shadow gives lift-off depth, inner shadow anchors parked planes.
+func _draw_directional_shadow() -> void:
+	if state == "EN_ROUTE":
+		return
+	var airborne := _airborne_shadow_factor()
+	var width := get_directional_draw_width()
+	var offset := Vector2(5, width * 0.12).lerp(
+		Vector2(14, width * 0.30),
+		airborne
+	)
+	var alpha := lerpf(0.17, 0.065, airborne)
+	# A low oval on the apron reads as a ground shadow. A tall wing
+	# silhouette previously projected well above the small Pico plane.
+	# Keep this inside the sprite's silhouette on all four headings.
+	draw_set_transform(offset, -global_rotation, Vector2.ONE)
+	var soft := PackedVector2Array()
+	for i in range(28):
+		var angle := TAU * float(i) / 28.0
+		soft.append(Vector2(
+			cos(angle) * width * 0.37,
+			sin(angle) * width * 0.13
+		))
+	draw_colored_polygon(
+		soft,
+		Color(0.08, 0.21, 0.24, alpha * 0.52)
+	)
+	var contact := PackedVector2Array()
+	for i in range(20):
+		var angle := TAU * float(i) / 20.0
+		contact.append(Vector2(
+			cos(angle) * width * 0.20,
+			sin(angle) * width * 0.08
+		))
+	draw_colored_polygon(
+		contact,
+		Color(0.07, 0.18, 0.21, alpha)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
 func _pico_engine_running() -> bool:
 	if aircraft_type_id != "pico_p8":
 		return false
@@ -198,14 +240,16 @@ func _pico_propeller_center(
 	direction: String,
 	width: float
 ) -> Vector2:
-	var normalized := Vector2(0.25, -0.18)
+	# Anchors follow the visible propeller hubs in the four original
+	# 256px Pico sprites. Positions are normalized to the actual drawn width.
+	var normalized := Vector2(0.19, -0.15)
 	match direction:
 		"se":
-			normalized = Vector2(0.27, 0.14)
+			normalized = Vector2(0.30, 0.12)
 		"sw":
-			normalized = Vector2(-0.27, 0.14)
+			normalized = Vector2(-0.31, 0.17)
 		"nw":
-			normalized = Vector2(-0.25, -0.18)
+			normalized = Vector2(-0.19, -0.15)
 	return normalized * width
 
 
@@ -214,21 +258,74 @@ func _pico_navigation_points(
 	width: float
 ) -> Dictionary:
 	var red := Vector2(-0.44, -0.23)
-	var green := Vector2(0.45, 0.06)
+	var green := Vector2(0.43, -0.05)
 	match direction:
 		"se":
-			red = Vector2(0.43, -0.18)
-			green = Vector2(-0.45, 0.06)
+			red = Vector2(0.43, -0.055)
+			green = Vector2(-0.39, 0.23)
 		"sw":
-			red = Vector2(0.43, 0.15)
-			green = Vector2(-0.45, -0.12)
+			red = Vector2(0.39, 0.28)
+			green = Vector2(-0.44, -0.03)
 		"nw":
-			red = Vector2(-0.43, 0.04)
-			green = Vector2(0.44, -0.16)
+			red = Vector2(-0.44, -0.02)
+			green = Vector2(0.42, -0.23)
 	return {
 		"red": red * width,
 		"green": green * width
 	}
+
+
+
+func _draw_pico_propeller_blur(
+	center: Vector2,
+	radius: float,
+	throttle: float,
+	clock: float,
+	direction: String
+) -> void:
+	var major := Vector2(-0.62, -0.78)
+	match direction:
+		"se":
+			major = Vector2(0.62, -0.78)
+		"sw":
+			major = Vector2(-0.62, 0.78)
+		"nw":
+			major = Vector2(0.62, 0.78)
+	major = major.normalized()
+	var minor := Vector2(-major.y, major.x)
+	var ellipse := PackedVector2Array()
+	for i in range(25):
+		var angle := TAU * float(i) / 24.0
+		ellipse.append(center
+			+ major * cos(angle) * radius
+			+ minor * sin(angle) * radius * 0.62
+		)
+	var fill := PackedVector2Array()
+	for i in range(24):
+		fill.append(ellipse[i])
+	draw_colored_polygon(
+		fill,
+		Color(0.82, 0.94, 0.99, 0.07 + throttle * 0.07)
+	)
+	draw_polyline(
+		ellipse,
+		Color(0.94, 0.98, 1.0, 0.13 + throttle * 0.10),
+		1.0,
+		true
+	)
+	var angle := clock * lerpf(8.0, 24.0, throttle)
+	for offset in [0.0, PI * 0.5]:
+		var blade := (
+			major * cos(angle + offset)
+			+ minor * sin(angle + offset) * 0.62
+		) * radius
+		draw_line(
+			center - blade,
+			center + blade,
+			Color(1.0, 0.95, 0.80, 0.24 + throttle * 0.13),
+			1.0,
+			true
+		)
 
 
 func _draw_pico_operating_fx(
@@ -248,52 +345,11 @@ func _draw_pico_operating_fx(
 		0.080 + throttle * 0.025
 	)
 
-	# A soft disc plus rotating spokes makes the baked propeller read as live
-	# without requiring another four-frame aircraft sprite set.
-	draw_circle(
-		prop_center,
-		prop_radius,
-		Color(
-			0.84,
-			0.91,
-			0.94,
-			0.07 + throttle * 0.08
-		)
+	# An oval blur follows the viewing angle of the actual propeller.
+	# Avoid a round white disc obscuring the crisp artwork underneath.
+	_draw_pico_propeller_blur(
+		prop_center, prop_radius, throttle, clock, direction
 	)
-	draw_arc(
-		prop_center,
-		prop_radius,
-		0.0,
-		TAU,
-		22,
-		Color(
-			0.96,
-			0.98,
-			0.98,
-			0.16 + throttle * 0.13
-		),
-		1.2
-	)
-	var spin_angle := clock * lerpf(
-		8.0,
-		24.0,
-		throttle
-	)
-	for offset in [0.0, PI * 0.5]:
-		var direction_vector := Vector2.RIGHT.rotated(
-			spin_angle + float(offset)
-		)
-		draw_line(
-			prop_center - direction_vector * prop_radius,
-			prop_center + direction_vector * prop_radius,
-			Color(
-				0.98,
-				0.94,
-				0.72,
-				0.22 + throttle * 0.18
-			),
-			1.25
-		)
 
 	var navigation := _pico_navigation_points(
 		direction,

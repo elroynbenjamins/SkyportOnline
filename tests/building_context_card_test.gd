@@ -89,8 +89,11 @@ func _run() -> void:
 	if not card.title_label.text.contains("Basic Fuel Station"):
 		_fail("Building card should show selected building name.")
 		return
-	if not card.title_label.text.contains("LV 1"):
-		_fail("Building card should show upgrade level.")
+	if not card.role_label.text.contains("LV 1"):
+		_fail("Building card should show upgrade level alongside its role.")
+		return
+	if not card.title_label.text.contains("Basic Fuel Station"):
+		_fail("Building title should remain readable without a clipped level suffix.")
 		return
 	if card.building_image.texture == null:
 		_fail("Building selection must show real art or a friendly grid-first thumbnail.")

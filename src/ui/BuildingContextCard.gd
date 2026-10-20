@@ -7,6 +7,7 @@ signal details_requested(building: Dictionary)
 
 var root: Control
 var panel: PanelContainer
+var content_scroll: ScrollContainer
 var building_image: TextureRect
 var title_label: Label
 var role_label: Label
@@ -26,6 +27,8 @@ func _ready() -> void:
 	layer = 23
 	_build_ui()
 	root.visible = false
+	get_viewport().size_changed.connect(_update_card_layout)
+	_update_card_layout()
 
 
 func show_building(
@@ -61,6 +64,14 @@ func get_selected_building_uid() -> int:
 	return int(selected_building.get("uid", -1))
 
 
+func _update_card_layout(viewport_override: Vector2i = Vector2i.ZERO) -> void:
+	var size := (
+		viewport_override if viewport_override != Vector2i.ZERO
+		else Vector2i(get_viewport().get_visible_rect().size)
+	)
+	AirportContextLayout.apply(panel, size, 426.0, 310.0)
+
+
 func _build_ui() -> void:
 	root = Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -69,20 +80,24 @@ func _build_ui() -> void:
 
 	panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	panel.offset_left = 14
-	panel.offset_top = -326
-	panel.offset_right = 440
-	panel.offset_bottom = -84
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel)
 	GameUIStyle.apply_panel(panel, "context")
 
+	content_scroll = ScrollContainer.new()
+	content_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	panel.add_child(content_scroll)
+
 	var margin := MarginContainer.new()
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_theme_constant_override("margin_left", 14)
 	margin.add_theme_constant_override("margin_right", 14)
 	margin.add_theme_constant_override("margin_top", 12)
 	margin.add_theme_constant_override("margin_bottom", 12)
-	panel.add_child(margin)
+	content_scroll.add_child(margin)
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 8)
@@ -109,6 +124,8 @@ func _build_ui() -> void:
 	header.add_child(header_text)
 
 	title_label = Label.new()
+	title_label.clip_text = true
+	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	GameUIStyle.heading(title_label, 18)
 	header_text.add_child(title_label)
 
@@ -126,7 +143,8 @@ func _build_ui() -> void:
 
 	var close_button := Button.new()
 	close_button.text = "✕"
-	close_button.custom_minimum_size = Vector2(42, 42)
+	close_button.custom_minimum_size = Vector2(44, 44)
+	close_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	GameUIStyle.apply_button(close_button, "hud_soft", true)
 	close_button.pressed.connect(close_card)
 	header.add_child(close_button)
@@ -184,16 +202,17 @@ func _refresh() -> void:
 		return
 
 	var level := int(selected_building.get("upgrade_level", 1))
-	title_label.text = "%s  •  LV %d" % [
-		String(definition.get("name", "Airport Building")),
+	title_label.text = String(definition.get("name", "Airport Building"))
+	title_label.tooltip_text = "%s • LV %d" % [title_label.text, level]
+	role_label.text = "◆ %s  •  LV %d" % [
+		String(
+			current_summary.get(
+				"role",
+				definition.get("category", "Airport")
+			)
+		).to_upper(),
 		level
 	]
-	role_label.text = "◆ " + String(
-		current_summary.get(
-			"role",
-			definition.get("category", "Airport")
-		)
-	).to_upper()
 
 	status_label.text = String(
 		current_summary.get("status", "Operational")

@@ -43,6 +43,42 @@ func _run() -> void:
 		_fail("Procedural icons should remain sharp at 42–108px preview sizes.")
 		return
 
+	# Different facilities deserve different fallback illustrations even
+	# when they share a category or have no production artwork yet.
+	var fallback_ids := [
+		"short_runway", "regional_runway", "fuel_parking_s",
+		"cargo_parking_s", "small_hangar", "medium_hangar",
+		"basic_fuel", "rapid_small_fuel", "ground_ops_depot",
+		"cleaning_center", "shuttle_station", "atc_tower",
+		"autumn_event_flag", "winter_event_flag"
+	]
+	var references: Dictionary = {}
+	for id in fallback_ids:
+		var definition := BuildingCatalog.get_definition(id)
+		if definition.is_empty():
+			_fail("Building inventory no longer defines " + id)
+			return
+		var art := AirportBuildThumbnails._illustration(definition)
+		if art == null:
+			_fail("Failed to draw distinctive fallback for " + id)
+			return
+		if references.has(art):
+			_fail("Two separate buildings share the same fallback instance.")
+			return
+		references[art] = true
+		if art != AirportBuildThumbnails._illustration(definition):
+			_fail("Fallback art should be cached per building identity.")
+			return
+	if AirportBuildThumbnails._kind("fuel_parking_s", "Infrastructure") != "parking":
+		_fail("Fuel parking is a pad, not a fuel station icon.")
+		return
+	if AirportBuildThumbnails._kind("cargo_parking_s", "Infrastructure") != "parking":
+		_fail("Cargo parking is a pad, not a cargo warehouse.")
+		return
+	if AirportBuildThumbnails._detail_for_id("small_hangar") == AirportBuildThumbnails._detail_for_id("medium_hangar"):
+		_fail("Small and medium hangars should have different silhouette badges.")
+		return
+
 	var hud = preload("res://src/ui/HUD.gd").new()
 	root.add_child(hud)
 	await process_frame

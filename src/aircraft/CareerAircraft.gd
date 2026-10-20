@@ -4,6 +4,7 @@ extends AircraftPrototype
 var direction_textures: Dictionary = {}
 var last_direction := ""
 var last_heading := INF
+var selection_highlight_active := false
 
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
@@ -14,6 +15,13 @@ func configure_aircraft_type(type_id: String) -> void:
 		if ResourceLoader.exists(path):
 			direction_textures[direction] = load(path)
 	queue_redraw()
+
+func set_selection_highlight(active: bool) -> void:
+	if selection_highlight_active == active:
+		return
+	selection_highlight_active = active
+	queue_redraw()
+
 
 func get_directional_draw_width() -> float:
 	var base_width := 78.0
@@ -75,6 +83,8 @@ func _draw() -> void:
 	):
 		return
 	_draw_directional_shadow(texture)
+	if selection_highlight_active:
+		_draw_selection_halo()
 	_draw_motion_feedback()
 	# Directional artwork is already isometric: cancel node rotation instead of rotating the image twice.
 	draw_set_transform(
@@ -188,6 +198,28 @@ func _draw_directional_shadow(texture: Texture2D) -> void:
 		Rect2(-flat_size * 0.5, flat_size),
 		false,
 		Color(0.08, 0.17, 0.20, opacity)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+# A narrow ground-level ring confirms which airplane was tapped. It follows
+# the airplane selection card, rather than displaying on every aircraft and
+# cluttering the Skyrama service parking areas.
+func _draw_selection_halo() -> void:
+	var width := get_directional_draw_width()
+	var pulse := 0.76 + 0.10 * sin(get_visual_clock() * 3.1)
+	draw_set_transform(
+		Vector2(0.0, 6.0).rotated(-global_rotation),
+		-global_rotation,
+		Vector2(1.0, 0.55)
+	)
+	draw_arc(
+		Vector2.ZERO, width * 0.56, 0.0, TAU, 42,
+		Color(0.06, 0.23, 0.27, 0.23 * pulse), 6.0
+	)
+	draw_arc(
+		Vector2.ZERO, width * 0.56, 0.0, TAU, 42,
+		Color(0.64, 0.96, 0.81, 0.90 * pulse), 2.1
 	)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 

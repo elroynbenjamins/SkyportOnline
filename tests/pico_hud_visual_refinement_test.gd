@@ -54,6 +54,28 @@ func _run() -> void:
 		_fail("The parked Pico should keep the engine turned off.")
 		return
 
+	# Transparent production detail layers should exactly match the
+	# existing approved Pico directional art; overlays never affect hitboxes.
+	for direction in ["ne", "se", "sw", "nw"]:
+		var base: Texture2D = plane.direction_textures.get(direction)
+		var detail: Texture2D = plane.pico_detail_textures.get(direction)
+		if base == null or detail == null:
+			_fail("Pico must have base art and a refinement layer for " + direction)
+			return
+		if Vector2i(base.get_width(), base.get_height()) != Vector2i(
+			detail.get_width(), detail.get_height()
+		):
+			_fail("Pico directional artwork and detail layers must match exactly: " + direction)
+			return
+	var untouched := CareerAircraft.new()
+	root.add_child(untouched)
+	await process_frame
+	untouched.configure_aircraft_type("swift_s14")
+	if not untouched.pico_detail_textures.is_empty():
+		_fail("Pico cockpit/wing refinements must not alter other aircraft types.")
+		return
+	untouched.queue_free()
+
 	var hud := preload("res://src/ui/HUD.gd").new()
 	root.add_child(hud)
 	await process_frame
@@ -62,7 +84,7 @@ func _run() -> void:
 			_fail("Friendly HUD icons must remain rasterizable: " + icon_key)
 			return
 
-	print("PICO_HUD_VISUAL_REFINEMENT_OK headings=4 nearest=true hud_icons=true")
+	print("PICO_HUD_VISUAL_REFINEMENT_OK headings=4 nearest=true detail_textures=4 hud_icons=true")
 	quit(0)
 
 

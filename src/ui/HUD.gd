@@ -581,14 +581,14 @@ func _build_interface() -> void:
 
 	handling_attention_button = Button.new()
 	handling_attention_button.text = "NEXT • NONE"
-	handling_attention_button.custom_minimum_size = Vector2(160, 34)
+	handling_attention_button.custom_minimum_size = Vector2(156, 44)
 	handling_attention_button.visible = false
 	handling_attention_button.pressed.connect(
 		_on_handling_attention_pressed
 	)
 	GameUIStyle.apply_button(
 		handling_attention_button,
-		"gold",
+		"hud_mint",
 		true
 	)
 	status_strip.add_child(handling_attention_button)
@@ -806,15 +806,26 @@ func set_handling_attention(
 	var suffix := ""
 	if pending_count > 1:
 		suffix = " +%d" % (pending_count - 1)
-	handling_attention_button.text = "%s • %s%s" % [
-		normalized_action,
-		aircraft_label,
-		suffix
-	]
-	handling_attention_button.tooltip_text = (
-		"Focus the next aircraft waiting for %s."
-		% normalized_action.capitalize()
+	var narrow := hud_compact_layout
+	handling_attention_button.custom_minimum_size = (
+		Vector2(106, 44) if narrow else Vector2(156, 44)
 	)
+	handling_attention_button.text = (
+		"%s%s" % [normalized_action, suffix]
+		if narrow else "%s • %s%s" % [
+			normalized_action, aircraft_label, suffix
+		]
+	)
+	handling_attention_button.tooltip_text = (
+		"%s is waiting for %s. Tap to focus this aircraft."
+		% [aircraft_label, normalized_action.capitalize()]
+	)
+	var kind := "hud_mint"
+	if normalized_action == "SEND":
+		kind = "gold"
+	elif normalized_action in ["UNLOAD", "LAND", "RECEIVE"]:
+		kind = "hud_soft"
+	GameUIStyle.apply_button(handling_attention_button, kind, true)
 	handling_attention_button.visible = true
 
 func _on_handling_attention_pressed() -> void:
@@ -2531,6 +2542,15 @@ func set_operation_status(
 	if bottom_status_label != null:
 		bottom_status_label.text = text.left(115)
 		bottom_status_label.tooltip_text = text
+		var status_color := GameUIStyle.COLOR_TEXT
+		match tone:
+			"success":
+				status_color = GameUIStyle.COLOR_SUCCESS
+			"warning":
+				status_color = GameUIStyle.COLOR_WARNING
+			"danger":
+				status_color = GameUIStyle.COLOR_DANGER
+		bottom_status_label.add_theme_color_override("font_color", status_color)
 	_refresh_operations_status()
 	if changed and tone in ["success", "warning", "danger"]:
 		_show_operation_toast(text, tone)

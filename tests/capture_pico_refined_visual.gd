@@ -70,6 +70,7 @@ func _run() -> void:
 	plane.start_simple_fueling(
 		pads[0].get("world_position", Vector2.ZERO), 24.0
 	)
+	plane.rotation = -PI * 0.25
 	plane.set_selection_highlight(true)
 	var camera := Camera2D.new()
 	camera.enabled = true
@@ -92,6 +93,9 @@ func _run() -> void:
 		return
 
 	plane.set_selection_highlight(false)
+	plane.clear_turnaround_status()
+	plane.clear_handling_action()
+	plane.simple_stage_remaining = 0.0
 	var runway := grid.get_simple_runway_animation_route("S")
 	if runway.is_empty():
 		push_error("Pico QA needs the placed small runway.")

@@ -146,6 +146,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Capture Pico four-direction visual comparison
+        run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_pico_four_directions.gd
+
+      - name: Upload Pico four-direction artwork review
+        uses: actions/upload-artifact@v4
+        with:
+          name: pico-four-direction-polish
+          path: artifacts/pico_four_direction_polish.png
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Validate grid and gameplay systems
         shell: bash
         run: |

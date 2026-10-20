@@ -297,7 +297,7 @@ func _update_card_layout(viewport_override: Vector2i = Vector2i.ZERO) -> void:
 		viewport_override if viewport_override != Vector2i.ZERO
 		else Vector2i(get_viewport().get_visible_rect().size)
 	)
-	AirportContextLayout.apply(panel, size, 416.0, 305.0)
+	AirportContextLayout.apply(panel, size, 416.0, 340.0)
 
 
 func _build_ui() -> void:
@@ -371,7 +371,8 @@ func _build_ui() -> void:
 
 	var close_button := Button.new()
 	close_button.text = "✕"
-	close_button.custom_minimum_size = Vector2(42, 42)
+	close_button.custom_minimum_size = Vector2(44, 44)
+	close_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	GameUIStyle.apply_button(
 		close_button,
 		"hud_soft",

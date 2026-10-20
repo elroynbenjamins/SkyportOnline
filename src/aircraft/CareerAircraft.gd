@@ -1,18 +1,28 @@
 class_name CareerAircraft
 extends AircraftPrototype
 
+const PICO_DETAIL_ROOT := "res://assets/production/pico_sprite_detail_v1/"
+
 var direction_textures: Dictionary = {}
+var pico_detail_textures: Dictionary = {}
 var last_direction := ""
 var last_heading := INF
 
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
 	direction_textures.clear()
+	pico_detail_textures.clear()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	for direction in ["ne", "se", "sw", "nw"]:
 		var path := "res://assets/pixel/aircraft/%s/%s_%s.png" % [type_id, type_id, direction]
 		if ResourceLoader.exists(path):
 			direction_textures[direction] = load(path)
+		if type_id == "pico_p8":
+			var detail_path := "%spico_p8_%s_detail.svg" % [PICO_DETAIL_ROOT, direction]
+			if ResourceLoader.exists(detail_path):
+				var detail := load(detail_path)
+				if detail is Texture2D:
+					pico_detail_textures[direction] = detail
 	queue_redraw()
 
 func get_directional_draw_width() -> float:
@@ -94,6 +104,12 @@ func _draw() -> void:
 	draw_texture_rect(texture, Rect2(-size * 0.5, size), false, tint)
 	var draw_direction := direction_for(global_rotation)
 	if aircraft_type_id == "pico_p8":
+		# Exact-dimension transparent overlays enrich the baked cockpit,
+		# wing and wheel pixels without replacing the approved base sprites.
+		# Detail artwork is non-interactive and follows the same four angles.
+		var detail: Texture2D = pico_detail_textures.get(draw_direction)
+		if detail != null:
+			draw_texture_rect(detail, Rect2(-size * 0.5, size), false, tint)
 		_draw_pico_operating_fx(
 			width,
 			draw_direction

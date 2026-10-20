@@ -84,7 +84,54 @@ func _run() -> void:
 	if fuel_pads.size() != 1 or cargo_pads.size() != 1:
 		_fail("Exactly one of each independent parking pad should be found.")
 		return
-	print("SEPARATE_HANDLING_PARKING_OK fuel=3x2 cargo=3x2 pads=2 roadless=true capacity=1")
+	# Processing capacity is not the same as occupancy. A completed
+	# aircraft still blocks its slab, but it releases the depot's worker.
+	var two_bays: Array[Dictionary] = [
+		{"uid": 1, "world_position": Vector2(10, 10)},
+		{"uid": 2, "world_position": Vector2(40, 10)}
+	]
+	var parked: Array[Dictionary] = [{
+		"world_position": Vector2(10, 10),
+		"state": "SIMPLE_WAITING_LOAD"
+	}]
+	var next_fuel := SkyramaParkingRules.select_available_pad(
+		"fuel", two_bays, 1, parked
+	)
+	if int(next_fuel.get("uid", -1)) != 2:
+		_fail("Completed fueling should free processing capacity, not its occupied bay.")
+		return
+	parked[0]["state"] = "SIMPLE_FUELING"
+	if not SkyramaParkingRules.select_available_pad(
+		"fuel", two_bays, 1, parked
+	).is_empty():
+		_fail("Active fueling must block another job at capacity one.")
+		return
+
+	parked[0]["state"] = "SIMPLE_WAITING_SEND"
+	if int(SkyramaParkingRules.select_available_pad(
+		"cargo", two_bays, 1, parked
+	).get("uid", -1)) != 2:
+		_fail("Finished cargo loading should release its processing slot.")
+		return
+	parked[0]["state"] = "SIMPLE_UNLOADING"
+	if not SkyramaParkingRules.select_available_pad(
+		"cargo", two_bays, 1, parked
+	).is_empty():
+		_fail("Active unloading must count against cargo processing capacity.")
+		return
+
+	parked[0]["state"] = "SIMPLE_WAITING_LOAD"
+	parked.append({
+		"world_position": Vector2(40, 10),
+		"state": "SIMPLE_WAITING_LOAD"
+	})
+	if not SkyramaParkingRules.select_available_pad(
+		"fuel", two_bays, 2, parked
+	).is_empty():
+		_fail("Two occupied bays cannot place a third plane, even with free workers.")
+		return
+
+	print("SEPARATE_HANDLING_PARKING_OK fuel=3x2 cargo=3x2 pads=2 roadless=true capacity=1 capacity_separated=true")
 	quit(0)
 
 

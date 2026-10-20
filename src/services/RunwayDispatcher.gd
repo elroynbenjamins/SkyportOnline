@@ -108,6 +108,23 @@ func _process(delta: float) -> void:
 	_sync_runway_analytics(runway_uids)
 	for runway_uid in runway_uids:
 		_tick_runway_analytics(runway_uid, delta)
+		# Freed aircraft must not leave an invisible permanent runway lock.
+		if active_by_runway.has(runway_uid):
+			var active: Dictionary = active_by_runway[runway_uid]
+			var active_aircraft := _valid_aircraft(active.get("aircraft"))
+			if active_aircraft == null:
+				active_by_runway.erase(runway_uid)
+				_emit_queue_status()
+		if queues_by_runway.has(runway_uid):
+			var queue: Array = queues_by_runway[runway_uid]
+			var previous_count := queue.size()
+			_remove_invalid_requests(queue)
+			if queue.is_empty():
+				queues_by_runway.erase(runway_uid)
+			else:
+				queues_by_runway[runway_uid] = queue
+			if queue.size() != previous_count:
+				_emit_queue_status()
 		if active_by_runway.has(runway_uid):
 			continue
 		if last_operation_by_runway.has(runway_uid):
@@ -245,7 +262,9 @@ func _request_operation(
 
 	# A second tap (or a repeated signal) must not reserve another runway
 	# slot for an aircraft that is already cleared or waiting for clearance.
-	if _has_pending_operation(aircraft):
+	if _reconcile_queued_aircraft_request(
+		aircraft, runway_uid, operation
+	):
 		return
 
 	var request := {
@@ -333,18 +352,39 @@ func _request_operation(
 	_emit_atc_state()
 
 
-func _has_pending_operation(aircraft: AircraftPrototype) -> bool:
+# A request is idempotent. If the same aircraft has been reassigned
+# before it gets clearance, drop its previous queued request first.
+func _reconcile_queued_aircraft_request(
+	aircraft: AircraftPrototype,
+	runway_uid: int,
+	operation: String
+) -> bool:
 	for active_variant in active_by_runway.values():
 		var active: Dictionary = active_variant
 		if active.get("aircraft") == aircraft:
 			return true
-	for queue_variant in queues_by_runway.values():
-		var queue: Array = queue_variant
-		for queued_variant in queue:
-			var queued: Dictionary = queued_variant
-			if queued.get("aircraft") == aircraft:
-				return true
-	return false
+
+	var already_queued := false
+	for key_variant in queues_by_runway.keys():
+		var queued_runway_uid := int(key_variant)
+		var queue: Array = queues_by_runway[queued_runway_uid]
+		for index in range(queue.size() - 1, -1, -1):
+			var request: Dictionary = queue[index]
+			if request.get("aircraft") != aircraft:
+				continue
+			if (
+				queued_runway_uid == runway_uid
+				and String(request.get("operation", "")) == operation
+				and not already_queued
+			):
+				already_queued = true
+				continue
+			queue.remove_at(index)
+		if queue.is_empty():
+			queues_by_runway.erase(queued_runway_uid)
+		else:
+			queues_by_runway[queued_runway_uid] = queue
+	return already_queued
 
 
 func _enqueue_request(
@@ -821,9 +861,9 @@ func get_runway_slot_snapshot(
 	var active: Dictionary = active_by_runway[
 		runway_uid
 	]
-	var aircraft := active.get(
+	var aircraft := _valid_aircraft(active.get(
 		"aircraft"
-	) as AircraftPrototype
+	))
 	var operation := String(
 		active.get(
 			"operation",
@@ -964,9 +1004,9 @@ func _grant_clearance(
 	request: Dictionary,
 	runway_uid: int
 ) -> void:
-	var aircraft := request.get(
+	var aircraft := _valid_aircraft(request.get(
 		"aircraft"
-	) as AircraftPrototype
+	))
 	if aircraft == null or not is_instance_valid(aircraft):
 		return
 
@@ -984,7 +1024,8 @@ func _grant_clearance(
 	aircraft.runway_cleared.connect(
 		_on_aircraft_cleared_runway.bind(
 			runway_uid,
-			label
+			label,
+			aircraft.get_instance_id()
 		),
 		Object.CONNECT_ONE_SHOT
 	)
@@ -1007,8 +1048,16 @@ func _grant_clearance(
 
 func _on_aircraft_cleared_runway(
 	runway_uid: int,
-	_label: String
+	_label: String,
+	aircraft_id: int
 ) -> void:
+	if not active_by_runway.has(runway_uid):
+		return
+	var current: Dictionary = active_by_runway[runway_uid]
+	var current_aircraft := _valid_aircraft(current.get("aircraft"))
+	# Completion from a previous runway occupant must not release this one.
+	if current_aircraft == null or current_aircraft.get_instance_id() != aircraft_id:
+		return
 	if active_by_runway.has(runway_uid):
 		var completed: Dictionary = active_by_runway[runway_uid]
 		var completed_operation := String(
@@ -1133,6 +1182,14 @@ func _separation_remaining_for_operation(
 	return maxf(required - elapsed, 0.0)
 
 
+# Casting an already-freed Godot object throws. Validate the raw Variant
+# before converting it to an aircraft in any dispatcher cleanup path.
+func _valid_aircraft(candidate: Variant) -> AircraftPrototype:
+	if not is_instance_valid(candidate):
+		return null
+	return candidate as AircraftPrototype
+
+
 func _remove_invalid_requests(
 	queue: Array
 ) -> void:
@@ -1142,11 +1199,19 @@ func _remove_invalid_requests(
 		-1
 	):
 		var request: Dictionary = queue[index]
-		var aircraft := request.get(
+		var aircraft := _valid_aircraft(request.get(
 			"aircraft"
-		) as AircraftPrototype
+		))
 		if aircraft == null or not is_instance_valid(aircraft):
 			queue.remove_at(index)
+			continue
+		if aircraft.uses_skyrama_handling():
+			var operation := String(request.get("operation", ""))
+			if (
+				(operation == "departure" and aircraft.state != "SIMPLE_WAITING_SEND")
+				or (operation == "arrival" and aircraft.state != "HOLDING_FOR_ARRIVAL")
+			):
+				queue.remove_at(index)
 
 
 func _sync_runway_analytics(
@@ -1248,9 +1313,9 @@ func _cleanup_planned_departures() -> void:
 	for key_variant in planned_departures.keys():
 		var key := int(key_variant)
 		var planned: Dictionary = planned_departures[key]
-		var aircraft := planned.get(
+		var aircraft := _valid_aircraft(planned.get(
 			"aircraft"
-		) as AircraftPrototype
+		))
 		if aircraft == null or not is_instance_valid(aircraft):
 			planned_departures.erase(key)
 
@@ -1259,9 +1324,9 @@ func _cleanup_pending_departures() -> void:
 	for key_variant in departure_taxi_pending.keys():
 		var key := int(key_variant)
 		var request: Dictionary = departure_taxi_pending[key]
-		var aircraft := request.get(
+		var aircraft := _valid_aircraft(request.get(
 			"aircraft"
-		) as AircraftPrototype
+		))
 		if aircraft == null or not is_instance_valid(aircraft):
 			departure_taxi_pending.erase(key)
 

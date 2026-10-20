@@ -67,7 +67,12 @@ func show_aircraft(
 	if aircraft == null or not is_instance_valid(aircraft):
 		return
 
+	# Clear the old world highlight when switching between aircraft.
+	if selected_aircraft is CareerAircraft and is_instance_valid(selected_aircraft):
+		(selected_aircraft as CareerAircraft).set_selection_highlight(false)
 	selected_aircraft = aircraft
+	if selected_aircraft is CareerAircraft:
+		(selected_aircraft as CareerAircraft).set_selection_highlight(true)
 	mastery_hours_by_type = mastery_hours.duplicate(true)
 	passenger_stock = maxi(current_passengers, 0)
 	passenger_capacity = maxi(current_capacity, 0)
@@ -76,6 +81,8 @@ func show_aircraft(
 
 
 func close_card() -> void:
+	if selected_aircraft is CareerAircraft and is_instance_valid(selected_aircraft):
+		(selected_aircraft as CareerAircraft).set_selection_highlight(false)
 	if root != null:
 		root.visible = false
 	selected_aircraft = null

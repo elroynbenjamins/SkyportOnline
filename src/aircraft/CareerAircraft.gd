@@ -4,16 +4,24 @@ extends AircraftPrototype
 var direction_textures: Dictionary = {}
 var last_direction := ""
 var last_heading := INF
+var selection_highlight_active := false
 
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
 	direction_textures.clear()
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
 	for direction in ["ne", "se", "sw", "nw"]:
 		var path := "res://assets/pixel/aircraft/%s/%s_%s.png" % [type_id, type_id, direction]
 		if ResourceLoader.exists(path):
 			direction_textures[direction] = load(path)
 	queue_redraw()
+
+func set_selection_highlight(active: bool) -> void:
+	if selection_highlight_active == active:
+		return
+	selection_highlight_active = active
+	queue_redraw()
+
 
 func get_directional_draw_width() -> float:
 	var base_width := 78.0
@@ -74,7 +82,9 @@ func _draw() -> void:
 		and not visible
 	):
 		return
-	_draw_shadow()
+	_draw_directional_shadow(texture)
+	if selection_highlight_active:
+		_draw_selection_halo()
 	_draw_motion_feedback()
 	# Directional artwork is already isometric: cancel node rotation instead of rotating the image twice.
 	draw_set_transform(
@@ -138,6 +148,81 @@ func _draw() -> void:
 			status_color
 		)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+# Draw the alpha mask of the actual NE/SE/SW/NW sprite as a shadow. It
+# matches the wing/fuselage silhouette instead of using a generic airplane
+# polygon that can point the wrong way when the heading changes.
+func get_directional_shadow_snapshot() -> Dictionary:
+	var altitude := _airborne_shadow_factor()
+	var width := get_directional_draw_width()
+	return {
+		"direction": direction_for(global_rotation),
+		"width": width,
+		"flatten": lerpf(0.69, 0.49, altitude),
+		"opacity": lerpf(0.27, 0.075, altitude),
+		"offset": Vector2(
+			lerpf(6.0, 16.0, altitude),
+			lerpf(9.0, 24.0, altitude)
+		) * get_visual_scale()
+	}
+
+
+func _draw_directional_shadow(texture: Texture2D) -> void:
+	if texture == null:
+		return
+	var snapshot := get_directional_shadow_snapshot()
+	var width := float(snapshot.get("width", 78.0))
+	var flatten := float(snapshot.get("flatten", 0.69))
+	var opacity := float(snapshot.get("opacity", 0.27))
+	var local_offset: Vector2 = snapshot.get("offset", Vector2(6.0, 9.0))
+	# Offset in world-screen coordinates while the airplane node rotates for
+	# runway motion. Avoid rotating the directional sprite a second time.
+	var flat_size := Vector2(
+		width,
+		width * float(texture.get_height())
+		/ maxf(float(texture.get_width()), 1.0) * flatten
+	)
+	draw_set_transform(
+		local_offset.rotated(-global_rotation),
+		-global_rotation,
+		Vector2.ONE
+	)
+	draw_texture_rect(
+		texture,
+		Rect2(-flat_size * 0.5 + Vector2(1.5, 2.0), flat_size * 1.04),
+		false,
+		Color(0.11, 0.24, 0.26, opacity * 0.35)
+	)
+	draw_texture_rect(
+		texture,
+		Rect2(-flat_size * 0.5, flat_size),
+		false,
+		Color(0.08, 0.17, 0.20, opacity)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+# A narrow ground-level ring confirms which airplane was tapped. It follows
+# the airplane selection card, rather than displaying on every aircraft and
+# cluttering the Skyrama service parking areas.
+func _draw_selection_halo() -> void:
+	var width := get_directional_draw_width()
+	var pulse := 0.76 + 0.10 * sin(get_visual_clock() * 3.1)
+	draw_set_transform(
+		Vector2(0.0, 6.0).rotated(-global_rotation),
+		-global_rotation,
+		Vector2(1.0, 0.55)
+	)
+	draw_arc(
+		Vector2.ZERO, width * 0.56, 0.0, TAU, 42,
+		Color(0.06, 0.23, 0.27, 0.23 * pulse), 6.0
+	)
+	draw_arc(
+		Vector2.ZERO, width * 0.56, 0.0, TAU, 42,
+		Color(0.64, 0.96, 0.81, 0.90 * pulse), 2.1
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
 
 func _pico_engine_running() -> bool:
 	if aircraft_type_id != "pico_p8":

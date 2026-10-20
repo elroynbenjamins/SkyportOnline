@@ -207,6 +207,7 @@ jobs:
             tests/airport_background_layer_test.gd
             tests/production_ui_skin_test.gd
             tests/aircraft_context_card_test.gd
+            tests/pico_hud_visual_refinement_test.gd
             tests/building_context_card_test.gd
             tests/land_expansion_progression_test.gd
             tests/airport_expansion_district_test.gd

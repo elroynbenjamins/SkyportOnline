@@ -2,6 +2,9 @@ extends SceneTree
 
 const WORLD_OUTPUT := "res://artifacts/skyrama_hud_world.png"
 const BUILD_OUTPUT := "res://artifacts/skyrama_hud_build.png"
+const BUILDING_CARD_OUTPUT := "res://artifacts/skyrama_building_card.png"
+const AIRCRAFT_CARD_OUTPUT := "res://artifacts/skyrama_aircraft_card.png"
+const COMPACT_CARD_OUTPUT := "res://artifacts/skyrama_compact_card.png"
 
 
 func _init() -> void:
@@ -64,7 +67,55 @@ func _run() -> void:
 		quit(1)
 		return
 
-	print("SKYRAMA_HUD_SCREENSHOTS_OK world=%s build=%s" % [
-		WORLD_OUTPUT, BUILD_OUTPUT
+	hud._on_catalog_close_pressed()
+
+	var building_card := BuildingContextCard.new()
+	root.add_child(building_card)
+	await process_frame
+	building_card.show_building(
+		{"uid": 10, "definition_id": "basic_fuel", "upgrade_level": 1},
+		{
+			"role": "Fuel service",
+			"status": "Ready • no planes queued",
+			"tone": "success",
+			"stat_one": "SERVICE SPEED\\nx1.00",
+			"stat_two": "PLANES\\n1",
+			"description": "Fuel planes using their separate parking pads.",
+			"primary_label": "UPGRADE",
+			"primary_kind": "hud_mint",
+			"show_move": true,
+			"show_details": true
+		}
+	)
+	if not await _capture(BUILDING_CARD_OUTPUT):
+		quit(1)
+		return
+	building_card.close_card()
+
+	var aircraft := AircraftPrototype.new()
+	aircraft.name = "SO-001"
+	world.add_child(aircraft)
+	await process_frame
+	aircraft.configure_aircraft_type("pico_p8")
+	aircraft.configure_skyrama_handling(true)
+	aircraft.start_simple_fueling(Vector2(95, 190), 75.0)
+	var aircraft_card := AircraftContextCard.new()
+	root.add_child(aircraft_card)
+	await process_frame
+	aircraft_card.show_aircraft(aircraft, {}, 60, 120)
+	if not await _capture(AIRCRAFT_CARD_OUTPUT):
+		quit(1)
+		return
+
+	root.size = Vector2i(820, 360)
+	await process_frame
+	aircraft_card._update_card_layout(Vector2i(820, 360))
+	if not await _capture(COMPACT_CARD_OUTPUT):
+		quit(1)
+		return
+
+	print("SKYRAMA_HUD_SCREENSHOTS_OK world=%s build=%s building=%s aircraft=%s compact=%s" % [
+		WORLD_OUTPUT, BUILD_OUTPUT, BUILDING_CARD_OUTPUT,
+		AIRCRAFT_CARD_OUTPUT, COMPACT_CARD_OUTPUT
 	])
 	quit(0)

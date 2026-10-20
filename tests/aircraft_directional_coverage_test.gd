@@ -66,7 +66,14 @@ func _run() -> void:
 				% aircraft_id
 			)
 			return
-		if String(fleet_texture.resource_path) != expected_ne:
+		if aircraft_id == "pico_p8":
+			if not (fleet_texture is AtlasTexture):
+				_fail("Pico Fleet preview should use the new four-view atlas.")
+				return
+			if fleet_texture != plane.direction_textures["ne"]:
+				_fail("Pico Fleet and world must share the same refined NE sprite.")
+				return
+		elif String(fleet_texture.resource_path) != expected_ne:
 			_fail(
 				"Fleet and world should share the same %s NE art."
 				% aircraft_id

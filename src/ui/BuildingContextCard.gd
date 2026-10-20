@@ -69,7 +69,7 @@ func _update_card_layout(viewport_override: Vector2i = Vector2i.ZERO) -> void:
 		viewport_override if viewport_override != Vector2i.ZERO
 		else Vector2i(get_viewport().get_visible_rect().size)
 	)
-	AirportContextLayout.apply(panel, size, 426.0, 330.0)
+	AirportContextLayout.apply(panel, size, 426.0, 310.0)
 
 
 func _build_ui() -> void:
@@ -202,17 +202,17 @@ func _refresh() -> void:
 		return
 
 	var level := int(selected_building.get("upgrade_level", 1))
-	title_label.text = "%s  •  LV %d" % [
-		String(definition.get("name", "Airport Building")),
+	title_label.text = String(definition.get("name", "Airport Building"))
+	title_label.tooltip_text = "%s • LV %d" % [title_label.text, level]
+	role_label.text = "◆ %s  •  LV %d" % [
+		String(
+			current_summary.get(
+				"role",
+				definition.get("category", "Airport")
+			)
+		).to_upper(),
 		level
 	]
-	title_label.tooltip_text = title_label.text
-	role_label.text = "◆ " + String(
-		current_summary.get(
-			"role",
-			definition.get("category", "Airport")
-		)
-	).to_upper()
 
 	status_label.text = String(
 		current_summary.get("status", "Operational")

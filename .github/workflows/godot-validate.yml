@@ -173,6 +173,7 @@ jobs:
             tests/flight_rules_test.gd
             tests/skyrama_simple_handling_test.gd
             tests/skyrama_runway_slot_test.gd
+            tests/runway_queue_safety_test.gd
             tests/skyrama_service_visual_test.gd
             tests/skyrama_handling_visual_test.gd
             tests/handling_art_v4_test.gd

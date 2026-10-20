@@ -243,6 +243,11 @@ func _request_operation(
 		)
 		return
 
+	# A second tap (or a repeated signal) must not reserve another runway
+	# slot for an aircraft that is already cleared or waiting for clearance.
+	if _has_pending_operation(aircraft):
+		return
+
 	var request := {
 		"aircraft": aircraft,
 		"label": label,
@@ -257,6 +262,7 @@ func _request_operation(
 
 	if (
 		not active_by_runway.has(runway_uid)
+		and not queues_by_runway.has(runway_uid)
 		and _separation_remaining_for_operation(
 			runway_uid,
 			operation
@@ -272,6 +278,16 @@ func _request_operation(
 		runway_uid,
 		request
 	)
+
+	# An idle runway may already have aircraft queued during a separation
+	# delay. Give that queue first refusal instead of letting a new request
+	# jump directly onto the runway when the delay expires.
+	if not active_by_runway.has(runway_uid):
+		_grant_next(runway_uid)
+		if active_by_runway.has(runway_uid):
+			var granted: Dictionary = active_by_runway[runway_uid]
+			if granted.get("aircraft") == aircraft:
+				return
 
 	var spacing := _separation_remaining_for_operation(
 		runway_uid,
@@ -315,6 +331,20 @@ func _request_operation(
 	_emit_runway_visual_state(runway_uid)
 	_emit_queue_status()
 	_emit_atc_state()
+
+
+func _has_pending_operation(aircraft: AircraftPrototype) -> bool:
+	for active_variant in active_by_runway.values():
+		var active: Dictionary = active_variant
+		if active.get("aircraft") == aircraft:
+			return true
+	for queue_variant in queues_by_runway.values():
+		var queue: Array = queue_variant
+		for queued_variant in queue:
+			var queued: Dictionary = queued_variant
+			if queued.get("aircraft") == aircraft:
+				return true
+	return false
 
 
 func _enqueue_request(

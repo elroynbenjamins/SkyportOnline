@@ -124,6 +124,8 @@ func _build_ui() -> void:
 	header.add_child(header_text)
 
 	title_label = Label.new()
+	title_label.clip_text = true
+	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	GameUIStyle.heading(title_label, 18)
 	header_text.add_child(title_label)
 
@@ -204,6 +206,7 @@ func _refresh() -> void:
 		String(definition.get("name", "Airport Building")),
 		level
 	]
+	title_label.tooltip_text = title_label.text
 	role_label.text = "◆ " + String(
 		current_summary.get(
 			"role",

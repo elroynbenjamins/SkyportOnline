@@ -138,6 +138,7 @@ func refresh_card() -> void:
 		String(aircraft.name),
 		aircraft.aircraft_display_name
 	]
+	title_label.tooltip_text = title_label.text
 	aircraft_image.texture = _aircraft_texture(
 		aircraft.aircraft_type_id
 	)
@@ -354,6 +355,8 @@ func _build_ui() -> void:
 	header.add_child(header_text)
 
 	title_label = Label.new()
+	title_label.clip_text = true
+	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	GameUIStyle.heading(title_label, 18)
 	header_text.add_child(title_label)
 

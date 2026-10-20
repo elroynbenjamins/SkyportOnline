@@ -1474,11 +1474,16 @@ func _hud_icon(key: String) -> Texture2D:
 	# Applied before SVG rasterization and cached once per icon key.
 	for original in ["#0b4f70", "#075a78", "#4a3517", "#3a3020", "#2e2045"]:
 		svg_text = svg_text.replace(original, "#367489")
-	for original in ["#36d1f6", "#4bd7f6", "#4bd7f6"]:
+	for original in ["#36d1f6", "#4bd7f6"]:
 		svg_text = svg_text.replace(original, "#a4e7df")
 	svg_text = svg_text.replace("#f5b33b", "#ffd184")
 	svg_text = svg_text.replace("#efb44a", "#efc981")
 	svg_text = svg_text.replace("#78df77", "#99e3b4")
+	# Bring the still-legacy icon accent colors in line with the warm HUD.
+	svg_text = svg_text.replace("#f3c663", "#ffe1a6")
+	svg_text = svg_text.replace("#f5c55d", "#ffdea0")
+	svg_text = svg_text.replace("#c49af5", "#d9c1f1")
+	svg_text = svg_text.replace("#7b4c18", "#986b40")
 	var image := Image.new()
 	if image.load_svg_from_string(svg_text, 2.0) != OK:
 		return null

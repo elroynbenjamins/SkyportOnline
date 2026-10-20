@@ -13,6 +13,7 @@ var root: Control
 var panel: PanelContainer
 var content_scroll: ScrollContainer
 var aircraft_image: TextureRect
+var aircraft_detail_image: TextureRect
 var title_label: Label
 var state_label: Label
 var route_label: Label
@@ -142,6 +143,16 @@ func refresh_card() -> void:
 	aircraft_image.texture = _aircraft_texture(
 		aircraft.aircraft_type_id
 	)
+	# Match the same subtle cockpit, wing and landing-gear layer that the
+	# world Pico uses. Keep previews and world sprites visually consistent.
+	var detail_path := (
+		"res://assets/production/pico_sprite_detail_v1/pico_p8_ne_detail.svg"
+	)
+	aircraft_detail_image.texture = (
+		ProductionUIAssets.texture(detail_path)
+		if aircraft.aircraft_type_id == "pico_p8" else null
+	)
+	aircraft_detail_image.visible = aircraft_detail_image.texture != null
 
 	var readable_state := aircraft.state.replace(
 		"_",
@@ -349,6 +360,14 @@ func _build_ui() -> void:
 	aircraft_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	aircraft_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	preview.add_child(aircraft_image)
+
+	aircraft_detail_image = TextureRect.new()
+	aircraft_detail_image.custom_minimum_size = Vector2(108, 78)
+	aircraft_detail_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	aircraft_detail_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	aircraft_detail_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	aircraft_detail_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview.add_child(aircraft_detail_image)
 
 	var header_text := VBoxContainer.new()
 	header_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL

@@ -1469,6 +1469,16 @@ func _hud_icon(key: String) -> Texture2D:
 	var svg_text := String(HUD_ICON_SVG.get(key, ""))
 	if svg_text.is_empty():
 		return null
+	# Keep the original icon silhouettes, but harmonize old neon/navy
+	# fills with the friendlier sea-glass, sky and sand-gold HUD palette.
+	# Applied before SVG rasterization and cached once per icon key.
+	for original in ["#0b4f70", "#075a78", "#4a3517", "#3a3020", "#2e2045"]:
+		svg_text = svg_text.replace(original, "#367489")
+	for original in ["#36d1f6", "#4bd7f6", "#4bd7f6"]:
+		svg_text = svg_text.replace(original, "#a4e7df")
+	svg_text = svg_text.replace("#f5b33b", "#ffd184")
+	svg_text = svg_text.replace("#efb44a", "#efc981")
+	svg_text = svg_text.replace("#78df77", "#99e3b4")
 	var image := Image.new()
 	if image.load_svg_from_string(svg_text, 2.0) != OK:
 		return null
@@ -1679,49 +1689,9 @@ func _apply_catalog_filter() -> void:
 
 
 func _catalog_icon_for(definition: Dictionary) -> Texture2D:
-	# Use the approved production atlas where possible. This draws a thumbnail
-	# inside the BUILD UI only; world/grid rendering stays untouched.
-	var atlas_path := String(definition.get("world_sprite_atlas_path", ""))
-	var regions: Array = definition.get("world_sprite_regions", [])
-	if not atlas_path.is_empty() and not regions.is_empty():
-		var atlas_texture := ProductionUIAssets.texture(atlas_path)
-		if atlas_texture != null and regions[0] is Rect2:
-			var icon := AtlasTexture.new()
-			icon.atlas = atlas_texture
-			icon.region = regions[0]
-			icon.filter_clip = true
-			return icon
-
-	var icon_path := String(definition.get("icon_path", ""))
-	if not icon_path.is_empty():
-		var thumbnail := ProductionUIAssets.texture(icon_path)
-		if thumbnail != null:
-			return thumbnail
-
-	# Some grid-native service structures do not yet have a dedicated icon.
-	for key in ["grid_first_structure_paths", "world_sprite_paths", "grid_native_surface_paths"]:
-		var paths: PackedStringArray = definition.get(key, PackedStringArray())
-		if not paths.is_empty():
-			var fallback := ProductionUIAssets.texture(paths[0])
-			if fallback != null:
-				return fallback
-
-	# Some older catalog definitions point at artwork that has not yet been
-	# committed to this repository. Never ship blank construction cards.
-	# Use the matching glossy game icon until the grid-native art exists.
-	var id := String(definition.get("id", ""))
-	var category := String(definition.get("category", ""))
-	if id.contains("fuel"):
-		return _hud_icon("fuel")
-	if id.contains("hangar") or id.contains("storage") or id.contains("depot"):
-		return _hud_icon("storage")
-	if id.contains("runway") or id.contains("stand") or id.contains("parking"):
-		return _hud_icon("airfield")
-	if category == "Passenger":
-		return _hud_icon("passengers")
-	if category == "Infrastructure":
-		return _hud_icon("airfield")
-	return _hud_icon("build")
+	# World-art-first shared resolver also used by the building detail card.
+	# Keeps all catalog entries recognizable even before Codex provides art.
+	return AirportBuildThumbnails.for_definition(definition)
 
 
 func _find_building_grid() -> GridContainer:

@@ -8,7 +8,7 @@ var last_heading := INF
 func configure_aircraft_type(type_id: String) -> void:
 	super.configure_aircraft_type(type_id)
 	direction_textures.clear()
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	for direction in ["ne", "se", "sw", "nw"]:
 		var path := "res://assets/pixel/aircraft/%s/%s_%s.png" % [type_id, type_id, direction]
 		if ResourceLoader.exists(path):
@@ -74,7 +74,7 @@ func _draw() -> void:
 		and not visible
 	):
 		return
-	_draw_shadow()
+	_draw_directional_shadow()
 	_draw_motion_feedback()
 	# Directional artwork is already isometric: cancel node rotation instead of rotating the image twice.
 	draw_set_transform(
@@ -138,6 +138,41 @@ func _draw() -> void:
 			status_color
 		)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+# The four rendered aircraft sprites already carry isometric orientation.
+# Keep their underlying apron shadow aligned with that same silhouette.
+# Soft outer shadow gives lift-off depth, inner shadow anchors parked planes.
+func _draw_directional_shadow() -> void:
+	var airborne := _airborne_shadow_factor()
+	var width := get_directional_draw_width()
+	var offset := Vector2(3, 6).lerp(Vector2(15, 22), airborne)
+	var alpha := lerpf(0.26, 0.09, airborne)
+	var wing_span := width * 0.43
+	var body_len := width * 0.39
+	draw_set_transform(offset, -global_rotation, Vector2.ONE)
+	var wing := PackedVector2Array([
+		Vector2(0, -wing_span),
+		Vector2(width * 0.10, -wing_span * 0.15),
+		Vector2(body_len, 0),
+		Vector2(width * 0.10, wing_span * 0.15),
+		Vector2(0, wing_span),
+		Vector2(-width * 0.14, wing_span * 0.16),
+		Vector2(-body_len, 0),
+		Vector2(-width * 0.14, -wing_span * 0.16)
+	])
+	draw_colored_polygon(wing, Color(0.10, 0.22, 0.26, alpha * 0.55))
+	draw_ellipse_shadow(width, alpha)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func draw_ellipse_shadow(width: float, alpha: float) -> void:
+	# Cheap contact shadow with no texture dependency.
+	draw_circle(
+		Vector2(-width * 0.025, width * 0.065),
+		width * 0.22,
+		Color(0.05, 0.18, 0.22, alpha * 0.42)
+	)
+
 
 func _pico_engine_running() -> bool:
 	if aircraft_type_id != "pico_p8":

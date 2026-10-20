@@ -143,35 +143,42 @@ func _draw() -> void:
 # Keep their underlying apron shadow aligned with that same silhouette.
 # Soft outer shadow gives lift-off depth, inner shadow anchors parked planes.
 func _draw_directional_shadow() -> void:
+	if state == "EN_ROUTE":
+		return
 	var airborne := _airborne_shadow_factor()
 	var width := get_directional_draw_width()
-	var offset := Vector2(3, 6).lerp(Vector2(15, 22), airborne)
-	var alpha := lerpf(0.26, 0.09, airborne)
-	var wing_span := width * 0.43
-	var body_len := width * 0.39
-	draw_set_transform(offset, -global_rotation, Vector2.ONE)
-	var wing := PackedVector2Array([
-		Vector2(0, -wing_span),
-		Vector2(width * 0.10, -wing_span * 0.15),
-		Vector2(body_len, 0),
-		Vector2(width * 0.10, wing_span * 0.15),
-		Vector2(0, wing_span),
-		Vector2(-width * 0.14, wing_span * 0.16),
-		Vector2(-body_len, 0),
-		Vector2(-width * 0.14, -wing_span * 0.16)
-	])
-	draw_colored_polygon(wing, Color(0.10, 0.22, 0.26, alpha * 0.55))
-	draw_ellipse_shadow(width, alpha)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-func draw_ellipse_shadow(width: float, alpha: float) -> void:
-	# Cheap contact shadow with no texture dependency.
-	draw_circle(
-		Vector2(-width * 0.025, width * 0.065),
-		width * 0.22,
-		Color(0.05, 0.18, 0.22, alpha * 0.42)
+	var offset := Vector2(5, width * 0.12).lerp(
+		Vector2(14, width * 0.30),
+		airborne
 	)
+	var alpha := lerpf(0.17, 0.065, airborne)
+	# A low oval on the apron reads as a ground shadow. A tall wing
+	# silhouette previously projected well above the small Pico plane.
+	# Keep this inside the sprite's silhouette on all four headings.
+	draw_set_transform(offset, -global_rotation, Vector2.ONE)
+	var soft := PackedVector2Array()
+	for i in range(28):
+		var angle := TAU * float(i) / 28.0
+		soft.append(Vector2(
+			cos(angle) * width * 0.37,
+			sin(angle) * width * 0.13
+		))
+	draw_colored_polygon(
+		soft,
+		Color(0.08, 0.21, 0.24, alpha * 0.52)
+	)
+	var contact := PackedVector2Array()
+	for i in range(20):
+		var angle := TAU * float(i) / 20.0
+		contact.append(Vector2(
+			cos(angle) * width * 0.20,
+			sin(angle) * width * 0.08
+		))
+	draw_colored_polygon(
+		contact,
+		Color(0.07, 0.18, 0.21, alpha)
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _pico_engine_running() -> bool:
@@ -254,11 +261,11 @@ func _pico_navigation_points(
 	var green := Vector2(0.43, -0.05)
 	match direction:
 		"se":
-			red = Vector2(0.43, -0.18)
-			green = Vector2(-0.39, 0.11)
+			red = Vector2(0.43, -0.055)
+			green = Vector2(-0.39, 0.065)
 		"sw":
-			red = Vector2(0.44, 0.17)
-			green = Vector2(-0.42, -0.03)
+			red = Vector2(0.44, 0.295)
+			green = Vector2(-0.42, 0.15)
 		"nw":
 			red = Vector2(-0.44, -0.02)
 			green = Vector2(0.42, -0.23)

@@ -262,10 +262,10 @@ func _pico_navigation_points(
 	match direction:
 		"se":
 			red = Vector2(0.43, -0.055)
-			green = Vector2(-0.39, 0.065)
+			green = Vector2(-0.39, 0.23)
 		"sw":
-			red = Vector2(0.44, 0.295)
-			green = Vector2(-0.42, 0.15)
+			red = Vector2(0.39, 0.28)
+			green = Vector2(-0.44, -0.03)
 		"nw":
 			red = Vector2(-0.44, -0.02)
 			green = Vector2(0.42, -0.23)

@@ -30,7 +30,7 @@ func _run() -> void:
 
 	plane.set_arrival_route(PackedVector2Array([
 		Vector2(0, 0), Vector2(100, 100)
-	]))
+	]), -1, -1)
 	plane.begin_arrival_after_clearance()
 	var approach := plane.get_directional_shadow_snapshot()
 	if float(approach.get("opacity", 1.0)) >= float(ground.get("opacity", 0.0)):

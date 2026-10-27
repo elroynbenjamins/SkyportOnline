@@ -44,6 +44,21 @@ func _run() -> void:
 		_fail("Starter office still falls back to a primitive rectangle.")
 		return
 
+	# A new raster hangar has to be the actual sprite drawn by the catalog.
+	var small := BuildingCatalog.get_definition("small_hangar")
+	var views: PackedStringArray = small.get("grid_first_structure_paths", PackedStringArray())
+	if views.size() != 2:
+		_fail("Raster hangar rotations missing.")
+		return
+	for view in views:
+		var source: Texture2D = load(view)
+		if source == null or source.get_size() != Vector2(224, 260):
+			_fail("Raster hangar import or exact-grid dimensions invalid: %s" % view)
+			return
+		if not view.ends_with(".png"):
+			_fail("Hangar pilot must load independently authored raster PNG artwork.")
+			return
+
 	var pilot := AirportPixelTerrain.new()
 	root.add_child(pilot)
 	await process_frame

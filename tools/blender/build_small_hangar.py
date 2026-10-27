@@ -37,8 +37,8 @@ for material in list(bpy.data.materials):
 scene = bpy.context.scene
 scene.render.engine = "CYCLES"
 scene.cycles.device = "CPU"
-scene.cycles.samples = 24
-scene.cycles.use_denoising = True
+scene.cycles.samples = 48
+scene.cycles.use_denoising = False  # Ubuntu's Blender build lacks OpenImageDenoiser
 scene.render.resolution_x = WIDTH
 scene.render.resolution_y = HEIGHT
 scene.render.resolution_percentage = 100

@@ -50,6 +50,9 @@ func _run() -> void:
 	if not bool(pilot.get_visual_snapshot().get("grass_texture", false)):
 		_fail("Pixel terrain texture wasn't initialized.")
 		return
+	if int(pilot.get_visual_snapshot().get("authored_tree_variants", 0)) != 4:
+		_fail("All four authored forest variants must import.")
+		return
 
 	var grid := AirportGrid.new()
 	root.add_child(grid)

@@ -24,6 +24,7 @@ func _run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	world.add_child(AirportBackdrop.new())
+	world.add_child(AirportPixelTerrain.new())
 	var grid := AirportGrid.new()
 	world.add_child(grid)
 	await process_frame

@@ -6,7 +6,7 @@ extends Node2D
 # The authored background remains underneath this layer.
 const GROUND_AREA := Rect2(-2200, -130, 4400, 2330)
 const MEADOW_PATH := "res://assets/production/environment_pixel_v2/grass_meadow_512_repeat.svg"
-const FOLIAGE_ROOT := "res://assets/production/environment_pixel_v2/"
+const FOLIAGE_ROOT := "res://assets/production/environment_illustrated_v1/"
 const PALETTE_GRASS_LIT := Color("b7ca6b")
 const PALETTE_GRASS_DARK := Color("3f713a")
 const PALETTE_TRUNK := Color("715a40")
@@ -19,7 +19,7 @@ var foliage_textures: Dictionary = {}
 func _ready() -> void:
 	z_index = -190
 	z_as_relative = false
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	if ResourceLoader.exists(MEADOW_PATH):
 		var meadow = load(MEADOW_PATH)
@@ -28,7 +28,7 @@ func _ready() -> void:
 	if detail_texture == null:
 		detail_texture = _build_grass_detail_texture()
 	for foliage_type in ["pine", "oak", "amber", "birch"]:
-		var path := "%s%s_tree_128x152.svg" % [FOLIAGE_ROOT, foliage_type]
+		var path := "%s%s_tree_hd.svg" % [FOLIAGE_ROOT, foliage_type]
 		if ResourceLoader.exists(path):
 			var loaded = load(path)
 			if loaded is Texture2D:
@@ -42,6 +42,7 @@ func get_visual_snapshot() -> Dictionary:
 		"grass_texture": detail_texture != null,
 		"meadow_texture_path": MEADOW_PATH,
 		"authored_tree_variants": foliage_textures.size(),
+		"environment_style": "high_density_illustrated",
 		"static_pixel_clusters": true,
 		"independent_from_grid": true,
 		"ground_area": GROUND_AREA,

@@ -44,6 +44,28 @@ func _run() -> void:
 		_fail("Starter office still falls back to a primitive rectangle.")
 		return
 
+	# Illustrated hangars must be 224x260 smooth vector assets rather than
+	# the previous 2x-enlarged 112x130 chunky raster prototype.
+	var hangar := BuildingCatalog.get_definition("small_hangar")
+	var variants: PackedStringArray = hangar.get(
+		"grid_first_structure_paths",
+		PackedStringArray()
+	)
+	if variants.size() != 2:
+		_fail("Illustrated hangar rotations missing.")
+		return
+	for source_path in variants:
+		var hangar_texture = load(source_path)
+		if not (hangar_texture is Texture2D):
+			_fail("Illustrated hangar isn't a valid Godot texture: %s" % source_path)
+			return
+		if hangar_texture.get_size() != Vector2(224, 260):
+			_fail("Illustrated hangar changed the existing placement dimensions.")
+			return
+		if not source_path.contains("airport_buildings_illustrated_v3"):
+			_fail("Old blocky sprite still selected.")
+			return
+
 	var pilot := AirportPixelTerrain.new()
 	root.add_child(pilot)
 	await process_frame

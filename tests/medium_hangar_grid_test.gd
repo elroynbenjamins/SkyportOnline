@@ -4,8 +4,8 @@ extends SceneTree
 # 5x4 occupancy, distinct 4x5 rotation, concrete pads, imported textures,
 # and a genuinely larger visual footprint than the 4x3 Small Hangar.
 const ART_PATHS := [
-	"res://assets/production/airport_buildings_v8/medium_hangar_5x4.svg",
-	"res://assets/production/airport_buildings_v8/medium_hangar_4x5.svg"
+	"res://assets/production/airport_buildings_illustrated_v3/medium_hangar_5x4.svg",
+	"res://assets/production/airport_buildings_illustrated_v3/medium_hangar_4x5.svg"
 ]
 const PAD_PATHS := [
 	"res://assets/production/airfield_v8/service/medium_hangar_pad_5x4.svg",

@@ -139,7 +139,7 @@ func _draw_edge_scenery() -> void:
 	# putting roots on starting buildable tiles.
 	for index in range(92):
 		var side := -1.0 if index % 2 == 0 else 1.0
-		var slot := index / 2
+		var slot := int(index / 2)
 		var y := -38.0 + float(posmod(slot * 59 + 23, 582))
 		var range_to_edge := maxf(
 			0.0,

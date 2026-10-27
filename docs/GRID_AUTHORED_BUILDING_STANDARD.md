@@ -1,5 +1,7 @@
 # SkyportOnline — Grid-authored building art standard (v6)
 
+> **Geometry/placement contract only (legacy v6 examples).** The current **artistic quality target** is `docs/CASSETTE_QUALITY_PIXEL_AIRPORT_STANDARD.md`. Current gameplay footprints are defined by `src/build/BuildingCatalog.gd`, including small hangar 4×3, medium hangar 5×4, runway 6×2 and 3×2 service parking. Older 3×2 hangar examples below explain the coordinate math, **not** the current building catalog. SVG is not the default final art format for newly produced pixel-world assets.
+
 **Canonical example:** `small_hangar`, `assets/production/airport_buildings_v6/small_hangar_{3x2,2x3}.svg`.
 
 The visual grid must determine the building geometry **before** art is produced. Do not resize, skew, crop or freehand-place a finished illustration onto the footprint.
@@ -36,7 +38,7 @@ Canvas height above the base is artistic flexibility. **Canvas width must equal 
 4. Every rotatable structure needs authored 0°/90° art paths. Runtime mirroring/rotating is a fallback only after visually verifying the projection; v6 hangar uses two distinct file paths.
 5. `grid_first_structure_width_scale = 1.0`. Do not independently scale artwork to compensate for the wrong asset base width.
 6. Do not use `grid_first_structure_clip_base_to_footprint` for grid-authored art. Contact shadows must stay beneath the walls and inside the pad. Disable extra renderer shadows if a fitted shadow is already in the sprite.
-7. Favor polished, colorful, toy-like airport artwork with consistent light direction and readable shapes at gameplay zoom. The v6 hangar solves **geometry first**, not the entire later art-polish pass.
+7. Favor polished, colorful, original **authored pixel art** and consistent light direction at gameplay zoom. The old v6 geometry examples remain useful but are not an acceptable pixel-art quality baseline. See the canonical style standard.
 
 ## Acceptance requirements
 
@@ -51,4 +53,4 @@ Canvas height above the base is artistic flexibility. **Canvas width must equal 
 
 Calculate footprint polygon -> select visible front/side walls -> build walls from actual polygon corners -> draw roof above -> export 2 variants as needed -> wire 1:1 into catalog -> view in the real airport at 1.75–1.9× zoom. **Never start by resizing a free-form generated building.**
 
-Once the 3×2 hangar is approved visually, use the same math and QA process for the 2×2 fuel station and 1×1 cargo depot.
+Apply the same math and QA process to all current live footprints from `BuildingCatalog.gd`. Preserve fuel and cargo **parking pads as separate 3×2 assets**; their service buildings are not themselves the parked aircraft stands.

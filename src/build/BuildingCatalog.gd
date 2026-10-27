@@ -525,12 +525,12 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg",
-				"res://assets/production/airport_buildings_pixel_v1/small_hangar_3x4.svg"
+				"res://assets/production/airport_buildings_pixel_v2/small_hangar_4x3.png",
+				"res://assets/production/airport_buildings_pixel_v2/small_hangar_3x4.png"
 			]),
 			"grid_first_structure_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg",
-				"res://assets/production/airport_buildings_pixel_v1/small_hangar_3x4.svg"
+				"res://assets/production/airport_buildings_pixel_v2/small_hangar_4x3.png",
+				"res://assets/production/airport_buildings_pixel_v2/small_hangar_3x4.png"
 			]),
 			"grid_first_structure_width_scale": 1.0,
 			"grid_first_structure_flip_odd_rotations": false,

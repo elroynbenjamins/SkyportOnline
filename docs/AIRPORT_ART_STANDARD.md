@@ -1,35 +1,38 @@
 # Canonical Airport Art Standard
 
+> **Updated 2026-10-27 — primary visual quality reference is now [Cassette Beasts-quality pixel airport art](CASSETTE_QUALITY_PIXEL_AIRPORT_STANDARD.md).** Skyrama remains an interaction/airport-layout reference. This file records supporting rules and legacy asset guidance; the new style target supersedes older SVG/glossy-vector recommendations.
+
 ## Minimum quality reference
 
-The canonical minimum visual-quality reference for airport buildings is:
+**Artistic standard:** an original, lively, high-detail pixel-art airport diorama with the world depth, environment integration and polish associated with Cassette Beasts. New production world art should be carefully authored raster pixel art or a separately validated 2.5D/voxel solution, not smooth SVG building illustrations.
+
+The historical project comparison atlas is:
 
 `assets/production/airport_buildings_v2/skyport_buildings_atlas.webp`
 
-All newly generated, regenerated, or replaced airport-building artwork must match or exceed this atlas visually.
-
-A later asset version number (for example `v3` or `v4`) does **not** automatically make an asset acceptable. If a newer asset is visually simpler, flatter, less detailed, less cohesive, or less polished than the v2 atlas, it should be rejected or regenerated before implementation.
+It remains useful for building identities and relative silhouettes **but is not the visual-quality ceiling or the required final style**. New assets must be judged in assembled Godot screenshots under the new reference standard, not accepted merely for matching the old atlas or having a newer version suffix.
 
 ## Required visual language
 
-Airport buildings should use a polished 2D isometric game-art style with:
+Airport buildings should use an independently designed, richly detailed isometric **pixel-art / miniature-diorama** style with:
 
 - strong, readable isometric silhouettes
 - high-detail architecture appropriate to the building's function
 - blue/white Skyport identity with restrained yellow/orange safety accents where appropriate
+- deliberate pixel clusters and shared original palette; no smooth gradients disguised as pixel art
 - layered material treatment for glass, concrete, metal, roof panels, doors, tanks, service areas, landscaping, and ground markings
 - consistent upper-left lighting direction
 - soft, grounded ambient/contact shadows
 - believable rooftop and service detail such as HVAC, antennas, lamps, bollards, signs, vents, railings, cones, equipment, and utility props
 - integrated landscaping and apron/forecourt detail where appropriate
 - clean transparent-background production assets with no visible generation artifacts
-- crisp readability at normal gameplay zoom while retaining detail when zoomed in
+- crisp nearest-filtered world-sprite readability at normal gameplay zoom while retaining deliberately authored detail when zoomed in
 
 ## Orientation and implementation
 
 For movable/rotatable buildings, provide the two gameplay-required isometric orientations. Full 360-degree rotation is not required.
 
-Artwork resolution and gameplay footprint remain separate. The art may overhang its logical footprint, but its visible base must align correctly with the isometric tile footprint and preserve reliable depth sorting and interaction.
+Artwork resolution and gameplay footprint remain separate. Respect the exact projected 2:1 ground footprint and its contact polygon, depth sorting and reliable interaction. Sideways overhangs at ground level must not break cell boundaries. Taller roof silhouettes may rise above the base within the world-art contract.
 
 The exact production asset used in the world should also be reused where practical in build cards, building context cards, and management/upgrade panels.
 
@@ -48,9 +51,9 @@ Procedural drawing remains appropriate for dynamic effects such as selection out
 
 ## Quality gate
 
-Before an airport-building asset is wired into gameplay, compare it against `skyport_buildings_atlas.webp`.
+Before an airport-building asset is wired into gameplay, compare it with the **Cassette Beasts-quality visual direction** in `docs/CASSETTE_QUALITY_PIXEL_AIRPORT_STANDARD.md` and actual game screenshots. The old v2 atlas is historical context only.
 
-The asset is acceptable only when it is visually equal to or better than that reference in:
+The asset is acceptable only when the **assembled in-game scene** meets or exceeds the agreed benchmark in:
 
 1. silhouette quality
 2. architectural detail
@@ -61,12 +64,12 @@ The asset is acceptable only when it is visually equal to or better than that re
 7. normal-zoom readability
 8. overall polish and cohesion
 
-This atlas is the floor, not the ceiling.
+The prior atlas is an interim compatibility reference, **not** the new production quality floor.
 
 
 ## Environment and background standard
 
-The airport background should support the same polished stylized game-art level as the building atlas without competing with placeable content.
+The airport background should support a cohesive, richly layered pixel-art diorama without competing with placeable content.
 
 - use authored landscape shapes rather than a single flat green fill;
 - keep upper-left lighting and lower-right contact shading consistent with buildings;
@@ -88,7 +91,7 @@ Decorative roads do not belong in the default backdrop. Roads, taxiways, service
 
 ## Airfield surface art standard
 
-The **5×2 Small Runway** is the canonical base style for grid-native airfield surfaces.
+The current **6×2 Short Runway** is the canonical logical V1 runway footprint (verify against `src/build/BuildingCatalog.gd`). Its **new pixel-art replacement** should establish the shared runway/apron material family.
 
 Taxiways, runway connectors, apron transitions and future airfield pavement should visually inherit:
 
@@ -99,4 +102,4 @@ Taxiways, runway connectors, apron transitions and future airfield pavement shou
 - crisp upper-left highlights and lower-right contact shading;
 - exact `square_grid_iso_v1` footprint boundaries with no visual overhang.
 
-A connected taxiway network must read as one continuous paved system. Players place one Taxiway object; straight, corner, dead-end, T and cross visuals are selected automatically from adjacency rather than exposed as separate shop items.
+V1 aircraft service uses instant transfers between separate parking pads and the runway. Taxiways and service roads are **not required buildable dependencies** in the approved V1, and must not be reintroduced through visual modernization. Any future airport pavement should use the same world-texture family while respecting gameplay-owned footprints.

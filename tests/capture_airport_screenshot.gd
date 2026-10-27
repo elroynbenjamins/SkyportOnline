@@ -14,6 +14,12 @@ func _run() -> void:
 	world.name = "VisualQAAirport"
 	root.add_child(world)
 
+	# The real main scene includes authored landscape beneath AirportGrid.
+	# The baseline screenshot must show the same background rather than a
+	# black void after construction-only grid lines are hidden.
+	var backdrop := AirportBackdrop.new()
+	world.add_child(backdrop)
+
 	var grid := AirportGrid.new()
 	world.add_child(grid)
 	await process_frame

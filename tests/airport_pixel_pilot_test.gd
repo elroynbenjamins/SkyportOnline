@@ -44,6 +44,27 @@ func _run() -> void:
 		_fail("Starter office still falls back to a primitive rectangle.")
 		return
 
+	# Real Blender exports must be independently imported and grid-sized.
+	var hangar := BuildingCatalog.get_definition("small_hangar")
+	var sprites: PackedStringArray = hangar.get(
+		"grid_first_structure_paths", PackedStringArray()
+	)
+	if sprites.size() != 2:
+		_fail("Both Blender hangar orientations required.")
+		return
+	for sprite_path in sprites:
+		if not sprite_path.ends_with(".png") or not sprite_path.contains(
+			"airport_buildings_blender_v1"
+		):
+			_fail("Small hangar isn't using the Blender-rendered PNG.")
+			return
+		var imported = load(sprite_path)
+		if not (imported is Texture2D) or imported.get_size() != Vector2(
+			224, 260
+		):
+			_fail("Blender sprite import or dimensions invalid.")
+			return
+
 	var pilot := AirportPixelTerrain.new()
 	root.add_child(pilot)
 	await process_frame

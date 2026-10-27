@@ -35,6 +35,9 @@ jobs:
         run: |
           mkdir -p assets/source/blender assets/production/airport_buildings_blender_v1
           blender --background --threads 4 --python tools/blender/build_small_hangar.py
+          test -s assets/source/blender/small_hangar_grid_contract.json
+          test -s assets/production/airport_buildings_blender_v1/_hires_4x3.png
+          test -s assets/production/airport_buildings_blender_v1/_hires_3x4.png
 
       - name: Downsample high-res renders; check alpha and exact dimensions
         run: |

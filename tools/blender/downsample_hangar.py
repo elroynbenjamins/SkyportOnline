@@ -36,7 +36,7 @@ for footprint in ("4x3", "3x4"):
     from PIL import ImageMath
     unpremultiplied = []
     for channel in channels:
-        px = ImageMath.eval("convert(min(255, (c*255)/(a+1)), 'L')", c=channel, a=a)
+        px = ImageMath.eval("convert((c*255)/(a+1), 'L')", c=channel, a=a)
         unpremultiplied.append(px)
     final = Image.merge("RGBA", (*unpremultiplied, a))
     bbox = a.getbbox()

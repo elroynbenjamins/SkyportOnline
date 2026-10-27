@@ -35,7 +35,10 @@ for material in list(bpy.data.materials):
     bpy.data.materials.remove(material)
 
 scene = bpy.context.scene
-scene.render.engine = "BLENDER_EEVEE_NEXT" if bpy.app.version >= (4, 2, 0) else "BLENDER_EEVEE"
+scene.render.engine = "CYCLES"
+scene.cycles.device = "CPU"
+scene.cycles.samples = 24
+scene.cycles.use_denoising = True
 scene.render.resolution_x = WIDTH
 scene.render.resolution_y = HEIGHT
 scene.render.resolution_percentage = 100
@@ -45,7 +48,6 @@ scene.render.film_transparent = True
 scene.render.image_settings.color_depth = "8"
 scene.render.film_transparent = True
 scene.camera = None
-scene.render.engine = scene.render.engine
 if hasattr(scene, "view_settings"):
     try:
         scene.view_settings.view_transform = "AgX" if bpy.app.version >= (4, 0, 0) else "Filmic"
@@ -69,8 +71,10 @@ def material(name, color, roughness=0.72, metallic=0.0, emission_strength=0.0):
     principled.inputs["Roughness"].default_value = roughness
     principled.inputs["Metallic"].default_value = metallic
     if emission_strength:
-        principled.inputs["Emission Color"].default_value = (*color, 1.0)
-        principled.inputs["Emission Strength"].default_value = emission_strength
+        emission_input = "Emission Color" if "Emission Color" in principled.inputs else "Emission"
+        principled.inputs[emission_input].default_value = (*color, 1.0)
+        if "Emission Strength" in principled.inputs:
+            principled.inputs["Emission Strength"].default_value = emission_strength
     return m
 
 M = {
@@ -115,7 +119,8 @@ def box(name, size, at, mat, bevel=0.025, rotation=None):
         modifier = ob.modifiers.new("Material corner catchlight", "BEVEL")
         modifier.width = bevel
         modifier.segments = 3
-        modifier.affect = "EDGES" if hasattr(modifier, "affect") else None
+        if hasattr(modifier, "affect"):
+            modifier.affect = "EDGES"
         normal = ob.modifiers.new("Weighted surface normals", "WEIGHTED_NORMAL")
         normal.keep_sharp = True
     return parent(ob)

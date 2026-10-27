@@ -41,15 +41,23 @@ func _run() -> void:
 		["basic_fuel", Vector2i(2, 3)],
 		["ground_ops_depot", Vector2i(4, 3)],
 		["fuel_parking_s", Vector2i(3, 7)],
-		["cargo_parking_s", Vector2i(9, 7)],
-		["apron_tile", Vector2i(7, 8)],
-		["apron_tile", Vector2i(8, 8)],
-		["apron_tile", Vector2i(7, 9)],
-		["apron_tile", Vector2i(8, 9)]
+		["cargo_parking_s", Vector2i(9, 7)]
 	]:
 		if not _place(grid, String(build[0]), build[1]):
 			quit(1)
 			return
+
+	# A constructed airport, not a sparse debug staging map. The concrete
+	# remains normal player-placeable 1x1 infrastructure in gameplay.
+	# This screenshot intentionally includes a built-out apron linking
+	# existing facilities, without introducing any taxi/road requirement.
+	for y in range(5, 11):
+		for x in range(5, 14):
+			if y in [7, 8] and (x == 5 or x in [9, 10, 11]):
+				continue
+			if not _place(grid, "apron_tile", Vector2i(x, y)):
+				quit(1)
+				return
 
 	var fuel_pads := grid.get_simple_service_parking_pads("fuel", "S")
 	var cargo_pads := grid.get_simple_service_parking_pads("cargo", "S")
@@ -80,7 +88,7 @@ func _run() -> void:
 	scene.add_child(camera)
 
 	grid.clear_build_preview()
-	for _frame in range(20):
+	for _frame in range(74):
 		await process_frame
 	RenderingServer.force_draw()
 	await process_frame

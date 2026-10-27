@@ -1,0 +1,65 @@
+{
+  "logical_grid": "square_64x64",
+  "footprint_normal": [
+    4,
+    3
+  ],
+  "footprint_rotated": [
+    3,
+    4
+  ],
+  "world_ground_units": [
+    3.0,
+    4.0
+  ],
+  "view_projection": "2_to_1_diamond_orthographic",
+  "azimuth_deg": 45,
+  "elevation_deg": 30,
+  "sprite_px": [
+    224,
+    260
+  ],
+  "supersample_factor": 4,
+  "projected_ground_px": [
+    224.0,
+    112.0
+  ],
+  "ground_center_target_px": [
+    112,
+    204
+  ],
+  "sprite_anchor": "front_footprint_corner_at_bottom_center",
+  "source": "Blender real 3D / Eevee transparent PNG / Lanczos final downsample",
+  "exports": {
+    "4x3": {
+      "size": [
+        224,
+        260
+      ],
+      "alpha_bbox": [
+        1,
+        62,
+        224,
+        256
+      ],
+      "file": "small_hangar_4x3.png",
+      "source_render": "_hires_4x3.png",
+      "render_scale": 4
+    },
+    "3x4": {
+      "size": [
+        224,
+        260
+      ],
+      "alpha_bbox": [
+        0,
+        51,
+        223,
+        256
+      ],
+      "file": "small_hangar_3x4.png",
+      "source_render": "_hires_3x4.png",
+      "render_scale": 4
+    }
+  }
+}

@@ -57,10 +57,14 @@ if hasattr(scene, "view_settings"):
 scene.world.use_nodes = True
 background = scene.world.node_tree.nodes.get("Background")
 background.inputs["Color"].default_value = (0.50, 0.69, 0.80, 1.0)
-background.inputs["Strength"].default_value = 0.8
+background.inputs["Strength"].default_value = 0.56
 
 root = bpy.data.objects.new("HANGAR_ROOT__rotate_for_4x3_and_3x4", None)
 bpy.context.collection.objects.link(root)
+# 5% internal footprint clearance prevents roof eaves clipping the export
+# canvas, while the separate 4x3 Godot placement and guide remain unchanged.
+root.scale.x = 0.93
+root.scale.y = 0.93
 
 def material(name, color, roughness=0.72, metallic=0.0, emission_strength=0.0):
     m = bpy.data.materials.new(name)
@@ -78,14 +82,14 @@ def material(name, color, roughness=0.72, metallic=0.0, emission_strength=0.0):
     return m
 
 M = {
- "wall": material("Warm ivory cladding", (0.72,0.78,0.75)),
- "wall_highlight": material("Warm wall highlights", (0.86,0.86,0.77)),
+ "wall": material("Warm ivory cladding", (0.61,0.67,0.67)),
+ "wall_highlight": material("Warm wall highlights", (0.76,0.78,0.73)),
  "slate": material("Slate structural steel", (0.18,0.30,0.38), .48, .27),
- "steel": material("Blue-grey metal", (0.33,0.51,0.62), .46, .33),
- "steel_light": material("Sunlit edging", (0.58,0.70,0.74), .40, .35),
- "roof": material("Deep desaturated blue coated roof", (0.15,0.31,0.51), .40, .30),
- "roof_alt": material("Slate blue standing seam", (0.18,0.37,0.57), .47, .25),
- "roof_light": material("Highlighted roof paint", (0.23,0.44,0.66), .43, .28),
+ "steel": material("Blue-grey metal", (0.25,0.41,0.54), .46, .33),
+ "steel_light": material("Sunlit edging", (0.47,0.60,0.67), .40, .35),
+ "roof": material("Deep desaturated blue coated roof", (0.08,0.22,0.41), .40, .30),
+ "roof_alt": material("Slate blue standing seam", (0.10,0.28,0.49), .47, .25),
+ "roof_light": material("Highlighted roof paint", (0.15,0.34,0.55), .43, .28),
  "glass": material("Blue smoked skylight glass", (0.10,0.33,0.43), .14, .1),
  "glass_glow": material("Blue skylight glints", (0.34,0.65,0.69), .22, .16),
  "floor": material("Cool inside concrete floor", (0.38,0.45,0.45)),
@@ -264,9 +268,9 @@ def area_light(name,loc,power,size,color):
     ob.location=loc
     ob.rotation_euler=(Vector((0,0,1))-ob.location).to_track_quat("-Z","Y").to_euler()
     return ob
-area_light("Large soft daylight key",( -3.5, 4.5, 8.0),900,7.0,(1.0,.94,.85))
-area_light("Blue overcast fill",( 4.0, -3.0, 5.6),420,6.0,(.75,.86,1.0))
-area_light("Roof rim light",( -4.0,-2.0,7.0),440,4.5,(.89,.97,1.0))
+area_light("Large soft daylight key",( -3.5, 4.5, 8.0),640,7.0,(1.0,.94,.85))
+area_light("Blue overcast fill",( 4.0, -3.0, 5.6),235,6.0,(.75,.86,1.0))
+area_light("Roof rim light",( -4.0,-2.0,7.0),250,4.5,(.89,.97,1.0))
 
 # 3. Camera projection uses the EXACT game cell vectors (32,16) and (-32,16)
 # via orthographic elevation 30 degrees and azimuth 45 degrees.

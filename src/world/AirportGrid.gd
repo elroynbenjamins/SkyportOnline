@@ -462,6 +462,12 @@ func _draw_grid_first_scene() -> void:
 
 
 func _draw_grid_first_parcels() -> void:
+	# Preserve the authored landscape instead of painting an opaque grid
+	# over owned terrain during normal play. Expansion candidates still
+	# render when expansion mode is active.
+	var show_grid := _placement_grid_visible()
+	if not show_grid and not expansion_mode_active:
+		return
 	for py in range(PARCEL_ROWS):
 		for px in range(PARCEL_COLUMNS):
 			var parcel := _parcel_at(px, py)
@@ -480,6 +486,9 @@ func _draw_grid_first_parcels() -> void:
 				) != "available":
 					continue
 				_draw_grid_first_expansion_candidate(candidate)
+				continue
+
+			if not show_grid:
 				continue
 
 			var start_x := int(parcel.get("px", 0)) * PARCEL_SIZE
@@ -7816,11 +7825,9 @@ func _placement_focus_active() -> bool:
 
 
 func _placement_grid_visible() -> bool:
-	if GRID_FIRST_VISUAL_RESET:
-		return true
-	# The construction grid is a tool, not part of the normal airport view.
-	# Show it only while the player is actively placing, moving or restoring
-	# a building. Normal play keeps the terrain seamless.
+	# The construction grid is a tool, not the airport ground itself.
+	# This also applies while GRID_FIRST_VISUAL_RESET is enabled: the
+	# authored AirportBackdrop should remain visible in normal play.
 	return _placement_focus_active()
 
 

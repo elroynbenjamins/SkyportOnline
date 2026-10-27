@@ -27,9 +27,10 @@ jobs:
 
       - name: Install real Blender and transparent image processing
         run: |
-          # Ubuntu runners already ship apt indexes; avoid an unnecessary
-          # network-wide index update before installing the packaged Blender.
-          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 install -y -qq blender python3-pil
+          # The preloaded Ubuntu apt indexes can reference deleted packages;
+          # always refresh before installing Blender to avoid mirror 404s.
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=40 update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=40 install -y -qq blender python3-pil
           blender --version | head -n 3
 
       - name: Build actual 3D scene and render both grid-native camera views

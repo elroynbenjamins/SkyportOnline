@@ -148,7 +148,26 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"movable": false,
 			"hidden_from_catalog": true,
 			"sizes": PackedStringArray([]),
-			"description": "The fixed administration and identity anchor of your airport. Operational facilities are built around it during the tutorial."
+			"description": "The fixed administration and identity anchor of your airport. Operational facilities are built around it during the tutorial.",
+			"art_tier": "pixel_office_v1",
+			"visual_contract": "square_grid_iso_v1",
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_pixel_v1/office_concrete_3x2.svg"
+			]),
+			"grid_native_surface_size": Vector2i(160, 80),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"grid_first_world_sprite": true,
+			"world_art_has_integrated_base": false,
+			"world_sprite_grid_fit": true,
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_pixel_v1/airport_office_3x2.svg"
+			]),
+			"grid_first_structure_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_pixel_v1/airport_office_3x2.svg"
+			]),
+			"grid_first_structure_art_size": Vector2i(160, 190),
+			"grid_first_structure_width_scale": 1.0,
+			"grid_first_structure_shadow_opacity": 0.08
 		},
 		{
 			"id": "small_terminal",

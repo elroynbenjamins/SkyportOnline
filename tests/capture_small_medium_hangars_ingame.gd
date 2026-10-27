@@ -31,6 +31,7 @@ func _run() -> void:
 
 	var backdrop := AirportBackdrop.new()
 	world.add_child(backdrop)
+	world.add_child(AirportPixelTerrain.new())
 
 	var grid := AirportGrid.new()
 	world.add_child(grid)

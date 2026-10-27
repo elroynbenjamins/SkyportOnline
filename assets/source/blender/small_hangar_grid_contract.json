@@ -37,10 +37,10 @@
         260
       ],
       "alpha_bbox": [
-        1,
-        62,
-        224,
-        256
+        7,
+        66,
+        217,
+        253
       ],
       "file": "small_hangar_4x3.png",
       "source_render": "_hires_4x3.png",
@@ -52,10 +52,10 @@
         260
       ],
       "alpha_bbox": [
-        0,
-        51,
-        223,
-        256
+        7,
+        54,
+        217,
+        253
       ],
       "file": "small_hangar_3x4.png",
       "source_render": "_hires_3x4.png",

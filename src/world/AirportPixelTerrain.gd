@@ -88,6 +88,20 @@ func _put_pixels(
 
 
 func _draw_edge_scenery() -> void:
+	# Frame the front of the airport with a varied stand of trees. Roots
+	# are beyond the initial construction diamond (front edge y ~512),
+	# keeping interactive tiles clear while the canopy is visible at the
+	# default landscape camera.
+	for i in range(21):
+		var x := float(-520 + i * 52 + posmod(i * 13, 15))
+		var y := float(565 + posmod(i * 43, 65))
+		if i % 5 == 0:
+			_draw_rock(Vector2(x + 16, y), 0.95)
+		else:
+			_draw_tree(Vector2(x, y), 0.65 + float(i % 4) * 0.08, i + 50)
+		if i % 3 == 0:
+			_draw_bush(Vector2(x + 26, y + 6), 0.85)
+
 	# Keep the central build area unobstructed. Soft green edge dressing
 	# appears outside the owned 16x16 core, behind all airport structures.
 	for i in range(42):

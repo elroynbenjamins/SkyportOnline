@@ -5,12 +5,15 @@ extends Node2D
 # pathfinding, building collisions, or infrastructure placement.
 # The authored background remains underneath this layer.
 const GROUND_AREA := Rect2(-2200, -130, 4400, 2330)
+const MEADOW_PATH := "res://assets/production/environment_pixel_v2/grass_meadow_512_repeat.svg"
+const FOLIAGE_ROOT := "res://assets/production/environment_pixel_v2/"
 const PALETTE_GRASS_LIT := Color("b7ca6b")
 const PALETTE_GRASS_DARK := Color("3f713a")
 const PALETTE_TRUNK := Color("715a40")
 const PALETTE_STONE := Color("929788")
 
-var detail_texture: ImageTexture
+var detail_texture: Texture2D
+var foliage_textures: Dictionary = {}
 
 
 func _ready() -> void:
@@ -18,7 +21,18 @@ func _ready() -> void:
 	z_as_relative = false
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	detail_texture = _build_grass_detail_texture()
+	if ResourceLoader.exists(MEADOW_PATH):
+		var meadow = load(MEADOW_PATH)
+		if meadow is Texture2D:
+			detail_texture = meadow as Texture2D
+	if detail_texture == null:
+		detail_texture = _build_grass_detail_texture()
+	for foliage_type in ["pine", "oak", "amber", "birch"]:
+		var path := "%s%s_tree_128x152.svg" % [FOLIAGE_ROOT, foliage_type]
+		if ResourceLoader.exists(path):
+			var loaded = load(path)
+			if loaded is Texture2D:
+				foliage_textures[foliage_type] = loaded
 	queue_redraw()
 
 
@@ -26,6 +40,8 @@ func get_visual_snapshot() -> Dictionary:
 	return {
 		"pixel_material_pilot": true,
 		"grass_texture": detail_texture != null,
+		"meadow_texture_path": MEADOW_PATH,
+		"authored_tree_variants": foliage_textures.size(),
 		"static_pixel_clusters": true,
 		"independent_from_grid": true,
 		"ground_area": GROUND_AREA,
@@ -34,12 +50,13 @@ func get_visual_snapshot() -> Dictionary:
 
 
 func _draw() -> void:
+	_draw_ground_washes()
 	if detail_texture != null:
 		draw_texture_rect(
 			detail_texture,
 			GROUND_AREA,
 			true,
-			Color(1.0, 1.0, 1.0, 0.75)
+			Color(1.0, 1.0, 1.0, 0.94)
 		)
 	_draw_edge_scenery()
 
@@ -87,42 +104,98 @@ func _put_pixels(
 			img.set_pixel(px, py, color)
 
 
+func _draw_ground_washes() -> void:
+	# Broad low-contrast color zones give the flat airfield some depth.
+	# Purely visual: they do not imply paths, footprints or owned land.
+	var regions := [
+		[Vector2(-370, -18), 325.0, Color("d2cd86", 0.052)],
+		[Vector2(325, 80), 355.0, Color("335e45", 0.07)],
+		[Vector2(-390, 415), 330.0, Color("9cc372", 0.072)],
+		[Vector2(320, 490), 400.0, Color("4a7651", 0.08)],
+		[Vector2(0, 680), 580.0, Color("c7c581", 0.056)]
+	]
+	for region in regions:
+		var center: Vector2 = region[0]
+		var radius: float = region[1]
+		var tone: Color = region[2]
+		for layer in range(3):
+			draw_set_transform(
+				center + Vector2(3 * layer, layer * 5),
+				0.0,
+				Vector2(1.0, 0.55)
+			)
+			draw_circle(
+				Vector2.ZERO,
+				radius * (1.0 - float(layer) * 0.21),
+				tone
+			)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
 func _draw_edge_scenery() -> void:
-	# Frame the front of the airport with a varied stand of trees. Roots
-	# are beyond the initial construction diamond (front edge y ~512),
-	# keeping interactive tiles clear while the canopy is visible at the
-	# default landscape camera.
-	for i in range(21):
-		var x := float(-520 + i * 52 + posmod(i * 13, 15))
-		var y := float(565 + posmod(i * 43, 65))
-		if i % 5 == 0:
-			_draw_rock(Vector2(x + 16, y), 0.95)
+	# The initial construction zone is a 16x16 logical-tile diamond.
+	# Its screen-space edges are (0,0), (+/-512,256), (0,512).
+	# Outside that boundary, build a gently irregular tree line, without
+	# putting roots on starting buildable tiles.
+	for index in range(92):
+		var side := -1.0 if index % 2 == 0 else 1.0
+		var slot := index / 2
+		var y := -38.0 + float(posmod(slot * 59 + 23, 582))
+		var range_to_edge := maxf(
+			0.0,
+			minf(y, 512.0 - y) * 2.0
+		)
+		var outward := 34.0 + float(posmod(index * 73, 160))
+		var x := side * (range_to_edge + outward)
+		var position := Vector2(x, y)
+		if index % 13 == 0:
+			_draw_rock(position + Vector2(10, 0), 0.9)
 		else:
-			_draw_tree(Vector2(x, y), 0.65 + float(i % 4) * 0.08, i + 50)
-		if i % 3 == 0:
-			_draw_bush(Vector2(x + 26, y + 6), 0.85)
+			_draw_tree(
+				position,
+				0.60 + float(posmod(index * 11, 6)) * 0.08,
+				index
+			)
+		if index % 3 == 0:
+			_draw_bush(position + Vector2(20, 5), 0.70)
 
-	# Keep the central build area unobstructed. Soft green edge dressing
-	# appears outside the owned 16x16 core, behind all airport structures.
-	for i in range(42):
-		var side := -1 if i % 2 == 0 else 1
-		var distance := 620 + posmod(i * 113, 880)
-		var x := float(side * distance)
-		var y := float(-100 + posmod(i * 127 + 31, 2200))
-		var scale := 0.70 + float(posmod(i * 17, 7)) * 0.085
-		_draw_tree(Vector2(x, y), scale, i)
-
-	for i in range(65):
-		var side := -1 if i % 2 == 0 else 1
-		var x := float(side * (605 + posmod(i * 83, 1070)))
-		var y := float(-85 + posmod(i * 151, 2200))
-		if i % 3 == 0:
-			_draw_rock(Vector2(x, y), 0.65 + float(i % 4) * 0.16)
+	# Add a staggered foreground treebelt: canopy appears below the owned
+	# area and softens the transition to surrounding countryside.
+	for index in range(42):
+		var x := float(-790 + index * 38)
+		var y := 545.0 + float(posmod(index * 31, 105))
+		if index % 7 == 0:
+			_draw_rock(Vector2(x, y), 1.0)
 		else:
-			_draw_bush(Vector2(x, y), 0.65 + float(i % 5) * 0.10)
+			_draw_tree(
+				Vector2(x, y),
+				0.56 + float(index % 4) * 0.075,
+				index + 130
+			)
 
 
 func _draw_tree(location: Vector2, scale: float, seed: int) -> void:
+	# Use independent detailed authored tree sprites. The procedural
+	# fallback remains for missing resources or editor import failures.
+	var species := "pine"
+	match posmod(seed, 9):
+		0, 4:
+			species = "oak"
+		5:
+			species = "birch"
+		8:
+			species = "amber"
+	var foliage: Texture2D = foliage_textures.get(species)
+	if foliage != null:
+		draw_set_transform(location.round(), 0.0, Vector2(scale, scale))
+		draw_texture_rect(
+			foliage,
+			Rect2(Vector2(-64, -148), Vector2(128, 152)),
+			false,
+			Color.WHITE
+		)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
 	draw_set_transform(location.round(), 0.0, Vector2(scale, scale))
 	# Long, offset flattened contact shadow ties trees to the terrain.
 	draw_colored_polygon(

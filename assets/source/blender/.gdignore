@@ -1,0 +1,1 @@
+# Editable Blender source stays in Git, but Godot must not try to import .blend as a live scene.

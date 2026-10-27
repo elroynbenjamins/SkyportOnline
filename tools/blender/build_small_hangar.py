@@ -139,7 +139,10 @@ fill.data.size=6
 aim(fill,(0,0,0))
 scene=bpy.context.scene
 scene.render.engine="CYCLES"
-scene.cycles.samples=32
+scene.cycles.samples=24
+# Ubuntu Blender package may be compiled without OpenImageDenoiser.
+scene.cycles.use_denoising=False
+bpy.context.view_layer.cycles.use_denoising=False
 scene.render.resolution_x=896
 scene.render.resolution_y=1040
 scene.render.resolution_percentage=100

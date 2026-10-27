@@ -121,8 +121,6 @@ def box(name, size, at, mat, bevel=0.025, rotation=None):
         modifier.segments = 3
         if hasattr(modifier, "affect"):
             modifier.affect = "EDGES"
-        normal = ob.modifiers.new("Weighted surface normals", "WEIGHTED_NORMAL")
-        normal.keep_sharp = True
     return parent(ob)
 
 def line(name, points, mat, bevel=0.017):
@@ -167,7 +165,7 @@ def arched_strip(name, x0, x1, mat, steps=28):
     bevel.segments=2
     return parent(ob)
 
-def window(name, x, y, width=0.62):
+def window(name, x, width=0.62):
     # Visible right-hand side wall: actual glass, mullions and lintel.
     box(name+" glass", (width, .039, .43), (x,1.811,1.20), M["glass"], .01)
     box(name+" top trim", (width+.10,.060,.035),(x,1.853,1.443),M["steel_light"],.004)

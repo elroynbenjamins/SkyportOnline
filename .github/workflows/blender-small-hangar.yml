@@ -1,0 +1,69 @@
+name: Render Grid-Native Blender Small Hangar
+
+on:
+  push:
+    branches:
+      - art/blender-small-hangar-grid-v1
+    paths:
+      - tools/blender/**
+      - .github/workflows/blender-small-hangar.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blender-small-hangar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install real Blender and transparent image processing
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq blender python3-pil
+          blender --version | head -n 3
+
+      - name: Build actual 3D scene and render both grid-native camera views
+        run: |
+          mkdir -p assets/source/blender assets/production/airport_buildings_blender_v1
+          blender --background --threads 4 --python tools/blender/build_small_hangar.py
+
+      - name: Downsample high-res renders; check alpha and exact dimensions
+        run: |
+          /usr/bin/python3 tools/blender/downsample_hangar.py
+          file assets/production/airport_buildings_blender_v1/*.png
+          cat assets/source/blender/small_hangar_grid_contract.json
+
+      - name: Upload genuine Blender source and rendered artwork for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: grid-native-blender-small-hangar
+          path: |
+            assets/source/blender/skyport_small_hangar_4x3_v1.blend
+            assets/source/blender/small_hangar_grid_contract.json
+            assets/production/airport_buildings_blender_v1/small_hangar_4x3.png
+            assets/production/airport_buildings_blender_v1/small_hangar_3x4.png
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Commit source .blend and generated sprites to working branch
+        if: github.ref == 'refs/heads/art/blender-small-hangar-grid-v1'
+        run: |
+          git config user.name "Skyport Blender Render Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/source/blender/skyport_small_hangar_4x3_v1.blend \
+            assets/source/blender/small_hangar_grid_contract.json \
+            assets/production/airport_buildings_blender_v1/small_hangar_4x3.png \
+            assets/production/airport_buildings_blender_v1/small_hangar_3x4.png
+          if ! git diff --cached --quiet; then
+            git commit -m "art: attach Blender model and grid-calibrated 2D renders"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

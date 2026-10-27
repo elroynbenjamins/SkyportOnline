@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/main/ProgressionMain.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/world/AirportGrid.gd" id="2_grid"]
 [ext_resource type="Script" path="res://src/world/AirportBackdrop.gd" id="6_backdrop"]
+[ext_resource type="Script" path="res://src/world/AirportPixelTerrain.gd" id="7_pixel_terrain"]
 [ext_resource type="Script" path="res://src/world/CameraController.gd" id="3_camera"]
 [ext_resource type="Script" path="res://src/ui/HUD.gd" id="4_hud"]
 [ext_resource type="Script" path="res://src/ui/AirportSetup.gd" id="5_setup"]
@@ -12,6 +13,9 @@ script = ExtResource("1_main")
 
 [node name="AirportBackdrop" type="Node2D" parent="."]
 script = ExtResource("6_backdrop")
+
+[node name="AirportPixelTerrain" type="Node2D" parent="."]
+script = ExtResource("7_pixel_terrain")
 
 [node name="AirportGrid" type="Node2D" parent="."]
 script = ExtResource("2_grid")

@@ -60,15 +60,8 @@ jobs:
         run: |
           mkdir -p assets/production/blender_hangar_v1
           cp artifacts/blender-hangar/small_hangar_4x3_render_v1.png assets/production/blender_hangar_v1/
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path("src/build/BuildingCatalog.gd")
-          text = path.read_text()
-          old = "res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg"
-          new = "res://assets/production/blender_hangar_v1/small_hangar_4x3_render_v1.png"
-          assert text.count(old) == 2, f"Unexpected catalog paths: {text.count(old)}"
-          path.write_text(text.replace(old,new))
-          PY
+          test "$(grep -c 'res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg' src/build/BuildingCatalog.gd)" -eq 2
+          sed -i 's#res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg#res://assets/production/blender_hangar_v1/small_hangar_4x3_render_v1.png#g' src/build/BuildingCatalog.gd
           godot --headless --path . --import
       - name: Capture actual Godot scene with Blender hangar
         shell: bash

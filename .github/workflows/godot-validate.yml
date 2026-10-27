@@ -171,6 +171,7 @@ jobs:
             tests/separate_service_parking_test.gd
             tests/roadless_airport_grid_test.gd
             tests/airport_normal_view_grid_visibility_test.gd
+            tests/airport_pixel_pilot_test.gd
             tests/flight_rules_test.gd
             tests/skyrama_simple_handling_test.gd
             tests/skyrama_runway_slot_test.gd
@@ -252,6 +253,17 @@ jobs:
             apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb
           fi
+
+      - name: Capture pixel airport visual pilot
+        run: timeout 55s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_pixel_airport_pilot.gd
+
+      - name: Upload pixel airport visual pilot
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixel-airport-pilot
+          path: artifacts/pixel_airport_pilot.png
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Capture current grid-first airport
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_airport_screenshot.gd

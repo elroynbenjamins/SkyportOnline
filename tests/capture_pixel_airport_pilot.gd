@@ -35,6 +35,26 @@ func _run() -> void:
 	await process_frame
 	grid.prepare_new_airport_builder_layout()
 
+	# Optional QA override: load a freshly rendered Blender PNG directly
+	# into Godot's texture cache, without needing an editor reimport.
+	# The approved game catalog and save behavior remain unchanged.
+	var pilot_png := "res://artifacts/blender-hangar/small_hangar_4x3_render_v1.png"
+	if FileAccess.file_exists(pilot_png):
+		var image := Image.load_from_file(pilot_png)
+		if image == null or image.is_empty():
+			push_error("Cannot open Blender visual QA sprite.")
+			quit(1)
+			return
+		if image.get_size() != Vector2i(224, 260):
+			push_error("Blender QA sprite violates 224x260 image bounds.")
+			quit(1)
+			return
+		var hangar_art_path := (
+			"res://assets/production/airport_buildings_pixel_v1/"
+			+ "small_hangar_4x3.svg"
+		)
+		grid.building_textures[hangar_art_path] = ImageTexture.create_from_image(image)
+
 	for build in [
 		["small_hangar", Vector2i(10, 2)],
 		["short_runway", Vector2i(4, 11)],

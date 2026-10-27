@@ -1,0 +1,81 @@
+name: Blender Small Hangar Visual Pilot
+on:
+  pull_request:
+    paths:
+      - "tools/blender/**"
+      - ".github/workflows/blender-hangar-pilot.yml"
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender and Pillow
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender python3-pil
+      - name: Build actual Blender project and render 4x source
+        run: |
+          mkdir -p artifacts/blender-hangar
+          blender -b -t 2 --python tools/blender/build_small_hangar.py -- --out "$PWD/artifacts/blender-hangar"
+          test -s artifacts/blender-hangar/skyport_small_hangar_4x3.blend
+          test -s artifacts/blender-hangar/small_hangar_4x3_render_4x.png
+      - name: Prepare native 224x260 premultiplied-safe RGBA sprite
+        run: |
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          output = Path("artifacts/blender-hangar")
+          image = Image.open(output / "small_hangar_4x3_render_4x.png").convert("RGBA")
+          assert image.size == (896, 1040), image.size
+          image = image.resize((224, 260), Image.Resampling.LANCZOS)
+          assert image.getbbox() is not None
+          image.save(output / "small_hangar_4x3_render_v1.png")
+          print("BLENDER_SPRITE_READY", image.size, image.getbbox())
+          PY
+      - name: Upload editable Blender scene and real render
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyport-blender-small-hangar-v1
+          path: artifacts/blender-hangar/
+          if-no-files-found: error
+          retention-days: 14
+
+  godot-preview:
+    needs: render
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.3
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: skyport-blender-small-hangar-v1
+          path: artifacts/blender-hangar/
+      - name: Temporarily install new rendered texture for in-game pilot
+        shell: bash
+        run: |
+          mkdir -p assets/production/blender_hangar_v1
+          cp artifacts/blender-hangar/small_hangar_4x3_render_v1.png assets/production/blender_hangar_v1/
+          test "$(grep -c 'res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg' src/build/BuildingCatalog.gd)" -eq 2
+          sed -i 's#res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg#res://assets/production/blender_hangar_v1/small_hangar_4x3_render_v1.png#g' src/build/BuildingCatalog.gd
+          godot --headless --path . --import
+      - name: Capture actual Godot scene with Blender hangar
+        shell: bash
+        run: |
+          if ! command -v xvfb-run >/dev/null; then
+            apt-get update -qq && apt-get install -y xvfb
+          fi
+          timeout 90s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_pixel_airport_pilot.gd
+          test -s artifacts/pixel_airport_pilot.png
+          mkdir -p artifacts/blender-godot
+          cp artifacts/pixel_airport_pilot.png artifacts/blender-godot/blender_hangar_ingame.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skyport-blender-hangar-ingame
+          path: artifacts/blender-godot/
+          if-no-files-found: error
+          retention-days: 14

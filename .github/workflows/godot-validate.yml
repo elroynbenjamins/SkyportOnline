@@ -265,6 +265,25 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Download existing Blender render for controlled Godot comparison
+        uses: actions/download-artifact@v4
+        with:
+          name: skyport-blender-small-hangar-v1
+          run-id: 40518540764
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/blender-hangar/
+
+      - name: Capture Blender hangar placed into the actual airport
+        run: timeout 75s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_pixel_airport_pilot.gd
+
+      - name: Upload real Godot screenshot with Blender hangar
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-small-hangar-in-real-godot
+          path: artifacts/pixel_airport_pilot.png
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Capture current grid-first airport
         run: timeout 45s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_airport_screenshot.gd
 

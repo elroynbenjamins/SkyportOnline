@@ -29,6 +29,7 @@ func _run() -> void:
 
 	var backdrop := AirportBackdrop.new()
 	scene.add_child(backdrop)
+	scene.add_child(AirportPixelTerrain.new())
 	var grid := AirportGrid.new()
 	scene.add_child(grid)
 	await process_frame

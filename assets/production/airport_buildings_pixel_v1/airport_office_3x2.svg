@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="190" viewBox="0 0 160 190" shape-rendering="crispEdges">
+<defs>
+ <clipPath id="office-roof"><polygon points="4,96 63,66 156,112 97,144"/></clipPath>
+ <clipPath id="office-glass"><polygon points="13,120 86,157 86,179 13,142"/></clipPath>
+</defs>
+<!-- Low isometric headquarters footprint: base exactly 3x2 cells, with air above. -->
+<polygon points="3,138 94,184 155,153 155,156 96,190 3,143" fill="#263b3d" opacity=".23"/>
+<polygon points="96,143 157,112 157,156 96,187" fill="#77929b" stroke="#314e64" stroke-width="2"/>
+<polygon points="4,98 96,143 96,188 4,144" fill="#d6dad0" stroke="#49667a" stroke-width="2"/>
+<polygon points="4,99 63,66 156,112 97,145" fill="#3c657e" stroke="#24465a" stroke-width="2.3"/>
+<g clip-path="url(#office-roof)">
+ <polygon points="7,100 64,70 152,113 96,142" fill="#436c83"/>
+ <path d="M-2 97 L92 144 M11 91 L105 138 M26 85 L120 131 M42 78 L136 123 M58 70 L151 117" fill="none" stroke="#7a9a9e" opacity=".35" stroke-width="1.5"/>
+ <path d="M18 107 L75 79 M49 121 L106 93" stroke="#b6c9ba" stroke-width="1.3" opacity=".55"/>
+ <path d="M71 75 L153 116" stroke="#d1e2d0" stroke-opacity=".54" stroke-width="2"/>
+</g>
+<!-- Front glass lobby and vertical frames, deliberately chunky at gameplay zoom. -->
+<polygon points="13,120 87,157 87,177 13,140" fill="#254d66" stroke="#eff9e8" stroke-width="1.5"/>
+<polygon points="16,124 82,156 82,173 16,141" fill="#3d849c"/>
+<g clip-path="url(#office-glass)">
+ <polygon points="20,119 37,129 28,153 15,145" fill="#97d8d4" opacity=".65"/>
+ <polygon points="56,137 75,145 64,170 50,160" fill="#70bbcb" opacity=".6"/>
+ <path d="M36,128 L36,157 M56,138 L56,168 M75,148 L75,177" fill="none" stroke="#d6e8dd" stroke-width="2.2"/>
+ <path d="M13,138 L87,174" stroke="#263f54" stroke-width="2.5" opacity=".75"/>
+</g>
+<!-- Entrance with original blue/gold signage. -->
+<polygon points="57,145 75,154 75,183 57,174" fill="#375d77" stroke="#edf7ea" stroke-width="2"/>
+<polygon points="61,149 71,154 71,176 61,171" fill="#64a4b2"/>
+<path d="M67,152 L67,174" stroke="#e7f7db" stroke-width="1.3"/>
+<path d="M12,113 L34,124 34,131 12,120" fill="#264966" stroke="#d8f0e7" stroke-width="1"/>
+<path d="M16,117 L29,123" fill="none" stroke="#f2c969" stroke-width="2.2"/>
+<!-- Right wall windows: consistent 3D projection, no pasted front-facing squares. -->
+<polygon points="111,146 147,128 147,144 111,162" fill="#d7e4dc" stroke="#effaf1" stroke-width="1"/>
+<polygon points="115,147 143,133 143,143 115,157" fill="#39738d"/>
+<path d="M128 140 L128 151 M113 150 L145 135" stroke="#c6dfe2" stroke-width="1.5"/>
+<polygon points="121,171 138,163 138,151 121,159" fill="#375c6c" stroke="#e1e8d8" stroke-width="1.2"/>
+<path d="M124 162 L135 156" stroke="#a2d8d5" stroke-width="2"/>
+<path d="M103 145 L152 121" stroke="#b0c8c2" stroke-width="3" opacity=".7"/>
+<!-- Air traffic office tower in layered pixel/voxel blockwork. -->
+<polygon points="75,63 94,54 113,63 93,73" fill="#496778"/>
+<polygon points="75,63 93,72 93,112 75,103" fill="#e4e2d3" stroke="#607d85" stroke-width="1.2"/>
+<polygon points="93,72 113,63 113,103 93,112" fill="#a2b8b3" stroke="#496876" stroke-width="1.2"/>
+<path d="M80 69 L88 73 M99 70 L109 66" stroke="#fff8df" stroke-width="2" opacity=".7"/>
+<polygon points="67,40 92,52 116,40 90,27" fill="#1d435c"/>
+<polygon points="67,40 92,52 92,70 67,58" fill="#25465d" stroke="#24394b" stroke-width="2"/>
+<polygon points="92,52 116,40 116,58 92,70" fill="#284c62" stroke="#24394b" stroke-width="2"/>
+<path d="M70,43 L89,52 L89,63 L70,54 Z" fill="#55a8b4"/>
+<path d="M95,53 L113,44 L113,55 L95,64 Z" fill="#3b8ca3"/>
+<path d="M77 46 L77 56 M85 50 L85 60 M102 50 L102 60" stroke="#e0ece1" stroke-width="1.6"/>
+<polygon points="63,39 90,24 119,39 92,54" fill="#e5e3d4" stroke="#466476" stroke-width="2"/>
+<polygon points="70,38 90,28 112,39 92,49" fill="#708b95"/>
+<polygon points="75,38 90,31 104,38 90,45" fill="#465e70"/>
+<path d="M92 24 L92 13" stroke="#445c60" stroke-width="2"/>
+<rect x="90" y="11" width="5" height="3" fill="#f8bf5c"/>
+<!-- Small antenna, HVAC, skylights, and edge fixtures keep silhouette lively. -->
+<polygon points="22,105 35,99 50,106 37,113" fill="#aec3bf" stroke="#385a6a" stroke-width="1"/>
+<polygon points="26,105 35,102 44,106 35,111" fill="#2d5d76"/>
+<polygon points="119,116 134,109 143,114 129,121" fill="#d8e1d7" stroke="#456476" stroke-width="1.2"/>
+<polygon points="123,116 134,111 137,113 127,118" fill="#669caa"/>
+<path d="M115,119 L121,116" stroke="#ffe6a9" stroke-width="2.2"/>
+<rect x="9" y="137" width="4" height="5" fill="#d9aa52"/>
+<rect x="90" y="180" width="4" height="5" fill="#f0c66b"/>
+<!-- Three planters stay on the existing pad and inside the 3x2 ground bounds. -->
+<polygon points="104,175 113,171 116,176 107,181" fill="#a28d6d"/>
+<polygon points="104,173 111,170 115,173 109,177" fill="#3b7650"/>
+<rect x="108" y="167" width="4" height="4" fill="#7fac60"/>
+<rect x="110" y="165" width="3" height="3" fill="#a1be76"/>
+</svg>

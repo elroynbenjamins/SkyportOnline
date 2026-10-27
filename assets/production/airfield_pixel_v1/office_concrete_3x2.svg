@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80" viewBox="0 0 160 80" shape-rendering="crispEdges">
+<defs><clipPath id="office-footprint"><polygon points="64,0 160,48 96,80 0,32"/></clipPath></defs>
+<g clip-path="url(#office-footprint)">
+<polygon points="64,0 160,48 96,80 0,32" fill="#9bafa6"/>
+<polygon points="64,3 156,48 96,76 4,32" fill="#c5c4b6"/>
+<path d="M31,16 L125,64 M95,16 L32,48 M1,32 L96,80" fill="none" stroke="#8c9f9e" stroke-width="1" opacity=".42"/>
+<path d="M65,4 L154,48" stroke="#f1f4e7" stroke-width="2" opacity=".75"/>
+<path d="M10,35 L92,76 L151,48" stroke="#738b88" stroke-opacity=".28" stroke-width="2" fill="none"/>
+<path d="M9,30 L12,31 M24,39 L28,40 M144,46 L147,48" stroke="#e5dfc6" stroke-width="1.5"/>
+</g></svg>

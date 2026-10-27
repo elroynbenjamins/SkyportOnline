@@ -29,8 +29,8 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"surface_art": "short_runway_s_6x2_v5",
 			"visual_contract": "square_grid_iso_v1",
 			"grid_native_surface_paths": PackedStringArray([
-				"res://assets/production/airfield_v5/short_runway_6x2.svg",
-				"res://assets/production/airfield_v5/short_runway_2x6.svg"
+				"res://assets/production/airfield_pixel_v1/short_runway_6x2.svg",
+				"res://assets/production/airfield_pixel_v1/short_runway_2x6.svg"
 			]),
 			"grid_native_surface_size": Vector2i(256, 128),
 			"grid_native_surface_runtime_scale": Vector2.ONE,
@@ -125,8 +125,14 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"sizes": PackedStringArray([]),
 			"description": "Placeable airport concrete for aprons, service areas and terminal hardscape.",
 			"icon_path": "res://assets/production/airfield_v2/apron_icon_v2.svg",
-			"art_tier": "surface_v2",
-			"surface_art": "apron_v2",
+			"art_tier": "pixel_apron_v1",
+			"surface_art": "apron_pixel_v1",
+			"visual_contract": "square_grid_iso_v1",
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_pixel_v1/apron_concrete_1x1.svg"
+			]),
+			"grid_native_surface_size": Vector2i(64, 32),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
 			"connection_family": "apron"
 		},
 		{
@@ -142,7 +148,26 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"movable": false,
 			"hidden_from_catalog": true,
 			"sizes": PackedStringArray([]),
-			"description": "The fixed administration and identity anchor of your airport. Operational facilities are built around it during the tutorial."
+			"description": "The fixed administration and identity anchor of your airport. Operational facilities are built around it during the tutorial.",
+			"art_tier": "pixel_office_v1",
+			"visual_contract": "square_grid_iso_v1",
+			"grid_native_surface_paths": PackedStringArray([
+				"res://assets/production/airfield_pixel_v1/office_concrete_3x2.svg"
+			]),
+			"grid_native_surface_size": Vector2i(160, 80),
+			"grid_native_surface_runtime_scale": Vector2.ONE,
+			"grid_first_world_sprite": true,
+			"world_art_has_integrated_base": false,
+			"world_sprite_grid_fit": true,
+			"world_sprite_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_pixel_v1/airport_office_3x2.svg"
+			]),
+			"grid_first_structure_paths": PackedStringArray([
+				"res://assets/production/airport_buildings_pixel_v1/airport_office_3x2.svg"
+			]),
+			"grid_first_structure_art_size": Vector2i(160, 190),
+			"grid_first_structure_width_scale": 1.0,
+			"grid_first_structure_shadow_opacity": 0.08
 		},
 		{
 			"id": "small_terminal",
@@ -500,12 +525,12 @@ static func _raw_definitions() -> Array[Dictionary]:
 			"world_sprite_ground_align": true,
 			"world_ground_pad": false,
 			"world_sprite_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v8/small_hangar_4x3.svg",
-				"res://assets/production/airport_buildings_v8/small_hangar_3x4.svg"
+				"res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg",
+				"res://assets/production/airport_buildings_pixel_v1/small_hangar_3x4.svg"
 			]),
 			"grid_first_structure_paths": PackedStringArray([
-				"res://assets/production/airport_buildings_v8/small_hangar_4x3.svg",
-				"res://assets/production/airport_buildings_v8/small_hangar_3x4.svg"
+				"res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg",
+				"res://assets/production/airport_buildings_pixel_v1/small_hangar_3x4.svg"
 			]),
 			"grid_first_structure_width_scale": 1.0,
 			"grid_first_structure_flip_odd_rotations": false,

@@ -3,8 +3,8 @@ extends SceneTree
 # The hangar is the first grid-geometry-driven building, not an illustration
 # deformed to fit a tile. Both sprite corners and build occupancy agree.
 
-const NORMAL := "res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg"
-const ROTATED := "res://assets/production/airport_buildings_pixel_v1/small_hangar_3x4.svg"
+const NORMAL := "res://assets/production/airport_buildings_blender_v1/small_hangar_4x3.png"
+const ROTATED := "res://assets/production/airport_buildings_blender_v1/small_hangar_3x4.png"
 
 
 func _init() -> void:
@@ -82,7 +82,7 @@ func _run() -> void:
 			return
 
 	print(
-		"GENERATED_HANGAR_GRID_OK pixel_pilot=true footprint=4x3 rotations=2 "
+		"GENERATED_HANGAR_GRID_OK blender_grid_native=true footprint=4x3 rotations=2 "
 		+ "pad=224x112 art=224x260 grid_geometry=true runtime_clip=false"
 	)
 	quit(0)

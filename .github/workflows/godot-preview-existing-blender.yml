@@ -1,0 +1,44 @@
+name: Godot Preview - Existing Blender Render
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/godot-preview-existing-blender.yml"
+  workflow_dispatch:
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download already-rendered Blender PNG (no new Blender installation)
+        uses: actions/download-artifact@v4
+        with:
+          name: skyport-blender-small-hangar-v1
+          run-id: 40518540764
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/blender-hangar/
+      - name: Inject Blender sprite into in-game building catalog
+        run: |
+          set -e
+          mkdir -p assets/production/blender_hangar_v1
+          cp artifacts/blender-hangar/small_hangar_4x3_render_v1.png assets/production/blender_hangar_v1/
+          test "$(grep -c 'res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg' src/build/BuildingCatalog.gd)" -eq 2
+          sed -i 's#res://assets/production/airport_buildings_pixel_v1/small_hangar_4x3.svg#res://assets/production/blender_hangar_v1/small_hangar_4x3_render_v1.png#g' src/build/BuildingCatalog.gd
+          godot --headless --path . --import
+      - name: Render real assembled airport in Godot
+        run: |
+          set -e
+          if ! command -v xvfb-run >/dev/null; then
+            apt-get update -qq && apt-get install -y xvfb
+          fi
+          timeout 90s xvfb-run -a godot --path . --display-driver x11 --rendering-method gl_compatibility --script res://tests/capture_pixel_airport_pilot.gd
+          test -s artifacts/pixel_airport_pilot.png
+      - name: Save real Godot screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: actual-godot-blender-hangar
+          path: artifacts/pixel_airport_pilot.png
+          retention-days: 14
+          if-no-files-found: error

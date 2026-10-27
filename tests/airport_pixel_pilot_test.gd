@@ -9,7 +9,8 @@ func _run() -> void:
 	var items := [
 		["short_runway", Vector2i(6, 2), Vector2i(256, 128), 2],
 		["small_hangar", Vector2i(4, 3), Vector2i(224, 112), 2],
-		["apron_tile", Vector2i(1, 1), Vector2i(64, 32), 1]
+		["apron_tile", Vector2i(1, 1), Vector2i(64, 32), 1],
+		["airport_office", Vector2i(3, 2), Vector2i(160, 80), 1]
 	]
 	for spec in items:
 		var id := String(spec[0])
@@ -31,6 +32,17 @@ func _run() -> void:
 			if texture.get_size() != Vector2(spec[2]):
 				_fail("Art dimensions not grid-native: %s" % path)
 				return
+
+	var office := BuildingCatalog.get_definition("airport_office")
+	var office_sprite: Texture2D = load(
+		"res://assets/production/airport_buildings_pixel_v1/airport_office_3x2.svg"
+	)
+	if office_sprite == null or office_sprite.get_size() != Vector2(160, 190):
+		_fail("New-pilot headquarters is not a valid exact-grid sprite.")
+		return
+	if not bool(office.get("grid_first_world_sprite", false)):
+		_fail("Starter office still falls back to a primitive rectangle.")
+		return
 
 	var pilot := AirportPixelTerrain.new()
 	root.add_child(pilot)
